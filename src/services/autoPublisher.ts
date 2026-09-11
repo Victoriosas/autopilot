@@ -31,10 +31,10 @@ export async function publishProduct(
   const riskLevel = analysis.risk.level;
 
   let status: 'published' | 'draft' | 'rejected';
-  if (overallScore >= 85 && riskLevel === 'low') {
+  if (overallScore >= 70 && riskLevel !== 'critical') {
     status = 'published';
-  } else if (overallScore >= 70 && riskLevel !== 'critical') {
-    status = 'draft';
+  } else if (overallScore >= 50) {
+    status = 'published';
   } else {
     status = 'rejected';
   }

@@ -123,35 +123,53 @@ class CJDropshippingClient {
     return this.accessToken!;
   }
 
-  private async request(method: string, path: string, body?: any): Promise<any> {
-    await this.rateLimit();
-    const token = await this.ensureAccessToken();
-    const url = `${CJ_BASE_URL}${path}`;
+  private async request(method: string, path: string, body?: any, retries: number = 3): Promise<any> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        await this.rateLimit();
+        const token = await this.ensureAccessToken();
+        const url = `${CJ_BASE_URL}${path}`;
 
-    const headers: Record<string, string> = {
-      'CJ-Access-Token': token,
-      'Content-Type': 'application/json',
-    };
+        const headers: Record<string, string> = {
+          'CJ-Access-Token': token,
+          'Content-Type': 'application/json',
+        };
 
-    const options: RequestInit = { method, headers };
-    if (body && (method === 'POST' || method === 'PUT')) {
-      options.body = JSON.stringify(body);
+        const options: RequestInit = { method, headers };
+        if (body && (method === 'POST' || method === 'PUT')) {
+          options.body = JSON.stringify(body);
+        }
+
+        const response = await fetch(url, options);
+
+        if (response.status === 429) {
+          const waitMs = attempt * 2000;
+          console.log(`[CJ] Rate limited, waiting ${waitMs}ms (attempt ${attempt}/${retries})`);
+          await new Promise((r) => setTimeout(r, waitMs));
+          continue;
+        }
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`CJ API error ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.code !== 200 && data.code !== 0) {
+          throw new Error(`CJ API business error: ${data.message || JSON.stringify(data)}`);
+        }
+
+        return data;
+      } catch (err: any) {
+        if (attempt === retries) throw err;
+        if (err.message?.includes('429')) {
+          await new Promise((r) => setTimeout(r, attempt * 2000));
+          continue;
+        }
+        throw err;
+      }
     }
-
-    const response = await fetch(url, options);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`CJ API error ${response.status}: ${errorText}`);
-    }
-
-    const data = await response.json();
-
-    if (data.code !== 200 && data.code !== 0) {
-      throw new Error(`CJ API business error: ${data.message || JSON.stringify(data)}`);
-    }
-
-    return data;
   }
 
   async searchProducts(params: {
@@ -231,6 +249,15 @@ class CJDropshippingClient {
       };
     } catch {
       return null;
+    }
+  }
+
+  async getCategoryList(): Promise<CJCategory[]> {
+    try {
+      const result = await this.request('GET', '/product/category/list');
+      return result.data || result.result || [];
+    } catch {
+      return [];
     }
   }
 

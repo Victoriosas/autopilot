@@ -1056,6 +1056,22 @@ app.post('/api/webhooks/paypal', async (req, res) => {
 // Product Sourcing Agent Endpoints
 // ============================================================
 
+// GET /api/products - Get all products from Supabase
+app.get('/api/products', async (req, res) => {
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+    if (!url || !key) return res.json([]);
+
+    const db = createClient(url, key);
+    const { data } = await db.from('products').select('*').order('created_at', { ascending: false });
+    res.json(data || []);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/sourcing/status - Scheduler status
 app.get('/api/sourcing/status', async (req, res) => {
   try {
@@ -1161,6 +1177,57 @@ app.post('/api/sourcing/cj/search', async (req, res) => {
     const { keyword, categoryId, pageSize = 20, minPrice, maxPrice } = req.body;
     const result = await cj.searchProducts({ keyword, categoryId, pageSize, minPrice, maxPrice });
     res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/sourcing/import-url - Import a product from CJ URL
+app.post('/api/sourcing/import-url', async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ error: 'URL required' });
+
+    const pidMatch = url.match(/product-p-(\d+)/);
+    if (!pidMatch) return res.status(400).json({ error: 'Invalid CJ product URL' });
+
+    const cj = getCJClient();
+    if (!cj) return res.status(503).json({ error: 'CJ API not configured' });
+
+    const product = await cj.getProductDetail(pidMatch[1]);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    const ai = getGeminiClient();
+    const { analyzeProduct } = await import('./src/services/productAnalyzer');
+    const { publishProduct } = await import('./src/services/autoPublisher');
+
+    const analysis = await analyzeProduct(product, ai);
+    if (!analysis) return res.status(500).json({ error: 'AI analysis failed' });
+
+    const result = await publishProduct(product, analysis);
+    res.json({ success: true, product: result, analysis });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/sourcing/price-monitor - Check prices and auto-reprice
+app.get('/api/sourcing/price-monitor', async (req, res) => {
+  try {
+    const { monitorPrices } = await import('./src/services/priceMonitor');
+    const alerts = await monitorPrices();
+    res.json({ alerts, count: alerts.length });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/sourcing/restock - Products needing restock
+app.get('/api/sourcing/restock', async (req, res) => {
+  try {
+    const { getProductsNeedingRestock } = await import('./src/services/priceMonitor');
+    const products = await getProductsNeedingRestock();
+    res.json({ products });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

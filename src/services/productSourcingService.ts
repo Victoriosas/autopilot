@@ -53,13 +53,16 @@ const DEFAULT_CONFIG: SourcingConfig = {
 };
 
 const CJ_SEARCH_KEYWORDS: Record<string, string[]> = {
-  'Electronics': ['bluetooth speaker', 'wireless earbuds', 'smart watch'],
-  'Home & Garden': ['desk lamp', 'wall art', 'kitchen gadget'],
-  'Beauty & Health': ['skincare', 'makeup brush', 'face mask'],
-  'Fashion': ['sunglasses', 'wallet', 'jewelry'],
-  'Toys & Hobbies': ['fidget toy', 'puzzle', 'board game'],
-  'Sports & Entertainment': ['yoga mat', 'water bottle', 'fitness band'],
-  'Tools & Home Improvement': ['smart plug', 'led strip', 'storage box'],
+  'Electronics': ['bluetooth speaker', 'wireless earbuds', 'smart watch', 'phone holder', 'usb charger'],
+  'Home & Garden': ['desk lamp', 'wall art', 'kitchen gadget', 'plant pot', 'candle holder'],
+  'Beauty & Health': ['skincare', 'makeup brush', 'face mask', 'hair clipper', 'nail lamp'],
+  'Fashion': ['sunglasses', 'wallet', 'jewelry', 'watch', 'belt'],
+  'Toys & Hobbies': ['fidget toy', 'puzzle', 'board game', 'rc car', 'model kit'],
+  'Sports & Entertainment': ['yoga mat', 'water bottle', 'fitness band', 'camping', 'bike light'],
+  'Tools & Home Improvement': ['smart plug', 'led strip', 'storage box', 'screwdriver set', 'tape measure'],
+  'Pet Supplies': ['dog toy', 'cat bed', 'pet collar', 'fish tank', 'bird cage'],
+  'Baby & Kids': ['baby toy', 'kids puzzle', 'baby bottle', 'stroller', 'diaper bag'],
+  'Office & Stationery': ['pen set', 'notebook', 'desk organizer', 'sticky notes', 'calculator'],
 };
 
 class ProductSourcingService {
