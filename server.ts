@@ -3,6 +3,9 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import { getCJClient } from "./src/services/cjDropshipping";
+import { getSourcingService } from "./src/services/productSourcingService";
+import { getSourcingScheduler } from "./src/services/sourcingScheduler";
 
 dotenv.config({ path: '.env.local' });
 dotenv.config();
@@ -1049,6 +1052,120 @@ app.post('/api/webhooks/paypal', async (req, res) => {
   }
 });
 
+// ============================================================
+// Product Sourcing Agent Endpoints
+// ============================================================
+
+// GET /api/sourcing/status - Scheduler status
+app.get('/api/sourcing/status', async (req, res) => {
+  try {
+    const scheduler = getSourcingScheduler();
+    res.json(scheduler.getStatus());
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/sourcing/stats - Sourcing statistics
+app.get('/api/sourcing/stats', async (req, res) => {
+  try {
+    const service = getSourcingService();
+    const stats = await service.getStats();
+    res.json(stats);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/sourcing/history - Sourcing run history
+app.get('/api/sourcing/history', async (req, res) => {
+  try {
+    const service = getSourcingService();
+    const limit = parseInt(req.query.limit as string) || 20;
+    const runs = await service.getRuns(limit);
+    res.json({ runs });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/sourcing/products - Discovered products
+app.get('/api/sourcing/products', async (req, res) => {
+  try {
+    const service = getSourcingService();
+    const limit = parseInt(req.query.limit as string) || 50;
+    const products = await service.getDiscoveredProducts(limit);
+    res.json({ products });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/sourcing/run - Trigger manual sourcing run
+app.post('/api/sourcing/run', async (req, res) => {
+  try {
+    const service = getSourcingService();
+    const config = await service.getConfig();
+    const result = await service.runSourcing(config);
+    res.json(result);
+  } catch (err: any) {
+    console.error('Sourcing run error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/sourcing/config - Update sourcing configuration
+app.put('/api/sourcing/config', async (req, res) => {
+  try {
+    const service = getSourcingService();
+    await service.updateConfig(req.body);
+    const config = await service.getConfig();
+    res.json({ success: true, config });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/sourcing/config - Get sourcing configuration
+app.get('/api/sourcing/config', async (req, res) => {
+  try {
+    const service = getSourcingService();
+    const config = await service.getConfig();
+    res.json(config);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/sourcing/cj/categories - CJ category list
+app.get('/api/sourcing/cj/categories', async (req, res) => {
+  try {
+    const cj = getCJClient();
+    if (!cj) {
+      return res.status(503).json({ error: 'CJ API not configured' });
+    }
+    const categories = await cj.getCategoryList();
+    res.json({ categories });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/sourcing/cj/search - Search CJ products
+app.post('/api/sourcing/cj/search', async (req, res) => {
+  try {
+    const cj = getCJClient();
+    if (!cj) {
+      return res.status(503).json({ error: 'CJ API not configured' });
+    }
+    const { keyword, categoryId, pageSize = 20, minPrice, maxPrice } = req.body;
+    const result = await cj.searchProducts({ keyword, categoryId, pageSize, minPrice, maxPrice });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Start Express and Vite Middleware
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
@@ -1063,6 +1180,14 @@ async function startServer() {
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
+  }
+
+  // Start sourcing scheduler
+  try {
+    const scheduler = getSourcingScheduler();
+    await scheduler.start();
+  } catch (err) {
+    console.warn('Sourcing scheduler not started:', err);
   }
 
   app.listen(PORT, "0.0.0.0", () => {
