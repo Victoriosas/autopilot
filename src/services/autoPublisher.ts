@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { ProductAnalysis } from './productAnalyzer';
+import { mapCategoryToSpanish } from './productSourcingService';
 
 let supabase: SupabaseClient | null = null;
 
@@ -42,7 +43,7 @@ export async function publishProduct(
 
   const overallScore = analysis.analysis.overallScore;
   const riskLevel = analysis.risk.level;
-  const category = analysis.category;
+  const category = mapCategoryToSpanish(analysis.category);
 
   // Check if category already has enough products
   const categoryCount = await getCategoryCount(category);
@@ -167,7 +168,7 @@ export async function publishBatch(
   const byCategory: Record<string, { published: number; draft: number; rejected: number }> = {};
 
   for (const { cjProduct, analysis } of products) {
-    const category = analysis.category;
+    const category = mapCategoryToSpanish(analysis.category);
     if (!byCategory[category]) {
       byCategory[category] = { published: 0, draft: 0, rejected: 0 };
     }

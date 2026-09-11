@@ -88,6 +88,17 @@ const CJ_SEARCH_KEYWORDS: Record<string, string[]> = {
   'Office & Stationery': ['pen set', 'notebook', 'desk organizer', 'sticky notes', 'calculator'],
 };
 
+const CATEGORY_MAP_EN_TO_ES: Record<string, string> = {
+  'Electronics': 'Tecnologia & Gadgets',
+  'Home & Garden': 'Hogar & Diseno',
+  'Beauty & Health': 'Belleza & Bienestar',
+  'Fashion': 'Moda & Accesorios',
+};
+
+export function mapCategoryToSpanish(englishCategory: string): string {
+  return CATEGORY_MAP_EN_TO_ES[englishCategory] || englishCategory;
+}
+
 class ProductSourcingService {
   private supabase: SupabaseClient | null = null;
 
