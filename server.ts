@@ -4,6 +4,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 
+dotenv.config({ path: '.env.local' });
 dotenv.config();
 
 const app = express();
@@ -123,7 +124,7 @@ Asegúrate de usar imágenes reales de Unsplash representativas (tecnología, di
 `;
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.5-flash",
         contents: prompt,
         config: {
           responseMimeType: "application/json"
@@ -223,7 +224,7 @@ Devuelve ÚNICAMENTE un JSON con esta estructura exacta:
 `;
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.5-flash",
         contents: prompt,
         config: {
           responseMimeType: "application/json"
@@ -392,7 +393,7 @@ Devuelve un JSON conciso:
 }
 `;
         const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-3.5-flash",
           contents: prompt,
           config: { responseMimeType: "application/json" }
         });
@@ -608,7 +609,7 @@ Devuelve ÚNICAMENTE un JSON con esta estructura:
 }
 `;
         const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-3.5-flash",
           contents: prompt,
           config: { responseMimeType: "application/json" }
         });
