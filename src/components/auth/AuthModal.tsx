@@ -17,7 +17,17 @@ import {
   UserPlus
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { getFirebaseErrorMessage } from '../../lib/firebase';
+
+function getSupabaseErrorMessage(err: any): string {
+  if (!err) return 'Ha ocurrido un error inesperado.';
+  const msg = err.message || '';
+  if (msg.includes('Invalid login credentials')) return 'Credenciales inválidas. Verifica tu correo y contraseña.';
+  if (msg.includes('User already registered')) return 'Este correo ya está registrado. Inicia sesión.';
+  if (msg.includes('Password should be at least')) return 'La contraseña debe tener al menos 6 caracteres.';
+  if (msg.includes('Unable to validate email address')) return 'El formato de correo electrónico no es válido.';
+  if (msg.includes('Email not confirmed')) return 'Correo no confirmado. Revisa tu bandeja de entrada.';
+  return msg || 'Error en la autenticación. Inténtalo de nuevo.';
+}
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -61,7 +71,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
       onClose();
     } catch (err: any) {
-      setError(getFirebaseErrorMessage(err));
+      setError(getSupabaseErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -95,7 +105,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
       onClose();
     } catch (err: any) {
-      setError(getFirebaseErrorMessage(err));
+      setError(getSupabaseErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -122,10 +132,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
             <div>
               <h2 className="font-serif font-bold text-lg text-white">
-                {user && !user.isAnonymous ? 'Cuenta y Autenticación' : (mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta')}
+                {user ? 'Cuenta y Autenticación' : (mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta')}
               </h2>
               <p className="text-xs text-slate-400 font-mono">
-                Firebase Auth & Roles RBAC
+                Supabase Auth & Roles RBAC
               </p>
             </div>
           </div>
@@ -145,7 +155,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <div className="space-y-1">
               <strong className="block text-amber-300 font-semibold">Acceso Administrativo Protegido</strong>
               <p className="text-slate-300">
-                El panel de control Autopilot, catálogo interno y fulfillment están resguardados en Firestore. Inicia sesión o regístrate como Administrador.
+                El panel de control Autopilot, catálogo interno y fulfillment están resguardados en Supabase. Inicia sesión o regístrate como Administrador.
               </p>
             </div>
           </div>
@@ -153,7 +163,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar">
           {/* Active Session Card (if user is authenticated) */}
-          {user && !user.isAnonymous && (
+          {user && (
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-400">Sesión Activa:</span>

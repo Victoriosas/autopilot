@@ -1,5 +1,5 @@
 import type { Product, ImageEnhancementOptions, EnhancedImageResult } from '../types';
-import { uploadImageToStorage } from './firebase';
+import supabase from './supabase';
 
 export const DEFAULT_ENHANCEMENT_OPTIONS: ImageEnhancementOptions = {
   targetWidth: 1000,
@@ -304,7 +304,7 @@ export async function processProductImageInCanvas(
 }
 
 /**
- * Enhances a product's image and persists the result to Firebase Storage and Firestore
+ * Enhances a product's image and persists the result to Supabase Storage and the database
  */
 export async function enhanceAndPersistProductImage(
   product: Product,
@@ -319,9 +319,26 @@ export async function enhanceAndPersistProductImage(
   // 1. Process image in canvas
   const { dataUrl, width, height, appliedFilters } = await enhanceImageWithCanvas(originalImageUrl, options);
 
-  // 2. Upload to Firebase Storage
+  // 2. Upload to Supabase Storage
   const storagePath = `products/${product.id}/enhanced_v${Date.now()}_img${imageIndex}.jpg`;
-  const storageUrl = await uploadImageToStorage(dataUrl, storagePath);
+  
+  // Convert data URL to blob for Supabase Storage
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  
+  const { error: uploadError } = await supabase.storage
+    .from('product-images')
+    .upload(storagePath, blob, { contentType: 'image/jpeg', upsert: true });
+  
+  let storageUrl = dataUrl;
+  if (!uploadError) {
+    const { data: urlData } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(storagePath);
+    storageUrl = urlData?.publicUrl || dataUrl;
+  } else {
+    console.warn('Supabase storage upload failed, using data URL:', uploadError);
+  }
 
   // 3. Build EnhancedImageResult object
   const enhancedResult: EnhancedImageResult = {
