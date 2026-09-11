@@ -1,32 +1,17 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig, loadEnv} from 'vite';
+import {defineConfig} from 'vite';
 
-export default defineConfig(({mode}) => {
-  // Merge Vite's env files with the process environment so that values
-  // provided without the VITE_ prefix (e.g. SUPABASE_URL / NEXT_PUBLIC_*)
-  // can still be surfaced to the browser as VITE_ variables.
-  const env = {...process.env, ...loadEnv(mode, process.cwd(), '')};
-
-  const supabaseUrl =
-    env.VITE_SUPABASE_URL ||
-    env.NEXT_PUBLIC_SUPABASE_URL ||
-    env.SUPABASE_URL ||
-    '';
-  const supabaseAnonKey =
-    env.VITE_SUPABASE_ANON_KEY ||
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    env.SUPABASE_ANON_KEY ||
-    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    env.SUPABASE_PUBLISHABLE_KEY ||
-    '';
-
+export default defineConfig(() => {
   return {
-    define: {
-      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl),
-      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey),
-    },
+    // The Supabase credentials are provided to the project as NEXT_PUBLIC_*
+    // variables (in process.env and .env files), not with Vite's default VITE_
+    // prefix. Whitelist the NEXT_PUBLIC_ prefix so Vite exposes those public
+    // values on import.meta.env. Only VITE_ and NEXT_PUBLIC_ prefixes are
+    // exposed, so server-only secrets like SUPABASE_SERVICE_ROLE_KEY and
+    // SUPABASE_SECRET_KEY are never shipped to the browser.
+    envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
