@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { apiFetch } from '../../lib/api';
 import { 
   X, 
   ShieldCheck, 
@@ -57,7 +58,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
   useEffect(() => {
     const loadPayPal = async () => {
       try {
-        const res = await fetch('/api/payments/paypal/config');
+        const res = await apiFetch('/api/payments/paypal/config');
         const config = await res.json();
 
         if (!config.configured || !config.clientId) {
@@ -110,7 +111,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
           }
 
           // Step 2: Create PayPal order (server-side)
-          const res = await fetch('/api/payments/paypal/order', {
+          const res = await apiFetch('/api/payments/paypal/order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -144,7 +145,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
       onApprove: async (data: any) => {
         try {
           // Step 3: Capture PayPal payment (server-side)
-          const captureRes = await fetch('/api/payments/paypal/capture', {
+          const captureRes = await apiFetch('/api/payments/paypal/capture', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

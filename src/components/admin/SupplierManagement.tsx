@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { apiFetch } from '../../lib/api';
 import { 
   Building2, 
   Plus, 
@@ -107,7 +108,7 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onOpenPr
     setEvaluationResult(null);
 
     try {
-      const res = await fetch('/api/autopilot/evaluate-supplier', {
+      const res = await apiFetch('/api/autopilot/evaluate-supplier', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ supplier, expectedVolume: 50 })

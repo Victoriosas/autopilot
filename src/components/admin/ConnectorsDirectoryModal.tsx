@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiFetch } from '../../lib/api';
 import { 
   X, 
   Layers, 
@@ -36,7 +37,7 @@ export const ConnectorsDirectoryModal: React.FC<ConnectorsDirectoryModalProps> =
     setTestResult(null);
 
     try {
-      const res = await fetch('/api/connectors/direct-import', {
+      const res = await apiFetch('/api/connectors/direct-import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: testUrl.trim() })

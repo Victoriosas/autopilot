@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { apiFetch } from '../../lib/api';
 import { 
   X, 
   Sparkles, 
@@ -114,7 +115,7 @@ export const ImageStudioModal: React.FC<ImageStudioModalProps> = ({
     setIsProcessing(true);
     try {
       showToast('Gemini IA analizando iluminación y composición de la imagen...', 'info');
-      const res = await fetch('/api/autopilot/enhance-image', {
+      const res = await apiFetch('/api/autopilot/enhance-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

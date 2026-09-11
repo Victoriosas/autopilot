@@ -1,6 +1,7 @@
 ﻿// @ts-nocheck
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import supabase from '../lib/supabase';
+import { apiFetch } from '../lib/api';
 import type { User } from '@supabase/supabase-js';
 import { INITIAL_PRODUCTS, INITIAL_RUNS } from '../data/initialProducts';
 import { INITIAL_SUPPLIERS } from '../data/initialSuppliers';
@@ -503,7 +504,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     const fetchConnectors = async () => {
       try {
-        const res = await fetch('/api/connectors');
+        const res = await apiFetch('/api/connectors');
         if (res.ok) {
           const data = await res.json();
           if (data.connectors) setConnectors(data.connectors);
@@ -868,7 +869,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         console.warn('Direct supabase update failed:', e);
       }
 
-      const res = await fetch('/api/autopilot/analyze', {
+      const res = await apiFetch('/api/autopilot/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ candidate, settings })
@@ -920,7 +921,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setIsAutopilotRunning(true);
       showToast('Autopilot explorando fuentes globales de catÃ¡logo...', 'info');
 
-      const res = await fetch('/api/autopilot/discover', {
+      const res = await apiFetch('/api/autopilot/discover', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category, source, keyword, count: 3 })
@@ -1058,7 +1059,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       logs.push({ timestamp: new Date().toISOString(), level: 'info', message: 'Fase 1/3: Descubriendo nuevos candidatos...' });
       setAutopilotLiveLogs([...logs]);
 
-      const discRes = await fetch('/api/autopilot/discover', {
+      const discRes = await apiFetch('/api/autopilot/discover', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category, source, count: 2 })
@@ -1078,7 +1079,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         logs.push({ timestamp: new Date().toISOString(), level: 'info', message: `Fase 2/3: Analizando candidato [${i + 1}/${rawCandidates.length}] "${item.originalTitle.slice(0, 30)}..."` });
         setAutopilotLiveLogs([...logs]);
 
-        const analyzeRes = await fetch('/api/autopilot/analyze', {
+        const analyzeRes = await apiFetch('/api/autopilot/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ candidate: item, settings })
@@ -1657,7 +1658,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     try {
       showToast(`Verificando stock y margen en tiempo real con ${sourcePlatform}...`, 'info');
-      const res = await fetch('/api/fulfillment/verify', {
+      const res = await apiFetch('/api/fulfillment/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1702,7 +1703,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     try {
       showToast(`Conectando con proveedor para tramitar pedido #${supplierOrderId.slice(-6)}...`, 'info');
-      const res = await fetch('/api/fulfillment/create-supplier-order', {
+      const res = await apiFetch('/api/fulfillment/create-supplier-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ supplierOrder: sOrder })
@@ -1875,7 +1876,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const importProductFromUrl = async (url: string): Promise<Product | null> => {
     try {
       showToast('Extrayendo metadatos de la URL con Autopilot...', 'info');
-      const res = await fetch('/api/connectors/direct-import', {
+      const res = await apiFetch('/api/connectors/direct-import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url })
@@ -2109,7 +2110,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       batchLogs.push({ timestamp: new Date().toISOString(), level: 'info', message: `Etapa 1/4: Descubriendo ${maxCandidates} candidatos en fuentes globales...` });
       setAutopilotLiveLogs([...batchLogs]);
 
-      const discRes = await fetch('/api/autopilot/discover', {
+      const discRes = await apiFetch('/api/autopilot/discover', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category, count: maxCandidates })
@@ -2143,7 +2144,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setAutopilotLiveLogs([...batchLogs]);
         }
 
-        const analyzeRes = await fetch('/api/autopilot/analyze', {
+        const analyzeRes = await apiFetch('/api/autopilot/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

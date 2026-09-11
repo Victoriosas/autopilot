@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiFetch, apiPost } from '../../lib/api';
 
 interface SourcingStats {
   totalProducts: number;
@@ -43,8 +44,8 @@ export default function SourcingPanel() {
   async function loadData() {
     try {
       const [productsRes, schedulerRes] = await Promise.all([
-        fetch('/api/products'),
-        fetch('/api/sourcing/status'),
+        apiFetch('/api/products'),
+        apiFetch('/api/sourcing/status'),
       ]);
 
       if (productsRes.ok) {
@@ -76,7 +77,7 @@ export default function SourcingPanel() {
     setSourcing(true);
     setLastResult(null);
     try {
-      const res = await fetch('/api/sourcing/run', { method: 'POST' });
+      const res = await apiPost('/api/sourcing/run');
       const data = await res.json();
       setLastResult(data);
       await loadData();
