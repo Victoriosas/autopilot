@@ -3,6 +3,8 @@ import { ProductAnalysis } from './productAnalyzer';
 
 let supabase: SupabaseClient | null = null;
 
+const MIN_PRODUCTS_PER_CATEGORY = 30;
+
 function getSupabase(): SupabaseClient {
   if (!supabase) {
     const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -13,11 +15,22 @@ function getSupabase(): SupabaseClient {
   return supabase;
 }
 
+async function getCategoryCount(category: string): Promise<number> {
+  const db = getSupabase();
+  const { count } = await db
+    .from('products')
+    .select('*', { count: 'exact', head: true })
+    .eq('category', category)
+    .eq('status', 'published');
+  return count || 0;
+}
+
 export interface PublishResult {
   success: boolean;
   productId?: string;
   status: 'published' | 'draft' | 'rejected';
   error?: string;
+  skippedReason?: string;
 }
 
 export async function publishProduct(
@@ -29,6 +42,17 @@ export async function publishProduct(
 
   const overallScore = analysis.analysis.overallScore;
   const riskLevel = analysis.risk.level;
+  const category = analysis.category;
+
+  // Check if category already has enough products
+  const categoryCount = await getCategoryCount(category);
+  if (categoryCount >= MIN_PRODUCTS_PER_CATEGORY) {
+    return {
+      success: true,
+      status: 'draft',
+      skippedReason: `Category "${category}" already has ${categoryCount} products (limit: ${MIN_PRODUCTS_PER_CATEGORY})`,
+    };
+  }
 
   let status: 'published' | 'draft' | 'rejected';
   if (overallScore >= 70 && riskLevel !== 'critical') {
@@ -72,7 +96,7 @@ export async function publishProduct(
     price: analysis.pricing.suggestedPrice,
     compare_at_price: analysis.pricing.compareAtPrice,
     images,
-    category: analysis.category,
+    category,
     tags: analysis.tags,
     badges: analysis.badges,
     status,
@@ -104,7 +128,7 @@ export async function publishProduct(
       price: analysis.pricing.suggestedPrice,
       original_price: Number(cjProduct.salePrice || 25),
       images,
-      category: analysis.category,
+      category,
       rating: 0,
       review_count: 0,
       shipping_cost: 3.5,
@@ -122,22 +146,48 @@ export async function publishProduct(
   return { success: true, productId: data?.id, status };
 }
 
+export interface BatchResult {
+  published: number;
+  draft: number;
+  rejected: number;
+  errors: number;
+  skipped: number;
+  byCategory: Record<string, { published: number; draft: number; rejected: number }>;
+}
+
 export async function publishBatch(
   products: Array<{ cjProduct: any; analysis: ProductAnalysis }>,
   sourceRunId?: string
-): Promise<{ published: number; draft: number; rejected: number; errors: number }> {
+): Promise<BatchResult> {
   let published = 0;
   let draft = 0;
   let rejected = 0;
   let errors = 0;
+  let skipped = 0;
+  const byCategory: Record<string, { published: number; draft: number; rejected: number }> = {};
 
   for (const { cjProduct, analysis } of products) {
+    const category = analysis.category;
+    if (!byCategory[category]) {
+      byCategory[category] = { published: 0, draft: 0, rejected: 0 };
+    }
+
     try {
       const result = await publishProduct(cjProduct, analysis, sourceRunId);
       if (result.success) {
-        if (result.status === 'published') published++;
-        else if (result.status === 'draft') draft++;
-        else rejected++;
+        if (result.status === 'published') {
+          published++;
+          byCategory[category].published++;
+        } else if (result.status === 'draft') {
+          draft++;
+          byCategory[category].draft++;
+          if (result.skippedReason) {
+            skipped++;
+          }
+        } else {
+          rejected++;
+          byCategory[category].rejected++;
+        }
       } else {
         errors++;
       }
@@ -147,5 +197,5 @@ export async function publishBatch(
     }
   }
 
-  return { published, draft, rejected, errors };
+  return { published, draft, rejected, errors, skipped, byCategory };
 }

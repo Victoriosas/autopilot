@@ -13,6 +13,28 @@ export interface SourcingConfig {
   minMargin: number;
   autoPublishScore: number;
   maxProductsPerRun: number;
+  minProductsPerCategory: number;
+  maxProductsPerCategory: number;
+}
+
+export interface CategoryCount {
+  category: string;
+  count: number;
+  needed: number;
+}
+
+export interface VerifyResult {
+  verified: number;
+  autoHidden: number;
+  repriced: number;
+  errors: number;
+  details: Array<{
+    productId: string;
+    action: string;
+    reason: string;
+    oldPrice?: number;
+    newPrice?: number;
+  }>;
 }
 
 export interface SourcingRun {
@@ -40,7 +62,7 @@ export interface SourcingResult {
 }
 
 const DEFAULT_CONFIG: SourcingConfig = {
-  scheduleInterval: 21600,
+  scheduleInterval: 86400,
   isEnabled: true,
   categories: ['Electronics', 'Home & Garden', 'Beauty & Health', 'Fashion'],
   minPrice: 5,
@@ -49,6 +71,8 @@ const DEFAULT_CONFIG: SourcingConfig = {
   minMargin: 30,
   autoPublishScore: 85,
   maxProductsPerRun: 50,
+  minProductsPerCategory: 30,
+  maxProductsPerCategory: 50,
 };
 
 const CJ_SEARCH_KEYWORDS: Record<string, string[]> = {
@@ -91,6 +115,8 @@ class ProductSourcingService {
         minMargin: data.min_margin || DEFAULT_CONFIG.minMargin,
         autoPublishScore: data.auto_publish_score || DEFAULT_CONFIG.autoPublishScore,
         maxProductsPerRun: data.max_products_per_run || DEFAULT_CONFIG.maxProductsPerRun,
+        minProductsPerCategory: data.min_products_per_category || DEFAULT_CONFIG.minProductsPerCategory,
+        maxProductsPerCategory: data.max_products_per_category || DEFAULT_CONFIG.maxProductsPerCategory,
       };
     }
     return DEFAULT_CONFIG;
@@ -178,6 +204,126 @@ class ProductSourcingService {
     return data || [];
   }
 
+  async getProductsCountByCategory(): Promise<CategoryCount[]> {
+    const db = this.getSupabase();
+    const config = await this.getConfig();
+
+    const { data } = await db
+      .from('products')
+      .select('category')
+      .eq('status', 'published');
+
+    const counts: Record<string, number> = {};
+    for (const cat of config.categories) {
+      counts[cat] = 0;
+    }
+
+    if (data) {
+      for (const row of data) {
+        const cat = row.category;
+        if (counts[cat] !== undefined) {
+          counts[cat]++;
+        }
+      }
+    }
+
+    return config.categories.map((cat) => ({
+      category: cat,
+      count: counts[cat] || 0,
+      needed: Math.max(0, config.minProductsPerCategory - (counts[cat] || 0)),
+    }));
+  }
+
+  async verifyPublishedProducts(): Promise<VerifyResult> {
+    const db = this.getSupabase();
+    const result: VerifyResult = {
+      verified: 0,
+      autoHidden: 0,
+      repriced: 0,
+      errors: 0,
+      details: [],
+    };
+
+    const { data: products, error } = await db
+      .from('products')
+      .select('id, title, category, price, compare_at_price, cj_product_id, stock_quantity')
+      .eq('status', 'published');
+
+    if (error || !products) {
+      console.error('[Sourcing] Error fetching published products:', error);
+      result.errors = 1;
+      return result;
+    }
+
+    const cj = getCJClient();
+
+    for (const product of products) {
+      try {
+        result.verified++;
+
+        if (cj && product.cj_product_id) {
+          const cjProduct = await cj.getProductDetail(product.cj_product_id);
+
+          if (cjProduct) {
+            const newStock = cjProduct.stockQuantity || 0;
+
+            if (newStock === 0) {
+              await db.from('products').update({ status: 'draft' }).eq('id', product.id);
+              result.autoHidden++;
+              result.details.push({
+                productId: product.id,
+                action: 'hidden',
+                reason: 'out_of_stock',
+              });
+              continue;
+            }
+
+            const newPrice = cjProduct.salePrice || cjProduct.sellPrice;
+            if (newPrice && product.price) {
+              const priceDelta = Math.abs(newPrice - product.price) / product.price;
+              if (priceDelta > 0.15) {
+                const { suggestedPrice, compareAtPrice } = this.calculatePricing(newPrice);
+                await db.from('products').update({
+                  price: suggestedPrice,
+                  compare_at_price: compareAtPrice,
+                }).eq('id', product.id);
+                result.repriced++;
+                result.details.push({
+                  productId: product.id,
+                  action: 'repriced',
+                  reason: `price_changed_${(priceDelta * 100).toFixed(0)}%`,
+                  oldPrice: product.price,
+                  newPrice: suggestedPrice,
+                });
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error(`[Sourcing] Error verifying product ${product.id}:`, err);
+        result.errors++;
+      }
+    }
+
+    return result;
+  }
+
+  private calculatePricing(cost: number, shipping: number = 3.5, targetMarginPct: number = 55) {
+    const totalCost = cost + shipping;
+    const rawPrice = totalCost / (1 - targetMarginPct / 100);
+
+    let roundedPrice = Math.ceil(rawPrice);
+    if (roundedPrice > 20) {
+      roundedPrice = roundedPrice - 0.05;
+    } else {
+      roundedPrice = Math.round(rawPrice * 2) / 2 - 0.05;
+      if (roundedPrice < 9.95) roundedPrice = 9.95;
+    }
+
+    const compareAtPrice = +(roundedPrice * 1.35).toFixed(2);
+    return { suggestedPrice: roundedPrice, compareAtPrice };
+  }
+
   async getStats(): Promise<{
     totalRuns: number;
     totalProductsFound: number;
@@ -244,17 +390,57 @@ class ProductSourcingService {
       };
     }
 
-    let allProducts: CJProduct[] = [];
+    // Get current category counts to prioritize
+    const categoryCounts = await this.getProductsCountByCategory();
+    const categoriesNeedingProducts = categoryCounts
+      .filter((c) => c.needed > 0)
+      .sort((a, b) => b.needed - a.needed);
+
+    console.log(`[Sourcing] Categories needing products:`, categoriesNeedingProducts.map((c) => `${c.category}: ${c.count}/${runConfig.minProductsPerCategory}`));
+
+    if (categoriesNeedingProducts.length === 0) {
+      console.log(`[Sourcing] All categories have ${runConfig.minProductsPerCategory}+ products. Skipping sourcing.`);
+      await this.updateRun(runId, {
+        status: 'completed',
+        productsFound: 0,
+        productsPublished: 0,
+        productsDraft: 0,
+        productsRejected: 0,
+        apiCallsUsed: 0,
+        completedAt: new Date().toISOString(),
+      });
+      return {
+        runId,
+        status: 'completed',
+        productsFound: 0,
+        published: 0,
+        draft: 0,
+        rejected: 0,
+        errors: 0,
+        duration: Date.now() - startTime,
+      };
+    }
+
+    // Search products per category, prioritizing those with fewer products
+    const productsByCategory: Record<string, CJProduct[]> = {};
     let apiCalls = 0;
 
-    for (const category of runConfig.categories) {
+    for (const catInfo of categoriesNeedingProducts) {
+      const category = catInfo.category;
       const keywords = CJ_SEARCH_KEYWORDS[category] || [category.toLowerCase()];
+      const maxForCategory = Math.min(
+        runConfig.maxProductsPerRun,
+        catInfo.needed + 10
+      );
+
+      productsByCategory[category] = [];
+
       for (const keyword of keywords) {
-        if (allProducts.length >= runConfig.maxProductsPerRun) break;
+        if (productsByCategory[category].length >= maxForCategory) break;
         try {
           const result = await cj.searchProducts({
             keyword,
-            pageSize: Math.min(10, runConfig.maxProductsPerRun - allProducts.length),
+            pageSize: Math.min(10, maxForCategory - productsByCategory[category].length),
             minPrice: runConfig.minPrice,
             maxPrice: runConfig.maxPrice,
           });
@@ -263,52 +449,35 @@ class ProductSourcingService {
           const filtered = result.products.filter(
             (p) => p.salePrice >= runConfig.minPrice && p.salePrice <= runConfig.maxPrice
           );
-          allProducts.push(...filtered);
+          productsByCategory[category].push(...filtered);
 
-          if (allProducts.length >= runConfig.maxProductsPerRun) break;
+          if (productsByCategory[category].length >= maxForCategory) break;
         } catch (err) {
-          console.error(`[Sourcing] Error searching "${keyword}":`, err);
+          console.error(`[Sourcing] Error searching "${keyword}" in ${category}:`, err);
         }
       }
-      if (allProducts.length >= runConfig.maxProductsPerRun) break;
     }
 
-    // If not enough products from keywords, try trending
-    if (allProducts.length < runConfig.maxProductsPerRun) {
-      try {
-        const trendingResult = await cj.searchProducts({
-          keyword: '',
-          pageSize: Math.min(20, runConfig.maxProductsPerRun - allProducts.length),
-          minPrice: runConfig.minPrice,
-          maxPrice: runConfig.maxPrice,
-        });
-        apiCalls++;
-        const trendingFiltered = trendingResult.products.filter(
-          (p) => p.salePrice >= runConfig.minPrice && p.salePrice <= runConfig.maxPrice
-        );
-        allProducts.push(...trendingFiltered);
-      } catch (err) {
-        console.error('[Sourcing] Error fetching trending:', err);
-      }
+    // Deduplicate by PID per category
+    const allProducts: CJProduct[] = [];
+    for (const category of Object.keys(productsByCategory)) {
+      const seen = new Set<string>();
+      const unique = productsByCategory[category].filter((p) => {
+        if (seen.has(p.pid)) return false;
+        seen.add(p.pid);
+        return true;
+      });
+      allProducts.push(...unique.slice(0, runConfig.maxProductsPerRun));
     }
 
-    // Deduplicate by PID
-    const seen = new Set<string>();
-    allProducts = allProducts.filter((p) => {
-      if (seen.has(p.pid)) return false;
-      seen.add(p.pid);
-      return true;
-    });
-
-    allProducts = allProducts.slice(0, runConfig.maxProductsPerRun);
-
-    console.log(`[Sourcing] Found ${allProducts.length} products from CJ`);
+    console.log(`[Sourcing] Found ${allProducts.length} products from CJ across ${categoriesNeedingProducts.length} categories`);
 
     await this.updateRun(runId, {
       productsFound: allProducts.length,
       apiCallsUsed: apiCalls,
     });
 
+    // Analyze and publish per category
     const analyzed: Array<{ cjProduct: CJProduct; analysis: ProductAnalysis }> = [];
     let analyzeErrors = 0;
 

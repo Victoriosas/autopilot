@@ -1092,6 +1092,36 @@ app.post('/api/sourcing/run', async (req, res) => {
   }
 });
 
+// GET /api/sourcing/count-by-category - Product count per category
+app.get('/api/sourcing/count-by-category', async (req, res) => {
+  try {
+    const service = getSourcingService();
+    const counts = await service.getProductsCountByCategory();
+    const total = counts.reduce((sum, c) => sum + c.count, 0);
+    const categoriesNeedingProducts = counts.filter((c) => c.needed > 0).map((c) => c.category);
+    res.json({
+      success: true,
+      counts: counts.reduce((acc, c) => ({ ...acc, [c.category]: c.count }), {}),
+      total,
+      categoriesNeedingProducts,
+      details: counts,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/sourcing/verify-published - Verify all published products
+app.post('/api/sourcing/verify-published', async (req, res) => {
+  try {
+    const service = getSourcingService();
+    const result = await service.verifyPublishedProducts();
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // PUT /api/sourcing/config - Update sourcing configuration
 app.put('/api/sourcing/config', async (req, res) => {
   try {

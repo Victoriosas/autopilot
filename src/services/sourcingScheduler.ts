@@ -1,10 +1,13 @@
 import { getSourcingService } from './productSourcingService';
 
+const TWENTY_FOUR_HOURS = 86400;
+
 class SourcingScheduler {
   private intervalId: NodeJS.Timeout | null = null;
   private isRunning = false;
   private nextRunAt: string | null = null;
   private lastRunAt: string | null = null;
+  private lastVerifyAt: string | null = null;
 
   async start(): Promise<void> {
     const service = getSourcingService();
@@ -16,7 +19,7 @@ class SourcingScheduler {
     }
 
     this.scheduleNext(config.scheduleInterval);
-    console.log(`[Scheduler] Started, interval: ${config.scheduleInterval}s`);
+    console.log(`[Scheduler] Started, interval: ${config.scheduleInterval}s (24h)`);
   }
 
   private scheduleNext(intervalSeconds: number): void {
@@ -24,9 +27,11 @@ class SourcingScheduler {
       clearTimeout(this.intervalId);
     }
 
-    const jitter = Math.random() * 60000;
+    const jitter = Math.random() * 120000;
     const delayMs = intervalSeconds * 1000 + jitter;
     this.nextRunAt = new Date(Date.now() + delayMs).toISOString();
+
+    console.log(`[Scheduler] Next run at: ${this.nextRunAt}`);
 
     this.intervalId = setTimeout(async () => {
       await this.execute();
@@ -42,11 +47,31 @@ class SourcingScheduler {
 
     this.isRunning = true;
     this.lastRunAt = new Date().toISOString();
+    const startTime = Date.now();
 
     try {
       const service = getSourcingService();
+
+      // Step 1: Get category counts before sourcing
+      const countsBefore = await service.getProductsCountByCategory();
+      console.log('[Scheduler] Category counts before sourcing:', countsBefore);
+
+      // Step 2: Run sourcing (will prioritize categories with <30)
       const result = await service.runSourcing();
-      console.log(`[Scheduler] Run completed:`, result);
+      console.log('[Scheduler] Sourcing completed:', result);
+
+      // Step 3: Get category counts after sourcing
+      const countsAfter = await service.getProductsCountByCategory();
+      console.log('[Scheduler] Category counts after sourcing:', countsAfter);
+
+      // Step 4: Verify published products (stock, price)
+      console.log('[Scheduler] Starting verification of published products...');
+      const verifyResult = await service.verifyPublishedProducts();
+      this.lastVerifyAt = new Date().toISOString();
+      console.log('[Scheduler] Verification completed:', verifyResult);
+
+      const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+      console.log(`[Scheduler] Full cycle completed in ${duration}s`);
     } catch (err) {
       console.error('[Scheduler] Run failed:', err);
     } finally {
@@ -67,12 +92,14 @@ class SourcingScheduler {
     isRunning: boolean;
     nextRunAt: string | null;
     lastRunAt: string | null;
+    lastVerifyAt: string | null;
     isScheduled: boolean;
   } {
     return {
       isRunning: this.isRunning,
       nextRunAt: this.nextRunAt,
       lastRunAt: this.lastRunAt,
+      lastVerifyAt: this.lastVerifyAt,
       isScheduled: this.intervalId !== null,
     };
   }
