@@ -25,14 +25,14 @@ function getProviders(): AIProvider[] {
       name: 'Cerebras',
       baseUrl: 'https://api.cerebras.ai/v1',
       apiKey: process.env.CEREBRAS_API_KEY || '',
-      model: 'llama-3.3-70b',
+      model: 'gpt-oss-120b',
       priority: 2,
     },
     {
       name: 'OpenRouter',
       baseUrl: 'https://openrouter.ai/api/v1',
       apiKey: process.env.OPENROUTER_API_KEY || '',
-      model: 'meta-llama/llama-3.3-70b-instruct:free',
+      model: 'inclusionai/ling-3.0-flash-vl:free',
       priority: 3,
     },
   ];
