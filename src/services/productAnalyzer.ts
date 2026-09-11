@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { aiCompletion, aiStructuredCompletion } from './aiClient';
 
 export interface ProductAnalysis {
   title: string;
@@ -71,15 +71,11 @@ export function calculatePricing(cost: number, shipping: number = 3.5, targetMar
 
 export async function analyzeProduct(
   product: any,
-  aiClient: GoogleGenAI | null
+  _aiClient?: any
 ): Promise<ProductAnalysis | null> {
   const cost = Number(product.costPrice || product.salePrice || 25);
   const shipping = Number(product.shippingCost || 3.5);
   const pricing = calculatePricing(cost, shipping, 55);
-
-  if (!aiClient) {
-    return generateFallbackAnalysis(product, pricing);
-  }
 
   const prompt = `
 ${VICTORIOSA_IDENTITY}
@@ -141,27 +137,12 @@ Devuelve SOLO JSON:
 `;
 
   try {
-    let response;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        response = await aiClient.models.generateContent({
-          model: 'gemini-3.5-flash',
-          contents: prompt,
-          config: { responseMimeType: 'application/json' },
-        });
-        break;
-      } catch (apiErr: any) {
-        if (apiErr.status === 429 && attempt < 3) {
-          const waitMs = attempt * 5000;
-          console.log(`[Analyzer] Gemini rate limited, waiting ${waitMs}ms (attempt ${attempt}/3)`);
-          await new Promise((r) => setTimeout(r, waitMs));
-          continue;
-        }
-        throw apiErr;
-      }
-    }
+    const parsed = await aiStructuredCompletion<any>(prompt, null);
 
-    const parsed = JSON.parse(response!.text || '{}');
+    if (!parsed) {
+      console.warn('[Analyzer] AI returned no parseable JSON, using fallback');
+      return generateFallbackAnalysis(product, pricing);
+    }
 
     return {
       title: parsed.title || product.productNameEn || 'Producto Victoriosa',
@@ -195,7 +176,7 @@ Devuelve SOLO JSON:
       },
     };
   } catch (err) {
-    console.error('Gemini analysis error:', err);
+    console.error('AI analysis error:', err);
     return generateFallbackAnalysis(product, pricing);
   }
 }

@@ -1,4 +1,3 @@
-import { GoogleGenAI } from '@google/genai';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { getCJClient, CJProduct } from './cjDropshipping';
 import { analyzeProduct, ProductAnalysis } from './productAnalyzer';
@@ -67,7 +66,6 @@ const CJ_SEARCH_KEYWORDS: Record<string, string[]> = {
 
 class ProductSourcingService {
   private supabase: SupabaseClient | null = null;
-  private aiClient: GoogleGenAI | null = null;
 
   private getSupabase(): SupabaseClient {
     if (!this.supabase) {
@@ -77,13 +75,6 @@ class ProductSourcingService {
       this.supabase = createClient(url, key);
     }
     return this.supabase;
-  }
-
-  private getAI(): GoogleGenAI | null {
-    if (!this.aiClient && process.env.GEMINI_API_KEY) {
-      this.aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    }
-    return this.aiClient;
   }
 
   async getConfig(): Promise<SourcingConfig> {
@@ -234,7 +225,6 @@ class ProductSourcingService {
     console.log(`[Sourcing] Starting run ${runId}`);
 
     const cj = getCJClient();
-    const ai = this.getAI();
 
     if (!cj) {
       await this.updateRun(runId, {
@@ -324,7 +314,7 @@ class ProductSourcingService {
 
     for (const product of allProducts) {
       try {
-        const analysis = await analyzeProduct(product, ai);
+        const analysis = await analyzeProduct(product);
         apiCalls++;
 
         if (analysis && analysis.analysis.overallScore >= runConfig.minMargin) {

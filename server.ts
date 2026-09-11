@@ -1,11 +1,11 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import { getCJClient } from "./src/services/cjDropshipping";
 import { getSourcingService } from "./src/services/productSourcingService";
 import { getSourcingScheduler } from "./src/services/sourcingScheduler";
+import { aiCompletion, aiStructuredCompletion, getProviderStatus } from "./src/services/aiClient";
 
 dotenv.config({ path: '.env.local' });
 dotenv.config();
@@ -14,18 +14,6 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: "10mb" }));
-
-// Lazy Gemini client helper
-let aiClient: GoogleGenAI | null = null;
-function getGeminiClient(): GoogleGenAI | null {
-  if (!process.env.GEMINI_API_KEY) {
-    return null;
-  }
-  if (!aiClient) {
-    aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  }
-  return aiClient;
-}
 
 // System prompt defining Victoriosa Brand Identity & Evaluation Rules
 const VICTORIOSA_IDENTITY_PROMPT = `
@@ -83,7 +71,7 @@ app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
     service: "Victoriosa Autopilot Core",
-    geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
+    aiProviders: getProviderStatus(),
     timestamp: new Date().toISOString()
   });
 });
@@ -92,10 +80,8 @@ app.get("/api/health", (req, res) => {
 app.post("/api/autopilot/discover", async (req, res) => {
   try {
     const { category, source, keyword, count = 3 } = req.body;
-    const ai = getGeminiClient();
 
-    if (ai) {
-      const prompt = `
+    const prompt = `
 ${VICTORIOSA_IDENTITY_PROMPT}
 
 Genera ${count} oportunidades de productos candidatos descubiertos en ${source || 'fuentes globales de e-commerce'} para la categoría '${category || 'Tecnología & Gadgets'}'.
@@ -126,26 +112,8 @@ Devuelve un JSON estricto con un arreglo de objetos que contenga los datos crudo
 Asegúrate de usar imágenes reales de Unsplash representativas (tecnología, diseño nórdico, café, accesorios de cuero, audio, ergonomía, lámparas minimalistas, etc.).
 `;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json"
-        }
-      });
-
-      const parsed = JSON.parse(response.text || "[]");
-      return res.json({ success: true, candidates: parsed, source: "gemini-ai" });
-    }
-
-    // When Gemini is not configured, discovery cannot produce real candidates
-    // Return NOT_CONFIGURED status so frontend knows to prompt for API key
-    res.json({ 
-      success: false, 
-      error: "GEMINI_API_KEY not configured. Product discovery requires AI analysis. Configure GEMINI_API_KEY in environment.",
-      status: "NOT_CONFIGURED",
-      candidates: []
-    });
+    const parsed = await aiStructuredCompletion<any[]>(prompt, []);
+    return res.json({ success: true, candidates: parsed, source: "ai-multi-provider" });
   } catch (err: any) {
     console.error("Autopilot discover error:", err);
     res.status(500).json({ success: false, error: err.message });
@@ -160,17 +128,13 @@ app.post("/api/autopilot/analyze", async (req, res) => {
       return res.status(400).json({ error: "Missing candidate payload" });
     }
 
-    const ai = getGeminiClient();
     const cost = Number(candidate.costPriceEur || candidate.costPrice || 25);
     const shipping = Number(candidate.supplierShippingCost || 3.5);
     const minMargin = Number(settings.minMarginPercentage || 50);
 
     const pricing = calculateVictoriosaPricing(cost, shipping, minMargin);
 
-    let analysisResult: any = null;
-
-    if (ai) {
-      const prompt = `
+    const prompt = `
 ${VICTORIOSA_IDENTITY_PROMPT}
 
 Analiza este producto candidato para el catálogo de Victoriosa y ejecuta el pipeline de transformación completo:
@@ -226,22 +190,12 @@ Devuelve ÚNICAMENTE un JSON con esta estructura exacta:
 }
 `;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json"
-        }
-      });
+    const analysisResult = await aiStructuredCompletion<any>(prompt, null);
 
-      analysisResult = JSON.parse(response.text || "{}");
-    }
-
-    // When Gemini is not configured, analysis cannot produce real results
     if (!analysisResult || !analysisResult.title) {
       return res.status(503).json({ 
         success: false, 
-        error: "AI analysis unavailable. Configure GEMINI_API_KEY for product analysis.",
+        error: "AI analysis unavailable. Configure GROQ_API_KEY, CEREBRAS_API_KEY, or OPENROUTER_API_KEY.",
         status: "AI_ANALYSIS_FAILED"
       });
     }
@@ -375,12 +329,10 @@ app.post("/api/autopilot/enhance-image", async (req, res) => {
       return res.status(400).json({ error: "Missing imageUrl" });
     }
 
-    const ai = getGeminiClient();
     let aiEnhancementNotes = "Procesamiento de imagen optimizado para catálogo prémium Victoriosa.";
 
-    if (ai) {
-      try {
-        const prompt = `
+    try {
+      const prompt = `
 Analiza esta imagen de producto para e-commerce de lujo Victoriosa: ${imageUrl}
 Proporciona recomendaciones de retoque:
 1. Encuadre óptimo (aspect ratio 1:1 o 4:5 centrado).
@@ -395,16 +347,10 @@ Devuelve un JSON conciso:
   "notes": "..."
 }
 `;
-        const response = await ai.models.generateContent({
-          model: "gemini-3.5-flash",
-          contents: prompt,
-          config: { responseMimeType: "application/json" }
-        });
-        const parsed = JSON.parse(response.text || "{}");
-        if (parsed.notes) aiEnhancementNotes = parsed.notes;
-      } catch (aiErr) {
-        console.warn("AI Image advisor notice:", aiErr);
-      }
+      const parsed = await aiStructuredCompletion<any>(prompt, {});
+      if (parsed.notes) aiEnhancementNotes = parsed.notes;
+    } catch (aiErr) {
+      console.warn("AI Image advisor notice:", aiErr);
     }
 
     res.json({
@@ -572,7 +518,6 @@ app.post("/api/connectors/direct-import", async (req, res) => {
       return res.status(400).json({ error: "URL inválida o no proporcionada" });
     }
 
-    const ai = getGeminiClient();
     const isAmazon = url.includes("amazon.") || url.includes("amzn.");
     const isAliExpress = url.includes("aliexpress.");
     const isAlibaba = url.includes("alibaba.");
@@ -610,8 +555,8 @@ app.post("/api/connectors/direct-import", async (req, res) => {
       }
     }
 
-    // If no CJ data, try Gemini AI
-    if (!extractedData && ai) {
+    // If no CJ data, try AI extraction
+    if (!extractedData) {
       try {
         const prompt = `
 Analiza esta URL de producto de e-commerce: ${url}
@@ -641,12 +586,7 @@ Devuelve ÚNICAMENTE un JSON con esta estructura:
   "rawImages": ["https://images.unsplash.com/..."]
 }
 `;
-        const response = await ai.models.generateContent({
-          model: "gemini-3.5-flash",
-          contents: prompt,
-          config: { responseMimeType: "application/json" }
-        });
-        extractedData = JSON.parse(response.text || "{}");
+        extractedData = await aiStructuredCompletion<any>(prompt, {});
       } catch (aiErr) {
         console.warn("Direct URL AI extraction notice:", aiErr);
       }
@@ -1219,11 +1159,10 @@ app.post('/api/sourcing/import-url', async (req, res) => {
     const product = await cj.getProductDetail(pidMatch[1]);
     if (!product) return res.status(404).json({ error: 'Product not found' });
 
-    const ai = getGeminiClient();
     const { analyzeProduct } = await import('./src/services/productAnalyzer');
     const { publishProduct } = await import('./src/services/autoPublisher');
 
-    const analysis = await analyzeProduct(product, ai);
+    const analysis = await analyzeProduct(product);
     if (!analysis) return res.status(500).json({ error: 'AI analysis failed' });
 
     const result = await publishProduct(product, analysis);
