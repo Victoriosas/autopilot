@@ -1,0 +1,115 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Victoriosa product item in catalog or discovery pipeline",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "status": { "type": "string" },
+        "price": { "type": "number" },
+        "costPrice": { "type": "number" },
+        "images": { "type": "array" }
+      },
+      "required": ["id", "title", "status", "price"]
+    },
+    "Supplier": {
+      "title": "Supplier",
+      "description": "Supplier profile with contact info, product catalogs, pricing agreements, and reliability metrics",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "contactEmail": { "type": "string" },
+        "contactPhone": { "type": "string" },
+        "representative": { "type": "string" },
+        "country": { "type": "string" },
+        "address": { "type": "string" },
+        "categories": { "type": "array" },
+        "pricingAgreements": { "type": "object" },
+        "stockAvailability": { "type": "string" },
+        "reliabilityScore": { "type": "number" },
+        "fulfillmentRate": { "type": "number" },
+        "defectRate": { "type": "number" },
+        "auditStatus": { "type": "string" }
+      },
+      "required": ["id", "name", "contactEmail", "country", "reliabilityScore"]
+    },
+    "AutopilotRun": {
+      "title": "AutopilotRun",
+      "description": "Autopilot batch execution run and logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "status": { "type": "string" },
+        "startedAt": { "type": "string" }
+      }
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile with role-based access control (admin vs customer)",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "customer"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Privileged administrator record used by Firestore security rules",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order placed in storefront",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orderNumber": { "type": "string" },
+        "total": { "type": "number" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "orderNumber", "total"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Store products and autopilot candidates"
+    },
+    "/suppliers/{supplierId}": {
+      "schema": "Supplier",
+      "description": "Supplier management directory and agreements (Admin only)"
+    },
+    "/autopilot_runs/{runId}": {
+      "schema": "AutopilotRun",
+      "description": "Autopilot run executions and logs (Admin only)"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile document with role identification"
+    },
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "Trusted collection of system administrators for Firestore rules"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer orders and fulfillment links"
+    }
+  }
+}
