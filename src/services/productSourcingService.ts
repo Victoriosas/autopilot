@@ -78,7 +78,7 @@ const DEFAULT_CONFIG: SourcingConfig = {
 const CJ_SEARCH_KEYWORDS: Record<string, string[]> = {
   'Electronics': ['bluetooth speaker', 'wireless earbuds', 'smart watch', 'phone holder', 'usb charger'],
   'Home & Garden': ['desk lamp', 'wall art', 'kitchen gadget', 'plant pot', 'candle holder'],
-  'Beauty & Health': ['skincare', 'makeup brush', 'face mask', 'hair clipper', 'nail lamp'],
+  'Beauty & Health': ['face cream', 'serum', 'moisturizer', 'sunscreen', 'lip balm', 'body lotion', 'hair oil', 'face wash', 'cleanser', 'anti aging'],
   'Fashion': ['sunglasses', 'wallet', 'jewelry', 'watch', 'belt'],
   'Toys & Hobbies': ['fidget toy', 'puzzle', 'board game', 'rc car', 'model kit'],
   'Sports & Entertainment': ['yoga mat', 'water bottle', 'fitness band', 'camping', 'bike light'],
@@ -224,6 +224,9 @@ class ProductSourcingService {
       .select('category')
       .eq('status', 'published');
 
+    // Map English categories to Spanish for counting
+    const spanishCategories = config.categories.map((cat) => mapCategoryToSpanish(cat));
+
     const counts: Record<string, number> = {};
     for (const cat of config.categories) {
       counts[cat] = 0;
@@ -232,8 +235,12 @@ class ProductSourcingService {
     if (data) {
       for (const row of data) {
         const cat = row.category;
-        if (counts[cat] !== undefined) {
-          counts[cat]++;
+        // Check if this Spanish category matches any of our English categories
+        for (const engCat of config.categories) {
+          if (mapCategoryToSpanish(engCat) === cat) {
+            counts[engCat]++;
+            break;
+          }
         }
       }
     }
@@ -492,13 +499,20 @@ class ProductSourcingService {
     const analyzed: Array<{ cjProduct: CJProduct; analysis: ProductAnalysis }> = [];
     let analyzeErrors = 0;
 
-    for (const product of allProducts) {
+    for (let i = 0; i < allProducts.length; i++) {
+      const product = allProducts[i];
       try {
+        console.log(`[Sourcing] Analyzing product ${i + 1}/${allProducts.length}: ${product.productNameEn || product.productName}`);
         const analysis = await analyzeProduct(product);
         apiCalls++;
 
         if (analysis && analysis.analysis.overallScore >= runConfig.minMargin) {
           analyzed.push({ cjProduct: product, analysis });
+        }
+
+        // Delay between analyses to avoid AI rate limits
+        if (i < allProducts.length - 1) {
+          await new Promise((r) => setTimeout(r, 3000));
         }
       } catch (err) {
         console.error(`[Sourcing] Error analyzing product ${product.pid}:`, err);

@@ -44,6 +44,10 @@ function getActiveProviders(): AIProvider[] {
   );
 }
 
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function callOpenAICompatible(
   provider: AIProvider,
   prompt: string,
@@ -122,6 +126,8 @@ export async function aiCompletion(
 
       if (text && text.trim().length > 10) {
         console.log(`[AI] Success with ${provider.name}`);
+        // Add delay between requests to avoid rate limits
+        await sleep(2000);
         return { text, provider: provider.name, model: provider.model };
       }
 
@@ -131,7 +137,8 @@ export async function aiCompletion(
       lastError = err;
 
       if (err.message.includes('429') || err.message.includes('rate limit')) {
-        console.log(`[AI] Rate limited on ${provider.name}, trying next...`);
+        console.log(`[AI] Rate limited on ${provider.name}, waiting 5s before trying next...`);
+        await sleep(5000);
         continue;
       }
 
