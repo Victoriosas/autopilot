@@ -100,8 +100,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
               onChange={(e) => setSortBy(e.target.value as any)}
               className="bg-transparent text-slate-200 focus:outline-none cursor-pointer text-xs"
             >
-              <option value="featured" className="bg-[#0d111d] text-slate-200">Destacados Autopilot</option>
-              <option value="score" className="bg-[#0d111d] text-slate-200">Mayor Score de Calidad</option>
+              <option value="featured" className="bg-[#0d111d] text-slate-200">Destacados</option>
+              <option value="score" className="bg-[#0d111d] text-slate-200">Mejor valorados</option>
               <option value="price_asc" className="bg-[#0d111d] text-slate-200">Precio: Menor a Mayor</option>
               <option value="price_desc" className="bg-[#0d111d] text-slate-200">Precio: Mayor a Menor</option>
               <option value="rating" className="bg-[#0d111d] text-slate-200">Mejor Valorados</option>
@@ -143,7 +143,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
               onClick={() => { if (userProfile?.role === 'admin') setViewMode('admin'); }}
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white rounded-xl transition-all shadow-lg shadow-indigo-600/25"
             >
-              Ir a Autopilot para Aprobar Candidatos
+              Abrir área de gestión
             </button>}
           </div>
         </div>
