@@ -63,6 +63,17 @@ export function createCatalogGovernanceRouter(): Router {
         return res.status(409).json({ error: 'repricing proposal already reviewed', status: persisted.status });
       }
       const council = await runRepricingCouncil(persisted.proposal);
+      if (council.ownerEscalationRequired) {
+        return res.status(409).json({
+          proposal: persisted,
+          council,
+          policy: {
+            ownerApprovalRequired: true,
+            councilMayOverride: false,
+            automaticPriceMutationAllowed: false,
+          },
+        });
+      }
       const reviewed = await recordRepricingCouncil(req.params.id, council);
       return res.json({ reviewed, council });
     } catch (error: any) {
