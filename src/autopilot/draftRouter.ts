@@ -3,11 +3,13 @@ import { runApprovalCouncil } from './approvalCouncil';
 import { getAutopilotPrincipal, requireControlPlaneAuth } from './auth';
 import { buildCommercialDraft, type CommercialFacts } from './draftBuilder';
 import {
+  claimProductDraftPublication,
   draftPersistenceStatus,
   getPersistedProductDraft,
   listPersistedProductDrafts,
   markProductDraftPublished,
   persistProductDraft,
+  releaseProductDraftPublication,
   reviewProductDraft,
 } from './draftStore';
 import { publishApprovedDraft } from './governedPublisher';
@@ -21,10 +23,7 @@ export function createDraftRouter(): Router {
     try {
       const limit = Number(req.query.limit || 50);
       const drafts = await listPersistedProductDrafts(limit);
-      return res.json({
-        persistence: draftPersistenceStatus(),
-        drafts,
-      });
+      return res.json({ persistence: draftPersistenceStatus(), drafts });
     } catch (error: any) {
       return res.status(500).json({ error: error?.message || 'Unable to list drafts' });
     }
@@ -39,19 +38,10 @@ export function createDraftRouter(): Router {
         persist?: boolean;
       };
 
-      if (!body.candidate) {
-        return res.status(400).json({ error: 'candidate is required' });
-      }
+      if (!body.candidate) return res.status(400).json({ error: 'candidate is required' });
 
-      const draft = await buildCommercialDraft(
-        body.candidate,
-        body.facts || {},
-        body.useAi !== false
-      );
-
-      const persisted = body.persist === true
-        ? await persistProductDraft(draft)
-        : null;
+      const draft = await buildCommercialDraft(body.candidate, body.facts || {}, body.useAi !== false);
+      const persisted = body.persist === true ? await persistProductDraft(draft) : null;
 
       return res.json({
         draft,
@@ -76,10 +66,7 @@ export function createDraftRouter(): Router {
     try {
       const persisted = await getPersistedProductDraft(req.params.id);
       if (persisted.status !== 'draft') {
-        return res.status(409).json({
-          error: 'draft has already been reviewed',
-          status: persisted.status,
-        });
+        return res.status(409).json({ error: 'draft has already been reviewed', status: persisted.status });
       }
 
       const council = await runApprovalCouncil(persisted.draft);
@@ -87,10 +74,7 @@ export function createDraftRouter(): Router {
         return res.status(409).json({
           draft: persisted,
           council,
-          policy: {
-            publicationAllowed: false,
-            ownerApprovalRequired: true,
-          },
+          policy: { publicationAllowed: false, ownerApprovalRequired: true },
         });
       }
 
@@ -121,6 +105,7 @@ export function createDraftRouter(): Router {
   });
 
   router.post('/:id/publish', async (req, res) => {
+    let claimAcquired = false;
     try {
       const persisted = await getPersistedProductDraft(req.params.id);
 
@@ -128,11 +113,12 @@ export function createDraftRouter(): Router {
         return res.json({
           draft: persisted,
           product: { id: persisted.publishedProductId, status: 'published' },
-          policy: {
-            idempotentReplay: true,
-            autonomousPurchaseAllowed: false,
-          },
+          policy: { idempotentReplay: true, autonomousPurchaseAllowed: false },
         });
+      }
+
+      if (persisted.status === 'publishing') {
+        return res.status(409).json({ error: 'publication already in progress', status: persisted.status });
       }
 
       if (persisted.status !== 'ai_approved') {
@@ -142,11 +128,11 @@ export function createDraftRouter(): Router {
         });
       }
 
-      const product = await publishApprovedDraft(persisted.draft);
-      const publishedDraft = await markProductDraftPublished({
-        id: persisted.id,
-        productId: product.productId,
-      });
+      const claimed = await claimProductDraftPublication(persisted.id);
+      claimAcquired = true;
+      const product = await publishApprovedDraft(claimed.draft);
+      const publishedDraft = await markProductDraftPublished({ id: claimed.id, productId: product.productId });
+      claimAcquired = false;
 
       return res.json({
         draft: publishedDraft,
@@ -159,6 +145,7 @@ export function createDraftRouter(): Router {
         },
       });
     } catch (error: any) {
+      if (claimAcquired) await releaseProductDraftPublication(req.params.id).catch(() => undefined);
       return res.status(400).json({ error: error?.message || 'Governed publication failed' });
     }
   });
@@ -166,10 +153,7 @@ export function createDraftRouter(): Router {
   router.post('/:id/review', async (req, res) => {
     try {
       const principal = getAutopilotPrincipal(res);
-      const body = (req.body || {}) as {
-        decision?: 'reject';
-        reason?: string;
-      };
+      const body = (req.body || {}) as { decision?: 'reject'; reason?: string };
 
       if (body.decision !== 'reject') {
         return res.status(400).json({
