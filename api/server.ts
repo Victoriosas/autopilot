@@ -1,5 +1,5 @@
 import express from 'express';
-import { mountAutopilotV4 } from '../src/autopilot/mount';
+import { mountAutopilotV4 } from '../src/autopilot/mount.ts';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
