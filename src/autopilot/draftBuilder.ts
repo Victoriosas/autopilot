@@ -55,6 +55,22 @@ function compactText(value: unknown): string {
   return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
 }
 
+function sanitizeStringArray(value: unknown, limit: number): string[] {
+  if (!Array.isArray(value)) return [];
+  const result: string[] = [];
+  const seen = new Set<string>();
+
+  for (const item of value) {
+    const cleaned = compactText(item);
+    if (!cleaned || seen.has(cleaned)) continue;
+    seen.add(cleaned);
+    result.push(cleaned);
+    if (result.length >= limit) break;
+  }
+
+  return result;
+}
+
 function slugWords(title: string): string[] {
   return title
     .toLowerCase()
@@ -71,19 +87,18 @@ function deterministicDraft(candidate: OpportunityCandidate, result: Opportunity
   const rawTitle = compactText(candidate.title);
   const title = rawTitle.length <= 72 ? rawTitle : `${rawTitle.slice(0, 69).trim()}...`;
   const category = compactText(facts.category) || 'Selección Victoriosa';
-  const features = Array.isArray(facts.features)
-    ? facts.features.map(compactText).filter(Boolean).slice(0, 8)
-    : [];
+  const features = sanitizeStringArray(facts.features, 8);
+  const images = sanitizeStringArray(facts.images, 10);
   const preservedFacts = [
     ...(facts.description ? ['description'] : []),
     ...(features.length ? ['features'] : []),
     ...(facts.specs && Object.keys(facts.specs).length ? ['specs'] : []),
-    ...(facts.images?.length ? ['images'] : []),
+    ...(images.length ? ['images'] : []),
     ...(facts.shippingDaysMin !== undefined || facts.shippingDaysMax !== undefined ? ['shipping'] : []),
     ...(facts.warrantyText ? ['warranty'] : []),
   ];
   const description = compactText(facts.description) || `${title}. Producto seleccionado para evaluación comercial en ${brand}. La publicación final requiere revisión humana de la ficha y sus datos de proveedor.`;
-  const tags = Array.from(new Set([brand, category, ...(candidate.tags || []), ...slugWords(title)])).slice(0, 12);
+  const tags = sanitizeStringArray([brand, category, ...(candidate.tags || []), ...slugWords(title)], 12);
   const price = result.pricing.recommendedPrice;
   const compareAtPrice = result.pricing.premiumCeiling > price ? result.pricing.premiumCeiling : undefined;
 
@@ -99,7 +114,7 @@ function deterministicDraft(candidate: OpportunityCandidate, result: Opportunity
     tags,
     features,
     specs: facts.specs || {},
-    images: Array.isArray(facts.images) ? facts.images.filter((item) => typeof item === 'string' && item.trim()).slice(0, 10) : [],
+    images,
     price,
     compareAtPrice,
     currency: result.pricing.currency,
@@ -169,16 +184,7 @@ ${JSON.stringify(evidencePayload)}
     return base;
   }
 
-  const enhancedTags: string[] = Array.isArray(enhanced.tags)
-    ? Array.from(
-        new Set(
-          enhanced.tags
-            .filter((value: unknown): value is string => typeof value === 'string')
-            .map((value: string) => compactText(value))
-            .filter(Boolean)
-        )
-      ).slice(0, 12)
-    : base.tags;
+  const enhancedTags = sanitizeStringArray(enhanced.tags, 12);
 
   return {
     ...base,
@@ -187,7 +193,7 @@ ${JSON.stringify(evidencePayload)}
     description: compactText(enhanced.description) || base.description,
     seoTitle: (compactText(enhanced.seoTitle) || base.seoTitle).slice(0, 60),
     seoDescription: (compactText(enhanced.seoDescription) || base.seoDescription).slice(0, 155),
-    tags: enhancedTags,
+    tags: enhancedTags.length ? enhancedTags : base.tags,
     provenance: {
       ...base.provenance,
       generatedFields: ['title', 'subtitle', 'description', 'seoTitle', 'seoDescription', 'tags'],
