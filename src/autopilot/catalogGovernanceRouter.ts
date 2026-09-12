@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import { requireControlPlaneAuth } from './auth';
 import { observePublishedCatalog } from './catalogMonitor';
+import { persistCatalogObservations, listCatalogObservationHistory } from './catalogObservationStore';
 import { buildRepricingProposal } from './repricingProposal';
 import { runRepricingCouncil } from './repricingCouncil';
+import { evaluatePromotion } from './promotionEngine';
+import { assessDormancy } from './dormancyEngine';
+import { calculateRealizedProfit } from './profitEngine';
 import {
   applyApprovedRepricing,
   getRepricingProposal,
@@ -19,8 +23,12 @@ export function createCatalogGovernanceRouter(): Router {
     try {
       const limit = Number(req.query.limit || 50);
       const observations = await observePublishedCatalog(limit);
+      const persistedCount = req.query.persist === 'true'
+        ? await persistCatalogObservations(observations)
+        : 0;
       return res.json({
         observations,
+        persistedCount,
         policy: {
           readOnlyObservation: true,
           automaticStockMutationAllowed: false,
@@ -30,6 +38,15 @@ export function createCatalogGovernanceRouter(): Router {
       });
     } catch (error: any) {
       return res.status(500).json({ error: error?.message || 'Catalog observation failed' });
+    }
+  });
+
+  router.get('/observations/:productId/history', async (req, res) => {
+    try {
+      const history = await listCatalogObservationHistory(req.params.productId, Number(req.query.limit || 50));
+      return res.json({ history });
+    } catch (error: any) {
+      return res.status(500).json({ error: error?.message || 'Unable to load observation history' });
     }
   });
 
@@ -94,6 +111,30 @@ export function createCatalogGovernanceRouter(): Router {
       });
     } catch (error: any) {
       return res.status(409).json({ error: error?.message || 'Unable to apply approved repricing' });
+    }
+  });
+
+  router.post('/promotions/evaluate', (req, res) => {
+    try {
+      return res.json({ decision: evaluatePromotion(req.body || {}) });
+    } catch (error: any) {
+      return res.status(400).json({ error: error?.message || 'Unable to evaluate promotion' });
+    }
+  });
+
+  router.post('/dormancy/evaluate', (req, res) => {
+    try {
+      return res.json({ assessment: assessDormancy(req.body || {}) });
+    } catch (error: any) {
+      return res.status(400).json({ error: error?.message || 'Unable to assess product dormancy' });
+    }
+  });
+
+  router.post('/profit/calculate', (req, res) => {
+    try {
+      return res.json({ summary: calculateRealizedProfit(req.body || {}) });
+    } catch (error: any) {
+      return res.status(400).json({ error: error?.message || 'Unable to calculate realized profit' });
     }
   });
 
