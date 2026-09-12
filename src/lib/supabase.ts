@@ -4,25 +4,23 @@ import type { Database } from '../types';
 const configuredSupabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
 const configuredSupabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 
-export const isSupabaseConfigured = Boolean(configuredSupabaseUrl && configuredSupabaseAnonKey);
+// These defaults are publishable client credentials, not secrets. Keeping them here
+// ensures the storefront and admin login stay connected even if Vercel build-time
+// public variables are missing. Server-side privileged access still requires a
+// separate service-role key and is never embedded in the browser bundle.
+const DEFAULT_SUPABASE_URL = 'https://jfjzpwlrhzqbcrvqxhzf.supabase.co';
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_NkSRyoiQRHOClEQwdOgwvw_IFzxChY3';
 
-if (!isSupabaseConfigured) {
-  console.warn(
-    '[Victoriosa] Supabase public environment variables are missing. The storefront will stay available, but authentication and live catalog data are disabled until VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are configured in Vercel.',
-  );
-}
+const supabaseUrl = configuredSupabaseUrl || DEFAULT_SUPABASE_URL;
+const supabaseAnonKey = configuredSupabaseAnonKey || DEFAULT_SUPABASE_PUBLISHABLE_KEY;
 
-// Supabase validates URL/key synchronously during module initialization. Using an
-// inert, syntactically valid fallback prevents a missing Vercel build variable from
-// crashing React before the storefront can render. It does not grant data access.
-const supabaseUrl = configuredSupabaseUrl || 'https://placeholder.supabase.co';
-const supabaseAnonKey = configuredSupabaseAnonKey || 'public-placeholder-anon-key';
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
-    autoRefreshToken: isSupabaseConfigured,
-    persistSession: isSupabaseConfigured,
-    detectSessionInUrl: isSupabaseConfigured,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
   },
   realtime: {
     params: {
