@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { ProductDraft } from './draftBuilder';
 
-export type DraftReviewStatus = 'draft' | 'ai_approved' | 'rejected' | 'published';
+export type DraftReviewStatus = 'draft' | 'ai_approved' | 'rejected' | 'publishing' | 'published';
 
 export interface PersistedProductDraft {
   id: string;
@@ -55,24 +55,19 @@ function mapRow(data: any): PersistedProductDraft {
 }
 
 export async function persistProductDraft(draft: ProductDraft): Promise<PersistedProductDraft> {
-  if (!db) {
-    throw new Error('Draft persistence unavailable: SUPABASE_SERVICE_ROLE_KEY is not configured');
-  }
+  if (!db) throw new Error('Draft persistence unavailable: SUPABASE_SERVICE_ROLE_KEY is not configured');
 
   const now = new Date().toISOString();
-  const id = randomUUID();
-  const row = {
-    id,
-    source_candidate_id: draft.sourceCandidateId,
-    status: 'draft',
-    draft,
-    created_at: now,
-    updated_at: now,
-  };
-
   const { data, error } = await db
     .from('autopilot_product_drafts')
-    .insert(row)
+    .insert({
+      id: randomUUID(),
+      source_candidate_id: draft.sourceCandidateId,
+      status: 'draft',
+      draft,
+      created_at: now,
+      updated_at: now,
+    })
     .select(SELECT_COLUMNS)
     .single();
 
@@ -81,9 +76,7 @@ export async function persistProductDraft(draft: ProductDraft): Promise<Persiste
 }
 
 export async function getPersistedProductDraft(id: string): Promise<PersistedProductDraft> {
-  if (!db) {
-    throw new Error('Draft persistence unavailable: SUPABASE_SERVICE_ROLE_KEY is not configured');
-  }
+  if (!db) throw new Error('Draft persistence unavailable: SUPABASE_SERVICE_ROLE_KEY is not configured');
 
   const { data, error } = await db
     .from('autopilot_product_drafts')
@@ -101,9 +94,7 @@ export async function reviewProductDraft(input: {
   reviewer: string;
   reason: string;
 }): Promise<PersistedProductDraft> {
-  if (!db) {
-    throw new Error('Draft persistence unavailable: SUPABASE_SERVICE_ROLE_KEY is not configured');
-  }
+  if (!db) throw new Error('Draft persistence unavailable: SUPABASE_SERVICE_ROLE_KEY is not configured');
 
   const reason = input.reason.trim();
   if (!reason) throw new Error('review reason is required');
@@ -112,13 +103,7 @@ export async function reviewProductDraft(input: {
   const status: DraftReviewStatus = input.decision === 'approve' ? 'ai_approved' : 'rejected';
   const { data, error } = await db
     .from('autopilot_product_drafts')
-    .update({
-      status,
-      reviewed_by: input.reviewer,
-      review_reason: reason,
-      reviewed_at: now,
-      updated_at: now,
-    })
+    .update({ status, reviewed_by: input.reviewer, review_reason: reason, reviewed_at: now, updated_at: now })
     .eq('id', input.id)
     .eq('status', 'draft')
     .select(SELECT_COLUMNS)
@@ -128,13 +113,34 @@ export async function reviewProductDraft(input: {
   return mapRow(data);
 }
 
-export async function markProductDraftPublished(input: {
-  id: string;
-  productId: string;
-}): Promise<PersistedProductDraft> {
-  if (!db) {
-    throw new Error('Draft persistence unavailable: SUPABASE_SERVICE_ROLE_KEY is not configured');
-  }
+export async function claimProductDraftPublication(id: string): Promise<PersistedProductDraft> {
+  if (!db) throw new Error('Draft persistence unavailable: SUPABASE_SERVICE_ROLE_KEY is not configured');
+
+  const { data, error } = await db
+    .from('autopilot_product_drafts')
+    .update({ status: 'publishing', updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('status', 'ai_approved')
+    .is('published_product_id', null)
+    .select(SELECT_COLUMNS)
+    .single();
+
+  if (error) throw new Error(`Unable to claim product draft for publication: ${error.message}`);
+  return mapRow(data);
+}
+
+export async function releaseProductDraftPublication(id: string): Promise<void> {
+  if (!db) return;
+  await db
+    .from('autopilot_product_drafts')
+    .update({ status: 'ai_approved', updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('status', 'publishing')
+    .is('published_product_id', null);
+}
+
+export async function markProductDraftPublished(input: { id: string; productId: string }): Promise<PersistedProductDraft> {
+  if (!db) throw new Error('Draft persistence unavailable: SUPABASE_SERVICE_ROLE_KEY is not configured');
 
   const now = new Date().toISOString();
   const { data, error } = await db
@@ -146,7 +152,7 @@ export async function markProductDraftPublished(input: {
       updated_at: now,
     })
     .eq('id', input.id)
-    .eq('status', 'ai_approved')
+    .eq('status', 'publishing')
     .is('published_product_id', null)
     .select(SELECT_COLUMNS)
     .single();
