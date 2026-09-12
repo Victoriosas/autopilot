@@ -1,9 +1,11 @@
+import { getModelCandidates, getModelRouterStatus, type ModelTask } from '../autopilot/modelRouter';
+import { recordModelCall } from '../autopilot/modelTelemetry';
+
 export interface AIProvider {
-  name: string;
+  name: 'Groq' | 'Cerebras' | 'OpenRouter';
   baseUrl: string;
   apiKey: string;
   model: string;
-  priority: number;
 }
 
 export interface AIResponse {
@@ -12,36 +14,44 @@ export interface AIResponse {
   model: string;
 }
 
-function getProviders(): AIProvider[] {
-  return [
-    {
+interface ProviderCallResult {
+  text: string;
+  inputTokens?: number;
+  outputTokens?: number;
+}
+
+function providerFromRoute(provider: string, model: string): AIProvider | null {
+  if (provider === 'groq') {
+    return {
       name: 'Groq',
       baseUrl: 'https://api.groq.com/openai/v1',
       apiKey: process.env.GROQ_API_KEY || '',
-      model: 'openai/gpt-oss-20b',
-      priority: 1,
-    },
-    {
+      model,
+    };
+  }
+  if (provider === 'cerebras') {
+    return {
       name: 'Cerebras',
       baseUrl: 'https://api.cerebras.ai/v1',
       apiKey: process.env.CEREBRAS_API_KEY || '',
-      model: 'gpt-oss-120b',
-      priority: 2,
-    },
-    {
+      model,
+    };
+  }
+  if (provider === 'openrouter') {
+    return {
       name: 'OpenRouter',
       baseUrl: 'https://openrouter.ai/api/v1',
       apiKey: process.env.OPENROUTER_API_KEY || '',
-      model: 'inclusionai/ling-3.0-flash-vl:free',
-      priority: 3,
-    },
-  ];
+      model,
+    };
+  }
+  return null;
 }
 
-function getActiveProviders(): AIProvider[] {
-  return getProviders().filter((p) => p.apiKey && p.apiKey.trim() !== '').sort(
-    (a, b) => a.priority - b.priority
-  );
+function getProviders(task: ModelTask): AIProvider[] {
+  return getModelCandidates(task)
+    .map((route) => providerFromRoute(route.provider, route.model))
+    .filter((provider): provider is AIProvider => Boolean(provider?.apiKey?.trim()));
 }
 
 async function sleep(ms: number): Promise<void> {
@@ -51,15 +61,16 @@ async function sleep(ms: number): Promise<void> {
 async function callOpenAICompatible(
   provider: AIProvider,
   prompt: string,
-  jsonMode: boolean = false
-): Promise<string> {
+  jsonMode: boolean = false,
+  task: ModelTask = 'structured_analysis'
+): Promise<ProviderCallResult> {
   const body: any = {
     model: provider.model,
     messages: [
       {
         role: 'system',
         content:
-          'Eres un asistente de análisis de productos prémium. Responde SIEMPRE en JSON válido.',
+          'Eres un asistente de análisis de productos prémium. Responde SIEMPRE en JSON válido cuando la tarea lo requiera.',
       },
       { role: 'user', content: prompt },
     ],
@@ -73,6 +84,7 @@ async function callOpenAICompatible(
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30000);
+  const startedAt = Date.now();
 
   try {
     const response = await fetch(`${provider.baseUrl}/chat/completions`, {
@@ -80,40 +92,78 @@ async function callOpenAICompatible(
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${provider.apiKey}`,
+        ...(provider.name === 'OpenRouter' && process.env.OPENROUTER_SITE_URL
+          ? { 'HTTP-Referer': process.env.OPENROUTER_SITE_URL }
+          : {}),
+        ...(provider.name === 'OpenRouter'
+          ? { 'X-OpenRouter-Title': process.env.OPENROUTER_APP_NAME || 'Victoriosa Autopilot' }
+          : {}),
       },
       body: JSON.stringify(body),
       signal: controller.signal,
     });
 
-    clearTimeout(timeout);
-
     if (!response.ok) {
       const errText = await response.text().catch(() => '');
+      await recordModelCall({
+        taskType: task,
+        provider: provider.name.toLowerCase(),
+        model: provider.model,
+        status: 'error',
+        latencyMs: Date.now() - startedAt,
+        errorCode: `HTTP_${response.status}`,
+      });
       throw new Error(
         `${provider.name} HTTP ${response.status}: ${errText.substring(0, 200)}`
       );
     }
 
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content || '';
+    const data: any = await response.json();
+    const result = {
+      text: data.choices?.[0]?.message?.content || '',
+      inputTokens: data.usage?.prompt_tokens,
+      outputTokens: data.usage?.completion_tokens,
+    };
+
+    await recordModelCall({
+      taskType: task,
+      provider: provider.name.toLowerCase(),
+      model: provider.model,
+      status: 'success',
+      latencyMs: Date.now() - startedAt,
+      inputTokens: result.inputTokens,
+      outputTokens: result.outputTokens,
+    });
+
+    return result;
   } catch (err: any) {
-    clearTimeout(timeout);
     if (err.name === 'AbortError') {
+      await recordModelCall({
+        taskType: task,
+        provider: provider.name.toLowerCase(),
+        model: provider.model,
+        status: 'error',
+        latencyMs: Date.now() - startedAt,
+        errorCode: 'TIMEOUT',
+      });
       throw new Error(`${provider.name}: timeout after 30s`);
     }
     throw err;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
 export async function aiCompletion(
   prompt: string,
-  jsonMode: boolean = true
+  jsonMode: boolean = true,
+  task: ModelTask = 'structured_analysis'
 ): Promise<AIResponse> {
-  const providers = getActiveProviders();
+  const providers = getProviders(task);
 
   if (providers.length === 0) {
     throw new Error(
-      'No AI providers configured. Set GROQ_API_KEY, CEREBRAS_API_KEY, or OPENROUTER_API_KEY in .env.local'
+      `No AI providers configured for task ${task}. Check GROQ_API_KEY, CEREBRAS_API_KEY, or OPENROUTER_API_KEY.`
     );
   }
 
@@ -121,65 +171,54 @@ export async function aiCompletion(
 
   for (const provider of providers) {
     try {
-      console.log(`[AI] Trying ${provider.name} (${provider.model})...`);
-      const text = await callOpenAICompatible(provider, prompt, jsonMode);
+      console.log(`[AI] ${task}: trying ${provider.name} (${provider.model})...`);
+      const result = await callOpenAICompatible(provider, prompt, jsonMode, task);
 
-      if (text && text.trim().length > 10) {
-        console.log(`[AI] Success with ${provider.name}`);
-        // Add delay between requests to avoid rate limits
-        await sleep(2000);
-        return { text, provider: provider.name, model: provider.model };
+      if (result.text && result.text.trim().length > 10) {
+        console.log(`[AI] ${task}: success with ${provider.name}`);
+        return { text: result.text, provider: provider.name, model: provider.model };
       }
 
       throw new Error('Empty response from provider');
     } catch (err: any) {
-      console.warn(`[AI] ${provider.name} failed: ${err.message}`);
+      console.warn(`[AI] ${task}: ${provider.name} failed: ${err.message}`);
       lastError = err;
 
-      if (err.message.includes('429') || err.message.includes('rate limit')) {
-        console.log(`[AI] Rate limited on ${provider.name}, waiting 5s before trying next...`);
-        await sleep(5000);
-        continue;
+      if (err.message.includes('429') || err.message.toLowerCase().includes('rate limit')) {
+        await sleep(1500);
       }
-
-      if (err.message.includes('timeout') || err.message.includes('abort')) {
-        console.log(`[AI] Timeout on ${provider.name}, trying next...`);
-        continue;
-      }
-
-      continue;
     }
   }
 
-  throw lastError || new Error('All AI providers failed');
+  throw lastError || new Error(`All AI providers failed for task ${task}`);
 }
 
 export async function aiStructuredCompletion<T>(
   prompt: string,
-  fallbackValue: T
+  fallbackValue: T,
+  task: ModelTask = 'structured_analysis'
 ): Promise<T> {
   try {
-    const response = await aiCompletion(prompt, true);
+    const response = await aiCompletion(prompt, true, task);
 
     let jsonStr = response.text.trim();
-
     const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) {
-      jsonStr = jsonMatch[1].trim();
-    }
+    if (jsonMatch) jsonStr = jsonMatch[1].trim();
 
-    const parsed = JSON.parse(jsonStr);
-    return parsed as T;
+    return JSON.parse(jsonStr) as T;
   } catch (err: any) {
     console.warn(`[AI] Structured completion failed: ${err.message}, using fallback`);
     return fallbackValue;
   }
 }
 
-export function getProviderStatus(): { name: string; configured: boolean; priority: number }[] {
-  return getProviders().map((p) => ({
-    name: p.name,
-    configured: !!(p.apiKey && p.apiKey.trim()),
-    priority: p.priority,
-  }));
+export function getProviderStatus() {
+  return {
+    routes: getModelRouterStatus(),
+    providers: [
+      { name: 'Groq', configured: Boolean(process.env.GROQ_API_KEY?.trim()) },
+      { name: 'Cerebras', configured: Boolean(process.env.CEREBRAS_API_KEY?.trim()) },
+      { name: 'OpenRouter', configured: Boolean(process.env.OPENROUTER_API_KEY?.trim()) },
+    ],
+  };
 }

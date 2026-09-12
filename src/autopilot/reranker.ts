@@ -1,4 +1,5 @@
 import { selectModel } from './modelRouter';
+import { recordModelCall } from './modelTelemetry';
 
 export interface RerankDocument<T = unknown> {
   text: string;
@@ -38,6 +39,7 @@ export async function rerankDocuments<T = unknown>(
   const safeTopN = Math.max(1, Math.min(topN, documents.length));
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30_000);
+  const startedAt = Date.now();
 
   try {
     const response = await fetch('https://openrouter.ai/api/v1/rerank', {
@@ -61,11 +63,30 @@ export async function rerankDocuments<T = unknown>(
 
     if (!response.ok) {
       const body = await response.text().catch(() => '');
-      throw new Error(`OpenRouter rerank HTTP ${response.status}: ${body.slice(0, 300)}`);
+      const error = new Error(`OpenRouter rerank HTTP ${response.status}: ${body.slice(0, 300)}`);
+      await recordModelCall({
+        taskType: 'rerank',
+        provider: route.provider,
+        model: route.model,
+        status: 'error',
+        latencyMs: Date.now() - startedAt,
+        errorCode: `HTTP_${response.status}`,
+        metadata: { documents: documents.length, topN: safeTopN },
+      });
+      throw error;
     }
 
     const payload = (await response.json()) as OpenRouterRerankResponse;
     const results = payload.results || [];
+
+    await recordModelCall({
+      taskType: 'rerank',
+      provider: route.provider,
+      model: route.model,
+      status: 'success',
+      latencyMs: Date.now() - startedAt,
+      metadata: { documents: documents.length, topN: safeTopN, returned: results.length },
+    });
 
     return results
       .filter((item) => Number.isInteger(item.index) && documents[item.index])
@@ -74,6 +95,20 @@ export async function rerankDocuments<T = unknown>(
         relevanceScore: Number(item.relevance_score || 0),
         document: documents[item.index],
       }));
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      await recordModelCall({
+        taskType: 'rerank',
+        provider: route.provider,
+        model: route.model,
+        status: 'error',
+        latencyMs: Date.now() - startedAt,
+        errorCode: 'TIMEOUT',
+        metadata: { documents: documents.length, topN: safeTopN },
+      });
+      throw new Error('OpenRouter rerank timed out after 30s');
+    }
+    throw error;
   } finally {
     clearTimeout(timeout);
   }
