@@ -63,7 +63,7 @@ export class AlibabaConnector implements SourceConnector {
       estimatedNetProfit: Number(estimatedNetProfit.toFixed(2)),
       estimatedNetMarginPct,
       marginHealthy: false,
-      flags: ['UNVERIFIED_SOURCE', 'RFQ_REQUIRED', 'REQUIRES_HUMAN_ACTION'],
+      flags: ['UNVERIFIED_STOCK', 'REQUIRES_HUMAN_ACTION'],
       actionRequired: 'HUMAN_APPROVAL_REQUIRED',
       notes: 'No existe cotización live verificada. MOQ, Trade Assurance, proveedor, coste y logística deben revisarse manualmente.',
     };
