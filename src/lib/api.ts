@@ -1,8 +1,22 @@
+import supabase from './supabase';
+
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
-export async function apiFetch(path: string, options?: RequestInit): Promise<Response> {
+export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const url = `${API_BASE}${path}`;
-  return fetch(url, options);
+  const headers = new Headers(options.headers || {});
+
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (token && !headers.has('authorization')) {
+      headers.set('authorization', `Bearer ${token}`);
+    }
+  } catch {
+    // Public endpoints remain callable even when auth state is unavailable.
+  }
+
+  return fetch(url, { ...options, headers });
 }
 
 export async function apiGet<T = any>(path: string): Promise<T> {
