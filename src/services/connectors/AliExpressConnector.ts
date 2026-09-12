@@ -75,7 +75,7 @@ export class AliExpressConnector implements SourceConnector {
       estimatedNetProfit: Number(estimatedNetProfit.toFixed(2)),
       estimatedNetMarginPct,
       marginHealthy: false,
-      flags: ['UNVERIFIED_SOURCE', 'REQUIRES_HUMAN_ACTION'],
+      flags: ['UNVERIFIED_STOCK', 'REQUIRES_HUMAN_ACTION'],
       actionRequired: 'HUMAN_APPROVAL_REQUIRED',
       notes: 'No se consultó precio, stock, logística ni vendedor live. Requiere revisión humana o implementación real de la API.',
     };
