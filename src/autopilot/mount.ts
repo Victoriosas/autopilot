@@ -3,9 +3,11 @@ import { createMercadoPagoRouter } from '../payments/mercadoPago';
 import { createPaymentV2Router } from '../payments/paypalV2';
 import { createLegacyAdminGuard } from '../security/adminAuth';
 import { createAutopilotV4Router } from './api';
+import { createPricingRouter } from './pricingRouter';
 
 export function mountAutopilotV4(app: Express): void {
   app.use('/api/autopilot/v4', createAutopilotV4Router());
+  app.use('/api/autopilot/v4/pricing', createPricingRouter());
   app.use('/api/payments/v2', createPaymentV2Router());
   app.use('/api/payments/mercadopago', createMercadoPagoRouter());
   app.use(createLegacyAdminGuard());
