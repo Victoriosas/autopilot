@@ -31,6 +31,9 @@ jobs:
       - name: Typecheck
         run: npm run lint
 
+      - name: Pricing regression tests
+        run: node --import tsx --test src/autopilot/pricingEngine.test.ts
+
       - name: Build
         run: npm run build
 

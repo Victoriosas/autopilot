@@ -46,8 +46,8 @@ function requireFinite(name: string, value: number, min = 0): number {
 
 function psychological(value: number): number {
   if (value <= 0) return 0;
-  const whole = Math.ceil(value);
-  return round2(Math.max(0.99, whole - 0.1));
+  const candidate = round2(Math.max(0.99, Math.ceil(value) - 0.1));
+  return candidate >= value ? candidate : round2(candidate + 1);
 }
 
 function confidenceFrom(input: PricingInput): number {
@@ -76,6 +76,9 @@ export function calculatePricingQuote(input: PricingInput): PricingQuote {
   const taxRatePct = requireFinite('taxRatePct', Number(input.taxRatePct || 0));
   const targetNetMarginPct = clamp(requireFinite('targetNetMarginPct', Number(input.targetNetMarginPct ?? 35)), 5, 75);
   const strategy: PricingStrategy = input.strategy || 'balanced';
+  if (!['conservative', 'balanced', 'aggressive'].includes(strategy)) {
+    throw new Error('Unknown pricing strategy');
+  }
   const currency = (input.currency || 'USD').toUpperCase();
   const marketPrice = input.marketPrice === undefined ? undefined : requireFinite('marketPrice', Number(input.marketPrice), 0.01);
 
