@@ -1,134 +1,94 @@
-import type { 
-  ConnectorStatus, 
-  ConnectorCapability, 
-  SourceProduct, 
-  PrePurchaseVerificationResult 
-} from '../../types';
-import type { 
-  SourceConnector, 
-  ConnectorSearchOptions, 
-  ConnectorVerificationOptions, 
-  ConnectorPurchasePayload, 
-  ConnectorPurchaseResponse 
-} from './types';
+import type { ConnectorStatus, ConnectorCapability, SourceProduct, PrePurchaseVerificationResult } from '../../types';
+import type { SourceConnector, ConnectorSearchOptions, ConnectorVerificationOptions, ConnectorPurchasePayload, ConnectorPurchaseResponse } from './types';
 
 export class AliExpressConnector implements SourceConnector {
   readonly id = 'aliexpress-direct';
-  readonly name = 'AliExpress Open Platform API (DS)';
+  readonly name = 'AliExpress Product Research';
   readonly platform = 'AliExpress Direct' as const;
-  readonly capabilities: ConnectorCapability[] = [
-    'search',
-    'direct_url',
-    'price_check',
-    'stock_check',
-    'manual_purchase'
-  ];
+  readonly capabilities: ConnectorCapability[] = ['direct_url', 'manual_purchase'];
 
-  private appKey: string | undefined;
-  private appSecret: string | undefined;
-
-  constructor() {
-    this.appKey = process.env.ALIEXPRESS_APP_KEY;
-    this.appSecret = process.env.ALIEXPRESS_APP_SECRET;
-  }
+  private appKey = process.env.ALIEXPRESS_APP_KEY;
+  private appSecret = process.env.ALIEXPRESS_APP_SECRET;
 
   getStatus(): ConnectorStatus {
-    if (this.appKey && this.appSecret) {
-      return 'IMPLEMENTED';
-    }
-    return 'NOT_CONFIGURED';
+    return this.isConfigured() ? 'REQUIRES_HUMAN_ACTION' : 'REQUIRES_CREDENTIALS';
   }
 
   getStatusReason(): string {
-    if (this.appKey && this.appSecret) {
-      return 'AliExpress Dropshipping Open API configurada con credenciales activas.';
-    }
-    return 'Conector AliExpress no configurado (falta ALIEXPRESS_APP_KEY / ALIEXPRESS_APP_SECRET). Operaciones de compra marcadas como REQUIRES_HUMAN_ACTION.';
+    return this.isConfigured()
+      ? 'Credenciales detectadas, pero búsqueda/precio/stock live aún no están implementados. Requiere verificación humana.'
+      : 'Faltan credenciales de AliExpress. Solo se admite registrar una URL para revisión manual.';
   }
 
-  isConfigured(): boolean {
-    return Boolean(this.appKey && this.appSecret);
-  }
-
-  async searchProducts(options: ConnectorSearchOptions): Promise<SourceProduct[]> {
-    return [];
-  }
+  isConfigured(): boolean { return Boolean(this.appKey && this.appSecret); }
+  async searchProducts(_options: ConnectorSearchOptions): Promise<SourceProduct[]> { return []; }
 
   async getProductByUrl(url: string): Promise<SourceProduct | null> {
-    const itemIdMatch = url.match(/item\/(\d+)\.html/);
-    const itemId = itemIdMatch ? itemIdMatch[1] : null;
-
-    if (!itemId) {
-      return null;
-    }
-
-    // Without API credentials, we can only return minimal extracted data
+    const itemId = url.match(/item\/(\d+)\.html/)?.[1];
+    if (!itemId) return null;
     return {
       id: `ae-${itemId}`,
       connectorId: this.id,
       platform: this.platform,
       sourceUrl: url,
       sourceSku: itemId,
-      sourceTitle: `Producto AliExpress (${itemId}) - Requiere revisión manual`,
+      sourceTitle: `AliExpress ${itemId} · datos comerciales pendientes`,
       sourceImages: [],
       sourceCost: 0,
-      sourceCurrency: 'EUR',
+      sourceCurrency: 'UNKNOWN',
       sourceShippingCost: 0,
       estimatedDeliveryDaysMin: 0,
       estimatedDeliveryDaysMax: 0,
       inStock: false,
       stockQuantity: undefined,
-      supplierName: 'AliExpress - Pendiente de verificación',
+      supplierName: 'Pendiente de verificación',
       supplierCountry: 'Desconocido',
       supplierRating: 0,
       lastVerifiedAt: new Date().toISOString(),
-      status: 'raw'
+      status: 'raw',
     };
   }
 
   async verifyAvailabilityAndPrice(options: ConnectorVerificationOptions): Promise<PrePurchaseVerificationResult> {
-    const liveCost = options.expectedCost;
-    const liveShipping = options.expectedShipping;
-    const salePrice = options.currentSalePrice;
-    const estimatedNetProfit = +(salePrice - liveCost - liveShipping - (salePrice * 0.015 + 0.25)).toFixed(2);
-    const estimatedNetMarginPct = +( (estimatedNetProfit / salePrice) * 100 ).toFixed(1);
-
+    const salePrice = Number(options.currentSalePrice || 0);
+    const expectedCost = Number(options.expectedCost || 0);
+    const expectedShipping = Number(options.expectedShipping || 0);
+    const estimatedNetProfit = salePrice > 0 ? salePrice - expectedCost - expectedShipping : 0;
+    const estimatedNetMarginPct = salePrice > 0 ? Number(((estimatedNetProfit / salePrice) * 100).toFixed(1)) : 0;
     return {
-      passed: true,
+      passed: false,
       checkedAt: new Date().toISOString(),
       productId: options.sourceSku,
-      productTitle: 'AliExpress Source Item',
+      productTitle: 'AliExpress item pendiente de consulta live',
       sourceUrl: options.sourceUrl,
-      supplierName: 'AliExpress Direct Merchant',
+      supplierName: 'Pendiente de verificación',
       sourcePlatform: this.platform,
-      inStock: true,
-      expectedCost: options.expectedCost,
-      liveCost,
+      inStock: false,
+      expectedCost,
+      liveCost: expectedCost,
       priceDeltaEur: 0,
       priceDeltaPercentage: 0,
-      expectedShippingCost: options.expectedShipping,
-      liveShippingCost: liveShipping,
+      expectedShippingCost: expectedShipping,
+      liveShippingCost: expectedShipping,
       shippingDeltaEur: 0,
       salePrice,
-      estimatedNetProfit,
+      estimatedNetProfit: Number(estimatedNetProfit.toFixed(2)),
       estimatedNetMarginPct,
-      marginHealthy: estimatedNetMarginPct >= 35,
-      flags: ['REQUIRES_HUMAN_ACTION'],
+      marginHealthy: false,
+      flags: ['UNVERIFIED_STOCK', 'REQUIRES_HUMAN_ACTION'],
       actionRequired: 'HUMAN_APPROVAL_REQUIRED',
-      notes: 'Requiere compra manual en AliExpress con la dirección del cliente o token API de dropshipping activo.'
+      notes: 'No se consultó precio, stock, logística ni vendedor live. Requiere revisión humana o implementación real de la API.',
     };
   }
 
-  async createPurchaseOrder(payload: ConnectorPurchasePayload): Promise<ConnectorPurchaseResponse> {
+  async createPurchaseOrder(_payload: ConnectorPurchasePayload): Promise<ConnectorPurchaseResponse> {
     return {
       success: false,
       status: 'human_action_required',
-      humanActionReason: 'AliExpress Open API no configurada con token OAuth de comprador. Requiere compra manual por operador.',
-      errorMessage: 'REQUIRES_HUMAN_ACTION: Haz clic en el botón [Comprar en AliExpress] para despachar con la dirección de envío del cliente.'
+      humanActionReason: 'La compra automática de AliExpress no está habilitada.',
+      errorMessage: 'REQUIRES_HUMAN_ACTION',
     };
   }
 
-  async getTracking(supplierOrderReference: string) {
-    return null;
-  }
+  async getTracking(_supplierOrderReference: string) { return null; }
 }
