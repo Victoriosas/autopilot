@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, Banknote, CheckCircle2, Loader2, Lock, MessageCircle, ShieldCheck, Truck, X } from 'lucide-react';
+import { AlertCircle, Banknote, CheckCircle2, CreditCard, Loader2, Lock, MessageCircle, ShieldCheck, Truck, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { apiFetch } from '../../lib/api';
 import { useApp } from '../../context/AppContext';
@@ -41,6 +41,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
   const [paypalError, setPaypalError] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
   const [transferBusy, setTransferBusy] = useState(false);
+  const [mercadoPagoConfigured, setMercadoPagoConfigured] = useState(false);
+  const [mercadoPagoBusy, setMercadoPagoBusy] = useState(false);
   const paypalButtonsRef = useRef<HTMLDivElement>(null);
   const paypalButtonsRendered = useRef(false);
   const victoriosaOrderIdRef = useRef<string | null>(null);
@@ -59,6 +61,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
 
   useEffect(() => {
     void trackRevenueEvent('checkout_started', { value: totals.total, currency: totals.currency, itemCount, channel: 'store' });
+    void apiFetch('/api/payments/mercadopago/config')
+      .then(async (response) => ({ ok: response.ok, data: await response.json() }))
+      .then(({ ok, data }) => setMercadoPagoConfigured(Boolean(ok && data.configured)))
+      .catch(() => setMercadoPagoConfigured(false));
   }, []);
 
   useEffect(() => {
@@ -67,22 +73,19 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
         const capabilityRes = await apiFetch('/api/payments/v2/config');
         const capability = await capabilityRes.json();
         if (!capabilityRes.ok || !capability.paypalConfigured || !capability.paypalConversionConfigured) {
-          setPaypalError('PayPal no está disponible para esta moneda. Podés usar transferencia o WhatsApp.');
+          setPaypalError('PayPal no está disponible para esta moneda.');
           return;
         }
-
-        const legacySafeConfigRes = await apiFetch('/api/payments/paypal/config');
-        const config = await legacySafeConfigRes.json();
-        if (!legacySafeConfigRes.ok || !config.clientId) {
+        const configRes = await apiFetch('/api/payments/paypal/config');
+        const config = await configRes.json();
+        if (!configRes.ok || !config.clientId) {
           setPaypalError('PayPal no está configurado.');
           return;
         }
-
         if (document.querySelector('script[data-victoriosa-paypal="true"]')) {
           setPaypalLoaded(Boolean(window.paypal));
           return;
         }
-
         const script = document.createElement('script');
         script.dataset.victoriosaPaypal = 'true';
         script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(config.clientId)}&currency=USD&disable-funding=credit,card,venmo`;
@@ -107,9 +110,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
         try {
           setPaying(true);
           const response = await apiFetch('/api/payments/v2/paypal/order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ customer: formData, items: checkoutItems }),
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customer: formData, items: checkoutItems }),
           });
           const data = await response.json();
           if (!response.ok || !data.paypalOrderId || !data.orderId) throw new Error(data.error || 'No se pudo crear el pago.');
@@ -126,39 +127,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
         if (!orderId) return showToast('No se encontró el pedido Victoriosa.', 'error');
         try {
           const response = await apiFetch('/api/payments/v2/paypal/capture', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paypalOrderId: data.orderID, orderId }),
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paypalOrderId: data.orderID, orderId }),
           });
           const result = await response.json();
           if (!response.ok || !result.success || !result.paymentId) throw new Error(result.error || 'PayPal no confirmó el pago.');
 
           const order = {
-            id: orderId,
-            orderNumber: orderId,
-            customer: formData,
-            items: cart.map((item) => ({
-              productId: item.product.id,
-              title: item.product.title,
-              price: item.product.price,
-              quantity: item.quantity,
-              image: item.product.images?.[0] || '',
-              selectedVariant: item.selectedVariant,
-              sku: item.product.sku,
-            })),
-            subtotal: totals.subtotal,
-            shippingCost: totals.shipping,
-            discount: 0,
-            total: totals.total,
-            currency: totals.currency,
-            paymentMethod: 'paypal',
-            paymentStatus: 'paid',
-            paymentId: result.paymentId,
-            paymentGateway: 'paypal',
-            status: 'confirmed',
-            trackingNumber: '',
-            estimatedDelivery: '',
-            createdAt: new Date().toISOString(),
+            id: orderId, orderNumber: orderId, customer: formData,
+            items: cart.map((item) => ({ productId: item.product.id, title: item.product.title, price: item.product.price, quantity: item.quantity, image: item.product.images?.[0] || '', selectedVariant: item.selectedVariant, sku: item.product.sku })),
+            subtotal: totals.subtotal, shippingCost: totals.shipping, discount: 0, total: totals.total, currency: totals.currency,
+            paymentMethod: 'paypal', paymentStatus: 'paid', paymentId: result.paymentId, paymentGateway: 'paypal', status: 'confirmed', trackingNumber: '', estimatedDelivery: '', createdAt: new Date().toISOString(),
           } as Order;
 
           setCompletion({ orderId, mode: 'paid', total: totals.total, currency: totals.currency, message: 'Pago confirmado por el servidor. Tu pedido quedó registrado.' });
@@ -183,26 +161,33 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const startMercadoPago = async () => {
+    if (!isFormValid) return showToast('Completá tus datos de envío primero.', 'error');
+    try {
+      setMercadoPagoBusy(true);
+      const response = await apiFetch('/api/payments/mercadopago/order', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customer: formData, items: checkoutItems }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.checkoutUrl || !data.orderId) throw new Error(data.error || 'No se pudo iniciar Mercado Pago.');
+      await trackRevenueEvent('mercadopago_order_started', { orderId: data.orderId, value: Number(data.total), currency: data.currency, itemCount, channel: 'mercadopago' });
+      window.location.assign(data.checkoutUrl);
+    } catch (error: any) {
+      setMercadoPagoBusy(false);
+      showToast(error.message || 'No se pudo iniciar Mercado Pago.', 'error');
+    }
+  };
+
   const startTransfer = async () => {
     if (!isFormValid) return showToast('Completá tus datos de envío primero.', 'error');
     try {
       setTransferBusy(true);
       const response = await apiFetch('/api/payments/v2/transfer/order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customer: formData, items: checkoutItems }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customer: formData, items: checkoutItems }),
       });
       const order = await response.json();
       if (!response.ok || !order.orderId) throw new Error(order.error || 'No se pudo crear el pedido.');
-      setCompletion({
-        orderId: order.orderId,
-        mode: 'pending_verification',
-        total: Number(order.total),
-        currency: order.currency,
-        message: 'Pedido creado. El pago seguirá pendiente hasta verificación administrativa.',
-        instructions: order.instructions,
-        label: order.label,
-      });
+      setCompletion({ orderId: order.orderId, mode: 'pending_verification', total: Number(order.total), currency: order.currency, message: 'Pedido creado. El pago seguirá pendiente hasta verificación administrativa.', instructions: order.instructions, label: order.label });
       clearCart();
       showToast('Pedido creado. Transferencia pendiente de verificación.', 'success');
     } catch (error: any) {
@@ -249,12 +234,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
               <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-indigo-400" />Elegí cómo pagar</h3>
               <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs"><div className="flex justify-between text-slate-400"><span>Artículos ({itemCount})</span><span>{STORE_CURRENCY} {totals.subtotal.toFixed(2)}</span></div><div className="flex justify-between text-slate-400"><span>Envío</span><span>{totals.shipping === 0 ? 'GRATIS' : `${STORE_CURRENCY} ${totals.shipping.toFixed(2)}`}</span></div><div className="flex justify-between text-base font-bold text-white pt-2 border-t border-white/10"><span>Total</span><span className="text-indigo-300">{STORE_CURRENCY} {totals.total.toFixed(2)}</span></div></div>
 
+              {mercadoPagoConfigured && (
+                <button disabled={!isFormValid || mercadoPagoBusy} onClick={startMercadoPago} className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-sky-500 hover:bg-sky-400 disabled:opacity-40 text-slate-950 font-extrabold text-sm">
+                  {mercadoPagoBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />} Tarjeta, débito y medios locales · Mercado Pago
+                </button>
+              )}
               {SALES_WHATSAPP && whatsappUrl && <button onClick={startWhatsAppOrder} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm"><MessageCircle className="w-4 h-4" />Comprar por WhatsApp</button>}
               <button disabled={!isFormValid || transferBusy} onClick={startTransfer} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/15 disabled:opacity-40 text-white font-bold text-sm border border-white/10">{transferBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Banknote className="w-4 h-4" />}Transferencia bancaria</button>
 
               <div className="pt-2 border-t border-white/10"><div className="text-[11px] text-slate-500 mb-2">PayPal internacional</div>{paypalError && <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-200 flex gap-2"><AlertCircle className="w-4 h-4 shrink-0" /><span>{paypalError}</span></div>}{!paypalLoaded && !paypalError && <div className="flex items-center justify-center gap-2 py-3 text-xs text-slate-400"><Loader2 className="w-4 h-4 animate-spin" />Cargando PayPal...</div>}<div ref={paypalButtonsRef} className="min-h-[48px]" /></div>
               {paying && <div className="flex items-center justify-center gap-2 text-xs text-indigo-300"><Loader2 className="w-4 h-4 animate-spin" />Procesando pago...</div>}
-              <div className="flex items-start gap-2 text-[10px] text-slate-500"><Lock className="w-3 h-3 mt-0.5 shrink-0" /><span>Victoriosa no almacena PAN/CVV. PayPal procesa los datos de tarjeta y el servidor Victoriosa valida el pedido, importe y resultado del pago.</span></div>
+              <div className="flex items-start gap-2 text-[10px] text-slate-500"><Lock className="w-3 h-3 mt-0.5 shrink-0" /><span>Victoriosa no almacena PAN/CVV. Las pasarelas procesan los datos de tarjeta y el servidor Victoriosa valida pedido, importe y resultado.</span></div>
             </div>
           </div>
         )}
