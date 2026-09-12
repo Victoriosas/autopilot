@@ -9,6 +9,7 @@ interface HeroBannerProps {
 
 export const HeroBanner: React.FC<HeroBannerProps> = ({ onExploreClick }) => {
   const { publishedProducts, setViewMode, userProfile } = useApp();
+  const featuredProduct = publishedProducts[0];
 
   return (
     <div className="relative overflow-hidden bg-white/[0.01] border-b border-white/10 backdrop-blur-md">
@@ -80,39 +81,29 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onExploreClick }) => {
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
                   Selección del catálogo
                 </span>
-                <span className="font-mono text-slate-400">
-                  {publishedProducts.length} Productos en catálogo
-                </span>
+                <span className="font-mono text-slate-400">{publishedProducts.length} productos disponibles</span>
               </div>
 
-              <div className="mt-4 aspect-[4/3] rounded-2xl overflow-hidden bg-black/40 relative group border border-white/5">
-                <img
-                  src={publishedProducts[0]?.images[0] || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=900&auto=format&fit=crop&q=80"}
-                  alt="Producto destacado"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-xl px-3 py-1 rounded-full text-xs font-semibold text-white border border-white/10">
-                  {publishedProducts[0]?.category || 'Tecnología'}
+              {featuredProduct ? (
+                <div className="mt-4 aspect-[4/3] rounded-2xl overflow-hidden bg-black/40 relative group border border-white/5">
+                  {featuredProduct.images?.[0] && <img src={featuredProduct.images[0]} alt={featuredProduct.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />}
+                  <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-xl px-3 py-1 rounded-full text-xs font-semibold text-white border border-white/10">{featuredProduct.category || 'Selección'}</div>
+                  <div className="absolute bottom-3 right-3 bg-indigo-600 text-white px-3 py-1.5 rounded-xl text-sm font-bold shadow-lg border border-white/10">{STORE_CURRENCY} {Number(featuredProduct.price).toFixed(2)}</div>
                 </div>
-                <div className="absolute bottom-3 right-3 bg-indigo-600 text-white px-3 py-1.5 rounded-xl text-sm font-bold shadow-lg border border-white/10">
-                  {STORE_CURRENCY} {(publishedProducts[0]?.price || 0).toFixed(2)}
+              ) : (
+                <div className="mt-4 aspect-[4/3] rounded-2xl bg-gradient-to-br from-[#f5e7da] via-[#d7b9a5] to-[#815949] border border-white/10 flex items-center justify-center p-8 text-center">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-white/70">Selección Victoriosa</p>
+                    <p className="mt-3 text-2xl font-serif text-white">Belleza en calma, elegida con criterio.</p>
+                    <p className="mt-3 text-xs text-white/75">Estamos preparando una selección curada. Pronto podrás descubrirla.</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="mt-4">
-                <h3 className="text-base font-semibold text-white line-clamp-1">
-                  {publishedProducts[0]?.title || 'Auriculares Hi-Fi Espaciales ANC'}
-                </h3>
-                <p className="text-xs text-slate-400 line-clamp-2 mt-1">
-                  {publishedProducts[0]?.subtitle || 'Transductores de titanio y cancelación activa híbrida de 42dB'}
-                </p>
-                <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-                  <span className="font-mono text-emerald-400">
-                    Ficha de producto
-                  </span>
-                  <span className="text-slate-500">SKU: {publishedProducts[0]?.sku || 'VIC-AUD-7721'}</span>
-                </div>
+                <h3 className="text-base font-semibold text-white line-clamp-1">{featuredProduct?.title || 'Catálogo en preparación'}</h3>
+                <p className="text-xs text-slate-400 line-clamp-2 mt-1">{featuredProduct?.subtitle || 'La disponibilidad y las condiciones de venta se confirmarán antes de cualquier compra.'}</p>
+                {featuredProduct && <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-slate-400"><span className="font-mono text-emerald-400">Ficha de producto</span><span className="text-slate-500">SKU: {featuredProduct.sku || 'Por verificar'}</span></div>}
               </div>
             </div>
           </div>
