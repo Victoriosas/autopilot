@@ -73,11 +73,13 @@ export function App() {
   }, [viewMode]);
 
   return (
-    <div className="min-h-screen bg-[#0a0c14] text-slate-200 font-sans selection:bg-indigo-500 selection:text-white flex flex-col relative overflow-x-hidden">
+    <div className={`${viewMode === 'store' ? 'storefront-editorial min-h-screen bg-[#f8f1e8] text-[#3b2b28] selection:bg-[#7b594c] selection:text-white' : 'min-h-screen bg-[#0a0c14] text-slate-200 selection:bg-indigo-500 selection:text-white'} font-sans flex flex-col relative overflow-x-hidden`}>
       {/* Frosted Glass Ambient Lighting Accents */}
-      <div className="fixed top-0 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none -z-10" />
-      <div className="fixed bottom-10 right-10 w-[30rem] h-[30rem] bg-blue-600/10 rounded-full blur-3xl pointer-events-none -z-10" />
-      <div className="fixed top-1/2 right-1/3 w-80 h-80 bg-purple-600/5 rounded-full blur-3xl pointer-events-none -z-10" />
+      {viewMode !== 'store' && <>
+        <div className="fixed top-0 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none -z-10" />
+        <div className="fixed bottom-10 right-10 w-[30rem] h-[30rem] bg-blue-600/10 rounded-full blur-3xl pointer-events-none -z-10" />
+        <div className="fixed top-1/2 right-1/3 w-80 h-80 bg-purple-600/5 rounded-full blur-3xl pointer-events-none -z-10" />
+      </>}
       
       {/* Toast Notification Container */}
       {toast && (
