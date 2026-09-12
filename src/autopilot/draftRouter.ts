@@ -6,9 +6,11 @@ import {
   draftPersistenceStatus,
   getPersistedProductDraft,
   listPersistedProductDrafts,
+  markProductDraftPublished,
   persistProductDraft,
   reviewProductDraft,
 } from './draftStore';
+import { publishApprovedDraft } from './governedPublisher';
 import type { OpportunityCandidate } from './opportunityEngine';
 
 export function createDraftRouter(): Router {
@@ -115,6 +117,49 @@ export function createDraftRouter(): Router {
       });
     } catch (error: any) {
       return res.status(400).json({ error: error?.message || 'Council review failed' });
+    }
+  });
+
+  router.post('/:id/publish', async (req, res) => {
+    try {
+      const persisted = await getPersistedProductDraft(req.params.id);
+
+      if (persisted.status === 'published' && persisted.publishedProductId) {
+        return res.json({
+          draft: persisted,
+          product: { id: persisted.publishedProductId, status: 'published' },
+          policy: {
+            idempotentReplay: true,
+            autonomousPurchaseAllowed: false,
+          },
+        });
+      }
+
+      if (persisted.status !== 'ai_approved') {
+        return res.status(409).json({
+          error: 'draft must be council-approved before publication',
+          status: persisted.status,
+        });
+      }
+
+      const product = await publishApprovedDraft(persisted.draft);
+      const publishedDraft = await markProductDraftPublished({
+        id: persisted.id,
+        productId: product.productId,
+      });
+
+      return res.json({
+        draft: publishedDraft,
+        product,
+        policy: {
+          approvedByCouncil: true,
+          supplierPurchaseTriggered: false,
+          autonomousPurchaseAllowed: false,
+          inventoryDefaultsToZeroUntilVerified: true,
+        },
+      });
+    } catch (error: any) {
+      return res.status(400).json({ error: error?.message || 'Governed publication failed' });
     }
   });
 
