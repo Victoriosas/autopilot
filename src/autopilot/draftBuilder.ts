@@ -45,7 +45,8 @@ export interface ProductDraft {
     estimatedNetMarginPct: number;
   };
   policy: {
-    publishRequiresHumanApproval: true;
+    publishRequiresCouncilApproval: true;
+    councilQuorum: '2_of_3';
     autonomousPurchaseAllowed: false;
   };
   warnings: string[];
@@ -97,7 +98,7 @@ function deterministicDraft(candidate: OpportunityCandidate, result: Opportunity
     ...(facts.shippingDaysMin !== undefined || facts.shippingDaysMax !== undefined ? ['shipping'] : []),
     ...(facts.warrantyText ? ['warranty'] : []),
   ];
-  const description = compactText(facts.description) || `${title}. Producto seleccionado para evaluación comercial en ${brand}. La publicación final requiere revisión humana de la ficha y sus datos de proveedor.`;
+  const description = compactText(facts.description) || `${title}. Producto seleccionado para evaluación comercial en ${brand}. La publicación final requiere aprobación del Consejo Autopilot y verificación de los datos del proveedor.`;
   const tags = sanitizeStringArray([brand, category, ...(candidate.tags || []), ...slugWords(title)], 12);
   const price = result.pricing.recommendedPrice;
   const compareAtPrice = result.pricing.premiumCeiling > price ? result.pricing.premiumCeiling : undefined;
@@ -132,7 +133,8 @@ function deterministicDraft(candidate: OpportunityCandidate, result: Opportunity
       estimatedNetMarginPct: result.pricing.estimatedNetMarginPct,
     },
     policy: {
-      publishRequiresHumanApproval: true,
+      publishRequiresCouncilApproval: true,
+      councilQuorum: '2_of_3',
       autonomousPurchaseAllowed: false,
     },
     warnings: [...result.warnings],
