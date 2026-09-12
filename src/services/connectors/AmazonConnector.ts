@@ -82,7 +82,7 @@ export class AmazonConnector implements SourceConnector {
       estimatedNetProfit: Number(estimate.toFixed(2)),
       estimatedNetMarginPct,
       marginHealthy: false,
-      flags: ['UNVERIFIED_SOURCE', 'REQUIRES_HUMAN_ACTION'],
+      flags: ['UNVERIFIED_STOCK', 'REQUIRES_HUMAN_ACTION'],
       actionRequired: 'HUMAN_APPROVAL_REQUIRED',
       notes: 'No se consultó un precio, stock ni vendedor live. Los importes mostrados son valores esperados, no verificados.',
     };
