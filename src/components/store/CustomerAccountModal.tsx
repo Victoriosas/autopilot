@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   ShieldCheck
 } from 'lucide-react';
+import { STORE_CURRENCY } from '../../services/revenue';
 import { useApp } from '../../context/AppContext';
 import type { Product } from '../../types';
 
@@ -174,7 +175,7 @@ export const CustomerAccountModal: React.FC<CustomerAccountModalProps> = ({
                             </div>
                           </div>
                           <span className="font-mono text-slate-300">
-                            ${(item.price * item.quantity * 1.08).toFixed(2)}
+                            {order.currency || STORE_CURRENCY} {(item.price * item.quantity).toFixed(2)}
                           </span>
                         </div>
                       ))}
@@ -182,7 +183,7 @@ export const CustomerAccountModal: React.FC<CustomerAccountModalProps> = ({
 
                     <div className="pt-2 border-t border-white/10 flex justify-between items-center text-[11px] text-slate-400">
                       <span>Entrega estimada: <strong className="text-slate-200">{order.estimatedDelivery}</strong></span>
-                      <span className="text-emerald-400 font-medium">Garantía Victoriosa 3 Años Activa</span>
+                      <span className="text-emerald-400 font-medium">Consultá las condiciones de tu pedido</span>
                     </div>
                   </div>
                 ))
@@ -215,7 +216,7 @@ export const CustomerAccountModal: React.FC<CustomerAccountModalProps> = ({
                       />
                       <div className="flex-1 min-w-0">
                         <h4 className="text-xs font-semibold text-white line-clamp-1">{p.title}</h4>
-                        <span className="text-xs font-bold text-indigo-400 font-mono block mt-0.5">${(p.price * 1.08).toFixed(2)}</span>
+                        <span className="text-xs font-bold text-indigo-400 font-mono block mt-0.5">{STORE_CURRENCY} {p.price.toFixed(2)}</span>
                         <div className="flex gap-2 mt-2">
                           <button
                             onClick={() => {

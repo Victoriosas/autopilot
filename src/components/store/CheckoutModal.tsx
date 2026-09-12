@@ -42,9 +42,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
   const [paying, setPaying] = useState(false);
   const [transferBusy, setTransferBusy] = useState(false);
   const [mercadoPagoConfigured, setMercadoPagoConfigured] = useState(false);
+  const [transferConfigured, setTransferConfigured] = useState(false);
+  const [checkoutAvailable, setCheckoutAvailable] = useState(false);
   const [mercadoPagoBusy, setMercadoPagoBusy] = useState(false);
   const paypalButtonsRef = useRef<HTMLDivElement>(null);
   const paypalButtonsRendered = useRef(false);
+  const latestCheckout = useRef({ formData: {} as OrderCustomer, checkoutItems: [] as ReturnType<typeof serializeCheckoutItems> });
   const victoriosaOrderIdRef = useRef<string | null>(null);
 
   const [formData, setFormData] = useState<OrderCustomer>({
@@ -54,6 +57,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
   const totals = useMemo(() => calculateCartTotals(cart), [cart]);
   const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const checkoutItems = useMemo(() => serializeCheckoutItems(cart), [cart]);
+  latestCheckout.current = { formData, checkoutItems };
   const isFormValid = Boolean(
     (formData.name || formData.fullName) && formData.email && formData.phone && formData.address && formData.city && formData.postalCode && formData.country,
   );
@@ -72,13 +76,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
       try {
         const capabilityRes = await apiFetch('/api/payments/v2/config');
         const capability = await capabilityRes.json();
+        setTransferConfigured(Boolean(capabilityRes.ok && capability.transferConfigured));
+        setCheckoutAvailable(Boolean(capabilityRes.ok && capability.checkoutEnabled));
         if (!capabilityRes.ok || !capability.paypalConfigured || !capability.paypalConversionConfigured) {
           setPaypalError('PayPal no está disponible para esta moneda.');
           return;
         }
-        const configRes = await apiFetch('/api/payments/paypal/config');
-        const config = await configRes.json();
-        if (!configRes.ok || !config.clientId) {
+        const config = { clientId: capability.paypalClientId };
+        if (!config.clientId) {
           setPaypalError('PayPal no está configurado.');
           return;
         }
@@ -110,7 +115,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
         try {
           setPaying(true);
           const response = await apiFetch('/api/payments/v2/paypal/order', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customer: formData, items: checkoutItems }),
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customer: latestCheckout.current.formData, items: latestCheckout.current.checkoutItems }),
           });
           const data = await response.json();
           if (!response.ok || !data.paypalOrderId || !data.orderId) throw new Error(data.error || 'No se pudo crear el pago.');
@@ -203,7 +208,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
         <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400"><Lock className="w-5 h-5" /></div>
-            <div><h2 className="font-serif font-bold text-lg text-white">{completion ? 'Pedido Victoriosa' : 'Checkout Victoriosa'}</h2><p className="text-xs text-slate-400">Compra en {STORE_CURRENCY}. Los importes de pago se verifican en el servidor.</p></div>
+            <div><h2 className="font-serif font-bold text-lg text-white">{completion ? 'Pedido Victoriosa' : 'Checkout Victoriosa'}</h2><p className="text-xs text-slate-400">Revisá tus datos y el importe antes de pagar.</p></div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10"><X className="w-5 h-5" /></button>
         </div>
@@ -240,11 +245,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
                 </button>
               )}
               {SALES_WHATSAPP && whatsappUrl && <button onClick={startWhatsAppOrder} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm"><MessageCircle className="w-4 h-4" />Comprar por WhatsApp</button>}
-              <button disabled={!isFormValid || transferBusy} onClick={startTransfer} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/15 disabled:opacity-40 text-white font-bold text-sm border border-white/10">{transferBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Banknote className="w-4 h-4" />}Transferencia bancaria</button>
+              {transferConfigured && <button disabled={!isFormValid || transferBusy} onClick={startTransfer} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/15 disabled:opacity-40 text-white font-bold text-sm border border-white/10">{transferBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Banknote className="w-4 h-4" />}Transferencia bancaria</button>}
 
+              {!checkoutAvailable && <p role="status" className="p-4 rounded-xl bg-amber-500/10 text-amber-100 text-sm">Estamos preparando la venta online. Por ahora podés explorar el catálogo; los pagos todavía no están habilitados.</p>}
               <div className="pt-2 border-t border-white/10"><div className="text-[11px] text-slate-500 mb-2">PayPal internacional</div>{paypalError && <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-200 flex gap-2"><AlertCircle className="w-4 h-4 shrink-0" /><span>{paypalError}</span></div>}{!paypalLoaded && !paypalError && <div className="flex items-center justify-center gap-2 py-3 text-xs text-slate-400"><Loader2 className="w-4 h-4 animate-spin" />Cargando PayPal...</div>}<div ref={paypalButtonsRef} className="min-h-[48px]" /></div>
               {paying && <div className="flex items-center justify-center gap-2 text-xs text-indigo-300"><Loader2 className="w-4 h-4 animate-spin" />Procesando pago...</div>}
-              <div className="flex items-start gap-2 text-[10px] text-slate-500"><Lock className="w-3 h-3 mt-0.5 shrink-0" /><span>Victoriosa no almacena PAN/CVV. Las pasarelas procesan los datos de tarjeta y el servidor Victoriosa valida pedido, importe y resultado.</span></div>
+              <div className="flex items-start gap-2 text-[10px] text-slate-500"><Lock className="w-3 h-3 mt-0.5 shrink-0" /><span>Los pagos disponibles se procesan a través de la pasarela seleccionada. No guardamos los datos de tu tarjeta.</span></div>
             </div>
           </div>
         )}
@@ -254,5 +260,5 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
 };
 
 const Field: React.FC<{ label: string; value: string; type?: string; onChange: (value: string) => void }> = ({ label, value, type = 'text', onChange }) => (
-  <div><label className="block text-slate-400 mb-1">{label}</label><input type={type} required value={value} onChange={(event) => onChange(event.target.value)} className="w-full px-3.5 py-2.5 bg-black/40 border border-white/10 rounded-xl text-white focus:border-indigo-500 focus:outline-none transition-colors" /></div>
+  <div><label className="block text-slate-400 mb-1" htmlFor={`checkout-${label}`}>{label}</label><input id={`checkout-${label}`} type={type} required value={value} onChange={(event) => onChange(event.target.value)} className="w-full px-3.5 py-2.5 bg-black/40 border border-white/10 rounded-xl text-white focus:border-indigo-500 focus:outline-none transition-colors" /></div>
 );

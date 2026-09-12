@@ -1,5 +1,6 @@
 import React from 'react';
 import { Sparkles, ShieldCheck, Cpu, ArrowRight, Award } from 'lucide-react';
+import { STORE_CURRENCY } from '../../services/revenue';
 import { useApp } from '../../context/AppContext';
 
 interface HeroBannerProps {
@@ -7,7 +8,7 @@ interface HeroBannerProps {
 }
 
 export const HeroBanner: React.FC<HeroBannerProps> = ({ onExploreClick }) => {
-  const { publishedProducts, setViewMode } = useApp();
+  const { publishedProducts, setViewMode, userProfile } = useApp();
 
   return (
     <div className="relative overflow-hidden bg-white/[0.01] border-b border-white/10 backdrop-blur-md">
@@ -22,7 +23,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onExploreClick }) => {
           <div className="lg:col-span-7 space-y-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold uppercase tracking-wider backdrop-blur-md shadow-[0_0_15px_rgba(99,102,241,0.15)]">
               <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Curaduría de Catálogo Autónoma & Inteligente</span>
+              <span>Descubrí Victoriosa</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-bold text-white tracking-tight leading-[1.1]">
@@ -33,7 +34,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onExploreClick }) => {
             </h1>
 
             <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed">
-              Cada pieza en Victoriosa pasa por el filtro más exigente de nuestro Autopilot: análisis de materiales, fiabilidad logística, verificación de garantías y adaptación de diseño prémium.
+              Explorá nuestra selección de productos para tu día a día. Estamos verificando disponibilidad, precios y condiciones antes de habilitar la venta online.
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
@@ -45,28 +46,28 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onExploreClick }) => {
                 <ArrowRight className="w-4 h-4" />
               </button>
 
-              <button
+              {userProfile?.role === 'admin' && <button
                 onClick={() => setViewMode('admin')}
                 className="px-5 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 text-sm font-medium border border-white/10 transition-all flex items-center gap-2 backdrop-blur-md hover:border-indigo-500/40"
               >
                 <Cpu className="w-4 h-4 text-indigo-400" />
-                <span>Ver Pipeline en Autopilot</span>
-              </button>
+                <span>Administrar catálogo</span>
+              </button>}
             </div>
 
             {/* Trust Badges */}
             <div className="pt-6 border-t border-white/10 grid grid-cols-3 gap-4 text-xs text-slate-400">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <span>Garantía Oficial 3 Años</span>
+                <span>Catálogo en preparación</span>
               </div>
               <div className="flex items-center gap-2">
                 <Award className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-                <span>Score de Calidad &gt;90%</span>
+                <span>Condiciones por producto</span>
               </div>
               <div className="flex items-center gap-2">
                 <Cpu className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-                <span>Trazabilidad 100% Verificada</span>
+                <span>Disponibilidad por verificar</span>
               </div>
             </div>
           </div>
@@ -77,10 +78,10 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onExploreClick }) => {
               <div className="flex items-center justify-between pb-4 border-b border-white/10 text-xs text-slate-400">
                 <span className="flex items-center gap-1.5 text-indigo-300 font-semibold uppercase tracking-wider">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-                  Publicado en Tiempo Real
+                  Selección del catálogo
                 </span>
                 <span className="font-mono text-slate-400">
-                  {publishedProducts.length} Productos Aprobados
+                  {publishedProducts.length} Productos en catálogo
                 </span>
               </div>
 
@@ -95,7 +96,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onExploreClick }) => {
                   {publishedProducts[0]?.category || 'Tecnología'}
                 </div>
                 <div className="absolute bottom-3 right-3 bg-indigo-600 text-white px-3 py-1.5 rounded-xl text-sm font-bold shadow-lg border border-white/10">
-                  ${((publishedProducts[0]?.price || 0) * 1.08).toFixed(2)}
+                  {STORE_CURRENCY} {(publishedProducts[0]?.price || 0).toFixed(2)}
                 </div>
               </div>
 
@@ -108,7 +109,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onExploreClick }) => {
                 </p>
                 <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
                   <span className="font-mono text-emerald-400">
-                    Autopilot Score: {publishedProducts[0]?.traceability?.analysis?.overallScore || 95}/100 (Tier S)
+                    Ficha de producto
                   </span>
                   <span className="text-slate-500">SKU: {publishedProducts[0]?.sku || 'VIC-AUD-7721'}</span>
                 </div>

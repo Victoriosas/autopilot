@@ -54,16 +54,13 @@ export async function publishProduct(
   }
 
   const categoryCount = await getCategoryCount(category);
-  if (categoryCount >= MIN_PRODUCTS_PER_CATEGORY && !options.humanApproved) {
-    return {
-      success: true,
-      status: 'draft',
-      skippedReason: `Category ${category} already has ${categoryCount} published products`,
-    };
-  }
 
-  // Discovery and AI may create drafts. Only an explicit human-approved call can publish.
-  const status: 'published' | 'draft' = options.humanApproved ? 'published' : 'draft';
+  // Legacy sourcing is draft-only. Even a historical humanApproved flag must never
+  // publish directly. Publication now goes exclusively through the persisted
+  // draft -> Council 2/3 -> ai_approved -> governedPublisher path.
+  const status: 'draft' = 'draft';
+  const legacyPublishBypassRequested = options.humanApproved === true;
+
   const slugBase = analysis.title
     .toLowerCase()
     .normalize('NFD')
@@ -84,7 +81,7 @@ export async function publishProduct(
     features: analysis.features,
     specs: analysis.specs,
     price: analysis.pricing.suggestedPrice,
-    compare_at_price: analysis.pricing.compareAtPrice,
+    compare_at_price: null,
     cost_price: Number(cjProduct.salePrice || cjProduct.sellPrice || 0) || null,
     images,
     category,
@@ -125,17 +122,33 @@ export async function publishProduct(
       ai_analysis: {
         ...analysis,
         publication: {
-          humanApproved: Boolean(options.humanApproved),
+          directPublicationAllowed: false,
+          legacyPublishBypassRequested,
+          approvalPath: 'autopilot_council_2_of_3',
           source: 'cj_dropshipping',
           sourceId: String(cjProduct.pid || ''),
         },
       } as any,
       status,
-      published_product_id: data?.id || null,
+      published_product_id: null,
     });
   }
 
-  return { success: true, productId: data?.id, status };
+  const reasons = [
+    categoryCount >= MIN_PRODUCTS_PER_CATEGORY
+      ? `Category ${category} already has ${categoryCount} published products`
+      : null,
+    legacyPublishBypassRequested
+      ? 'Legacy direct publish request blocked; Council approval is required'
+      : 'Legacy sourcing is draft-only; Council approval is required',
+  ].filter(Boolean);
+
+  return {
+    success: true,
+    productId: data?.id,
+    status,
+    skippedReason: reasons.join(' | '),
+  };
 }
 
 export interface BatchResult {
