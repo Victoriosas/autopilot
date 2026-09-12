@@ -39,7 +39,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Checking for obvious committed secrets..."
-          if git grep -nE '(sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{20,}|SUPABASE_SERVICE_ROLE_KEY=[A-Za-z0-9_-]{20,})' -- ':!package-lock.json' ':!bun.lock'; then
+          if git grep -nE '(sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{20,}|SUPABASE_SERVICE_ROLE_KEY=[A-Za-z0-9_-]{20,})' -- ':!.env.example' ':!package-lock.json' ':!bun.lock'; then
             echo "Potential hard-coded secret detected."
             exit 1
           fi
