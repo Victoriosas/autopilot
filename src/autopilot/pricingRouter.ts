@@ -13,8 +13,10 @@ export function createPricingRouter(): Router {
         quote,
         policy: {
           autonomousPurchaseAllowed: false,
-          autonomousPublishAllowed: quote.confidence >= 80 && quote.revenueScore >= 70,
-          requiresHumanReview: quote.confidence < 80 || quote.warnings.length > 0,
+          draftEligible: quote.confidence >= 80 && quote.revenueScore >= 70,
+          publishRequiresCouncilApproval: true,
+          councilQuorum: '2_of_3',
+          requiresReview: quote.confidence < 80 || quote.warnings.length > 0,
         },
       });
     } catch (error: any) {
