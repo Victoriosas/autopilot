@@ -82,11 +82,31 @@ export async function applyApprovedRepricing(id: string): Promise<PersistedRepri
   const record = await getRepricingProposal(id);
   if (record.status === 'applied') return record;
   if (record.status !== 'ai_approved') throw new Error('repricing proposal is not ai_approved');
+  if (record.proposal.policy.ownerApprovalRequired) throw new Error('repricing proposal requires explicit owner approval');
+
   const proposedPrice = record.proposal.proposedPrice;
   if (!proposedPrice || !Number.isFinite(proposedPrice) || proposedPrice <= 0) throw new Error('approved proposal has no valid price');
 
   const db = getDb();
-  const { error: productError } = await db.from('products').update({ price: proposedPrice }).eq('id', record.productId);
+  const { data: product, error: productReadError } = await db
+    .from('products')
+    .select('id,price,status')
+    .eq('id', record.productId)
+    .single();
+  if (productReadError || !product) throw new Error(`Unable to load product before repricing: ${productReadError?.message || 'not found'}`);
+  if (product.status !== 'published') throw new Error('product is no longer published');
+
+  const livePrice = Number(product.price);
+  if (!Number.isFinite(livePrice) || Math.abs(livePrice - record.proposal.currentPrice) > 0.01) {
+    throw new Error('product price changed after proposal creation; generate a fresh repricing proposal');
+  }
+
+  const { error: productError } = await db
+    .from('products')
+    .update({ price: proposedPrice })
+    .eq('id', record.productId)
+    .eq('status', 'published')
+    .eq('price', record.proposal.currentPrice);
   if (productError) throw new Error(`Unable to apply product price: ${productError.message}`);
 
   const now = new Date().toISOString();
