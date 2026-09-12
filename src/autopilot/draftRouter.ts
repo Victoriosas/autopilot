@@ -1,8 +1,10 @@
 import { Router } from 'express';
+import { runApprovalCouncil } from './approvalCouncil';
 import { getAutopilotPrincipal, requireControlPlaneAuth } from './auth';
 import { buildCommercialDraft, type CommercialFacts } from './draftBuilder';
 import {
   draftPersistenceStatus,
+  getPersistedProductDraft,
   listPersistedProductDrafts,
   persistProductDraft,
   reviewProductDraft,
@@ -54,8 +56,8 @@ export function createDraftRouter(): Router {
         persisted,
         policy: {
           autonomousPurchaseAllowed: false,
-          publishRequiresGovernorApproval: true,
-          governorCanApproveLowRiskCommercialDrafts: true,
+          publishRequiresCouncilApproval: true,
+          councilQuorum: '2_of_3',
           highRiskOrFinancialActionsRequireOwnerApproval: true,
           persistencePerformed: Boolean(persisted),
         },
@@ -68,21 +70,71 @@ export function createDraftRouter(): Router {
     }
   });
 
+  router.post('/:id/council-review', async (req, res) => {
+    try {
+      const persisted = await getPersistedProductDraft(req.params.id);
+      if (persisted.status !== 'draft') {
+        return res.status(409).json({
+          error: 'draft has already been reviewed',
+          status: persisted.status,
+        });
+      }
+
+      const council = await runApprovalCouncil(persisted.draft);
+      if (council.ownerEscalationRequired) {
+        return res.status(409).json({
+          draft: persisted,
+          council,
+          policy: {
+            publicationAllowed: false,
+            ownerApprovalRequired: true,
+          },
+        });
+      }
+
+      const reason = [
+        council.summary,
+        ...council.votes.map((vote) => `${vote.agent}: ${vote.decision} (${vote.confidence}%) - ${vote.reason}`),
+      ].join(' | ').slice(0, 4000);
+
+      const reviewed = await reviewProductDraft({
+        id: req.params.id,
+        decision: council.decision,
+        reviewer: `autopilot-council:${council.quorum}`,
+        reason,
+      });
+
+      return res.json({
+        draft: reviewed,
+        council,
+        policy: {
+          standardCatalogApproval: 'majority_2_of_3',
+          publicationAllowedAfterCouncilApproval: reviewed.status === 'ai_approved',
+          ownerApprovalStillRequiredFor: ['supplier_purchase', 'refund', 'production_secrets', 'medical_claims', 'regulated_products'],
+        },
+      });
+    } catch (error: any) {
+      return res.status(400).json({ error: error?.message || 'Council review failed' });
+    }
+  });
+
   router.post('/:id/review', async (req, res) => {
     try {
       const principal = getAutopilotPrincipal(res);
       const body = (req.body || {}) as {
-        decision?: 'approve' | 'reject';
+        decision?: 'reject';
         reason?: string;
       };
 
-      if (body.decision !== 'approve' && body.decision !== 'reject') {
-        return res.status(400).json({ error: 'decision must be approve or reject' });
+      if (body.decision !== 'reject') {
+        return res.status(400).json({
+          error: 'Single-agent approval is disabled. Use /council-review for approval; this endpoint only supports rejection.',
+        });
       }
 
       const reviewed = await reviewProductDraft({
         id: req.params.id,
-        decision: body.decision,
+        decision: 'reject',
         reviewer: `autopilot-governor:${principal.role}`,
         reason: String(body.reason || '').trim(),
       });
@@ -91,8 +143,8 @@ export function createDraftRouter(): Router {
         draft: reviewed,
         policy: {
           autonomousPurchaseAllowed: false,
-          publicationAllowedAfterAiApproval: reviewed.status === 'ai_approved',
-          ownerApprovalStillRequiredFor: ['supplier_purchase', 'refund', 'production_secrets', 'medical_claims', 'regulated_products'],
+          singleAgentApprovalAllowed: false,
+          approvalRequiresCouncilQuorum: '2_of_3',
         },
       });
     } catch (error: any) {
