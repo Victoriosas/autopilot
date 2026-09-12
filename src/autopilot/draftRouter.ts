@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import { requireControlPlaneAuth } from './auth';
+import { getAutopilotPrincipal, requireControlPlaneAuth } from './auth';
 import { buildCommercialDraft, type CommercialFacts } from './draftBuilder';
 import {
   draftPersistenceStatus,
   listPersistedProductDrafts,
   persistProductDraft,
+  reviewProductDraft,
 } from './draftStore';
 import type { OpportunityCandidate } from './opportunityEngine';
 
@@ -53,7 +54,9 @@ export function createDraftRouter(): Router {
         persisted,
         policy: {
           autonomousPurchaseAllowed: false,
-          publishRequiresHumanApproval: true,
+          publishRequiresGovernorApproval: true,
+          governorCanApproveLowRiskCommercialDrafts: true,
+          highRiskOrFinancialActionsRequireOwnerApproval: true,
           persistencePerformed: Boolean(persisted),
         },
         persistence: draftPersistenceStatus(),
@@ -62,6 +65,38 @@ export function createDraftRouter(): Router {
       const message = error?.message || 'Draft Builder failed';
       const status = message.includes('only draft_ready') ? 409 : 400;
       return res.status(status).json({ error: message });
+    }
+  });
+
+  router.post('/:id/review', async (req, res) => {
+    try {
+      const principal = getAutopilotPrincipal(res);
+      const body = (req.body || {}) as {
+        decision?: 'approve' | 'reject';
+        reason?: string;
+      };
+
+      if (body.decision !== 'approve' && body.decision !== 'reject') {
+        return res.status(400).json({ error: 'decision must be approve or reject' });
+      }
+
+      const reviewed = await reviewProductDraft({
+        id: req.params.id,
+        decision: body.decision,
+        reviewer: `autopilot-governor:${principal.role}`,
+        reason: String(body.reason || '').trim(),
+      });
+
+      return res.json({
+        draft: reviewed,
+        policy: {
+          autonomousPurchaseAllowed: false,
+          publicationAllowedAfterAiApproval: reviewed.status === 'ai_approved',
+          ownerApprovalStillRequiredFor: ['supplier_purchase', 'refund', 'production_secrets', 'medical_claims', 'regulated_products'],
+        },
+      });
+    } catch (error: any) {
+      return res.status(400).json({ error: error?.message || 'Draft review failed' });
     }
   });
 
