@@ -9,6 +9,7 @@ export type RevenueEventName =
   | 'checkout_started'
   | 'whatsapp_order_started'
   | 'transfer_order_created'
+  | 'mercadopago_order_started'
   | 'payment_completed';
 
 export interface RevenueEventPayload {
@@ -17,7 +18,7 @@ export interface RevenueEventPayload {
   value?: number;
   currency?: string;
   itemCount?: number;
-  channel?: 'store' | 'whatsapp' | 'bank_transfer' | 'paypal';
+  channel?: 'store' | 'whatsapp' | 'bank_transfer' | 'paypal' | 'mercadopago';
 }
 
 export const STORE_CURRENCY = (import.meta.env.VITE_STORE_CURRENCY || 'UYU').toUpperCase();
