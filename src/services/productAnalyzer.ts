@@ -1,4 +1,6 @@
-import { aiCompletion, aiStructuredCompletion } from './aiClient';
+import { aiStructuredCompletion } from './aiClient';
+
+export type FactProvenance = 'verified' | 'observed' | 'inferred' | 'generated' | 'unknown';
 
 export interface ProductAnalysis {
   title: string;
@@ -24,6 +26,8 @@ export interface ProductAnalysis {
     logisticsScore: number;
     overallScore: number;
     scoreTier: string;
+    revenueScore: number;
+    confidenceScore: number;
     targetAudience: string;
     keySellingPoints: string[];
   };
@@ -35,202 +39,282 @@ export interface ProductAnalysis {
     returnRisk: string;
     details: string[];
   };
+  provenance: Record<string, FactProvenance>;
 }
 
 const VICTORIOSA_IDENTITY = `
-Eres el Autopilot Central de Inteligencia de 'Victoriosa', una marca y plataforma e-commerce prémium, contemporánea y de alta confianza.
-La identidad de Victoriosa se basa en:
-1. Sofisticación sin pretensiones: diseño elegante, materiales prémium, ergonomía y practicidad cotidiana.
-2. Tono de marca: Persuasivo, refinado, claro, transparente y enfocado en la experiencia del cliente (en español impecable).
-3. Criterio de selección estricto: Solo productos con alto potencial, márgenes sanos (40-70%), proveedores confiables, bajo riesgo.
+Eres el analista de catálogo de Victoriosa. Tu trabajo es preparar BORRADORES para revisión humana.
+Nunca inventes hechos del proveedor. No afirmes garantía, certificaciones, materiales, stock, tiempos de envío,
+valoraciones, demanda real, seguridad, origen o calidad si esos datos no aparecen en la entrada.
+Puedes generar copy comercial, pero debe distinguirse de los hechos observados.
+Si un dato no está disponible, omítelo o indícalo como desconocido.
 `;
 
-export function calculatePricing(cost: number, shipping: number = 3.5, targetMarginPct: number = 55) {
-  const totalCost = cost + shipping;
-  const rawPrice = totalCost / (1 - targetMarginPct / 100);
-
-  let roundedPrice = Math.ceil(rawPrice);
-  if (roundedPrice > 20) {
-    roundedPrice = roundedPrice - 0.05;
-  } else {
-    roundedPrice = Math.round(rawPrice * 2) / 2 - 0.05;
-    if (roundedPrice < 9.95) roundedPrice = 9.95;
-  }
-
-  const compareAtPrice = +(roundedPrice * 1.35).toFixed(2);
-  const margin = +(roundedPrice - totalCost).toFixed(2);
-  const marginPct = +((margin / roundedPrice) * 100).toFixed(1);
-
-  return {
-    suggestedPrice: roundedPrice,
-    compareAtPrice,
-    margin,
-    marginPct,
-  };
+function finiteNumber(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
 }
 
-export async function analyzeProduct(
-  product: any,
-  _aiClient?: any
-): Promise<ProductAnalysis | null> {
-  const cost = Number(product.costPrice || product.salePrice || 25);
-  const shipping = Number(product.shippingCost || 3.5);
-  const pricing = calculatePricing(cost, shipping, 55);
+function clamp(value: unknown, fallback = 0): number {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(0, Math.min(100, n));
+}
+
+export function calculatePricing(cost: number, shipping: number = 0, targetMarginPct: number = 55) {
+  const safeCost = Math.max(0, Number(cost) || 0);
+  const safeShipping = Math.max(0, Number(shipping) || 0);
+  const marginTarget = Math.max(5, Math.min(85, Number(targetMarginPct) || 55));
+  const totalCost = safeCost + safeShipping;
+  if (totalCost <= 0) {
+    return { suggestedPrice: 0, compareAtPrice: 0, margin: 0, marginPct: 0 };
+  }
+
+  const rawPrice = totalCost / (1 - marginTarget / 100);
+  let roundedPrice = Math.ceil(rawPrice * 100) / 100;
+  if (roundedPrice >= 10) roundedPrice = Math.floor(roundedPrice) + 0.95;
+  const compareAtPrice = Number((roundedPrice * 1.2).toFixed(2));
+  const margin = Number((roundedPrice - totalCost).toFixed(2));
+  const marginPct = Number(((margin / roundedPrice) * 100).toFixed(1));
+  return { suggestedPrice: roundedPrice, compareAtPrice, margin, marginPct };
+}
+
+function riskPenalty(level: string) {
+  if (level === 'critical') return 50;
+  if (level === 'high') return 30;
+  if (level === 'medium') return 15;
+  if (level === 'low') return 5;
+  return 20;
+}
+
+export function calculateRevenueScore(input: {
+  marginPct: number;
+  demandScore: number;
+  brandFitScore: number;
+  logisticsScore: number;
+  riskLevel: string;
+  confidenceScore: number;
+}) {
+  const marginScore = clamp((input.marginPct / 70) * 100);
+  const raw =
+    marginScore * 0.35 +
+    clamp(input.demandScore) * 0.25 +
+    clamp(input.brandFitScore) * 0.2 +
+    clamp(input.logisticsScore) * 0.2;
+  const confidenceMultiplier = 0.45 + clamp(input.confidenceScore) / 180;
+  return Math.round(Math.max(0, Math.min(100, raw * confidenceMultiplier - riskPenalty(input.riskLevel))));
+}
+
+function sourceProvenance(product: any) {
+  const costKnown = finiteNumber(product.costPrice ?? product.salePrice ?? product.sellPrice) !== null;
+  const shippingKnown = finiteNumber(product.shippingCost) !== null;
+  const stockKnown = finiteNumber(product.stockQuantity) !== null;
+  return {
+    supplierPrice: costKnown ? 'observed' : 'unknown',
+    shippingCost: shippingKnown ? 'observed' : 'unknown',
+    stock: stockKnown ? 'observed' : 'unknown',
+    sourceUrl: product.productUrl ? 'observed' : 'unknown',
+    title: (product.productNameEn || product.productName || product.title) ? 'observed' : 'unknown',
+    generatedCopy: 'generated',
+    demand: 'inferred',
+    competition: 'inferred',
+    quality: 'inferred',
+    logistics: 'inferred',
+  } satisfies Record<string, FactProvenance>;
+}
+
+function confidenceFromSource(product: any) {
+  let score = 10;
+  if (finiteNumber(product.costPrice ?? product.salePrice ?? product.sellPrice) !== null) score += 30;
+  if (finiteNumber(product.shippingCost) !== null) score += 15;
+  if (finiteNumber(product.stockQuantity) !== null) score += 15;
+  if (product.productUrl) score += 10;
+  if (product.productSku || product.sku) score += 10;
+  if (product.productImage) score += 5;
+  return Math.min(100, score);
+}
+
+export async function analyzeProduct(product: any, _aiClient?: any): Promise<ProductAnalysis | null> {
+  const cost = finiteNumber(product.costPrice ?? product.salePrice ?? product.sellPrice);
+  if (cost === null || cost <= 0) {
+    console.warn('[Analyzer] Product skipped: supplier cost is not observed');
+    return null;
+  }
+
+  const observedShipping = finiteNumber(product.shippingCost);
+  const shippingForEstimate = observedShipping ?? 0;
+  const pricing = calculatePricing(cost, shippingForEstimate, 55);
+  const provenance = sourceProvenance(product);
+  const sourceConfidence = confidenceFromSource(product);
+
+  const sourceFacts = {
+    title: product.productNameEn || product.productName || product.title || null,
+    category: product.categoryName || product.category || null,
+    supplierPrice: cost,
+    shippingCost: observedShipping,
+    sku: product.productSku || product.sku || null,
+    weight: finiteNumber(product.productWeight),
+    stock: finiteNumber(product.stockQuantity),
+    url: product.productUrl || null,
+  };
 
   const prompt = `
 ${VICTORIOSA_IDENTITY}
 
-Analiza este producto de CJ Dropshipping para el catálogo de Victoriosa:
+HECHOS OBSERVADOS DEL PROVEEDOR:
+${JSON.stringify(sourceFacts, null, 2)}
 
-DATOS DEL PRODUCTO:
-- Título original: ${product.productNameEn || product.productName || product.title}
-- Categoría: ${product.categoryName || product.category || 'General'}
-- Precio proveedor: $${product.salePrice || product.costPrice || cost}
-- SKU: ${product.productSku || product.sku || 'N/A'}
-- Peso: ${product.productWeight || 'N/A'}kg
-- Stock: ${product.stockQuantity || 'N/A'}
-- URL: ${product.productUrl || 'N/A'}
-- Imagen: ${product.productImage || 'N/A'}
+Genera un borrador comercial en español. Las puntuaciones de demanda, competencia, calidad y logística son únicamente
+INFERENCIAS y no deben presentarse al cliente como hechos. No añadas garantías, certificaciones, reseñas, materiales,
+tiempos de entrega ni afirmaciones médicas que no estén en HECHOS OBSERVADOS.
 
-TAREAS:
-1. Genera un título comercial prémium en español (máximo 8 palabras)
-2. Genera subtítulo persuasivo
-3. Genera descripción rica y elegante (2 párrafos)
-4. Extrae 4-5 características clave
-5. Genera especificaciones técnicas
-6. Evalúa demanda, competencia, margen, calidad, logística (0-100)
-7. Calcula score general (0-100) y tier (S/A/B/C/D)
-8. Evalúa riesgos (copyright, claims, proveedor, devoluciones)
-9. Sugiere badges de confianza
-
-Devuelve SOLO JSON:
+Devuelve SOLO JSON con esta forma:
 {
   "title": "...",
   "subtitle": "...",
   "description": "...",
   "category": "...",
-  "tags": ["...", "..."],
-  "features": ["...", "..."],
-  "specs": { "Material": "...", "Dimensiones": "...", "Garantía": "3 Años Victoriosa" },
-  "badges": ["...", "..."],
+  "tags": ["..."],
+  "features": ["..."],
+  "specs": {},
+  "badges": [],
   "analysis": {
-    "demandScore": 85,
-    "competitionLevel": "medium",
-    "marginPotential": 75,
-    "brandFitScore": 90,
-    "qualityScore": 80,
-    "logisticsScore": 85,
-    "overallScore": 85,
-    "scoreTier": "A",
+    "demandScore": 0,
+    "competitionLevel": "unknown",
+    "brandFitScore": 0,
+    "qualityScore": 0,
+    "logisticsScore": 0,
+    "overallScore": 0,
+    "scoreTier": "D",
     "targetAudience": "...",
-    "keySellingPoints": ["...", "...", "..."]
+    "keySellingPoints": []
   },
   "risk": {
-    "level": "low",
-    "copyrightRisk": "none",
-    "claimsRisk": "safe",
-    "supplierRisk": "safe",
-    "returnRisk": "low",
-    "details": ["..."]
+    "level": "medium",
+    "copyrightRisk": "unknown",
+    "claimsRisk": "unknown",
+    "supplierRisk": "unknown",
+    "returnRisk": "unknown",
+    "details": []
   }
 }
 `;
 
   try {
     const parsed = await aiStructuredCompletion<any>(prompt, null);
+    if (!parsed) return generateFallbackAnalysis(product, pricing, provenance, sourceConfidence, observedShipping !== null);
 
-    if (!parsed) {
-      console.warn('[Analyzer] AI returned no parseable JSON, using fallback');
-      return generateFallbackAnalysis(product, pricing);
-    }
+    const riskLevel = ['low', 'medium', 'high', 'critical'].includes(parsed.risk?.level) ? parsed.risk.level : 'medium';
+    const demandScore = clamp(parsed.analysis?.demandScore, 20);
+    const brandFitScore = clamp(parsed.analysis?.brandFitScore, 40);
+    const qualityScore = clamp(parsed.analysis?.qualityScore, 20);
+    const logisticsScore = clamp(parsed.analysis?.logisticsScore, observedShipping !== null ? 40 : 20);
+    const confidenceScore = Math.min(100, sourceConfidence + 10);
+    const revenueScore = calculateRevenueScore({
+      marginPct: pricing.marginPct,
+      demandScore,
+      brandFitScore,
+      logisticsScore,
+      riskLevel,
+      confidenceScore,
+    });
+    const overallScore = Math.round((brandFitScore + qualityScore + logisticsScore + demandScore) / 4);
 
     return {
-      title: parsed.title || product.productNameEn || 'Producto Victoriosa',
-      subtitle: parsed.subtitle || '',
-      description: parsed.description || '',
-      category: parsed.category || product.categoryName || 'General',
-      tags: parsed.tags || ['Prémium', 'Victoriosa'],
-      features: parsed.features || [],
-      specs: parsed.specs || {},
-      badges: parsed.badges || ['Garantía Victoriosa 3 Años', 'Envío Express'],
+      title: String(parsed.title || sourceFacts.title || 'Producto Victoriosa').slice(0, 120),
+      subtitle: String(parsed.subtitle || ''),
+      description: String(parsed.description || ''),
+      category: String(parsed.category || sourceFacts.category || 'General'),
+      tags: Array.isArray(parsed.tags) ? parsed.tags.map(String).slice(0, 10) : [],
+      features: Array.isArray(parsed.features) ? parsed.features.map(String).slice(0, 8) : [],
+      specs: parsed.specs && typeof parsed.specs === 'object' ? parsed.specs : {},
+      badges: Array.isArray(parsed.badges) ? parsed.badges.map(String).slice(0, 5) : [],
       pricing,
       analysis: {
-        demandScore: parsed.analysis?.demandScore || 75,
-        competitionLevel: parsed.analysis?.competitionLevel || 'medium',
-        marginPotential: parsed.analysis?.marginPotential || 70,
-        brandFitScore: parsed.analysis?.brandFitScore || 80,
-        qualityScore: parsed.analysis?.qualityScore || 75,
-        logisticsScore: parsed.analysis?.logisticsScore || 80,
-        overallScore: parsed.analysis?.overallScore || 80,
-        scoreTier: parsed.analysis?.scoreTier || 'B',
-        targetAudience: parsed.analysis?.targetAudience || 'Consumidor prémium',
-        keySellingPoints: parsed.analysis?.keySellingPoints || [],
+        demandScore,
+        competitionLevel: String(parsed.analysis?.competitionLevel || 'unknown'),
+        marginPotential: pricing.marginPct,
+        brandFitScore,
+        qualityScore,
+        logisticsScore,
+        overallScore,
+        scoreTier: revenueScore >= 80 ? 'A' : revenueScore >= 65 ? 'B' : revenueScore >= 50 ? 'C' : 'D',
+        revenueScore,
+        confidenceScore,
+        targetAudience: String(parsed.analysis?.targetAudience || ''),
+        keySellingPoints: Array.isArray(parsed.analysis?.keySellingPoints) ? parsed.analysis.keySellingPoints.map(String).slice(0, 6) : [],
       },
       risk: {
-        level: parsed.risk?.level || 'medium',
-        copyrightRisk: parsed.risk?.copyrightRisk || 'low',
-        claimsRisk: parsed.risk?.claimsRisk || 'safe',
-        supplierRisk: parsed.risk?.supplierRisk || 'moderate',
-        returnRisk: parsed.risk?.returnRisk || 'medium',
-        details: parsed.risk?.details || [],
+        level: riskLevel,
+        copyrightRisk: String(parsed.risk?.copyrightRisk || 'unknown'),
+        claimsRisk: String(parsed.risk?.claimsRisk || 'unknown'),
+        supplierRisk: String(parsed.risk?.supplierRisk || 'unknown'),
+        returnRisk: String(parsed.risk?.returnRisk || 'unknown'),
+        details: Array.isArray(parsed.risk?.details) ? parsed.risk.details.map(String).slice(0, 8) : [],
       },
+      provenance,
     };
-  } catch (err) {
-    console.error('AI analysis error:', err);
-    return generateFallbackAnalysis(product, pricing);
+  } catch (error) {
+    console.error('[Analyzer] AI analysis failed:', error);
+    return generateFallbackAnalysis(product, pricing, provenance, sourceConfidence, observedShipping !== null);
   }
 }
 
-function generateFallbackAnalysis(product: any, pricing: any): ProductAnalysis {
-  const title = product.productNameEn || product.productName || 'Producto Victoriosa';
-  const price = parseFloat(product.salePrice || product.sellPrice || '25');
-  const rating = 4.0 + Math.random() * 0.8;
-
-  const score = Math.min(95, Math.max(60,
-    50 + (price > 10 && price < 100 ? 15 : 5) +
-    (rating > 4.3 ? 10 : 0) +
-    (pricing.marginPct > 40 ? 10 : 5) +
-    Math.floor(Math.random() * 10)
-  ));
+function generateFallbackAnalysis(
+  product: any,
+  pricing: ProductAnalysis['pricing'],
+  provenance: Record<string, FactProvenance>,
+  sourceConfidence: number,
+  shippingKnown: boolean,
+): ProductAnalysis {
+  const originalTitle = String(product.productNameEn || product.productName || product.title || 'Producto sin título');
+  const riskLevel = shippingKnown ? 'medium' : 'high';
+  const demandScore = 10;
+  const brandFitScore = 35;
+  const qualityScore = 10;
+  const logisticsScore = shippingKnown ? 35 : 10;
+  const confidenceScore = Math.max(10, sourceConfidence - 10);
+  const revenueScore = calculateRevenueScore({
+    marginPct: pricing.marginPct,
+    demandScore,
+    brandFitScore,
+    logisticsScore,
+    riskLevel,
+    confidenceScore,
+  });
 
   return {
-    title: title.substring(0, 60),
-    subtitle: `Premium ${product.categoryName || 'Product'} by Victoriosa`,
-    description: `${title} - Producto de alta calidad seleccionado por el equipo de Victoriosa. Materiales premium, diseño elegante y garantía de satisfacción.`,
-    category: product.categoryName || 'General',
-    tags: ['Prémium', 'Victoriosa', 'CJ Dropshipping'],
-    features: [
-      'Materiales de alta calidad',
-      'Diseño elegante y moderno',
-      'Garantía Victoriosa 3 Años',
-      'Envío express disponible',
-    ],
-    specs: {
-      'Marca': 'Victoriosa',
-      'Garantía': '3 Años',
-      'Envío': '7-15 días',
-    },
-    badges: ['Garantía Victoriosa 3 Años', 'Envío Express', 'Selección Autopilot'],
+    title: originalTitle.slice(0, 120),
+    subtitle: '',
+    description: 'Borrador generado a partir de datos limitados del proveedor. Requiere revisión antes de publicarse.',
+    category: String(product.categoryName || product.category || 'General'),
+    tags: [],
+    features: [],
+    specs: {},
+    badges: [],
     pricing,
     analysis: {
-      demandScore: score,
-      competitionLevel: 'medium',
+      demandScore,
+      competitionLevel: 'unknown',
       marginPotential: pricing.marginPct,
-      brandFitScore: Math.min(95, score + 5),
-      qualityScore: score,
-      logisticsScore: 75,
-      overallScore: score,
-      scoreTier: score >= 85 ? 'A' : score >= 70 ? 'B' : 'C',
-      targetAudience: 'Consumidor prémium',
-      keySellingPoints: ['Calidad superior', 'Diseño exclusivo', 'Garantía extendida'],
+      brandFitScore,
+      qualityScore,
+      logisticsScore,
+      overallScore: 20,
+      scoreTier: 'D',
+      revenueScore,
+      confidenceScore,
+      targetAudience: '',
+      keySellingPoints: [],
     },
     risk: {
-      level: score >= 80 ? 'low' : 'medium',
-      copyrightRisk: 'none',
-      claimsRisk: 'safe',
-      supplierRisk: 'moderate',
-      returnRisk: 'low',
-      details: ['Proveedor verificado CJ Dropshipping'],
+      level: riskLevel,
+      copyrightRisk: 'unknown',
+      claimsRisk: 'unknown',
+      supplierRisk: 'unknown',
+      returnRisk: 'unknown',
+      details: ['Datos insuficientes: requiere verificación humana antes de publicar.'],
     },
+    provenance,
   };
 }
