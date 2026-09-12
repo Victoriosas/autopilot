@@ -1,6 +1,10 @@
 import supabase from '../lib/supabase';
 import type { CartItem, OrderCustomer } from '../types';
 
+// The generated Supabase schema in this legacy app is incomplete for some
+// operational tables. Keep the type escape at the database boundary only.
+const db = supabase as any;
+
 export type RevenueEventName =
   | 'product_view'
   | 'add_to_cart'
@@ -36,7 +40,7 @@ export function calculateCartTotals(cart: CartItem[]) {
 export async function trackRevenueEvent(name: RevenueEventName, payload: RevenueEventPayload = {}) {
   const safePayload = { ...payload, occurredAt: new Date().toISOString() };
   try {
-    await supabase.from('audit_logs').insert({
+    await db.from('audit_logs').insert({
       event_type: `REVENUE_${name.toUpperCase()}`,
       entity_id: payload.orderId || payload.productId || null,
       new_values: safePayload,
@@ -116,7 +120,7 @@ async function insertPendingOrder(
     created_at: new Date().toISOString(),
   };
 
-  const { error } = await supabase.from('orders').insert(row);
+  const { error } = await db.from('orders').insert(row);
   if (error) throw new Error(error.message || 'No se pudo crear el pedido.');
   return { orderId, items, ...totals };
 }
@@ -139,7 +143,7 @@ export async function createPendingPayPalOrder(cart: CartItem[], customer: Order
 
 export async function markPayPalOrderPaid(orderId: string, paymentId: string) {
   if (!orderId || !paymentId) throw new Error('Falta identificación de pago.');
-  const { error } = await supabase
+  const { error } = await db
     .from('orders')
     .update({
       payment_status: 'paid',
@@ -151,5 +155,4 @@ export async function markPayPalOrderPaid(orderId: string, paymentId: string) {
     .eq('payment_method', 'paypal')
     .eq('payment_status', 'pending');
   if (error) throw new Error(error.message || 'No se pudo confirmar el pedido pagado.');
-  await trackRevenueEvent('payment_completed', { orderId, channel: 'paypal' });
 }
