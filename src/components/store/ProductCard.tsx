@@ -1,5 +1,6 @@
 import React from 'react';
 import { Heart, Star, ShoppingBag, ShieldCheck, Cpu, ArrowUpRight } from 'lucide-react';
+import { STORE_CURRENCY } from '../../services/revenue';
 import { useApp } from '../../context/AppContext';
 import type { Product } from '../../types';
 
@@ -62,11 +63,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect }) =
           <Heart className="w-4 h-4 fill-current" />
         </button>
 
-        {/* Autopilot Score Pill in corner */}
-        <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-xl bg-black/70 backdrop-blur-xl border border-white/10 text-[10px] text-emerald-400 font-mono flex items-center gap-1.5">
-          <Cpu className="w-3 h-3 text-emerald-400" />
-          <span>Score {product.traceability?.analysis?.overallScore || 90}/100</span>
-        </div>
+
       </div>
 
       {/* Product Information */}
@@ -100,16 +97,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect }) =
           <div>
             <div className="flex items-baseline gap-2">
               <span className="text-lg font-bold text-white font-mono">
-                ${(product.price * 1.08).toFixed(2)}
+                {STORE_CURRENCY} {product.price.toFixed(2)}
               </span>
               {product.compareAtPrice && product.compareAtPrice > product.price && (
                 <span className="text-xs text-slate-500 line-through font-mono">
-                  ${(product.compareAtPrice * 1.08).toFixed(2)}
+                  {STORE_CURRENCY} {product.compareAtPrice.toFixed(2)}
                 </span>
               )}
             </div>
             <span className="text-[10px] text-slate-400 block mt-0.5">
-              IVA incl. • Envío 24/48h
+              Disponibilidad por confirmar
             </span>
           </div>
 

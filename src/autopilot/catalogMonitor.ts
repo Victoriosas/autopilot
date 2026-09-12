@@ -38,7 +38,7 @@ export async function observePublishedCatalog(limit = 50): Promise<CatalogObserv
   const safeLimit = Math.max(1, Math.min(Number(limit) || 50, 200));
   const { data, error } = await getDb()
     .from('products')
-    .select('id,title,price,cj_product_id,status')
+    .select('id,title,price,source,source_id,status,currency')
     .eq('status', 'published')
     .limit(safeLimit);
 
@@ -52,34 +52,35 @@ export async function observePublishedCatalog(limit = 50): Promise<CatalogObserv
     const base: CatalogObservation = {
       productId: product.id,
       title: product.title,
-      source: product.cj_product_id ? 'cj_dropshipping' : 'unknown',
-      supplierProductId: product.cj_product_id || undefined,
+      source: (product.source === 'cj_dropshipping' ? product.source_id : null) ? 'cj_dropshipping' : 'unknown',
+      supplierProductId: (product.source === 'cj_dropshipping' ? product.source_id : null) || undefined,
       currentPrice: Number(product.price || 0),
-      currency,
+      currency: product.currency || currency,
       observedAt: new Date().toISOString(),
       severity: 'info',
       signals: [],
       provenance: { product: 'verified' },
     };
 
-    if (!cj || !product.cj_product_id) {
+    if (!cj || !(product.source === 'cj_dropshipping' ? product.source_id : null)) {
       base.signals.push('supplier_live_observation_unavailable');
       observations.push(base);
       continue;
     }
 
     try {
-      const supplier = await cj.getProductDetail(product.cj_product_id);
+      const supplier = await cj.getProductDetail((product.source === 'cj_dropshipping' ? product.source_id : null));
       if (!supplier) {
         base.severity = 'warning';
         base.signals.push('supplier_product_not_found');
       } else {
         const cost = Number(supplier.salePrice || supplier.sellPrice);
-        const stock = Number(supplier.stockQuantity);
-        if (Number.isFinite(cost) && cost > 0) {
+        const stock = supplier.stockQuantity == null ? NaN : Number(supplier.stockQuantity);
+        if (base.currency === 'USD' && Number.isFinite(cost) && cost > 0) {
           base.observedSupplierCost = cost;
           base.provenance.supplierCost = 'observed';
         }
+        if (base.currency !== 'USD') base.signals.push('supplier_currency_conversion_required');
         if (Number.isFinite(stock) && stock >= 0) {
           base.observedStock = stock;
           base.provenance.stock = 'observed';

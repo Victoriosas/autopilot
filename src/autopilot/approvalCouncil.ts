@@ -71,7 +71,7 @@ function hardEscalations(draft: ProductDraft): string[] {
   if (supplierCost !== 'verified' && supplierCost !== 'observed') {
     reasons.push('supplier_cost_not_verified_or_observed');
   }
-  if (draft.commercial.confidence < 75) {
+  if (!Number.isFinite(draft.commercial?.confidence) || draft.commercial.confidence < 75) {
     reasons.push('commercial_confidence_below_75');
   }
   const text = [
@@ -133,7 +133,7 @@ ${JSON.stringify(draft)}
 
   return {
     agent: agent.id,
-    decision: raw.decision,
+    decision: raw.decision === 'approve' && clampConfidence(raw.confidence) >= 75 && typeof raw.reason === 'string' && raw.reason.trim() ? 'approve' : 'reject',
     confidence: clampConfidence(raw.confidence),
     reason: typeof raw.reason === 'string' && raw.reason.trim()
       ? raw.reason.trim().slice(0, 1000)

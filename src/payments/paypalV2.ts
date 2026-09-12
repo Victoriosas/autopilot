@@ -1,3 +1,4 @@
+import { orderIdentity, checkoutEnabled, paymentDatabaseConfigured, requireCheckoutEnabled, validateCheckoutItems, assertStock, assertPaymentAmount } from './safety';
 import { createClient } from '@supabase/supabase-js';
 import { Router } from 'express';
 
@@ -76,23 +77,13 @@ function validateCustomer(value: unknown): CustomerInput {
   return { name, fullName: name, email, phone, address, city, postalCode, country };
 }
 
-function validateItems(value: unknown): CheckoutItemInput[] {
-  if (!Array.isArray(value) || value.length === 0 || value.length > 50) throw new Error('INVALID_CHECKOUT_ITEMS');
-  return value.map((raw) => {
-    const item = raw as Partial<CheckoutItemInput>;
-    const productId = typeof item.productId === 'string' ? item.productId.trim() : '';
-    const quantity = Number(item.quantity);
-    if (!productId || !Number.isInteger(quantity) || quantity < 1 || quantity > 20) throw new Error('INVALID_CHECKOUT_ITEM');
-    return { productId, quantity, selectedVariant: typeof item.selectedVariant === 'string' ? item.selectedVariant : undefined };
-  });
-}
 
 async function buildServerOrder(itemsInput: CheckoutItemInput[]) {
   const db = getDb();
   const ids = [...new Set(itemsInput.map((item) => item.productId))];
   const { data: products, error } = await db
     .from('products')
-    .select('id,title,price,sku,images,status')
+    .select('id,title,price,sku,images,status,inventory,currency')
     .in('id', ids);
   if (error) throw new Error('PRODUCT_LOOKUP_FAILED');
   if (!products || products.length !== ids.length) throw new Error('PRODUCT_NOT_FOUND');
@@ -101,6 +92,7 @@ async function buildServerOrder(itemsInput: CheckoutItemInput[]) {
   const items = itemsInput.map((input) => {
     const product: any = productMap.get(input.productId);
     if (!product || product.status !== 'published') throw new Error('PRODUCT_NOT_AVAILABLE');
+    assertStock(product, input.quantity);
     const price = Number(product.price);
     if (!Number.isFinite(price) || price <= 0) throw new Error('INVALID_PRODUCT_PRICE');
     return {
@@ -133,11 +125,11 @@ async function insertOrder(params: {
 }) {
   const db = getDb();
   const prefix = params.paymentMethod === 'paypal' ? 'PP' : 'TR';
-  const orderId = `VIC-${prefix}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-  const paymentStatus = params.paymentMethod === 'paypal' ? 'pending' : 'pending_verification';
+  const { id: orderId, orderNumber } = orderIdentity(prefix);
+  const paymentStatus = 'pending';
   const row = {
     id: orderId,
-    order_number: orderId,
+    order_number: orderNumber,
     customer_email: params.customer.email,
     customer_name: params.customer.fullName || params.customer.name,
     customer_phone: params.customer.phone,
@@ -217,17 +209,21 @@ export function createPaymentV2Router(): Router {
     const cfg = storeConfig();
     res.json({
       storeCurrency: cfg.currency,
-      paypalConfigured: Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET),
+      checkoutEnabled: checkoutEnabled(),
+      paypalClientId: process.env.PAYPAL_CLIENT_ID || null,
+      paypalConfigured: checkoutEnabled() && paymentDatabaseConfigured() && Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET),
       paypalCurrency: 'USD',
       paypalConversionConfigured: cfg.currency === 'USD' || cfg.storeToUsdRate > 0,
-      transferConfigured: Boolean(process.env.BANK_TRANSFER_PUBLIC_INSTRUCTIONS || process.env.VITE_BANK_TRANSFER_INSTRUCTIONS),
+      transferConfigured: checkoutEnabled() && paymentDatabaseConfigured() && Boolean(process.env.BANK_TRANSFER_PUBLIC_INSTRUCTIONS || process.env.VITE_BANK_TRANSFER_INSTRUCTIONS),
     });
   });
 
   router.post('/transfer/order', async (req, res) => {
     try {
+      if (!(process.env.BANK_TRANSFER_PUBLIC_INSTRUCTIONS || process.env.VITE_BANK_TRANSFER_INSTRUCTIONS)) throw new Error('TRANSFER_NOT_CONFIGURED');
+      requireCheckoutEnabled();
       const customer = validateCustomer(req.body?.customer);
-      const requestedItems = validateItems(req.body?.items);
+      const requestedItems = validateCheckoutItems(req.body?.items);
       const order = await buildServerOrder(requestedItems);
       const orderId = await insertOrder({
         customer,
@@ -257,8 +253,10 @@ export function createPaymentV2Router(): Router {
 
   router.post('/paypal/order', async (req, res) => {
     try {
+      if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_CLIENT_SECRET) throw new Error('PAYMENT_NOT_CONFIGURED');
+      requireCheckoutEnabled();
       const customer = validateCustomer(req.body?.customer);
-      const requestedItems = validateItems(req.body?.items);
+      const requestedItems = validateCheckoutItems(req.body?.items);
       const order = await buildServerOrder(requestedItems);
       const totalUsd = toUsd(order.total, order.cfg.storeToUsdRate);
       const orderId = await insertOrder({
@@ -274,7 +272,7 @@ export function createPaymentV2Router(): Router {
       const token = await getPayPalAccessToken();
       const paypalResponse = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'PayPal-Request-Id': orderId },
         body: JSON.stringify({
           intent: 'CAPTURE',
           purchase_units: [{
@@ -291,6 +289,8 @@ export function createPaymentV2Router(): Router {
         await audit('PAYPAL_ORDER_CREATE_FAILED', orderId, { status: paypalResponse.status });
         return res.status(502).json({ error: 'PAYPAL_ORDER_CREATE_FAILED', orderId });
       }
+      const { error: bindError } = await order.db.from('orders').update({ provider_order_id: paypalData.id, provider_amount: totalUsd, provider_currency: 'USD' }).eq('id', orderId);
+      if (bindError) throw new Error('ORDER_PROVIDER_BIND_FAILED');
       await audit('PAYPAL_ORDER_CREATED', orderId, { paypalOrderId: paypalData.id, totalUsd });
       return res.status(201).json({ orderId, paypalOrderId: paypalData.id, total: order.total, currency: order.cfg.currency, totalUsd });
     } catch (error: any) {
@@ -309,7 +309,7 @@ export function createPaymentV2Router(): Router {
       const db = getDb();
       const { data: localOrder, error: lookupError } = await db
         .from('orders')
-        .select('id,total,currency,payment_method,payment_status')
+        .select('id,total,currency,payment_method,payment_status,provider_order_id,provider_amount,provider_currency')
         .eq('id', orderId)
         .single();
       if (lookupError || !localOrder) return res.status(404).json({ error: 'ORDER_NOT_FOUND' });
@@ -317,12 +317,13 @@ export function createPaymentV2Router(): Router {
         return res.status(409).json({ error: 'ORDER_NOT_PAYABLE' });
       }
 
-      const cfg = storeConfig();
-      const expectedUsd = toUsd(Number(localOrder.total), cfg.storeToUsdRate);
+      if (localOrder.provider_order_id !== paypalOrderId) return res.status(409).json({ error: 'ORDER_PROVIDER_ID_MISMATCH' });
+      const expectedUsd = Number(localOrder.provider_amount);
+      if (!Number.isFinite(expectedUsd) || expectedUsd <= 0 || localOrder.provider_currency !== 'USD') throw new Error('ORDER_PROVIDER_AMOUNT_MISSING');
       const token = await getPayPalAccessToken();
       const captureResponse = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders/${encodeURIComponent(paypalOrderId)}/capture`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'PayPal-Request-Id': orderId },
       });
       const captureData: any = await captureResponse.json();
       if (!captureResponse.ok || captureData.status !== 'COMPLETED') {
@@ -335,7 +336,7 @@ export function createPaymentV2Router(): Router {
       const referenceId = unit?.reference_id || unit?.custom_id;
       const capturedValue = Number(capture?.amount?.value);
       const capturedCurrency = capture?.amount?.currency_code;
-      if (referenceId !== orderId || capturedCurrency !== 'USD' || !Number.isFinite(capturedValue) || Math.abs(capturedValue - expectedUsd) > 0.01) {
+      if (capture?.status !== 'COMPLETED' || referenceId !== orderId || capturedCurrency !== 'USD' || !Number.isFinite(capturedValue) || Math.round(capturedValue * 100) !== Math.round(expectedUsd * 100)) {
         await audit('PAYMENT_CAPTURE_MISMATCH', orderId, { paypalOrderId, referenceId, capturedValue, capturedCurrency, expectedUsd });
         return res.status(409).json({ error: 'PAYMENT_CAPTURE_MISMATCH' });
       }
@@ -364,12 +365,17 @@ export function createPaymentV2Router(): Router {
       const orderId = resource.custom_id || resource.supplementary_data?.related_ids?.order_id || null;
       if (eventType === 'PAYMENT.CAPTURE.COMPLETED' && resource.custom_id) {
         const db = getDb();
-        await db.from('orders').update({
+        const { data: local, error: lookupError } = await db.from('orders').select('id,provider_order_id,provider_amount,provider_currency,payment_status').eq('id', resource.custom_id).eq('payment_method', 'paypal').single();
+        if (lookupError || !local) throw new Error('ORDER_NOT_FOUND');
+        if (local.provider_order_id !== resource.supplementary_data?.related_ids?.order_id) throw new Error('ORDER_PROVIDER_ID_MISMATCH');
+        assertPaymentAmount(local.provider_amount, resource.amount?.value, local.provider_currency, resource.amount?.currency_code);
+        const { error: updateError } = await db.from('orders').update({
           payment_status: 'paid',
           payment_id: resource.id,
           payment_gateway: 'paypal',
           status: 'confirmed',
-        }).eq('id', resource.custom_id).eq('payment_method', 'paypal');
+        }).eq('id', resource.custom_id).eq('payment_method', 'paypal').eq('payment_status', 'pending');
+        if (updateError) throw new Error('ORDER_PAYMENT_UPDATE_FAILED');
         await audit('PAYPAL_WEBHOOK_PAYMENT_COMPLETED', resource.custom_id, { paymentId: resource.id });
       }
       return res.status(200).json({ received: true, eventType, orderId });

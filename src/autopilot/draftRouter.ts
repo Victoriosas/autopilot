@@ -3,16 +3,13 @@ import { runApprovalCouncil } from './approvalCouncil';
 import { getAutopilotPrincipal, requireControlPlaneAuth } from './auth';
 import { buildCommercialDraft, type CommercialFacts } from './draftBuilder';
 import {
-  claimProductDraftPublication,
+  publishProductDraftAtomically,
   draftPersistenceStatus,
   getPersistedProductDraft,
   listPersistedProductDrafts,
-  markProductDraftPublished,
   persistProductDraft,
-  releaseProductDraftPublication,
   reviewProductDraft,
 } from './draftStore';
-import { publishApprovedDraft } from './governedPublisher';
 import type { OpportunityCandidate } from './opportunityEngine';
 
 export function createDraftRouter(): Router {
@@ -105,7 +102,6 @@ export function createDraftRouter(): Router {
   });
 
   router.post('/:id/publish', async (req, res) => {
-    let claimAcquired = false;
     try {
       const persisted = await getPersistedProductDraft(req.params.id);
 
@@ -128,11 +124,8 @@ export function createDraftRouter(): Router {
         });
       }
 
-      const claimed = await claimProductDraftPublication(persisted.id);
-      claimAcquired = true;
-      const product = await publishApprovedDraft(claimed.draft);
-      const publishedDraft = await markProductDraftPublished({ id: claimed.id, productId: product.productId });
-      claimAcquired = false;
+      const publishedDraft = await publishProductDraftAtomically(persisted.id);
+      const product = { productId: publishedDraft.publishedProductId, status: 'published' };
 
       return res.json({
         draft: publishedDraft,
@@ -145,7 +138,6 @@ export function createDraftRouter(): Router {
         },
       });
     } catch (error: any) {
-      if (claimAcquired) await releaseProductDraftPublication(req.params.id).catch(() => undefined);
       return res.status(400).json({ error: error?.message || 'Governed publication failed' });
     }
   });

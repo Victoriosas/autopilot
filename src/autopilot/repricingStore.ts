@@ -79,45 +79,8 @@ export async function recordRepricingCouncil(id: string, council: RepricingCounc
 }
 
 export async function applyApprovedRepricing(id: string): Promise<PersistedRepricingProposal> {
-  const record = await getRepricingProposal(id);
-  if (record.status === 'applied') return record;
-  if (record.status !== 'ai_approved') throw new Error('repricing proposal is not ai_approved');
-  if (record.proposal.policy.ownerApprovalRequired) throw new Error('repricing proposal requires explicit owner approval');
-
-  const proposedPrice = record.proposal.proposedPrice;
-  if (!proposedPrice || !Number.isFinite(proposedPrice) || proposedPrice <= 0) throw new Error('approved proposal has no valid price');
-
-  const db = getDb();
-  const { data: product, error: productReadError } = await db
-    .from('products')
-    .select('id,price,status')
-    .eq('id', record.productId)
-    .single();
-  if (productReadError || !product) throw new Error(`Unable to load product before repricing: ${productReadError?.message || 'not found'}`);
-  if (product.status !== 'published') throw new Error('product is no longer published');
-
-  const livePrice = Number(product.price);
-  if (!Number.isFinite(livePrice) || Math.abs(livePrice - record.proposal.currentPrice) > 0.01) {
-    throw new Error('product price changed after proposal creation; generate a fresh repricing proposal');
-  }
-
-  const { error: productError } = await db
-    .from('products')
-    .update({ price: proposedPrice })
-    .eq('id', record.productId)
-    .eq('status', 'published')
-    .eq('price', record.proposal.currentPrice);
-  if (productError) throw new Error(`Unable to apply product price: ${productError.message}`);
-
-  const now = new Date().toISOString();
-  const { data, error } = await db
-    .from('autopilot_repricing_proposals')
-    .update({ status: 'applied', applied_at: now, updated_at: now })
-    .eq('id', id)
-    .eq('status', 'ai_approved')
-    .select('*')
-    .single();
-  if (error) throw new Error(`Unable to mark repricing as applied: ${error.message}`);
+  const { data, error } = await getDb().rpc('apply_autopilot_repricing', { proposal_id: id });
+  if (error) throw new Error(`Unable to apply repricing: ${error.message}`);
   return mapRow(data);
 }
 

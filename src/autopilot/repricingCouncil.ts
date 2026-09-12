@@ -51,7 +51,7 @@ PROPUESTA: ${JSON.stringify(proposal)}
   }
   return {
     agent: agent.id,
-    decision: raw.decision,
+    decision: raw.decision === 'approve' && clamp(raw.confidence) >= 75 && typeof raw.reason === 'string' && raw.reason.trim() ? 'approve' : 'reject',
     confidence: clamp(raw.confidence),
     reason: typeof raw.reason === 'string' && raw.reason.trim() ? raw.reason.trim().slice(0, 1000) : 'Sin justificación utilizable.',
   };

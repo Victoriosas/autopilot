@@ -28,7 +28,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
     <header className="sticky top-0 z-40 bg-[#0a0c14]/90 backdrop-blur-2xl border-b border-white/10">
       <div className="bg-white/[0.02] border-b border-white/5 px-4 py-1.5 text-xs text-slate-400">
         <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-4">
-          <span>Compra segura · disponibilidad y entrega confirmadas en checkout</span>
+          <span>Catálogo en preparación · pagos todavía no habilitados</span>
           {!isAuthLoading && userRole === 'admin' && (
             <button
               onClick={() => setViewMode('admin')}

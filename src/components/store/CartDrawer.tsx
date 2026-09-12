@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Trash2, ShoppingBag, ArrowRight, ShieldCheck, Truck } from 'lucide-react';
+import { calculateCartTotals, STORE_CURRENCY, FREE_SHIPPING_FROM } from '../../services/revenue';
 import { useApp } from '../../context/AppContext';
 
 interface CartDrawerProps {
@@ -11,12 +12,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onProceedToCheckout }) =
 
   if (!isCartOpen) return null;
 
-  const subtotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
-  const exchangeRate = 1.08;
-  const freeShippingThresholdUsd = 80;
-  const subtotalUsd = +(subtotal * exchangeRate).toFixed(2);
-  const progressToFreeShipping = Math.min(100, (subtotalUsd / freeShippingThresholdUsd) * 100);
-  const remainingForFreeShipping = Math.max(0, +(freeShippingThresholdUsd - subtotalUsd).toFixed(2));
+  const totals = calculateCartTotals(cart);
+  const subtotalUsd = totals.subtotal;
+  const freeShippingThresholdUsd = FREE_SHIPPING_FROM;
+  const progressToFreeShipping = FREE_SHIPPING_FROM > 0 ? Math.min(100, totals.subtotal / FREE_SHIPPING_FROM * 100) : 0;
+  const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_FROM - totals.subtotal);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-xl animate-fadeIn">
@@ -44,14 +44,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onProceedToCheckout }) =
         </div>
 
         {/* Free Shipping Progress Indicator */}
-        <div className="px-6 py-3.5 bg-white/[0.02] border-b border-white/10 text-xs">
+        {FREE_SHIPPING_FROM > 0 && <div className="px-6 py-3.5 bg-white/[0.02] border-b border-white/10 text-xs">
           <div className="flex items-center justify-between text-slate-300 mb-2">
             <span className="flex items-center gap-1.5 font-medium">
               <Truck className="w-3.5 h-3.5 text-indigo-400" />
               {remainingForFreeShipping === 0 ? (
                 <span className="text-emerald-400 font-semibold">¡Envío Gratuito Conseguido!</span>
               ) : (
-                <span>Faltan <strong className="text-indigo-300">${remainingForFreeShipping}</strong> para Envío Gratis</span>
+                <span>Faltan <strong className="text-indigo-300">{STORE_CURRENCY} {remainingForFreeShipping.toFixed(2)}</strong> para Envío Gratis</span>
               )}
             </span>
             <span className="font-mono text-slate-400">{Math.round(progressToFreeShipping)}%</span>
@@ -62,7 +62,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onProceedToCheckout }) =
               style={{ width: `${progressToFreeShipping}%` }}
             />
           </div>
-        </div>
+        </div>}
 
         {/* Cart Item List */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -103,7 +103,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onProceedToCheckout }) =
                     </span>
                   )}
                   <span className="text-xs font-bold text-white block mt-1 font-mono">
-                    ${(item.product.price * exchangeRate).toFixed(2)}
+                    {STORE_CURRENCY} {item.product.price.toFixed(2)}
                   </span>
 
                   <div className="flex items-center gap-3 mt-2">
@@ -144,22 +144,18 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onProceedToCheckout }) =
             <div className="space-y-1.5 text-xs">
               <div className="flex justify-between text-slate-400">
                 <span>Subtotal</span>
-                <span className="font-mono text-slate-200">${subtotalUsd.toFixed(2)}</span>
+                <span className="font-mono text-slate-200">{STORE_CURRENCY} {subtotalUsd.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-slate-400">
                 <span>Envío estimado</span>
                 <span className="font-mono text-slate-200">
-                  {subtotalUsd >= freeShippingThresholdUsd ? (
-                    <span className="text-emerald-400 font-semibold">GRATIS</span>
-                  ) : (
-                    '$5.95'
-                  )}
+                  {STORE_CURRENCY} {totals.shipping.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between text-sm font-bold text-white pt-2 border-t border-white/10">
                 <span>Total Estimado</span>
                 <span className="text-indigo-400 text-base font-mono">
-                  ${(subtotalUsd + (subtotalUsd >= freeShippingThresholdUsd ? 0 : 5.95)).toFixed(2)}
+                  {STORE_CURRENCY} {totals.total.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -177,10 +173,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onProceedToCheckout }) =
 
             <div className="flex items-center justify-center gap-4 text-[10px] text-slate-500">
               <span className="flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-emerald-400" /> Pago Cifrado SSL 256-bit
+                <ShieldCheck className="w-3 h-3 text-emerald-400" /> Revisá el total al continuar
               </span>
               <span>•</span>
-              <span>Garantía Oficial Victoriosa</span>
+              <span>Condiciones por confirmar</span>
             </div>
           </div>
         )}

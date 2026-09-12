@@ -2,7 +2,7 @@ name: Autopilot Core v4
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, 'codex/**']
   push:
     branches:
       - 'codex/**'
@@ -31,8 +31,8 @@ jobs:
       - name: Typecheck
         run: npm run lint
 
-      - name: Pricing regression tests
-        run: node --import tsx --test src/autopilot/pricingEngine.test.ts
+      - name: Regression tests
+        run: npm test
 
       - name: Build
         run: npm run build

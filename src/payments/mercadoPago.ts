@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { orderIdentity, checkoutEnabled, paymentDatabaseConfigured, requireCheckoutEnabled, validateCheckoutItems, assertStock, assertPaymentAmount } from './safety';
 import { createClient } from '@supabase/supabase-js';
 import { Router } from 'express';
 
@@ -64,21 +64,11 @@ function validateCustomer(value: unknown): Required<Pick<CustomerInput, 'email'>
   return { email, name, fullName: name, phone, address, city, postalCode, country };
 }
 
-function validateItems(value: unknown): CheckoutItemInput[] {
-  if (!Array.isArray(value) || value.length === 0 || value.length > 50) throw new Error('INVALID_CHECKOUT_ITEMS');
-  return value.map((raw) => {
-    const item = raw as Partial<CheckoutItemInput>;
-    const productId = typeof item.productId === 'string' ? item.productId.trim() : '';
-    const quantity = Number(item.quantity);
-    if (!productId || !Number.isInteger(quantity) || quantity < 1 || quantity > 20) throw new Error('INVALID_CHECKOUT_ITEM');
-    return { productId, quantity, selectedVariant: typeof item.selectedVariant === 'string' ? item.selectedVariant : undefined };
-  });
-}
 
 async function priceCheckout(itemsInput: CheckoutItemInput[]) {
   const db = getDb();
   const ids = [...new Set(itemsInput.map((item) => item.productId))];
-  const { data: products, error } = await db.from('products').select('id,title,price,sku,images,status').in('id', ids);
+  const { data: products, error } = await db.from('products').select('id,title,price,sku,images,status,inventory,currency').in('id', ids);
   if (error) throw new Error('PRODUCT_LOOKUP_FAILED');
   if (!products || products.length !== ids.length) throw new Error('PRODUCT_NOT_FOUND');
 
@@ -86,6 +76,7 @@ async function priceCheckout(itemsInput: CheckoutItemInput[]) {
   const items = itemsInput.map((input) => {
     const product: any = map.get(input.productId);
     if (!product || product.status !== 'published') throw new Error('PRODUCT_NOT_AVAILABLE');
+    assertStock(product, input.quantity);
     const price = Number(product.price);
     if (!Number.isFinite(price) || price <= 0) throw new Error('INVALID_PRODUCT_PRICE');
     return {
@@ -108,10 +99,10 @@ async function priceCheckout(itemsInput: CheckoutItemInput[]) {
 }
 
 async function createLocalOrder(customer: CustomerInput, priced: Awaited<ReturnType<typeof priceCheckout>>) {
-  const orderId = `VIC-MP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+  const { id: orderId, orderNumber } = orderIdentity('MP');
   const { error } = await priced.db.from('orders').insert({
     id: orderId,
-    order_number: orderId,
+    order_number: orderNumber,
     customer_email: customer.email,
     customer_name: customer.fullName || customer.name,
     customer_phone: customer.phone,
@@ -163,20 +154,22 @@ async function reconcileMpOrder(mpOrderId: string) {
   const db = getDb();
   const { data: local, error } = await db
     .from('orders')
-    .select('id,total,currency,payment_method,payment_status')
+    .select('id,total,currency,payment_method,payment_status,provider_order_id')
     .eq('id', localOrderId)
     .single();
   if (error || !local) throw new Error('ORDER_NOT_FOUND');
   if (local.payment_method !== 'mercadopago') throw new Error('ORDER_PROVIDER_MISMATCH');
 
+  if (local.provider_order_id !== mpOrderId) throw new Error('ORDER_PROVIDER_ID_MISMATCH');
   const expected = Number(local.total);
   const providerTotal = Number(provider.total_amount);
   const paidTotal = Number(provider.total_paid_amount ?? 0);
-  if (!Number.isFinite(providerTotal) || Math.abs(providerTotal - expected) > 0.01) {
+  if (!Number.isFinite(providerTotal) || Math.round(providerTotal * 100) !== Math.round(expected * 100)) {
     await audit('MERCADOPAGO_AMOUNT_MISMATCH', localOrderId, { mpOrderId, expected, providerTotal, paidTotal });
     throw new Error('MERCADOPAGO_AMOUNT_MISMATCH');
   }
 
+  if (local.currency !== 'UYU' || (provider.currency_id && provider.currency_id !== local.currency)) throw new Error('PAYMENT_CURRENCY_MISMATCH');
   const processed = provider.status === 'processed' && paidTotal + 0.001 >= expected;
   if (processed && local.payment_status !== 'paid') {
     const { error: updateError } = await db.from('orders').update({
@@ -184,7 +177,7 @@ async function reconcileMpOrder(mpOrderId: string) {
       payment_id: mpOrderId,
       payment_gateway: 'mercadopago',
       status: 'confirmed',
-    }).eq('id', localOrderId).eq('payment_method', 'mercadopago');
+    }).eq('id', localOrderId).eq('payment_method', 'mercadopago').eq('payment_status', 'pending');
     if (updateError) throw new Error('ORDER_PAYMENT_UPDATE_FAILED');
     await audit('REVENUE_PAYMENT_COMPLETED', localOrderId, { provider: 'mercadopago', mpOrderId, total: expected, currency: local.currency });
   }
@@ -204,7 +197,7 @@ export function createMercadoPagoRouter(): Router {
 
   router.get('/config', (_req, res) => {
     res.json({
-      configured: Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN?.trim() && process.env.PUBLIC_APP_URL?.trim()),
+      configured: checkoutEnabled() && paymentDatabaseConfigured() && Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN?.trim() && process.env.PUBLIC_APP_URL?.trim()),
       provider: 'mercadopago',
       checkout: 'pro-orders',
       storeCurrency: storeConfig().currency,
@@ -214,8 +207,12 @@ export function createMercadoPagoRouter(): Router {
   router.post('/order', async (req, res) => {
     let localOrderId: string | null = null;
     try {
+      requireCheckoutEnabled();
+      accessToken();
+      publicAppUrl();
+      if (storeConfig().currency !== 'UYU') throw new Error('MERCADOPAGO_CURRENCY_NOT_CONFIGURED');
       const customer = validateCustomer(req.body?.customer);
-      const requestedItems = validateItems(req.body?.items);
+      const requestedItems = validateCheckoutItems(req.body?.items);
       const priced = await priceCheckout(requestedItems);
       localOrderId = await createLocalOrder(customer, priced);
       const appUrl = publicAppUrl();
@@ -243,7 +240,7 @@ export function createMercadoPagoRouter(): Router {
           Authorization: `Bearer ${accessToken()}`,
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          'X-Idempotency-Key': randomUUID(),
+          'X-Idempotency-Key': localOrderId,
         },
         body: JSON.stringify({
           type: 'online',
@@ -271,6 +268,8 @@ export function createMercadoPagoRouter(): Router {
         return res.status(502).json({ error: 'MERCADOPAGO_ORDER_CREATE_FAILED', orderId: localOrderId });
       }
 
+      const { error: bindError } = await priced.db.from('orders').update({ provider_order_id: String(provider.id), provider_amount: priced.total, provider_currency: priced.cfg.currency }).eq('id', localOrderId);
+      if (bindError) throw new Error('ORDER_PROVIDER_BIND_FAILED');
       await audit('MERCADOPAGO_ORDER_CREATED', localOrderId, { providerOrderId: provider.id, total: priced.total, currency: priced.cfg.currency });
       return res.status(201).json({
         orderId: localOrderId,
@@ -297,8 +296,8 @@ export function createMercadoPagoRouter(): Router {
       return res.status(200).json({ received: true, reconciled: true, ...result });
     } catch (error: any) {
       console.warn('Mercado Pago webhook reconcile failed:', error?.message || error);
-      // Acknowledge notifications so provider retries do not become a denial-of-service loop.
-      return res.status(200).json({ received: true, reconciled: false });
+      // Preserve provider retries after transient database/API failures.
+      return res.status(503).json({ received: true, reconciled: false });
     }
   });
 

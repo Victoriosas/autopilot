@@ -113,54 +113,6 @@ export async function reviewProductDraft(input: {
   return mapRow(data);
 }
 
-export async function claimProductDraftPublication(id: string): Promise<PersistedProductDraft> {
-  if (!db) throw new Error('Draft persistence unavailable: SUPABASE_SERVICE_ROLE_KEY is not configured');
-
-  const { data, error } = await db
-    .from('autopilot_product_drafts')
-    .update({ status: 'publishing', updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .eq('status', 'ai_approved')
-    .is('published_product_id', null)
-    .select(SELECT_COLUMNS)
-    .single();
-
-  if (error) throw new Error(`Unable to claim product draft for publication: ${error.message}`);
-  return mapRow(data);
-}
-
-export async function releaseProductDraftPublication(id: string): Promise<void> {
-  if (!db) return;
-  await db
-    .from('autopilot_product_drafts')
-    .update({ status: 'ai_approved', updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .eq('status', 'publishing')
-    .is('published_product_id', null);
-}
-
-export async function markProductDraftPublished(input: { id: string; productId: string }): Promise<PersistedProductDraft> {
-  if (!db) throw new Error('Draft persistence unavailable: SUPABASE_SERVICE_ROLE_KEY is not configured');
-
-  const now = new Date().toISOString();
-  const { data, error } = await db
-    .from('autopilot_product_drafts')
-    .update({
-      status: 'published',
-      published_product_id: input.productId,
-      published_at: now,
-      updated_at: now,
-    })
-    .eq('id', input.id)
-    .eq('status', 'publishing')
-    .is('published_product_id', null)
-    .select(SELECT_COLUMNS)
-    .single();
-
-  if (error) throw new Error(`Unable to mark product draft published: ${error.message}`);
-  return mapRow(data);
-}
-
 export async function listPersistedProductDrafts(limit = 50): Promise<PersistedProductDraft[]> {
   if (!db) return [];
 
@@ -173,4 +125,11 @@ export async function listPersistedProductDrafts(limit = 50): Promise<PersistedP
 
   if (error) throw new Error(`Unable to list product drafts: ${error.message}`);
   return (data || []).map(mapRow);
+}
+
+export async function publishProductDraftAtomically(id: string): Promise<PersistedProductDraft> {
+  if (!db) throw new Error('Draft persistence unavailable');
+  const { data, error } = await db.rpc('publish_autopilot_draft', { draft_id: id });
+  if (error) throw new Error(`Unable to publish draft: ${error.message}`);
+  return mapRow(data);
 }

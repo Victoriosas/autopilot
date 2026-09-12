@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ProductCard } from './ProductCard';
 import { SlidersHorizontal, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
+import { STORE_CURRENCY } from '../../services/revenue';
 import { useApp } from '../../context/AppContext';
 import type { Product } from '../../types';
 
@@ -15,7 +16,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   searchQuery,
   onSelectProduct
 }) => {
-  const { publishedProducts, setViewMode } = useApp();
+  const { publishedProducts, setViewMode, userProfile } = useApp();
   const [sortBy, setSortBy] = useState<'featured' | 'price_asc' | 'price_desc' | 'rating' | 'score'>('featured');
   const [priceFilter, setPriceFilter] = useState<number>(300);
 
@@ -66,13 +67,13 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
         <div>
           <h2 className="text-2xl font-serif font-bold text-white flex items-center gap-2">
-            <span>{activeCategory === 'Todos' ? 'Catálogo Oficial Publicado' : activeCategory}</span>
+            <span>{activeCategory === 'Todos' ? 'Catálogo Victoriosa' : activeCategory}</span>
             <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-white/10 text-indigo-300 font-normal border border-white/10">
               {filteredProducts.length} {filteredProducts.length === 1 ? 'producto' : 'productos'}
             </span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Solo productos rigurosamente aprobados por el Autopilot aparecen en esta tienda.
+            Explorá el catálogo. Estamos verificando disponibilidad y condiciones de venta.
           </p>
         </div>
 
@@ -80,7 +81,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         <div className="flex flex-wrap items-center gap-3 text-xs">
           <div className="flex items-center gap-2 bg-white/5 px-3.5 py-2 rounded-xl border border-white/10 backdrop-blur-md">
             <span className="text-slate-400">Hasta:</span>
-            <span className="font-semibold text-slate-200">${(priceFilter * 1.08).toFixed(0)}</span>
+            <span className="font-semibold text-slate-200">{STORE_CURRENCY} {priceFilter.toFixed(0)}</span>
             <input
               type="range"
               min="20"
@@ -127,7 +128,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
           <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto">
             {searchQuery 
               ? `No encontramos resultados para "${searchQuery}". Intenta con otros términos.`
-              : `No hay productos con precio inferior a $${(priceFilter * 1.08).toFixed(0)} en la categoría ${activeCategory}.`}
+              : `No hay productos con precio inferior a ${STORE_CURRENCY} ${priceFilter.toFixed(0)} en la categoría ${activeCategory}.`}
           </p>
           <div className="mt-6 flex justify-center gap-3">
             <button
@@ -138,12 +139,12 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
             >
               Restablecer Filtros
             </button>
-            <button
-              onClick={() => setViewMode('admin')}
+            {userProfile?.role === 'admin' && <button
+              onClick={() => { if (userProfile?.role === 'admin') setViewMode('admin'); }}
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white rounded-xl transition-all shadow-lg shadow-indigo-600/25"
             >
               Ir a Autopilot para Aprobar Candidatos
-            </button>
+            </button>}
           </div>
         </div>
       )}
