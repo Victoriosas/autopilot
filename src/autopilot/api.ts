@@ -4,6 +4,11 @@ import { controlPlaneAuthStatus, getAutopilotPrincipal, requireControlPlaneAuth 
 import { getModelRouterStatus } from './modelRouter';
 import { modelTelemetryStatus } from './modelTelemetry';
 import { getTaskOrchestrator } from './orchestrator';
+import {
+  isActor,
+  isAutopilotAction,
+  type PolicyContext,
+} from './policyEngine';
 import { rerankDocuments } from './reranker';
 import {
   listPersistedTasks,
@@ -11,7 +16,31 @@ import {
   persistTask,
   taskPersistenceStatus,
 } from './taskStore';
-import type { Actor, AutopilotAction } from './policyEngine';
+
+function buildPolicyContext(body: Record<string, unknown>): Omit<PolicyContext, 'actor' | 'action'> {
+  const context: Omit<PolicyContext, 'actor' | 'action'> = {};
+
+  if (body.amountUsd !== undefined) {
+    const amountUsd = Number(body.amountUsd);
+    if (!Number.isFinite(amountUsd) || amountUsd < 0) {
+      throw new Error('amountUsd must be a non-negative finite number');
+    }
+    context.amountUsd = amountUsd;
+  }
+
+  if (body.targetBranch !== undefined) {
+    if (typeof body.targetBranch !== 'string' || !body.targetBranch.trim()) {
+      throw new Error('targetBranch must be a non-empty string');
+    }
+    context.targetBranch = body.targetBranch.trim();
+  }
+
+  // Risk supplied by an API caller is not authoritative. Sensitive actions are
+  // evaluated conservatively until a trusted internal risk assessor is wired in.
+  context.risk = 'high';
+
+  return context;
+}
 
 export function createAutopilotV4Router(): Router {
   const router = Router();
@@ -48,15 +77,17 @@ export function createAutopilotV4Router(): Router {
 
   router.post('/tasks', async (req, res) => {
     try {
-      const { goal, actor, action, input } = req.body as {
-        goal?: string;
-        actor?: Actor;
-        action?: AutopilotAction;
-        input?: unknown;
-      };
+      const body = (req.body || {}) as Record<string, unknown>;
+      const { goal, actor, action, input } = body;
 
-      if (!goal || !actor || !action) {
-        return res.status(400).json({ error: 'goal, actor and action are required' });
+      if (typeof goal !== 'string' || !goal.trim()) {
+        return res.status(400).json({ error: 'goal must be a non-empty string' });
+      }
+      if (!isActor(actor)) {
+        return res.status(400).json({ error: 'invalid actor' });
+      }
+      if (!isAutopilotAction(action)) {
+        return res.status(400).json({ error: 'invalid action' });
       }
 
       const principal = getAutopilotPrincipal(res);
@@ -64,7 +95,14 @@ export function createAutopilotV4Router(): Router {
         return res.status(403).json({ error: 'Codex credentials may only create codex tasks' });
       }
 
-      const task = orchestrator.createTask(goal, actor, action, input);
+      let policyContext: Omit<PolicyContext, 'actor' | 'action'>;
+      try {
+        policyContext = buildPolicyContext(body);
+      } catch (error: any) {
+        return res.status(400).json({ error: error.message });
+      }
+
+      const task = orchestrator.createTask(goal.trim(), actor, action, input, policyContext);
       await persistTask(task);
       await Promise.all(
         task.audit.map((event) =>
@@ -72,7 +110,10 @@ export function createAutopilotV4Router(): Router {
             taskId: task.id,
             at: event.at,
             event: event.event,
-            details: { ...(typeof event.details === 'object' && event.details ? event.details : {}), principal: principal.role },
+            details: {
+              ...(typeof event.details === 'object' && event.details ? event.details : {}),
+              principal: principal.role,
+            },
           })
         )
       );
@@ -94,7 +135,10 @@ export function createAutopilotV4Router(): Router {
         taskId: task.id,
         at: event.at,
         event: event.event,
-        details: { ...(typeof event.details === 'object' && event.details ? event.details : {}), principal: principal.role },
+        details: {
+          ...(typeof event.details === 'object' && event.details ? event.details : {}),
+          principal: principal.role,
+        },
       });
       res.json({ task });
     } catch (error: any) {
