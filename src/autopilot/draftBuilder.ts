@@ -101,7 +101,6 @@ function deterministicDraft(candidate: OpportunityCandidate, result: Opportunity
   const description = compactText(facts.description) || `${title}. Producto seleccionado para evaluación comercial en ${brand}. La publicación final requiere aprobación del Consejo Autopilot y verificación de los datos del proveedor.`;
   const tags = sanitizeStringArray([brand, category, ...(candidate.tags || []), ...slugWords(title)], 12);
   const price = result.pricing.recommendedPrice;
-  const compareAtPrice = result.pricing.premiumCeiling > price ? result.pricing.premiumCeiling : undefined;
 
   return {
     status: 'draft',
@@ -117,7 +116,7 @@ function deterministicDraft(candidate: OpportunityCandidate, result: Opportunity
     specs: facts.specs || {},
     images,
     price,
-    compareAtPrice,
+    compareAtPrice: undefined,
     currency: result.pricing.currency,
     provenance: {
       sourceUrl: compactText(facts.sourceUrl) || compactText(candidate.sourceUrl) || undefined,
