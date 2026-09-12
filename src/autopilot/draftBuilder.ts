@@ -169,6 +169,17 @@ ${JSON.stringify(evidencePayload)}
     return base;
   }
 
+  const enhancedTags: string[] = Array.isArray(enhanced.tags)
+    ? Array.from(
+        new Set(
+          enhanced.tags
+            .filter((value: unknown): value is string => typeof value === 'string')
+            .map((value: string) => compactText(value))
+            .filter(Boolean)
+        )
+      ).slice(0, 12)
+    : base.tags;
+
   return {
     ...base,
     title: compactText(enhanced.title) || base.title,
@@ -176,9 +187,7 @@ ${JSON.stringify(evidencePayload)}
     description: compactText(enhanced.description) || base.description,
     seoTitle: (compactText(enhanced.seoTitle) || base.seoTitle).slice(0, 60),
     seoDescription: (compactText(enhanced.seoDescription) || base.seoDescription).slice(0, 155),
-    tags: Array.isArray(enhanced.tags)
-      ? Array.from(new Set(enhanced.tags.map(compactText).filter(Boolean))).slice(0, 12)
-      : base.tags,
+    tags: enhancedTags,
     provenance: {
       ...base.provenance,
       generatedFields: ['title', 'subtitle', 'description', 'seoTitle', 'seoDescription', 'tags'],
