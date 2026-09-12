@@ -135,7 +135,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {user ? 'Cuenta y Autenticación' : (mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta')}
               </h2>
               <p className="text-xs text-slate-400 font-mono">
-                Supabase Auth & Roles RBAC
+                Acceso seguro a tu cuenta
               </p>
             </div>
           </div>
@@ -155,7 +155,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <div className="space-y-1">
               <strong className="block text-amber-300 font-semibold">Acceso Administrativo Protegido</strong>
               <p className="text-slate-300">
-                El panel de control Autopilot, catálogo interno y fulfillment están resguardados en Supabase. Inicia sesión o regístrate como Administrador.
+                El área privada de gestión está protegida. Inicia sesión con una cuenta autorizada para continuar.
               </p>
             </div>
           </div>
@@ -190,7 +190,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     }}
                     className="flex-1 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/20 transition-all"
                   >
-                    Ir al Panel Autopilot
+                    Ir al área de gestión
                   </button>
                 )}
                 <button

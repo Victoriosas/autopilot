@@ -59,7 +59,7 @@ export const CustomerAccountModal: React.FC<CustomerAccountModalProps> = ({
               <h2 className="font-serif font-bold text-lg text-white">Mi Cuenta Victoriosa</h2>
               <p className="text-xs text-slate-400 font-mono">
                 {user && !user.isAnonymous 
-                  ? `${user.displayName || user.email} • Rol: ${userRole === 'admin' ? 'Administrador' : 'Cliente'}`
+                  ? `${user.displayName || user.email} • ${userRole === 'admin' ? 'Administrador' : 'Cliente'}`
                   : `Sesión de Invitado / Anónimo • Rol: ${userRole}`}
               </p>
             </div>
@@ -73,7 +73,7 @@ export const CustomerAccountModal: React.FC<CustomerAccountModalProps> = ({
               }}
               className="text-xs font-semibold px-3.5 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 transition-colors"
             >
-              {user && !user.isAnonymous ? 'Gestionar Sesión / RBAC' : 'Iniciar Sesión'}
+              {user && !user.isAnonymous ? 'Gestionar sesión' : 'Iniciar Sesión'}
             </button>
             <button
               onClick={onClose}
@@ -253,7 +253,7 @@ export const CustomerAccountModal: React.FC<CustomerAccountModalProps> = ({
                   }}
                   className="px-3 py-1 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs transition-colors"
                 >
-                  Gestionar Sesión / RBAC
+                  Gestionar sesión
                 </button>
               </div>
 
@@ -271,17 +271,17 @@ export const CustomerAccountModal: React.FC<CustomerAccountModalProps> = ({
                   </span>
                 </div>
                 <div>
-                  <span className="block text-[10px] uppercase text-slate-500">Identificador (UID)</span>
+                  <span className="block text-[10px] uppercase text-slate-500">Identificador</span>
                   <span className="text-slate-300 font-mono text-[11px] truncate block">
                     {user?.uid || 'Sin sesión activa'}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-[10px] uppercase text-slate-500">Rol Activo en Firestore</span>
+                      <span className="block text-[10px] uppercase text-slate-500">Tipo de cuenta</span>
                   <span className={`inline-flex items-center gap-1 font-bold ${
                     userRole === 'admin' ? 'text-indigo-400' : 'text-emerald-400'
                   }`}>
-                    {userRole === 'admin' ? 'Administrador (Control Total)' : 'Cliente (Tienda & Compras)'}
+                    {userRole === 'admin' ? 'Administrador' : 'Cliente'}
                   </span>
                 </div>
               </div>
