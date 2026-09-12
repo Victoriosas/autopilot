@@ -1,7 +1,5 @@
 import { getSourcingService } from './productSourcingService';
 
-const TWENTY_FOUR_HOURS = 86400;
-
 class SourcingScheduler {
   private intervalId: NodeJS.Timeout | null = null;
   private isRunning = false;
@@ -10,6 +8,11 @@ class SourcingScheduler {
   private lastVerifyAt: string | null = null;
 
   async start(): Promise<void> {
+    if (process.env.AUTOPILOT_LEGACY_SOURCING_ENABLED !== 'true') {
+      console.log('[Scheduler] Legacy sourcing scheduler disabled by safety policy');
+      return;
+    }
+
     const service = getSourcingService();
     const config = await service.getConfig();
 
@@ -19,7 +22,7 @@ class SourcingScheduler {
     }
 
     this.scheduleNext(config.scheduleInterval);
-    console.log(`[Scheduler] Started, interval: ${config.scheduleInterval}s (24h)`);
+    console.log(`[Scheduler] Started, interval: ${config.scheduleInterval}s`);
   }
 
   private scheduleNext(intervalSeconds: number): void {
@@ -35,11 +38,16 @@ class SourcingScheduler {
 
     this.intervalId = setTimeout(async () => {
       await this.execute();
-      await this.scheduleNext(intervalSeconds);
+      this.scheduleNext(intervalSeconds);
     }, delayMs);
   }
 
   async execute(): Promise<void> {
+    if (process.env.AUTOPILOT_LEGACY_SOURCING_ENABLED !== 'true') {
+      console.log('[Scheduler] Execution blocked: AUTOPILOT_LEGACY_SOURCING_ENABLED is not true');
+      return;
+    }
+
     if (this.isRunning) {
       console.log('[Scheduler] Already running, skipping');
       return;
@@ -51,20 +59,15 @@ class SourcingScheduler {
 
     try {
       const service = getSourcingService();
-
-      // Step 1: Get category counts before sourcing
       const countsBefore = await service.getProductsCountByCategory();
       console.log('[Scheduler] Category counts before sourcing:', countsBefore);
 
-      // Step 2: Run sourcing (will prioritize categories with <30)
       const result = await service.runSourcing();
       console.log('[Scheduler] Sourcing completed:', result);
 
-      // Step 3: Get category counts after sourcing
       const countsAfter = await service.getProductsCountByCategory();
       console.log('[Scheduler] Category counts after sourcing:', countsAfter);
 
-      // Step 4: Verify published products (stock, price)
       console.log('[Scheduler] Starting verification of published products...');
       const verifyResult = await service.verifyPublishedProducts();
       this.lastVerifyAt = new Date().toISOString();
@@ -94,6 +97,7 @@ class SourcingScheduler {
     lastRunAt: string | null;
     lastVerifyAt: string | null;
     isScheduled: boolean;
+    legacySourcingEnabled: boolean;
   } {
     return {
       isRunning: this.isRunning,
@@ -101,6 +105,7 @@ class SourcingScheduler {
       lastRunAt: this.lastRunAt,
       lastVerifyAt: this.lastVerifyAt,
       isScheduled: this.intervalId !== null,
+      legacySourcingEnabled: process.env.AUTOPILOT_LEGACY_SOURCING_ENABLED === 'true',
     };
   }
 }
