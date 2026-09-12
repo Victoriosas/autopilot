@@ -19,7 +19,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
   searchQuery,
   onSearchChange,
 }) => {
-  const { cart, wishlist, setIsCartOpen, setViewMode, candidateProducts, user, userRole, setIsAuthModalOpen } = useApp();
+  const { cart, wishlist, setIsCartOpen, setViewMode, candidateProducts, user, userRole, isAuthLoading, setIsAuthModalOpen } = useApp();
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
   const pendingReviewCount = candidateProducts.filter((product) => product.status === 'ready_for_review' || product.status === 'discovered').length;
   const categories = ['Todos', 'Tecnología & Gadgets', 'Hogar & Diseño', 'Moda & Accesorios', 'Belleza & Bienestar', 'Fitness & Outdoor'];
@@ -29,7 +29,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
       <div className="bg-white/[0.02] border-b border-white/5 px-4 py-1.5 text-xs text-slate-400">
         <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-4">
           <span>Compra segura · disponibilidad y entrega confirmadas en checkout</span>
-          {userRole === 'admin' && (
+          {!isAuthLoading && userRole === 'admin' && (
             <button
               onClick={() => setViewMode('admin')}
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/15 text-indigo-300 hover:bg-indigo-500/25 border border-indigo-500/30"
