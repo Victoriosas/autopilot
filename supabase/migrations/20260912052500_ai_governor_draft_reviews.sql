@@ -14,7 +14,7 @@ create index if not exists autopilot_product_drafts_status_idx
   on public.autopilot_product_drafts (status, created_at desc);
 
 comment on column public.autopilot_product_drafts.reviewed_by is
-  'Server-side review authority identifier. AI governor approvals are recorded explicitly and are never represented as a human reviewer.';
+  'Server-side review authority identifier. Standard approvals are recorded as AI council decisions and are never represented as human review.';
 
 comment on column public.autopilot_product_drafts.review_reason is
-  'Required rationale for approve/reject decisions.';
+  'Auditable rationale for approve/reject decisions, including council vote summaries when applicable.';
