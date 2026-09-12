@@ -6,6 +6,7 @@ import { getCJClient } from "./src/services/cjDropshipping";
 import { getSourcingService } from "./src/services/productSourcingService";
 import { getSourcingScheduler } from "./src/services/sourcingScheduler";
 import { aiCompletion, aiStructuredCompletion, getProviderStatus } from "./src/services/aiClient";
+import { mountAutopilotV4 } from "./src/autopilot/mount";
 
 dotenv.config({ path: '.env.local' });
 dotenv.config();
@@ -14,6 +15,7 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: "10mb" }));
+mountAutopilotV4(app);
 
 // System prompt defining Victoriosa Brand Identity & Evaluation Rules
 const VICTORIOSA_IDENTITY_PROMPT = `
