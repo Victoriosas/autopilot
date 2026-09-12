@@ -17,6 +17,7 @@ export interface RepricingCouncilResult {
   votes: RepricingVote[];
   debatePerformed: boolean;
   summary: string;
+  ownerEscalationRequired: boolean;
 }
 
 const AGENTS: Array<{ id: RepricingAgentId; focus: string; task: 'structured_analysis' | 'deep_reasoning' }> = [
@@ -66,6 +67,17 @@ function resolve(votes: RepricingVote[]) {
 }
 
 export async function runRepricingCouncil(proposal: RepricingProposal): Promise<RepricingCouncilResult> {
+  if (proposal.policy.ownerApprovalRequired) {
+    return {
+      decision: 'reject',
+      quorum: '3_of_3',
+      votes: AGENTS.map((agent) => ({ agent: agent.id, decision: 'reject', confidence: 100, reason: 'Cambio de precio de alta magnitud; requiere aprobación explícita del propietario.' })),
+      debatePerformed: false,
+      summary: 'Repricing escalado al propietario por variación igual o superior al 25%.',
+      ownerEscalationRequired: true,
+    };
+  }
+
   if (proposal.status !== 'review_required' || !proposal.proposedPrice || !Number.isFinite(proposal.proposedPrice) || proposal.proposedPrice <= 0 || proposal.provenance.supplierCost !== 'observed') {
     return {
       decision: 'reject',
@@ -73,6 +85,7 @@ export async function runRepricingCouncil(proposal: RepricingProposal): Promise<
       votes: AGENTS.map((agent) => ({ agent: agent.id, decision: 'reject', confidence: 100, reason: 'Bloqueo determinista por evidencia insuficiente o propuesta no apta.' })),
       debatePerformed: false,
       summary: 'Repricing rechazado por regla determinista previa al debate.',
+      ownerEscalationRequired: false,
     };
   }
 
@@ -88,5 +101,6 @@ export async function runRepricingCouncil(proposal: RepricingProposal): Promise<
     votes,
     debatePerformed: !unanimousInitially,
     summary: `${final.decision === 'approve' ? 'Aprobado' : 'Rechazado'} por ${final.quorum.replace('_', ' ')}. Confianza media ${avg}%.`,
+    ownerEscalationRequired: false,
   };
 }
