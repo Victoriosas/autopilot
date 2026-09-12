@@ -64,15 +64,15 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   return (
     <section id="catalogo" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Controls and Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#7b594c]/15">
         <div>
-          <h2 className="text-2xl font-serif font-bold text-white flex items-center gap-2">
+          <h2 className="text-2xl font-serif font-bold text-[#3b2b28] flex items-center gap-2">
             <span>{activeCategory === 'Todos' ? 'Catálogo Victoriosa' : activeCategory}</span>
-            <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-white/10 text-indigo-300 font-normal border border-white/10">
+            <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-[#7b594c]/10 text-[#7b594c] font-normal border border-[#7b594c]/15">
               {filteredProducts.length} {filteredProducts.length === 1 ? 'producto' : 'productos'}
             </span>
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-[#76635c] mt-1">
             Explorá el catálogo. Estamos verificando disponibilidad y condiciones de venta.
           </p>
         </div>
@@ -122,10 +122,10 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
           ))}
         </div>
       ) : (
-        <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-xl mt-8 p-8 max-w-xl mx-auto shadow-2xl">
-          <AlertCircle className="w-12 h-12 text-slate-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white">No hay productos publicados que coincidan</h3>
-          <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto">
+        <div className="text-center py-20 bg-[#fffaf4]/80 rounded-3xl border border-[#7b594c]/15 backdrop-blur-xl mt-8 p-8 max-w-xl mx-auto shadow-2xl shadow-[#7b594c]/10">
+          <AlertCircle className="w-12 h-12 text-[#b58e79] mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-[#3b2b28]">Estamos preparando la selección</h3>
+          <p className="text-sm text-[#76635c] mt-2 max-w-md mx-auto">
             {searchQuery 
               ? `No encontramos resultados para "${searchQuery}". Intenta con otros términos.`
               : `No hay productos con precio inferior a ${STORE_CURRENCY} ${priceFilter.toFixed(0)} en la categoría ${activeCategory}.`}
