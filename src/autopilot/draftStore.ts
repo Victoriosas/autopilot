@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { ProductDraft } from './draftBuilder';
 
-export type DraftReviewStatus = 'draft' | 'ai_approved' | 'rejected';
+export type DraftReviewStatus = 'draft' | 'ai_approved' | 'rejected' | 'published';
 
 export interface PersistedProductDraft {
   id: string;
@@ -12,6 +12,8 @@ export interface PersistedProductDraft {
   reviewedBy?: string;
   reviewReason?: string;
   reviewedAt?: string;
+  publishedProductId?: string;
+  publishedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,6 +29,7 @@ function createSupabase(): SupabaseClient | null {
 }
 
 const db = createSupabase();
+const SELECT_COLUMNS = 'id, source_candidate_id, status, draft, reviewed_by, review_reason, reviewed_at, published_product_id, published_at, created_at, updated_at';
 
 export function draftPersistenceStatus() {
   return {
@@ -44,6 +47,8 @@ function mapRow(data: any): PersistedProductDraft {
     reviewedBy: data.reviewed_by || undefined,
     reviewReason: data.review_reason || undefined,
     reviewedAt: data.reviewed_at || undefined,
+    publishedProductId: data.published_product_id || undefined,
+    publishedAt: data.published_at || undefined,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
@@ -68,7 +73,7 @@ export async function persistProductDraft(draft: ProductDraft): Promise<Persiste
   const { data, error } = await db
     .from('autopilot_product_drafts')
     .insert(row)
-    .select('id, source_candidate_id, status, draft, reviewed_by, review_reason, reviewed_at, created_at, updated_at')
+    .select(SELECT_COLUMNS)
     .single();
 
   if (error) throw new Error(`Unable to persist product draft: ${error.message}`);
@@ -82,7 +87,7 @@ export async function getPersistedProductDraft(id: string): Promise<PersistedPro
 
   const { data, error } = await db
     .from('autopilot_product_drafts')
-    .select('id, source_candidate_id, status, draft, reviewed_by, review_reason, reviewed_at, created_at, updated_at')
+    .select(SELECT_COLUMNS)
     .eq('id', id)
     .single();
 
@@ -116,10 +121,37 @@ export async function reviewProductDraft(input: {
     })
     .eq('id', input.id)
     .eq('status', 'draft')
-    .select('id, source_candidate_id, status, draft, reviewed_by, review_reason, reviewed_at, created_at, updated_at')
+    .select(SELECT_COLUMNS)
     .single();
 
   if (error) throw new Error(`Unable to review product draft: ${error.message}`);
+  return mapRow(data);
+}
+
+export async function markProductDraftPublished(input: {
+  id: string;
+  productId: string;
+}): Promise<PersistedProductDraft> {
+  if (!db) {
+    throw new Error('Draft persistence unavailable: SUPABASE_SERVICE_ROLE_KEY is not configured');
+  }
+
+  const now = new Date().toISOString();
+  const { data, error } = await db
+    .from('autopilot_product_drafts')
+    .update({
+      status: 'published',
+      published_product_id: input.productId,
+      published_at: now,
+      updated_at: now,
+    })
+    .eq('id', input.id)
+    .eq('status', 'ai_approved')
+    .is('published_product_id', null)
+    .select(SELECT_COLUMNS)
+    .single();
+
+  if (error) throw new Error(`Unable to mark product draft published: ${error.message}`);
   return mapRow(data);
 }
 
@@ -129,7 +161,7 @@ export async function listPersistedProductDrafts(limit = 50): Promise<PersistedP
   const safeLimit = Math.max(1, Math.min(Number(limit) || 50, 200));
   const { data, error } = await db
     .from('autopilot_product_drafts')
-    .select('id, source_candidate_id, status, draft, reviewed_by, review_reason, reviewed_at, created_at, updated_at')
+    .select(SELECT_COLUMNS)
     .order('created_at', { ascending: false })
     .limit(safeLimit);
 
