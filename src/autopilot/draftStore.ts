@@ -75,6 +75,21 @@ export async function persistProductDraft(draft: ProductDraft): Promise<Persiste
   return mapRow(data);
 }
 
+export async function getPersistedProductDraft(id: string): Promise<PersistedProductDraft> {
+  if (!db) {
+    throw new Error('Draft persistence unavailable: SUPABASE_SERVICE_ROLE_KEY is not configured');
+  }
+
+  const { data, error } = await db
+    .from('autopilot_product_drafts')
+    .select('id, source_candidate_id, status, draft, reviewed_by, review_reason, reviewed_at, created_at, updated_at')
+    .eq('id', id)
+    .single();
+
+  if (error) throw new Error(`Unable to load product draft: ${error.message}`);
+  return mapRow(data);
+}
+
 export async function reviewProductDraft(input: {
   id: string;
   decision: 'approve' | 'reject';
