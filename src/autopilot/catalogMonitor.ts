@@ -10,6 +10,7 @@ export interface CatalogObservation {
   observedAt: string;
   supplierProductId?: string;
   currentPrice: number;
+  currency: string;
   observedSupplierCost?: number;
   observedStock?: number;
   severity: ObservationSeverity;
@@ -44,6 +45,7 @@ export async function observePublishedCatalog(limit = 50): Promise<CatalogObserv
   if (error) throw new Error(`Unable to load published catalog: ${error.message}`);
 
   const cj = getCJClient();
+  const currency = String(process.env.STORE_CURRENCY || 'UYU').trim().toUpperCase();
   const observations: CatalogObservation[] = [];
 
   for (const product of data || []) {
@@ -53,6 +55,7 @@ export async function observePublishedCatalog(limit = 50): Promise<CatalogObserv
       source: product.cj_product_id ? 'cj_dropshipping' : 'unknown',
       supplierProductId: product.cj_product_id || undefined,
       currentPrice: Number(product.price || 0),
+      currency,
       observedAt: new Date().toISOString(),
       severity: 'info',
       signals: [],
