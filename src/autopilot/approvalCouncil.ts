@@ -172,12 +172,18 @@ export async function runApprovalCouncil(draft: ProductDraft): Promise<CouncilRe
     };
   }
 
-  let votes = await Promise.all(AGENTS.map((agent) => askAgent(agent, draft)));
+  const collect = async (transcript?: CouncilVote[]) => {
+    const results = await Promise.allSettled(AGENTS.map(agent => askAgent(agent,draft,transcript)));
+    const failed = results.find(result => result.status === 'rejected');
+    if (failed?.status === 'rejected') throw failed.reason;
+    return results.map(result => (result as PromiseFulfilledResult<CouncilVote>).value);
+  };
+  let votes = await collect();
   const initial = resolveMajority(votes);
   const unanimousInitially = initial.quorum === '3_of_3';
 
   if (!unanimousInitially) {
-    votes = await Promise.all(AGENTS.map((agent) => askAgent(agent, draft, votes)));
+    votes = await collect(votes);
   }
 
   const finalDecision = resolveMajority(votes);

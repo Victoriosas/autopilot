@@ -3,6 +3,7 @@ import { runApprovalCouncil } from './approvalCouncil';
 import { getAutopilotPrincipal, requireControlPlaneAuth } from './auth';
 import { buildCommercialDraft, type CommercialFacts } from './draftBuilder';
 import {
+  assertDraftPublishable,
   publishProductDraftAtomically,
   draftPersistenceStatus,
   getPersistedProductDraft,
@@ -104,6 +105,7 @@ export function createDraftRouter(): Router {
   router.post('/:id/auto-publish', async (req, res) => {
     try {
       const persisted = await getPersistedProductDraft(req.params.id);
+      assertDraftPublishable(persisted);
       if (persisted.status === 'published' && persisted.publishedProductId) {
         return res.json({ draft: persisted, product: { id: persisted.publishedProductId, status: 'published' }, policy: { idempotentReplay: true } });
       }
@@ -155,6 +157,7 @@ export function createDraftRouter(): Router {
   router.post('/:id/publish', async (req, res) => {
     try {
       const persisted = await getPersistedProductDraft(req.params.id);
+      assertDraftPublishable(persisted);
 
       if (persisted.status === 'published' && persisted.publishedProductId) {
         return res.json({

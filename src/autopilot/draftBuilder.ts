@@ -143,9 +143,10 @@ function deterministicDraft(candidate: OpportunityCandidate, result: Opportunity
 export async function buildCommercialDraft(
   candidate: OpportunityCandidate,
   facts: CommercialFacts = {},
-  useAi = true
+  useAi = true,
+  evaluated?: OpportunityResult
 ): Promise<ProductDraft> {
-  const result = evaluateOpportunity(candidate);
+  const result = evaluated || evaluateOpportunity(candidate);
   if (result.status !== 'draft_ready') {
     throw new Error(`Candidate is ${result.status}; only draft_ready candidates may enter Draft Builder`);
   }

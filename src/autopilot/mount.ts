@@ -9,8 +9,10 @@ import { createDraftRouter } from './draftRouter';
 import { createOpportunityRouter } from './opportunityRouter';
 import { createPricingRouter } from './pricingRouter';
 import { createCJSourcingRouter } from './cjSourcingRouter';
+import { createSourcingRouter } from './sourcingRouter';
 
 export function mountAutopilotV4(app: Express): void {
+  app.use('/api/autopilot/v4', createSourcingRouter());
   app.use('/api/autopilot/v4', createAutopilotV4Router());
   app.use('/api/autopilot/v4/pricing', createPricingRouter());
   app.use('/api/autopilot/v4/opportunities', createOpportunityRouter());

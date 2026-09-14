@@ -8,6 +8,8 @@ export interface PersistedProductDraft {
   id: string;
   sourceCandidateId: string;
   status: DraftReviewStatus;
+  createdInShadowMode: boolean;
+  publicationEligible: boolean;
   draft: ProductDraft;
   reviewedBy?: string;
   reviewReason?: string;
@@ -29,7 +31,7 @@ function createSupabase(): SupabaseClient | null {
 }
 
 const db = createSupabase();
-const SELECT_COLUMNS = 'id, source_candidate_id, status, draft, reviewed_by, review_reason, reviewed_at, published_product_id, published_at, created_at, updated_at';
+const SELECT_COLUMNS = 'id, source_candidate_id, status, draft, reviewed_by, review_reason, reviewed_at, published_product_id, published_at, created_at, updated_at, created_in_shadow_mode, publication_eligible';
 
 export function draftPersistenceStatus() {
   return {
@@ -43,6 +45,8 @@ function mapRow(data: any): PersistedProductDraft {
     id: data.id,
     sourceCandidateId: data.source_candidate_id,
     status: data.status as DraftReviewStatus,
+    createdInShadowMode: data.created_in_shadow_mode !== false,
+    publicationEligible: data.publication_eligible === true,
     draft: data.draft as ProductDraft,
     reviewedBy: data.reviewed_by || undefined,
     reviewReason: data.review_reason || undefined,
@@ -64,6 +68,8 @@ export async function persistProductDraft(draft: ProductDraft): Promise<Persiste
       id: randomUUID(),
       source_candidate_id: draft.sourceCandidateId,
       status: 'draft',
+      created_in_shadow_mode: true,
+      publication_eligible: false,
       draft,
       created_at: now,
       updated_at: now,
@@ -129,7 +135,12 @@ export async function listPersistedProductDrafts(limit = 50): Promise<PersistedP
 
 export async function publishProductDraftAtomically(id: string): Promise<PersistedProductDraft> {
   if (!db) throw new Error('Draft persistence unavailable');
+  assertDraftPublishable(await getPersistedProductDraft(id));
   const { data, error } = await db.rpc('publish_autopilot_draft', { draft_id: id });
   if (error) throw new Error(`Unable to publish draft: ${error.message}`);
   return mapRow(data);
+}
+
+export function assertDraftPublishable(draft: Pick<PersistedProductDraft,'createdInShadowMode'|'publicationEligible'>) {
+  if (draft.createdInShadowMode !== false || draft.publicationEligible !== true) throw new Error('SHADOW_PUBLICATION_DENIED');
 }
