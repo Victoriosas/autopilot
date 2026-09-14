@@ -17,7 +17,9 @@ function sql(query:string):Promise<string>{
 }
 const quoted=(value:unknown)=>`'${JSON.stringify(value).replace(/'/g,"''")}'::jsonb`;
 const store:SourcingStore={async command(command,args){return JSON.parse(await sql(`set role service_role; select public.autopilot_sourcing_command('${command}',${quoted(args)});`));}};
-const config={...sourcingConfig({}),minMargin:35,durationMs:40000,maxCandidates:30};
+// These are synthetic durability fixtures denominated entirely in UYU. They do
+// not exercise CJ provider FX; dedicated sourcing safety tests cover that path.
+const config={...sourcingConfig({STORE_CURRENCY:'UYU',AUTOPILOT_CJ_CURRENCY:'UYU'}),minMargin:35,durationMs:40000,maxCandidates:30};
 function fixture(id=randomUUID()):Evidence {
  return {provider:'cj',productId:id,variantId:'one',sourceUrl:'https://example.test/evidence',observedAt:new Date().toISOString(),
  currency:'UYU',stock:10,supplierCost:10,shippingCost:2,destination:'UY',shippingVerified:true,imageRightsVerified:true,
