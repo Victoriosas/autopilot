@@ -37,8 +37,15 @@ export default function SourcingPanel() {
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 30000);
-    return () => clearInterval(interval);
+
+    // Status is refreshed when the admin returns to the tab instead of
+    // polling every 30 seconds. The durable six-hour cron owns execution;
+    // this keeps the dashboard read-only between explicit user activity.
+    const refreshOnFocus = () => {
+      if (document.visibilityState === 'visible') loadData();
+    };
+    document.addEventListener('visibilitychange', refreshOnFocus);
+    return () => document.removeEventListener('visibilitychange', refreshOnFocus);
   }, []);
 
   async function loadData() {
