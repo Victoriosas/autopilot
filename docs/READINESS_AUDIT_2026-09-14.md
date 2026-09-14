@@ -1,7 +1,7 @@
 # Autopilot: verificación del flujo comercial
 
 Base: GitHub Victoriosas/autopilot, commit 3ef07a7.
-Trabajo local: C:/autopilot-github-current, rama codex/readiness-audit.
+Trabajo local: C:/autopilot-github-current, rama codex/autopilot-v4-durable-orchestrator.
 C:/autopilot permanece intacto. No se copiaron secretos al checkout nuevo.
 
 ## Evidencia actual
@@ -40,7 +40,24 @@ Cambios preparados localmente; no desplegados.
 
 ## Validación local
 
-- npm test: PASS, 9 pruebas.
+- npm test: PASS.
 - npm run lint: PASS.
+- npm run build: PASS.
 - npm run build:vercel: PASS; advertencia de bundle JavaScript mayor de 500 kB.
+- npm run test:db: PASS, 13 pruebas PostgreSQL aisladas.
+- node scripts/secret-scan.mjs: PASS.
 - git diff --check: PASS.
+
+## Pasada de simplificación y eficiencia
+
+Se revisaron timers, polling, cron y workflows antes de cerrar la implementación.
+
+- Polling eliminado: `SourcingPanel` ya no consulta cada 30 segundos; actualiza al cargar y al volver a la pestaña.
+- Cron activo: 1, el único ciclo durable de seis horas en `vercel.json`.
+- Workflow CI: 1 (`autopilot-core-v4.yml`), sin workflows duplicados.
+- Scheduler legado: conservado por compatibilidad, pero bloqueado salvo `AUTOPILOT_LEGACY_SOURCING_ENABLED=true`; no es una vía activa de producción.
+- Timers de red: permanecen únicamente timeouts acotados, backoff de rate limit y debounce de interfaz; no programan ciclos de sourcing.
+- Llamadas AI: se evitan cuando faltan evidencias deterministas y existe presupuesto por ejecución.
+- Código/dependencias eliminados: no se borraron archivos o paquetes sin evidencia de que fueran seguros de retirar.
+
+Resultado: una sola autoridad de ejecución (cron durable), sin polling administrativo continuo y con compatibilidad heredada explícitamente desactivada.
