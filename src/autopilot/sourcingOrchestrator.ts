@@ -3,7 +3,16 @@ import { getCJClient } from '../services/cjDropshipping';
 import { runApprovalCouncil } from './approvalCouncil';
 import { buildCommercialDraft } from './draftBuilder';
 import { evaluateOpportunity } from './opportunityEngine';
-import { evidenceIdentity, evidenceVersion, normalizeCJ, validateEvidence, type Evidence, type SourcingConfig } from './sourcingEvidence';
+import {
+  buildCJLiveEvidence,
+  evidenceIdentity,
+  evidenceVersion,
+  normalizeCJ,
+  selectCJVariant,
+  validateEvidence,
+  type Evidence,
+  type SourcingConfig,
+} from './sourcingEvidence';
 import { sourcingModelBudget } from './sourcingModelBudget';
 import type { SourcingStore, Run, Item } from './sourcingStore';
 
@@ -13,18 +22,66 @@ export interface SourcingDependencies {
   council:typeof runApprovalCouncil;
   afterCheckpoint?:(stage:string)=>void; // fault-injection seam, never exposed through HTTP
 }
+
 export const liveSourcing: SourcingDependencies={
-  async discover(config) {const cj=getCJClient(); if(!cj) throw new Error('CJ_NOT_CONFIGURED');
-    const result=await cj.searchProducts({keyword:config.keyword,pageSize:config.maxCandidates});
-    return result.products.slice(0,config.maxCandidates).map(p=>normalizeCJ(p,config));},
+  async discover(config) {
+    const cj=getCJClient();
+    if(!cj) throw new Error('CJ_NOT_CONFIGURED');
+
+    // Evidence enrichment costs multiple provider calls per candidate. Keep the
+    // live batch bounded so a Vercel invocation can checkpoint before timeout.
+    const enrichmentLimit=Math.max(1,Math.min(config.maxCandidates,config.durationMs>=30000?6:4));
+    const result=await cj.searchProducts({keyword:config.keyword,pageSize:enrichmentLimit});
+    const evidence:Evidence[]=[];
+
+    for(const product of result.products.slice(0,enrichmentLimit)) {
+      const searchObservation=normalizeCJ(product,config);
+      try {
+        const variants=await cj.getVariants(product.pid);
+        const selected=selectCJVariant(variants);
+        if(!selected) {
+          evidence.push(searchObservation);
+          continue;
+        }
+
+        // Inventory and freight are independent facts. A missing response stays
+        // unknown; it is never converted to zero, free shipping, or fake stock.
+        const stock=await cj.getVariantStock(selected.vid);
+        const freight=await cj.calculateShipping({
+          variantId:selected.vid,
+          countryCode:config.destination,
+          quantity:1,
+        });
+
+        evidence.push(buildCJLiveEvidence({
+          product,
+          variants,
+          stock,
+          freight,
+          config,
+          imageSaleUseAllowed:config.imageSaleUseAllowed,
+        }));
+      } catch(error) {
+        // Keep a truthful search observation rather than losing the candidate or
+        // inventing missing data when an enrichment endpoint is temporarily down.
+        evidence.push({
+          ...searchObservation,
+          evidenceNotes:[...(searchObservation.evidenceNotes||[]),'CJ_ENRICHMENT_FAILED'],
+        });
+      }
+    }
+    return evidence;
+  },
   council:runApprovalCouncil,
 };
+
 export function errorClass(error:unknown) {
   const e=error as {message?:string;status?:number;retryAfterMs?:number};
   const retryable=[408,429,502,503,504].includes(e.status || 0) || /timeout|fetch failed|network|database|budget/i.test(e.message || '');
   return {code:e.status ? `PROVIDER_HTTP_${e.status}` : retryable?'TRANSIENT_FAILURE':'INVALID_EVIDENCE_OR_CONFIGURATION',retryable,
     delay:Math.min(Math.max(e.retryAfterMs || 10000,1000),3600000)};
 }
+
 export async function runSourcing(store:SourcingStore, config:SourcingConfig, key:string, deps=liveSourcing) {
   const claimed=await store.command<{status:string;run:Run}>('claim',{scope:`cj:${config.destination}`,key,owner:randomUUID(),mode:config.mode,config});
   if(claimed.status!=='claimed') return {status:claimed.status,run_id:claimed.run.id,mode:claimed.run.mode};
