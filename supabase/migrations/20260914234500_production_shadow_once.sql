@@ -21,7 +21,9 @@ language plpgsql
 security invoker
 set search_path=''
 as $$
-declare authorization public.autopilot_shadow_run_authorizations%rowtype;
+declare
+  authorization_id uuid;
+  authorization_limits jsonb;
 begin
   if requested_token_hash is null or requested_token_hash !~ '^[0-9a-f]{64}$' then
     return null;
@@ -32,10 +34,10 @@ begin
    where token_hash = requested_token_hash
      and consumed_at is null
      and expires_at > clock_timestamp()
-  returning * into authorization;
+  returning id, limits into authorization_id, authorization_limits;
 
   if not found then return null; end if;
-  return jsonb_build_object('id', authorization.id, 'limits', authorization.limits);
+  return jsonb_build_object('id', authorization_id, 'limits', authorization_limits);
 end $$;
 
 revoke all on function public.consume_autopilot_shadow_run_authorization(text) from public, anon, authenticated;
