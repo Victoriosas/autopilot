@@ -1,5 +1,16 @@
 const CJ_BASE_URL = 'https://developers.cjdropshipping.com/api2.0/v1';
 
+export class CJRequestError extends Error {
+  constructor(public status: number, public retryAfterMs = 0) { super(`CJ_HTTP_${status}`); }
+}
+
+function observedStock(value: unknown): number | undefined {
+  if (typeof value !== 'number' && typeof value !== 'string') return undefined;
+  if (typeof value === 'string' && !value.trim()) return undefined;
+  const stock = Number(value);
+  return Number.isSafeInteger(stock) && stock >= 0 ? stock : undefined;
+}
+
 export interface CJProduct {
   pid: string;
   productNameEn: string;
@@ -12,7 +23,7 @@ export interface CJProduct {
   sellPrice: number;
   categoryName: string;
   categoryId: string;
-  stockQuantity: number;
+  stockQuantity?: number;
   supplierId: string;
   supplierName: string;
   isFreeShipping: boolean;
@@ -84,12 +95,13 @@ class CJDropshippingClient {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ apiKey: this.apiKey }),
+      signal: AbortSignal.timeout(8000),
     });
 
     const data = await response.json();
 
     if (data.code !== 200 || !data.data) {
-      throw new Error(`CJ auth failed: ${data.message || JSON.stringify(data)}`);
+      throw new CJRequestError(response.ok ? 401 : response.status);
     }
 
     this.accessToken = data.data.accessToken;
@@ -106,6 +118,7 @@ class CJDropshippingClient {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken: this.refreshToken }),
+      signal: AbortSignal.timeout(8000),
     });
 
     const data = await response.json();
@@ -123,7 +136,7 @@ class CJDropshippingClient {
     return this.accessToken!;
   }
 
-  private async request(method: string, path: string, body?: any, retries: number = 3): Promise<any> {
+  private async request(method: string, path: string, body?: any, retries: number = 1): Promise<any> {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         await this.rateLimit();
@@ -135,7 +148,7 @@ class CJDropshippingClient {
           'Content-Type': 'application/json',
         };
 
-        const options: RequestInit = { method, headers };
+        const options: RequestInit = { method, headers, signal: AbortSignal.timeout(8000) };
         if (body && (method === 'POST' || method === 'PUT')) {
           options.body = JSON.stringify(body);
         }
@@ -143,21 +156,19 @@ class CJDropshippingClient {
         const response = await fetch(url, options);
 
         if (response.status === 429) {
-          const waitMs = attempt * 2000;
-          console.log(`[CJ] Rate limited, waiting ${waitMs}ms (attempt ${attempt}/${retries})`);
-          await new Promise((r) => setTimeout(r, waitMs));
-          continue;
+          const retry = response.headers.get('retry-after');
+          const delay = retry && /^\d+$/.test(retry) ? Number(retry)*1000 : retry ? Date.parse(retry)-Date.now() : 10000;
+          throw new CJRequestError(429,Number.isFinite(delay)?Math.max(1000,delay):10000);
         }
 
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`CJ API error ${response.status}: ${errorText}`);
+          throw new CJRequestError(response.status);
         }
 
         const data = await response.json();
 
         if (data.code !== 200 && data.code !== 0) {
-          throw new Error(`CJ API business error: ${data.message || JSON.stringify(data)}`);
+          throw new CJRequestError(400);
         }
 
         return data;
@@ -185,7 +196,7 @@ class CJDropshippingClient {
     searchParams.set('pageNum', String(params.pageNum || 1));
     searchParams.set('pageSize', String(params.pageSize || 20));
 
-    if (params.keyword) searchParams.set('keyWord', params.keyword);
+    if (params.keyword) searchParams.set('productNameEn', params.keyword);
     if (params.categoryId) searchParams.set('categoryId', params.categoryId);
     if (params.minPrice) searchParams.set('minPrice', String(params.minPrice));
     if (params.maxPrice) searchParams.set('maxPrice', String(params.maxPrice));
@@ -206,7 +217,7 @@ class CJDropshippingClient {
       sellPrice: parseFloat(item.sellPrice) || 0,
       categoryName: item.categoryName || '',
       categoryId: item.categoryId || '',
-      stockQuantity: 999,
+      stockQuantity: observedStock(item.stockQuantity),
       supplierId: item.supplierId || '',
       supplierName: item.supplierName || '',
       isFreeShipping: item.isFreeShipping || false,
@@ -239,7 +250,7 @@ class CJDropshippingClient {
         sellPrice: parseFloat(item.sellPrice) || 0,
         categoryName: item.categoryName || '',
         categoryId: item.categoryId || '',
-        stockQuantity: item.stockQuantity || 999,
+        stockQuantity: observedStock(item.stockQuantity),
         supplierId: item.supplierId || '',
         supplierName: item.supplierName || '',
         isFreeShipping: item.isFreeShipping || false,

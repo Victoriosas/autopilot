@@ -1,0 +1,82 @@
+{
+  "checkedAt": "2026-09-14T21:30:37.190Z",
+  "query": "facial headband",
+  "total": 6793,
+  "status": "REVIEW_ONLY",
+  "publicationAllowed": false,
+  "missingEvidence": [
+    "shipping_to_Uruguay",
+    "variant_stock",
+    "currency_confirmation",
+    "image_rights",
+    "net_margin"
+  ],
+  "products": [
+    {
+      "pid": "2099391570528149505",
+      "productNameEn": "West&Month Anti-Darkness Turmeric Toner Deeply Hydrating, Elasticizing, Moisturizing, And Nourishing Facial Skin Toner",
+      "productName": "[\"West\",\"Month\",\"祛黑\",\"姜黄\",\"爽肤水\"]",
+      "productImage": "https://cj-product-center.oss-accelerate.aliyuncs.com/supplier/1688/8a163ed4-2b30-452d-a501-381bd7180141.jpg",
+      "productSku": "CJST3161716",
+      "productWeight": "131",
+      "productType": "SUPPLIER_PRODUCT",
+      "salePrice": 3.64,
+      "sellPrice": 3.64,
+      "categoryName": "Body Care",
+      "categoryId": "E0238E88-0C63-427F-812E-BA1FCE4C67B4",
+      "supplierId": "2071522741462507520",
+      "supplierName": "xiaodong",
+      "isFreeShipping": false,
+      "shippingCountryCodes": [
+        "CN",
+        "CN_US"
+      ],
+      "createTime": 1789344000000,
+      "productUrl": "https://cjdropshipping.com/product-p-2099391570528149505.html"
+    },
+    {
+      "pid": "2609130616481627200",
+      "productNameEn": "Halloween Demon Wings Bird-beak Mask And Horn Headband",
+      "productName": "[\"跨境万圣节恶魔翅膀套装 鸟嘴面具牛角发箍 暗黑舞会角色扮演道具\",\"跨境万圣节恶魔翅膀套装\",\"鸟嘴面具牛角发箍\"]",
+      "productImage": "https://cf.cjdropshipping.com/quick/product/3879a0ed-c6cc-4ecb-a211-a9c2ad16f5fd.jpg",
+      "productSku": "CJYD3159497",
+      "productWeight": "500.00",
+      "productType": "ORDINARY_PRODUCT",
+      "salePrice": 1.62,
+      "sellPrice": 1.62,
+      "categoryName": "Event & Party Supplies",
+      "categoryId": "C329460A-9074-4E42-B1FD-D9E91568A64B",
+      "supplierId": "9999",
+      "supplierName": "",
+      "isFreeShipping": false,
+      "shippingCountryCodes": [
+        "CN",
+        "CN_US"
+      ],
+      "createTime": 1789280208000,
+      "productUrl": "https://cjdropshipping.com/product-p-2609130616481627200.html"
+    },
+    {
+      "pid": "2609121449151622500",
+      "productNameEn": "Retro Pearl Rhinestone Headband Hair Accessory For Women",
+      "productName": "[\"欧美复古珍珠水钻发箍后脑勺隐形发卡简约气质新娘婚礼头饰发饰\",\"欧美复古珍珠水钻\",\"发箍后脑勺隐形发卡简约\"]",
+      "productImage": "https://cf.cjdropshipping.com/quick/product/433c6d4d-51f3-4a22-bc1f-04000f0ec80e.jpg",
+      "productSku": "CJYD3158537",
+      "productWeight": "20.00",
+      "productType": "ORDINARY_PRODUCT",
+      "salePrice": 2.21,
+      "sellPrice": 2.21,
+      "categoryName": "Headband & Hair Band & Hairpin",
+      "categoryId": "2502140903111619100",
+      "supplierId": "9999",
+      "supplierName": "",
+      "isFreeShipping": false,
+      "shippingCountryCodes": [
+        "CN",
+        "CN_US"
+      ],
+      "createTime": 1789224555000,
+      "productUrl": "https://cjdropshipping.com/product-p-2609121449151622500.html"
+    }
+  ]
+}

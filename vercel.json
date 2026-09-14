@@ -4,6 +4,7 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "installCommand": "npm ci",
+  "crons": [{ "path": "/api/autopilot/v4/cron/sourcing", "schedule": "0 */6 * * *" }],
   "rewrites": [
     {
       "source": "/api/:path*",
