@@ -23,6 +23,7 @@ export interface SourcingConfig {
   returnReservePct: number | null;
   acquisitionCost: number | null;
   taxRatePct: number | null;
+  imageSaleUseAllowed: boolean;
 }
 
 function integer(value: string | undefined, fallback: number, max: number) {
@@ -60,6 +61,7 @@ export function sourcingConfig(env: NodeJS.ProcessEnv = process.env): SourcingCo
     returnReservePct: finitePolicy(env.AUTOPILOT_RETURN_RESERVE_PCT, 0, 100),
     acquisitionCost: finitePolicy(env.AUTOPILOT_ACQUISITION_COST, 0),
     taxRatePct: finitePolicy(env.AUTOPILOT_TAX_RATE_PCT, 0, 100),
+    imageSaleUseAllowed: env.AUTOPILOT_CJ_IMAGE_SALE_USE_ALLOWED === 'true',
   };
 }
 
@@ -126,13 +128,13 @@ function logisticsScore(freight: CJFreightOption): number {
   return 30;
 }
 
-function chooseVariant(variants: CJVariant[]): CJVariant | null {
+export function selectCJVariant(variants: CJVariant[]): CJVariant | null {
   return variants
     .filter((variant) => Boolean(variant.vid) && typeof variant.variantSellPrice === 'number' && variant.variantSellPrice > 0)
     .sort((a, b) => (a.variantSellPrice! - b.variantSellPrice!) || a.vid.localeCompare(b.vid))[0] || null;
 }
 
-function chooseFreight(options: CJFreightOption[]): CJFreightOption | null {
+export function selectCJFreight(options: CJFreightOption[]): CJFreightOption | null {
   return options
     .filter((option) => Number.isFinite(option.totalCostUsd) && option.totalCostUsd >= 0)
     .sort((a, b) => a.totalCostUsd - b.totalCostUsd)[0] || null;
@@ -156,8 +158,8 @@ export function buildCJLiveEvidence(input: {
 }): Evidence {
   const { product, config } = input;
   const detail = input.detail || product;
-  const variant = chooseVariant(input.variants.length ? input.variants : (detail.variants || []));
-  const freight = chooseFreight(input.freight);
+  const variant = selectCJVariant(input.variants.length ? input.variants : (detail.variants || []));
+  const freight = selectCJFreight(input.freight);
   const providerCost = variant?.variantSellPrice ?? null;
   const providerShipping = freight?.totalCostUsd ?? null;
   const supplierCost = convertProviderAmount(providerCost, config);
