@@ -47,13 +47,51 @@ test('live CJ evidence converts observed provider cost only with explicit FX and
  assert.equal(evidence.imageRightsVerified,true);
  assert.equal(evidence.candidate?.pricing.currency,'UYU');
  const reasons=validateEvidence(evidence,config);
- // Live CJ evidence solves supplier economics/logistics, but it must not invent
- // demand, competition or supplier reliability just to force publication.
  assert.equal(reasons.includes('SUPPLIER_COST_REQUIRED'),false);
  assert.equal(reasons.includes('SHIPPING_EVIDENCE_REQUIRED'),false);
  assert.ok(reasons.includes('COMMERCIAL_EVIDENCE_REQUIRED:demand'));
  assert.ok(reasons.includes('COMMERCIAL_EVIDENCE_REQUIRED:supplierReliability'));
  assert.ok(reasons.includes('COMMERCIAL_EVIDENCE_REQUIRED:competition'));
+});
+
+test('shadow-only CJ proxies use observed platform signals but production ignores the flag',()=>{
+ const env={
+  STORE_CURRENCY:'USD',AUTOPILOT_CJ_CURRENCY:'USD',AUTOPILOT_V4_MIN_MARGIN_PCT:'35',
+  AUTOPILOT_CUSTOMS_RATE_PCT:'0',AUTOPILOT_PAYMENT_FEE_PCT:'4',AUTOPILOT_PAYMENT_FEE_FIXED:'0',
+  AUTOPILOT_RETURN_RESERVE_PCT:'4',AUTOPILOT_ACQUISITION_COST:'0',AUTOPILOT_TAX_RATE_PCT:'0',
+  AUTOPILOT_CJ_IMAGE_SALE_USE_ALLOWED:'true',AUTOPILOT_CJ_SHADOW_COMMERCIAL_PROXIES:'true',
+ };
+ const shadow=sourcingConfig(env);
+ assert.equal(shadow.mode,'shadow');
+ assert.equal(shadow.commercialProxiesAllowed,true);
+ const now=Date.UTC(2026,8,14);
+ const evidence=buildCJLiveEvidence({
+  product:{
+   pid:'p3',productNameEn:'Listable Product',productImage:'https://img.example/p3.jpg',supplierId:'supplier-1',supplierName:'Supplier',
+   status:'3',listedNum:120,createTime:now-30*86400000,productUrl:'https://cjdropshipping.com/product-p-p3.html',
+  } as CJProduct,
+  variants:[{vid:'v3',pid:'p3',variantNameEn:'One',variantSku:'V3',variantImage:'https://img.example/v3.jpg',variantWeight:90,variantSellPrice:3,variantSugSellPrice:null}],
+  stock:{variantId:'v3',totalInventory:25,warehouses:[{countryCode:'CN',totalInventory:25,cjInventory:20,factoryInventory:5}]},
+  freight:[{logisticName:'CJPacket',logisticAging:'7-12',logisticPrice:2,taxesFee:0,clearanceOperationFee:0,totalPostageFee:2,totalCostUsd:2}],
+  config:shadow,imageSaleUseAllowed:true,now,
+ });
+ assert.equal(evidence.candidate?.evidence?.demand,'observed');
+ assert.equal(evidence.candidate?.evidence?.supplierReliability,'observed');
+ assert.equal(evidence.candidate?.evidence?.logistics,'observed');
+ assert.equal(evidence.candidate?.evidence?.competition,'observed');
+ assert.equal(validateEvidence(evidence,shadow,now).length,0);
+
+ const production=sourcingConfig({...env,AUTOPILOT_SHADOW_MODE:'false'});
+ assert.equal(production.mode,'production');
+ assert.equal(production.commercialProxiesAllowed,false);
+ const prodEvidence=buildCJLiveEvidence({
+  product:evidence.candidate ? ({pid:'p3',productNameEn:'Listable Product',productImage:'https://img.example/p3.jpg',supplierId:'supplier-1',status:'3',listedNum:120,createTime:now-30*86400000} as CJProduct) : ({} as CJProduct),
+  variants:[{vid:'v3',pid:'p3',variantNameEn:'One',variantSku:'V3',variantImage:'https://img.example/v3.jpg',variantWeight:90,variantSellPrice:3,variantSugSellPrice:null}],
+  stock:{variantId:'v3',totalInventory:25,warehouses:[]},
+  freight:[{logisticName:'CJPacket',logisticAging:'7-12',logisticPrice:2,taxesFee:0,clearanceOperationFee:0,totalPostageFee:2,totalCostUsd:2}],
+  config:production,imageSaleUseAllowed:true,now,
+ });
+ assert.ok(validateEvidence(prodEvidence,production,now).includes('COMMERCIAL_EVIDENCE_REQUIRED:demand'));
 });
 
 test('CJ evidence never guesses FX or image rights',()=>{
