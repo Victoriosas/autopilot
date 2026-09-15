@@ -2,7 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { getCJClient } from '../services/cjDropshipping';
 import { runApprovalCouncil } from './approvalCouncil';
 import { buildCommercialDraft } from './draftBuilder';
-import { evaluateOpportunity } from './opportunityEngine';
+import { evaluateOpportunity, type OpportunityCandidate } from './opportunityEngine';
+import { applyMarketEvidence, findGroundedMarketEvidence, type MarketEvidence } from './marketEvidence';
 import {
   buildCJLiveEvidence,
   evidenceIdentity,
@@ -14,64 +15,40 @@ import {
   type SourcingConfig,
 } from './sourcingEvidence';
 import { sourcingModelBudget } from './sourcingModelBudget';
+import { assessVictoriosaFit } from './victoriosaProductFilter';
 import type { SourcingStore, Run, Item } from './sourcingStore';
 
 const terminal=new Set(['needs_evidence','evidence_rejected','pricing_rejected','council_rejected','shadow_completed','published','failed_terminal']);
 export interface SourcingDependencies {
   discover:(config:SourcingConfig)=>Promise<Evidence[]>;
+  marketEvidence?:(candidate:any)=>Promise<MarketEvidence>;
   council:typeof runApprovalCouncil;
-  afterCheckpoint?:(stage:string)=>void; // fault-injection seam, never exposed through HTTP
+  afterCheckpoint?:(stage:string)=>void;
 }
 
 export const liveSourcing: SourcingDependencies={
   async discover(config) {
     const cj=getCJClient();
     if(!cj) throw new Error('CJ_NOT_CONFIGURED');
-
-    // Evidence enrichment costs multiple provider calls per candidate. Keep the
-    // live batch bounded so a Vercel invocation can checkpoint before timeout.
     const enrichmentLimit=Math.max(1,Math.min(config.maxCandidates,config.durationMs>=30000?6:4));
     const result=await cj.searchProducts({keyword:config.keyword,pageSize:enrichmentLimit});
     const evidence:Evidence[]=[];
-
     for(const product of result.products.slice(0,enrichmentLimit)) {
       const searchObservation=normalizeCJ(product,config);
       try {
         const variants=await cj.getVariants(product.pid);
         const selected=selectCJVariant(variants);
-        if(!selected) {
-          evidence.push(searchObservation);
-          continue;
-        }
-
-        // Inventory and freight are independent facts. A missing response stays
-        // unknown; it is never converted to zero, free shipping, or fake stock.
+        if(!selected) { evidence.push(searchObservation); continue; }
         const stock=await cj.getVariantStock(selected.vid);
-        const freight=await cj.calculateShipping({
-          variantId:selected.vid,
-          countryCode:config.destination,
-          quantity:1,
-        });
-
-        evidence.push(buildCJLiveEvidence({
-          product,
-          variants,
-          stock,
-          freight,
-          config,
-          imageSaleUseAllowed:config.imageSaleUseAllowed,
-        }));
-      } catch(error) {
-        // Keep a truthful search observation rather than losing the candidate or
-        // inventing missing data when an enrichment endpoint is temporarily down.
-        evidence.push({
-          ...searchObservation,
-          evidenceNotes:[...(searchObservation.evidenceNotes||[]),'CJ_ENRICHMENT_FAILED'],
-        });
+        const freight=await cj.calculateShipping({variantId:selected.vid,countryCode:config.destination,quantity:1});
+        evidence.push(buildCJLiveEvidence({product,variants,stock,freight,config,imageSaleUseAllowed:config.imageSaleUseAllowed}));
+      } catch {
+        evidence.push({...searchObservation,evidenceNotes:[...(searchObservation.evidenceNotes||[]),'CJ_ENRICHMENT_FAILED']});
       }
     }
     return evidence;
   },
+  marketEvidence:findGroundedMarketEvidence,
   council:runApprovalCouncil,
 };
 
@@ -89,6 +66,7 @@ export async function runSourcing(store:SourcingStore, config:SourcingConfig, ke
   const fence={run:run.id,owner:run.lease_owner,generation:run.lease_generation};
   const deadline=Date.now()+config.durationMs;
   const call=<T=any>(command:string,args:Record<string,unknown>={})=>store.command<T>(command,{...fence,...args});
+  const reserveModelCall=async()=>{if(Date.now()>deadline-1500)throw new Error('AI_BUDGET_TIMEOUT');await call('reserve_ai',{calls:1});};
   const checkpoint=async(item:Item,status:string,data:Record<string,unknown>={})=>{
     await call('checkpoint',{item:item.id,status,data});item.status=status;Object.assign(item.checkpoint,data);deps.afterCheckpoint?.(status);
   };
@@ -108,36 +86,47 @@ export async function runSourcing(store:SourcingStore, config:SourcingConfig, ke
         if(item.status==='normalized'){
           const reasons=validateEvidence(item.payload,config);
           if(reasons.length){await checkpoint(item,'needs_evidence',{reasons});continue;}
-          if(item.payload.stock===0 || ['high','critical'].includes(item.payload.candidate?.risk || '')) {await checkpoint(item,'evidence_rejected',{reasons:['KNOWN_STOCK_OR_RISK_REJECTION']});continue;}
-          await checkpoint(item,'evidence_validated');
+          const fit=assessVictoriosaFit(item.payload.candidate!,item.payload.facts);
+          if(fit.decision==='reject') {await checkpoint(item,'evidence_rejected',{reasons:fit.reasons,victoriosaFit:fit});continue;}
+          if(item.payload.stock===0 || ['high','critical'].includes(item.payload.candidate?.risk || '')) {await checkpoint(item,'evidence_rejected',{reasons:['KNOWN_STOCK_OR_RISK_REJECTION'],victoriosaFit:fit});continue;}
+          await checkpoint(item,'evidence_validated',{victoriosaFit:fit});
         }
         if(item.status==='evidence_validated') {
-          const candidate={...item.payload.candidate!,pricing:{...item.payload.candidate!.pricing,targetNetMarginPct:config.minMargin!}};
+          const fit=item.checkpoint.victoriosaFit || assessVictoriosaFit(item.payload.candidate!,item.payload.facts);
+          let candidate:OpportunityCandidate={...item.payload.candidate!,risk:fit.risk,pricing:{...item.payload.candidate!.pricing,targetNetMarginPct:config.minMargin!}};
+          let market:MarketEvidence|undefined;
+          if(config.mode==='shadow' && deps.marketEvidence){
+            market=await sourcingModelBudget.run({deadline,beforeCall:reserveModelCall},()=>deps.marketEvidence!(candidate));
+            if(market.status!=='ok'){
+              await checkpoint(item,'needs_evidence',{reasons:[market.status==='not_configured'?'MARKET_SEARCH_NOT_CONFIGURED':'MARKET_EVIDENCE_INSUFFICIENT'],marketEvidence:market,victoriosaFit:fit});continue;
+            }
+            candidate=applyMarketEvidence(candidate,market);
+          }
           const quote=evaluateOpportunity(candidate);
-          await checkpoint(item,'opportunity_scored',{quote,candidate,pricingVersion:'existing-v4',calculatedAt:new Date().toISOString()});
+          await checkpoint(item,'opportunity_scored',{quote,candidate,marketEvidence:market||null,victoriosaFit:fit,pricingVersion:market?'existing-v4+grounded-market-v1':'existing-v4',calculatedAt:new Date().toISOString()});
         }
         if(item.status==='opportunity_scored') await checkpoint(item,'pricing_completed');
         if(item.status==='pricing_completed'){
-          const {quote,candidate}=item.checkpoint;
+          const {quote,candidate,victoriosaFit}=item.checkpoint;
+          if(victoriosaFit?.regulatoryReviewRequired){await checkpoint(item,'needs_evidence',{reasons:victoriosaFit.reasons});continue;}
           if(quote.pricing.estimatedNetMarginPct<config.minMargin! || quote.status!=='draft_ready'){
-            await checkpoint(item,quote.status==='review'?'needs_evidence':'pricing_rejected',{reasons:quote.warnings});continue;}
+            await checkpoint(item,quote.status==='review'?'needs_evidence':'pricing_rejected',{reasons:quote.warnings});continue;
+          }
           const draft=await buildCommercialDraft(candidate,item.payload.facts,false,quote);
           await call('draft',{item:item.id,draft});item.status='draft_created';deps.afterCheckpoint?.('draft_created');
           await checkpoint(item,'council_pending',{draft});
         }
         if(item.status==='draft_created') {
-          // Draft RPC committed atomically; its deterministic content can be reconstructed.
           const draft=await buildCommercialDraft(item.checkpoint.candidate,item.payload.facts,false,item.checkpoint.quote);
           await checkpoint(item,'council_pending',{draft});
         }
         if(item.status==='council_pending'){
-          const result=await sourcingModelBudget.run({deadline,beforeCall:async()=>{if(Date.now()>deadline-1500)throw new Error('AI_BUDGET_TIMEOUT');await call('reserve_ai',{calls:1});}},()=>deps.council(item.checkpoint.draft));
+          const result=await sourcingModelBudget.run({deadline,beforeCall:reserveModelCall},()=>deps.council(item.checkpoint.draft));
           await call('council',{item:item.id,council:result});
           item.status=result.decision==='approve'&&!result.ownerEscalationRequired?'council_approved':'council_rejected';
           deps.afterCheckpoint?.(item.status);
         }
         if(item.status==='council_approved'){
-          // Revalidate evidence at the final side-effect boundary after any pause.
           const reasons=validateEvidence(item.payload,config);
           if(reasons.length){await checkpoint(item,'needs_evidence',{reasons});continue;}
           await call('publish',{item:item.id});deps.afterCheckpoint?.(config.mode==='shadow'?'shadow_completed':'published');
