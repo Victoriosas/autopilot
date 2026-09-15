@@ -91,20 +91,20 @@ returns jsonb language plpgsql security invoker set search_path='' as $$
 declare d public.autopilot_product_drafts%rowtype; r public.autopilot_sourcing_runs%rowtype;
         i public.autopilot_sourcing_items%rowtype; result jsonb;
 begin
-  select * into strict d from public.autopilot_product_drafts where id=draft_id for update;
+  select * into strict d from public.autopilot_product_drafts d0 where d0.id=draft_id for update;
   if d.status='published' and d.published_product_id is not null then return to_jsonb(d); end if;
   if d.created_in_shadow_mode or not d.publication_eligible then raise exception 'SHADOW_PUBLICATION_DENIED'; end if;
   if d.status<>'ai_approved' or d.reviewed_by not like 'autopilot-council:%' then raise exception 'COUNCIL_APPROVAL_REQUIRED'; end if;
   if d.sourcing_run_id is null then raise exception 'PRODUCTION_SOURCING_RUN_REQUIRED'; end if;
 
-  select * into strict r from public.autopilot_sourcing_runs where id=d.sourcing_run_id for update;
+  select * into strict r from public.autopilot_sourcing_runs r0 where r0.id=d.sourcing_run_id for update;
   if r.mode<>'production' or r.status<>'completed' or r.completed_at is null
      or r.completed_at < clock_timestamp()-interval '24 hours' then
     raise exception 'MANUAL_RELEASE_EVIDENCE_STALE_OR_INVALID';
   end if;
 
-  select * into strict i from public.autopilot_sourcing_items
-   where run_id=r.id and draft_id=d.id for update;
+  select * into strict i from public.autopilot_sourcing_items si
+   where si.run_id=r.id and si.draft_id=d.id for update;
   if i.status not in ('production_ready','published')
      or coalesce(i.council->>'decision','')<>'approve'
      or coalesce((i.council->>'ownerEscalationRequired')::boolean,true) then
@@ -113,9 +113,9 @@ begin
 
   perform set_config('autopilot.manual_release','true',true);
   result := public.publish_autopilot_draft(d.id);
-  update public.autopilot_sourcing_items
-    set status='published',checkpoint=checkpoint || jsonb_build_object('published',true,'manualPublishedAt',now()),updated_at=now()
-    where id=i.id and status<>'published';
+  update public.autopilot_sourcing_items si
+    set status='published',checkpoint=si.checkpoint || jsonb_build_object('published',true,'manualPublishedAt',now()),updated_at=now()
+    where si.id=i.id and si.status<>'published';
   return result;
 end $$;
 revoke all on function public.publish_autopilot_draft_manual(uuid) from public,anon,authenticated;
