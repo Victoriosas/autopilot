@@ -18,7 +18,7 @@ import { sourcingModelBudget } from './sourcingModelBudget';
 import { assessVictoriosaFit } from './victoriosaProductFilter';
 import type { SourcingStore, Run, Item } from './sourcingStore';
 
-const terminal=new Set(['needs_evidence','evidence_rejected','pricing_rejected','council_rejected','shadow_completed','published','failed_terminal']);
+const terminal=new Set(['needs_evidence','evidence_rejected','pricing_rejected','council_rejected','shadow_completed','production_ready','published','failed_terminal']);
 export interface SourcingDependencies {
   discover:(config:SourcingConfig)=>Promise<Evidence[]>;
   marketEvidence?:(candidate:any)=>Promise<MarketEvidence>;
@@ -71,6 +71,10 @@ function commercialEvidenceReasons(candidate:OpportunityCandidate):string[] {
   return [...new Set(missing)];
 }
 
+function automaticProductionPublicationEnabled(){
+  return process.env.AUTOPILOT_V4_AUTO_PUBLISH_ENABLED==='true';
+}
+
 export const liveSourcing: SourcingDependencies={
   async discover(config) {
     const cj=getCJSourcingReadProvider(config);
@@ -112,7 +116,7 @@ export function errorClass(error:unknown) {
 }
 
 export async function runSourcing(store:SourcingStore, config:SourcingConfig, key:string, deps=liveSourcing) {
-  const claimed=await store.command<{status:string;run:Run}>('claim',{scope:`cj:${config.destination}`,key,owner:randomUUID(),mode:config.mode,config});
+  const claimed=await store.command<{status:string;run:Run}>('claim',{scope:`cj:${config.destination}:${config.mode}`,key,owner:randomUUID(),mode:config.mode,config});
   if(claimed.status!=='claimed') return {status:claimed.status,run_id:claimed.run.id,mode:claimed.run.mode};
   const run=claimed.run; config=run.config;
   const fence={run:run.id,owner:run.lease_owner,generation:run.lease_generation};
@@ -149,7 +153,7 @@ export async function runSourcing(store:SourcingStore, config:SourcingConfig, ke
           let candidate:OpportunityCandidate={...item.payload.candidate!,risk:fit.risk,pricing:{...item.payload.candidate!.pricing,targetNetMarginPct:config.minMargin!}};
           candidate=enrichSupplierReliability(candidate,item.payload);
           let market:MarketEvidence|undefined;
-          if(config.mode==='shadow' && deps.marketEvidence){
+          if(deps.marketEvidence){
             await reserveModelCall();
             market=await deps.marketEvidence(candidate);
             if(market.status!=='ok'){
@@ -188,6 +192,10 @@ export async function runSourcing(store:SourcingStore, config:SourcingConfig, ke
           const commercialReasons=commercialEvidenceReasons(item.checkpoint.candidate);
           const allReasons=[...new Set([...reasons,...commercialReasons])];
           if(allReasons.length){await checkpoint(item,'needs_evidence',{reasons:allReasons});continue;}
+          if(config.mode==='production' && !automaticProductionPublicationEnabled()){
+            await checkpoint(item,'production_ready',{productionReadyAt:new Date().toISOString(),publicationPolicy:'manual_admin_release_v1'});
+            continue;
+          }
           await call('publish',{item:item.id});deps.afterCheckpoint?.(config.mode==='shadow'?'shadow_completed':'published');
         }
       } catch(error){

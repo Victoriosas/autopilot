@@ -136,8 +136,12 @@ export async function listPersistedProductDrafts(limit = 50): Promise<PersistedP
 export async function publishProductDraftAtomically(id: string): Promise<PersistedProductDraft> {
   if (!db) throw new Error('Draft persistence unavailable');
   assertDraftPublishable(await getPersistedProductDraft(id));
-  const { data, error } = await db.rpc('publish_autopilot_draft', { draft_id: id });
-  if (error) throw new Error(`Unable to publish draft: ${error.message}`);
+  const { data, error } = await db.rpc('publish_autopilot_draft_manual', { draft_id: id });
+  if (error) {
+    const known = ['MANUAL_RELEASE_EVIDENCE_STALE_OR_INVALID','PRODUCTION_READY_COUNCIL_REQUIRED','COUNCIL_APPROVAL_REQUIRED','SHADOW_PUBLICATION_DENIED'];
+    const code = known.find((value) => error.message.includes(value));
+    throw new Error(code || `Unable to publish draft: ${error.message}`);
+  }
   return mapRow(data);
 }
 

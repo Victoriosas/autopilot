@@ -17,8 +17,6 @@ function sql(query:string):Promise<string>{
 }
 const quoted=(value:unknown)=>`'${JSON.stringify(value).replace(/'/g,"''")}'::jsonb`;
 const store:SourcingStore={async command(command,args){return JSON.parse(await sql(`set role service_role; select public.autopilot_sourcing_command('${command}',${quoted(args)});`));}};
-// These are synthetic durability fixtures denominated entirely in UYU. They do
-// not exercise CJ provider FX; dedicated sourcing safety tests cover that path.
 const config={...sourcingConfig({STORE_CURRENCY:'UYU',AUTOPILOT_CJ_CURRENCY:'UYU'}),minMargin:35,durationMs:40000,maxCandidates:30};
 function fixture(id=randomUUID()):Evidence {
  return {provider:'cj',productId:id,variantId:'one',sourceUrl:'https://example.test/evidence',observedAt:new Date().toISOString(),
@@ -29,23 +27,23 @@ function fixture(id=randomUUID()):Evidence {
  marketPrice:40,provenance:{supplierCost:'verified',supplierShipping:'verified',marketPrice:'verified'}}},
  facts:{description:'Vincha de tela para sujetar el cabello durante la rutina.',images:['https://example.test/headband.jpg']}};
 }
+const market:SourcingDependencies['marketEvidence']=async()=>({status:'ok',provider:'mercadolibre_uy',marketPriceUyu:40,minPriceUyu:35,maxPriceUyu:45,demandScore:95,competitionScore:5,confidence:95,comparableCount:3,sources:[{title:'A',url:'https://example.com.uy/a'},{title:'B',url:'https://example.com.uy/b'}],notes:[],observedAt:new Date().toISOString()});
 const approve:SourcingDependencies['council']=async()=>({decision:'approve',quorum:'3_of_3',votes:[],debatePerformed:false,summary:'Synthetic test approval',ownerEscalationRequired:false,escalationReasons:[]});
 
 test('PostgreSQL durable sourcing integration', {skip:!database,timeout:240000}, async t=>{
  const target=new URL(database!);
  assert.ok(['localhost','127.0.0.1'].includes(target.hostname),'Only loopback databases allowed');
  assert.equal(target.pathname,'/autopilot_orchestrator_test','Dedicated disposable database required');
- // Dedicated database/schema only. No remote or existing app schema is eligible.
  await sql('drop schema public cascade; create schema public;');
  await sql(readFileSync('tests/sourcing-baseline.sql','utf8'));
- for(const file of ['20260912051000_autopilot_product_drafts.sql','20260912052500_ai_governor_draft_reviews.sql','20260912054500_governed_publication.sql','20260912200316_release_integrity.sql','20260914215143_durable_sourcing_orchestrator.sql'])
+ for(const file of ['20260912051000_autopilot_product_drafts.sql','20260912052500_ai_governor_draft_reviews.sql','20260912054500_governed_publication.sql','20260912200316_release_integrity.sql','20260914215143_durable_sourcing_orchestrator.sql','20260915071500_release_candidate_lane.sql'])
   await sql(readFileSync(`supabase/migrations/${file}`,'utf8'));
  await sql('grant usage on schema public to service_role,anon,authenticated; grant select,insert,update on products,autopilot_product_drafts to service_role;');
  const expire=async()=>sql("update autopilot_sourcing_runs set lease_expires_at=now()-interval '1 second' where status in ('running','resuming');");
  const clean=async()=>sql('truncate autopilot_sourcing_items,autopilot_sourcing_runs,autopilot_product_drafts,products cascade;');
 
  await t.test('concurrent claim, lease takeover and stale fencing',async()=>{
-  const args={scope:'cj:UY',key:'concurrency',mode:'shadow',config};
+  const args={scope:'cj:UY:shadow',key:'concurrency',mode:'shadow',config};
   const results=await Promise.all([store.command('claim',{...args,owner:randomUUID()}),store.command('claim',{...args,owner:randomUUID()})]);
   assert.equal(results.filter(r=>r.status==='claimed').length,1);
   const old=results.find(r=>r.status==='claimed').run;
@@ -57,7 +55,7 @@ test('PostgreSQL durable sourcing integration', {skip:!database,timeout:240000},
  });
  await t.test('30 unknown candidates complete successfully without drafts',async()=>{
   const unknown=Array.from({length:30},()=>({...fixture(),currency:null,shippingCost:null}));
-  const result=await runSourcing(store,config,'empty',{discover:async()=>unknown,council:approve});
+  const result=await runSourcing(store,config,'empty',{discover:async()=>unknown,marketEvidence:market,council:approve});
   assert.equal(result.status,'completed_no_candidates');
   assert.equal(await sql("select count(*) from autopilot_sourcing_items where status='needs_evidence';"),'30');
   assert.equal(await sql('select count(*) from products;'),'0');
@@ -66,7 +64,7 @@ test('PostgreSQL durable sourcing integration', {skip:!database,timeout:240000},
  for(const stage of ['discovered','normalized','evidence_validated','opportunity_scored','pricing_completed','draft_created','council_approved','shadow_completed']){
   await t.test(`crash after ${stage} resumes without duplicate effects`,async()=>{
    const evidence=fixture();let crashed=false;
-   const deps:SourcingDependencies={discover:async()=>[evidence],council:approve,afterCheckpoint(s){if(s===stage&&!crashed){crashed=true;throw new Error('SIMULATED_CRASH');}}};
+   const deps:SourcingDependencies={discover:async()=>[evidence],marketEvidence:market,council:approve,afterCheckpoint(s){if(s===stage&&!crashed){crashed=true;throw new Error('SIMULATED_CRASH');}}};
    await assert.rejects(runSourcing(store,config,stage,deps),/SIMULATED_CRASH/);
    await expire();
    const resumed=await runSourcing(store,config,stage,{...deps,afterCheckpoint:undefined});
@@ -80,14 +78,29 @@ test('PostgreSQL durable sourcing integration', {skip:!database,timeout:240000},
    await clean();
   });
  }
- await t.test('production publication, crash replay and commercial identity deduplication',async()=>{
+ await t.test('production validation stops at production_ready and manual release is idempotent',async()=>{
   const evidence=fixture();const prod={...config,mode:'production' as const};
-  await assert.rejects(runSourcing(store,prod,'prod',{discover:async()=>[evidence],council:approve,afterCheckpoint(s){if(s==='published')throw new Error('SIMULATED_CRASH');}}),/SIMULATED_CRASH/);
-  await expire();await runSourcing(store,prod,'prod',{discover:async()=>[evidence],council:approve});
+  const validated=await runSourcing(store,prod,'prod',{discover:async()=>[evidence],marketEvidence:market,council:approve});
+  assert.equal(validated.status,'completed');
+  assert.equal(await sql("select count(*) from autopilot_sourcing_items where status='production_ready';"),'1');
+  assert.equal(await sql('select count(*) from products;'),'0');
+  const draftId=await sql('select id from autopilot_product_drafts limit 1;');
+  await sql(`set role service_role; select publish_autopilot_draft_manual('${draftId}'::uuid);`);
   assert.equal(await sql('select count(*) from products;'),'1');
   assert.equal(await sql('select inventory from products;'),'0');
-  await runSourcing(store,prod,'prod-new',{discover:async()=>[{...evidence,observedAt:new Date(Date.now()+1).toISOString()}],council:approve});
+  assert.equal(await sql('select publication_eligible from products;'),'t');
+  assert.equal(await sql("select count(*) from autopilot_sourcing_items where status='published';"),'1');
+  await sql(`set role service_role; select publish_autopilot_draft_manual('${draftId}'::uuid);`);
   assert.equal(await sql('select count(*) from products;'),'1');
+  await clean();
+ });
+ await t.test('manual release rejects stale production evidence',async()=>{
+  const evidence=fixture();const prod={...config,mode:'production' as const};
+  await runSourcing(store,prod,'stale-prod',{discover:async()=>[evidence],marketEvidence:market,council:approve});
+  const draftId=await sql('select id from autopilot_product_drafts limit 1;');
+  await sql("update autopilot_sourcing_runs set completed_at=now()-interval '25 hours' where mode='production';");
+  await assert.rejects(sql(`set role service_role; select publish_autopilot_draft_manual('${draftId}'::uuid);`),/MANUAL_RELEASE_EVIDENCE_STALE_OR_INVALID/);
+  assert.equal(await sql('select count(*) from products;'),'0');
   await clean();
  });
  await t.test('anonymous roles cannot access internal state or commands',async()=>{
