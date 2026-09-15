@@ -94,14 +94,16 @@ export async function runSourcing(store:SourcingStore, config:SourcingConfig, ke
         if(item.status==='evidence_validated') {
           const fit=item.checkpoint.victoriosaFit || assessVictoriosaFit(item.payload.candidate!,item.payload.facts);
           let candidate={...item.payload.candidate!,risk:fit.risk,pricing:{...item.payload.candidate!.pricing,targetNetMarginPct:config.minMargin!}};
-          if(config.mode!=='shadow' || !deps.marketEvidence){await checkpoint(item,'needs_evidence',{reasons:['GROUNDED_MARKET_EVIDENCE_REQUIRED'],victoriosaFit:fit});continue;}
-          const market=await sourcingModelBudget.run({deadline,beforeCall:reserveModelCall},()=>deps.marketEvidence!(candidate));
-          if(market.status!=='ok'){
-            await checkpoint(item,'needs_evidence',{reasons:[market.status==='not_configured'?'MARKET_SEARCH_NOT_CONFIGURED':'MARKET_EVIDENCE_INSUFFICIENT'],marketEvidence:market,victoriosaFit:fit});continue;
+          let market:MarketEvidence|undefined;
+          if(config.mode==='shadow' && deps.marketEvidence){
+            market=await sourcingModelBudget.run({deadline,beforeCall:reserveModelCall},()=>deps.marketEvidence!(candidate));
+            if(market.status!=='ok'){
+              await checkpoint(item,'needs_evidence',{reasons:[market.status==='not_configured'?'MARKET_SEARCH_NOT_CONFIGURED':'MARKET_EVIDENCE_INSUFFICIENT'],marketEvidence:market,victoriosaFit:fit});continue;
+            }
+            candidate=applyMarketEvidence(candidate,market);
           }
-          candidate=applyMarketEvidence(candidate,market);
           const quote=evaluateOpportunity(candidate);
-          await checkpoint(item,'opportunity_scored',{quote,candidate,marketEvidence:market,victoriosaFit:fit,pricingVersion:'existing-v4+grounded-market-v1',calculatedAt:new Date().toISOString()});
+          await checkpoint(item,'opportunity_scored',{quote,candidate,marketEvidence:market||null,victoriosaFit:fit,pricingVersion:market?'existing-v4+grounded-market-v1':'existing-v4',calculatedAt:new Date().toISOString()});
         }
         if(item.status==='opportunity_scored') await checkpoint(item,'pricing_completed');
         if(item.status==='pricing_completed'){
