@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { requireSupabaseAdminAuth } from '../security/adminAuth';
 import { cjSourcingReadConfigured } from '../services/cjSourcingProvider';
 import { requireControlPlaneAuth,getAutopilotPrincipal } from './auth';
+import { marketProviderStatus } from './marketEvidence';
 import { sourcingConfig, type SourcingConfig } from './sourcingEvidence';
 import { runSourcing } from './sourcingOrchestrator';
 import { createSourcingStore, type SourcingStore } from './sourcingStore';
@@ -107,7 +108,9 @@ export function createSourcingRouter(
     lastCompletedNoCandidates:runs.find(r=>r.status==='completed_no_candidates')||null,
     currentlyRunning:runs.some(r=>Date.parse(r.lease_expires_at)>Date.now()),
     resumableRuns:runs.filter(r=>['queued','running','resuming','failed_retryable'].includes(r.status)).length},
-    sourcing:{provider:'cj',configured:cjSourcingReadConfigured(config),transportPolicy:config.mode==='shadow'?'mcp_first_rest_fallback':'rest'},governance:{councilEnabled:true,autonomousPurchaseAllowed:false},
+    sourcing:{provider:'cj',configured:cjSourcingReadConfigured(config),transportPolicy:config.mode==='shadow'?'mcp_first_rest_fallback':'rest'},
+    marketEvidence:{priority:['mercadolibre_uy','gemini_google_search','openrouter_web_search'],...marketProviderStatus()},
+    governance:{councilEnabled:true,autonomousPurchaseAllowed:false},
     commerce:{checkoutEnabled:process.env.CHECKOUT_ENABLED==='true'}});
   }catch{return res.status(503).json({error:'SOURCING_STATUS_UNAVAILABLE'});}
  });
@@ -140,6 +143,7 @@ export function createSourcingRouter(
     cronEnabled:false,
     policyVersion:UI_SHADOW_POLICY.policyVersion,
     transportPolicy:'mcp_first_rest_fallback',
+    marketEvidence:{priority:['mercadolibre_uy','gemini_google_search','openrouter_web_search'],...marketProviderStatus()},
     searchQuery,
     safety:{checkout:false,purchases:false,autoPublish:false,maxCandidates:config.maxCandidates,maxAiCalls:config.maxAiCalls},
     inspection,
@@ -158,6 +162,7 @@ export function createSourcingRouter(
     shadow:true,
     cronEnabled:sourcingConfig().enabled,
     transportPolicy:'mcp_first_rest_fallback',
+    marketEvidence:{priority:['mercadolibre_uy','gemini_google_search','openrouter_web_search'],...marketProviderStatus()},
     safety:{checkout:process.env.CHECKOUT_ENABLED==='true',purchaseLimitUsd:Number(process.env.AUTOPILOT_PURCHASE_LIMIT_USD || '0'),autoPublish:false},
     ...inspection,
    });
