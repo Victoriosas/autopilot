@@ -21,6 +21,12 @@ export interface CJSourcingReadProvider {
   drainTrace(): string[];
 }
 
+export class CJReadChainError extends Error {
+  constructor(public code: string, public status?: number) {
+    super(code);
+  }
+}
+
 function finiteNumber(value: unknown): number | undefined {
   if (typeof value !== 'number' && typeof value !== 'string') return undefined;
   if (typeof value === 'string' && !value.trim()) return undefined;
@@ -146,8 +152,15 @@ function searchRows(value: any): any[] {
 }
 
 function errorCode(error: unknown): string {
-  if (error instanceof CJMcpError) return error.code.replace(/[^A-Z0-9_:-]/gi, '_').slice(0, 80);
+  if (error instanceof CJMcpError || error instanceof CJReadChainError) return error.code.replace(/[^A-Z0-9_:-]/gi, '_').slice(0, 120);
+  const status = Number((error as any)?.status);
+  if (Number.isFinite(status) && status > 0) return `CJ_REST_HTTP_${status}`;
   return 'UNKNOWN';
+}
+
+function errorStatus(error: unknown): number | undefined {
+  const status = Number((error as any)?.status);
+  return Number.isFinite(status) && status > 0 ? status : undefined;
 }
 
 export class CJMcpFirstSourcingProvider implements CJSourcingReadProvider {
@@ -163,20 +176,30 @@ export class CJMcpFirstSourcingProvider implements CJSourcingReadProvider {
   }
 
   private async withFallback<T>(tool: string, mcpCall: () => Promise<T>, restCall: () => Promise<T>): Promise<T> {
+    let mcpFailure: string | null = null;
     if (this.mcp) {
       try {
         const value = await mcpCall();
         this.note(`CJ_MCP_${tool.toUpperCase()}_OBSERVED`);
         return value;
       } catch (error) {
-        this.note(`CJ_MCP_${tool.toUpperCase()}_FALLBACK_${errorCode(error)}`);
-        if (!this.rest) throw error;
+        mcpFailure = errorCode(error);
+        this.note(`CJ_MCP_${tool.toUpperCase()}_FALLBACK_${mcpFailure}`);
+        if (!this.rest) throw new CJReadChainError(`CJ_MCP_ONLY_${mcpFailure}`, errorStatus(error));
       }
     }
-    if (!this.rest) throw new Error('CJ_READ_PROVIDER_NOT_CONFIGURED');
-    const value = await restCall();
-    this.note(`CJ_REST_${tool.toUpperCase()}_OBSERVED`);
-    return value;
+    if (!this.rest) throw new CJReadChainError('CJ_READ_PROVIDER_NOT_CONFIGURED');
+    try {
+      const value = await restCall();
+      this.note(`CJ_REST_${tool.toUpperCase()}_OBSERVED`);
+      return value;
+    } catch (error) {
+      const restFailure = errorCode(error);
+      const chain = mcpFailure
+        ? `CJ_MCP_FALLBACK_${mcpFailure}_${restFailure}`
+        : `CJ_REST_ONLY_${restFailure}`;
+      throw new CJReadChainError(chain, errorStatus(error));
+    }
   }
 
   async searchProducts(params: { keyword?: string; pageNum?: number; pageSize?: number }) {
@@ -243,5 +266,7 @@ export function getCJSourcingReadProvider(config: Pick<SourcingConfig, 'mode'>, 
   const mcp = config.mode === 'shadow' && cjMcpShadowSafetyReady(env) ? getCJMcpReadOnlyClient(env) : null;
   const rest = getCJClient();
   if (!mcp && !rest) return null;
+  const transport = mcp ? (rest ? 'mcp-first-rest-fallback' : 'mcp-only') : 'rest-only';
+  console.info(`[CJ Sourcing] transport=${transport}`);
   return new CJMcpFirstSourcingProvider(mcp, rest);
 }
