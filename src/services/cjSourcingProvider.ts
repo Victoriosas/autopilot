@@ -97,7 +97,7 @@ function mapMcpVariant(item: any, fallbackPid = ''): CJVariant {
 
 function rowsFrom(value: any): any[] {
   if (Array.isArray(value)) return value;
-  for (const key of ['list', 'records', 'content', 'data', 'variants', 'skuList']) {
+  for (const key of ['list', 'records', 'content', 'data', 'variants', 'skuList', 'variantList']) {
     if (Array.isArray(value?.[key])) return value[key];
   }
   return [];
@@ -114,8 +114,21 @@ function skuRows(value: any): any[] {
   return value && typeof value === 'object' ? [value] : [];
 }
 
+function inventoryRows(value: any): any[] {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.flatMap(inventoryRows);
+  if (typeof value !== 'object') return [];
+  const ownInventory = observedStock(
+    value?.totalInventoryNum ?? value?.totalInventory ?? value?.inventory ?? value?.cjInventoryNum ?? value?.cjInventory,
+  );
+  const ownLooksLikeRow = ownInventory !== undefined || Boolean(value?.countryCode || value?.country || value?.areaCode || value?.warehouseName);
+  const nestedKeys = ['data', 'list', 'records', 'content', 'inventories', 'inventoryList', 'stock', 'stocks', 'warehouseInventory'];
+  const nested = nestedKeys.flatMap((key) => inventoryRows(value?.[key]));
+  return ownLooksLikeRow ? [value, ...nested] : nested;
+}
+
 function mapMcpStock(variantId: string, value: any): CJVariantStock | null {
-  const rows = rowsFrom(value);
+  const rows = inventoryRows(value);
   if (!rows.length) return null;
   const warehouses = rows.map((row: any) => ({
     countryCode: firstString(row?.countryCode, row?.country, row?.areaCode),
@@ -124,12 +137,10 @@ function mapMcpStock(variantId: string, value: any): CJVariantStock | null {
     factoryInventory: observedStock(row?.factoryInventoryNum ?? row?.factoryInventory) ?? null,
     verifiedWarehouse: observedStock(row?.verifiedWarehouse) ?? null,
   }));
-  const knownTotals = warehouses.map((warehouse) => warehouse.totalInventory).filter((value): value is number => value !== null);
-  return {
-    variantId,
-    totalInventory: knownTotals.length ? knownTotals.reduce((sum, value) => sum + value, 0) : null,
-    warehouses,
-  };
+  const knownTotals = warehouses.map((warehouse) => warehouse.totalInventory).filter((item): item is number => item !== null);
+  const directTotal = observedStock(value?.totalInventoryNum ?? value?.totalInventory ?? value?.inventory);
+  const totalInventory = directTotal ?? (knownTotals.length ? knownTotals.reduce((sum, item) => sum + item, 0) : null);
+  return { variantId, totalInventory, warehouses };
 }
 
 function mapMcpFreight(value: any): CJFreightOption[] {
@@ -176,7 +187,6 @@ function errorStatus(error: unknown): number | undefined {
 
 export class CJMcpFirstSourcingProvider implements CJSourcingReadProvider {
   private trace: string[] = [];
-  private readonly observedVariantStock = new Map<string, number>();
 
   constructor(
     private readonly mcp: CJMcpReadOnlyClient | null,
@@ -232,45 +242,27 @@ export class CJMcpFirstSourcingProvider implements CJSourcingReadProvider {
   }
 
   async getVariants(productId: string, productSku?: string) {
-    return this.withFallback('query_sku_details', async () => {
-      if (!productSku) throw new CJMcpError('CJ_MCP_PRODUCT_SKU_MISSING', 'CJ_MCP_PRODUCT_SKU_MISSING');
-      const data = await this.mcp!.callReadOnlyJsonTool('query_sku_details', { sku: productSku });
-      const variants = skuRows(data).map((row) => mapMcpVariant(row, productId)).filter((variant) => Boolean(variant.vid));
-      if (!variants.length) throw new CJMcpError('CJ_MCP_SKU_DETAILS_EMPTY', 'CJ_MCP_SKU_DETAILS_EMPTY');
-      for (const variant of variants) {
-        if (variant.stockQuantity !== undefined) this.observedVariantStock.set(variant.vid, variant.stockQuantity);
+    return this.withFallback('get_product_variants', async () => {
+      let data: unknown;
+      try {
+        data = await this.mcp!.callReadOnlyJsonTool('get_product_variants', { pid: productId });
+      } catch (error) {
+        this.note(`CJ_MCP_GET_PRODUCT_VARIANTS_DETAIL_FALLBACK_${errorCode(error)}`);
+        data = await this.mcp!.callReadOnlyJsonTool('get_product_detail', { pid: productId });
       }
+      const variants = skuRows(data).map((row) => mapMcpVariant(row, productId)).filter((variant) => Boolean(variant.vid));
+      if (!variants.length) throw new CJMcpError('CJ_MCP_PUBLIC_VARIANTS_EMPTY', 'CJ_MCP_PUBLIC_VARIANTS_EMPTY');
       return variants;
     }, async () => this.rest!.getVariants(productId));
   }
 
   async getVariantStock(variantId: string) {
-    const observed = this.observedVariantStock.get(variantId);
-    if (observed !== undefined) {
-      this.note('CJ_MCP_QUERY_SKU_DETAILS_STOCK_OBSERVED');
-      return {
-        variantId,
-        totalInventory: observed,
-        warehouses: [{
-          countryCode: '',
-          totalInventory: observed,
-          cjInventory: null,
-          factoryInventory: null,
-          verifiedWarehouse: null,
-        }],
-      };
-    }
-    if (!this.rest) {
-      this.note('CJ_MCP_QUERY_SKU_DETAILS_STOCK_UNKNOWN');
-      return null;
-    }
-    try {
-      const stock = await this.rest.getVariantStock(variantId);
-      this.note('CJ_REST_QUERY_CJ_INVENTORY_OBSERVED');
+    return this.withFallback('query_cj_inventory', async () => {
+      const data = await this.mcp!.callReadOnlyJsonTool('query_cj_inventory', { vid: variantId });
+      const stock = mapMcpStock(variantId, data);
+      if (!stock || stock.totalInventory === null) throw new CJMcpError('CJ_MCP_PUBLIC_INVENTORY_EMPTY', 'CJ_MCP_PUBLIC_INVENTORY_EMPTY');
       return stock;
-    } catch (error) {
-      throw new CJReadChainError(`CJ_REST_ONLY_${errorCode(error)}`, errorStatus(error));
-    }
+    }, async () => this.rest!.getVariantStock(variantId));
   }
 
   async calculateShipping(params: { variantId: string; countryCode: string; quantity?: number; startCountryCode?: string }) {
