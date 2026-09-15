@@ -157,26 +157,42 @@ class CJDropshippingClient {
   private refreshToken: string | null = null;
   private tokenExpiry = 0;
   private refreshExpiry = 0;
-  private lastRequestTime = 0;
+  private tokenPromise: Promise<string> | null = null;
+  private requestQueue: Promise<void> = Promise.resolve();
+  private nextRequestAt = 0;
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
   }
 
+  // CJ documents a 1 QPS limit. Serialize calls within each warm serverless
+  // instance so concurrent product/stock/freight work cannot burst the API.
   private async rateLimit(): Promise<void> {
-    const now = Date.now();
-    const elapsed = now - this.lastRequestTime;
-    if (elapsed < 1100) await new Promise((resolve) => setTimeout(resolve, 1100 - elapsed));
-    this.lastRequestTime = Date.now();
+    const slot = this.requestQueue.then(async () => {
+      const waitMs = Math.max(0, this.nextRequestAt - Date.now());
+      if (waitMs > 0) await new Promise((resolve) => setTimeout(resolve, waitMs));
+      this.nextRequestAt = Date.now() + 1100;
+    });
+    this.requestQueue = slot.catch(() => undefined);
+    await slot;
   }
 
   private async ensureAccessToken(): Promise<string> {
     if (this.accessToken && Date.now() < this.tokenExpiry) return this.accessToken;
-    if (this.refreshToken && Date.now() < this.refreshExpiry) return this.refreshAccessToken();
-    return this.getNewAccessToken();
+    if (this.tokenPromise) return this.tokenPromise;
+
+    this.tokenPromise = (async () => {
+      if (this.refreshToken && Date.now() < this.refreshExpiry) return this.refreshAccessToken();
+      return this.getNewAccessToken();
+    })().finally(() => {
+      this.tokenPromise = null;
+    });
+
+    return this.tokenPromise;
   }
 
   private async getNewAccessToken(): Promise<string> {
+    await this.rateLimit();
     const response = await fetch(`${CJ_BASE_URL}/authentication/getAccessToken`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -194,6 +210,7 @@ class CJDropshippingClient {
   }
 
   private async refreshAccessToken(): Promise<string> {
+    await this.rateLimit();
     const response = await fetch(`${CJ_BASE_URL}/authentication/refreshAccessToken`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -213,8 +230,8 @@ class CJDropshippingClient {
   private async request(method: string, path: string, body?: any, retries = 1): Promise<any> {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
-        await this.rateLimit();
         const token = await this.ensureAccessToken();
+        await this.rateLimit();
         const headers: Record<string, string> = { 'CJ-Access-Token': token, 'Content-Type': 'application/json' };
         const options: RequestInit = { method, headers, signal: AbortSignal.timeout(8000) };
         if (body && (method === 'POST' || method === 'PUT')) options.body = JSON.stringify(body);
