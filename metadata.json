@@ -1,6 +1,0 @@
-{
-  "name": "Victoriosa",
-  "description": "Autopilot inteligente de descubrimiento, análisis y publicación de catálogo con tienda e-commerce integrada",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
