@@ -54,22 +54,23 @@ test('MCP-first search maps CJ listV2 product shape without fabricating fields',
   assert.ok(provider.drainTrace().includes('CJ_MCP_SEARCH_PRODUCTS_OBSERVED'));
 });
 
-test('MCP-first provider maps variants, public inventory and freight for V4 evidence', async () => {
-  const mcp = mcpClient((name) => {
-    if (name === 'get_product_variants') return [
-      { pid: 'P-1', vid: 'V-1', variantSku: 'SKU-1', variantNameEn: 'Pink', variantSellPrice: '3.25', variantWeight: '80' },
-    ];
-    if (name === 'query_cj_inventory') return [
-      { countryCode: 'CN', totalInventoryNum: 4, cjInventoryNum: 4 },
-      { countryCode: 'US', totalInventoryNum: '6' },
-    ];
+test('MCP-first provider uses documented SKU details, observed stock and freight for V4 evidence', async () => {
+  const mcp = mcpClient((name, args) => {
+    if (name === 'query_sku_details') {
+      assert.equal(args.sku, 'SPU-1');
+      return {
+        variants: [
+          { pid: 'P-1', vid: 'V-1', variantSku: 'SKU-1', variantNameEn: 'Pink', variantSellPrice: '3.25', variantWeight: '80', variantStock: 10 },
+        ],
+      };
+    }
     if (name === 'calculate_freight') return [
       { logisticName: 'CJPacket', logisticAging: '12-22', logisticPrice: '4.20', taxesFee: '0.30', clearanceOperationFee: '0.50' },
     ];
     throw new Error(`unexpected tool ${name}`);
   });
   const provider = new CJMcpFirstSourcingProvider(mcp, null);
-  const variants = await provider.getVariants('P-1');
+  const variants = await provider.getVariants('P-1', 'SPU-1');
   const stock = await provider.getVariantStock('V-1');
   const freight = await provider.calculateShipping({ variantId: 'V-1', countryCode: 'UY' });
   assert.equal(variants[0].variantSellPrice, 3.25);
@@ -78,9 +79,25 @@ test('MCP-first provider maps variants, public inventory and freight for V4 evid
   assert.equal(freight[0].totalCostUsd, 5);
   assert.equal(freight[0].logisticAging, '12-22');
   const trace = provider.drainTrace();
-  assert.ok(trace.includes('CJ_MCP_GET_PRODUCT_VARIANTS_OBSERVED'));
-  assert.ok(trace.includes('CJ_MCP_QUERY_CJ_INVENTORY_OBSERVED'));
+  assert.ok(trace.includes('CJ_MCP_QUERY_SKU_DETAILS_OBSERVED'));
+  assert.ok(trace.includes('CJ_MCP_QUERY_SKU_DETAILS_STOCK_OBSERVED'));
   assert.ok(trace.includes('CJ_MCP_CALCULATE_FREIGHT_OBSERVED'));
+});
+
+test('uses REST stock when SKU details do not provide observed inventory', async () => {
+  const mcp = mcpClient((name) => {
+    if (name === 'query_sku_details') return { variants: [{ pid: 'P-1', vid: 'V-1', variantSku: 'SKU-1', variantSellPrice: '3.25' }] };
+    throw new Error(`unexpected tool ${name}`);
+  });
+  const rest = {
+    getVariantStock: async () => ({ variantId: 'V-1', totalInventory: 7, warehouses: [{ countryCode: 'CN', totalInventory: 7, cjInventory: 7, factoryInventory: null, verifiedWarehouse: null }] }),
+    getVariants: async () => [],
+  } as unknown as CJDropshippingClient;
+  const provider = new CJMcpFirstSourcingProvider(mcp, rest);
+  await provider.getVariants('P-1', 'SPU-1');
+  const stock = await provider.getVariantStock('V-1');
+  assert.equal(stock?.totalInventory, 7);
+  assert.ok(provider.drainTrace().includes('CJ_REST_QUERY_CJ_INVENTORY_OBSERVED'));
 });
 
 test('falls back to REST when an MCP read fails and records only a sanitized code', async () => {
