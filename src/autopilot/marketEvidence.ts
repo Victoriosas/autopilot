@@ -1,6 +1,7 @@
+import { createClient } from '@supabase/supabase-js';
 import type { OpportunityCandidate } from './opportunityEngine';
 
-export type MarketEvidenceProvider='mercadolibre_uy'|'gemini_google_search'|'openrouter_web_search';
+export type MarketEvidenceProvider='curated_uy_observations'|'mercadolibre_uy'|'gemini_google_search'|'openrouter_web_search';
 
 export interface MarketEvidence {
   status: 'ok' | 'insufficient' | 'not_configured' | 'provider_error';
@@ -18,6 +19,7 @@ export interface MarketEvidence {
 }
 
 type GroundedPriceRow={url:string;title:string;price:number};
+type MarketMemoryRow={title:string;url:string;price_uyu:number|string;sold_quantity:number|null;rating_count:number|null;observed_at:string;expires_at:string};
 let openRouterBlockedUntil=0;
 
 function clamp(value: unknown, min=0, max=100): number | undefined {
@@ -174,6 +176,49 @@ function titleSimilarity(query:string,title:string):number{
   return hits/Math.min(Math.max(q.length,1),4);
 }
 
+function priceStats(prices:number[]){
+  const sorted=[...prices].sort((a,b)=>a-b);
+  const middle=Math.floor(sorted.length/2);
+  return {min:sorted[0],max:sorted[sorted.length-1],median:sorted.length%2?sorted[middle]:(sorted[middle-1]+sorted[middle])/2};
+}
+
+async function searchWithMarketMemory(candidate:OpportunityCandidate,observedAt:string):Promise<MarketEvidence>{
+  const url=process.env.SUPABASE_URL?.trim(),key=process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if(!url||!key) return {status:'not_configured',provider:'curated_uy_observations',comparableCount:0,sources:[],notes:['MARKET_MEMORY_DATABASE_NOT_CONFIGURED'],observedAt};
+  try{
+    const client=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+    const freshSince=new Date(Date.now()-24*60*60*1000).toISOString();
+    const {data,error}=await client.from('autopilot_market_observations')
+      .select('title,url,price_uyu,sold_quantity,rating_count,observed_at,expires_at')
+      .gte('observed_at',freshSince).gt('expires_at',observedAt).order('observed_at',{ascending:false}).limit(200);
+    if(error) return {status:'provider_error',provider:'curated_uy_observations',comparableCount:0,sources:[],notes:['MARKET_MEMORY_QUERY_FAILED'],observedAt};
+    const rows=(data||[] as MarketMemoryRow[]).flatMap((row:any)=>{
+      const price=Number(row.price_uyu),similarity=titleSimilarity(candidate.title,String(row.title||''));
+      if(!Number.isFinite(price)||price<100||price>100000||similarity<0.25||!String(row.url||'').startsWith('http')) return [];
+      return [{...row,price,similarity}];
+    });
+    const unique=[...new Map<string,(typeof rows)[number]>(rows.map((row:any)=>[String(row.url),row])).values()].sort((a:any,b:any)=>b.similarity-a.similarity).slice(0,8);
+    const sources=unique.map((row:any)=>({title:String(row.title).slice(0,200),url:String(row.url).slice(0,1000)}));
+    if(unique.length<2) return {status:'insufficient',provider:'curated_uy_observations',comparableCount:unique.length,sources,notes:['MARKET_MEMORY_FEWER_THAN_2_RELEVANT_COMPARABLES'],observedAt};
+    const sold=unique.map((row:any)=>Number(row.sold_quantity)).filter((value:number)=>Number.isFinite(value)&&value>=0);
+    const ratings=unique.map((row:any)=>Number(row.rating_count)).filter((value:number)=>Number.isFinite(value)&&value>=0);
+    if(!sold.length&&!ratings.length) return {status:'insufficient',provider:'curated_uy_observations',comparableCount:unique.length,sources,notes:['MARKET_MEMORY_DEMAND_SIGNAL_REQUIRED'],observedAt};
+    const stats=priceStats(unique.map((row:any)=>Number(row.price)));
+    const soldAverage=sold.length?sold.reduce((a:number,b:number)=>a+b,0)/sold.length:0;
+    const ratingAverage=ratings.length?ratings.reduce((a:number,b:number)=>a+b,0)/ratings.length:0;
+    const demandSignal=sold.length?Math.log10(1+soldAverage)*18:Math.log10(1+ratingAverage)*12;
+    const avgSimilarity=unique.reduce((sum:number,row:any)=>sum+row.similarity,0)/unique.length;
+    const evidenceObservedAt=unique.map((row:any)=>Date.parse(row.observed_at)).filter(Number.isFinite).sort((a:number,b:number)=>a-b)[0] || Date.now();
+    return {
+      status:'ok',provider:'curated_uy_observations',marketPriceUyu:stats.median,minPriceUyu:stats.min,maxPriceUyu:stats.max,
+      demandScore:Math.round(Math.min(82,42+demandSignal)),competitionScore:Math.round(Math.min(85,45+unique.length*5)),
+      confidence:Math.round(Math.min(88,58+unique.length*3+avgSimilarity*12)),comparableCount:unique.length,sources,
+      notes:['CURATED_URUGUAY_MARKET_MEMORY','FRESH_WITHIN_24H','PRICE_MEDIAN_FROM_DISTINCT_SOURCE_URLS',sold.length?'DEMAND_FROM_OBSERVED_SOLD_QUANTITY':'DEMAND_FROM_OBSERVED_RATING_COUNT'],
+      observedAt:new Date(evidenceObservedAt).toISOString(),
+    };
+  }catch{return {status:'provider_error',provider:'curated_uy_observations',comparableCount:0,sources:[],notes:['MARKET_MEMORY_FAILED'],observedAt};}
+}
+
 export function mercadoLibreEvidenceFromSearch(data:any,candidateTitle:string,observedAt:string):MarketEvidence {
   const results=Array.isArray(data?.results)?data.results:[];
   const rows=results.flatMap((item:any)=>{
@@ -286,6 +331,7 @@ async function searchWithOpenRouter(candidate:OpportunityCandidate,apiKey:string
 
 export function marketProviderStatus(){
   return {
+    marketMemory:Boolean(process.env.SUPABASE_URL?.trim()&&process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()),
     mercadoLibre:Boolean(process.env.MERCADOLIBRE_ACCESS_TOKEN?.trim() || process.env.ML_ACCESS_TOKEN?.trim()),
     gemini:Boolean(process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_API_KEY?.trim()),
     openRouter:Boolean(process.env.OPENROUTER_API_KEY?.trim()) && process.env.AUTOPILOT_MARKET_OPENROUTER_DISABLED!=='true',
@@ -296,6 +342,7 @@ export function marketProviderStatus(){
 export async function findGroundedMarketEvidence(candidate: OpportunityCandidate): Promise<MarketEvidence> {
   const observedAt=new Date().toISOString();
   const attempts:MarketEvidence[]=[];
+  const memory=await searchWithMarketMemory(candidate,observedAt); attempts.push(memory); if(memory.status==='ok') return memory;
   const mercadoLibreKey=process.env.MERCADOLIBRE_ACCESS_TOKEN?.trim() || process.env.ML_ACCESS_TOKEN?.trim();
   if(mercadoLibreKey){
     const result=await searchWithMercadoLibre(candidate,mercadoLibreKey,observedAt); attempts.push(result); if(result.status==='ok') return result;
@@ -308,7 +355,8 @@ export async function findGroundedMarketEvidence(candidate: OpportunityCandidate
   if(openRouterKey && process.env.AUTOPILOT_MARKET_OPENROUTER_DISABLED!=='true'){
     const result=await searchWithOpenRouter(candidate,openRouterKey,observedAt); attempts.push(result); if(result.status==='ok') return result;
   }
-  if(!attempts.length) return {status:'not_configured',comparableCount:0,sources:[],notes:['MARKET_SEARCH_PROVIDER_NOT_CONFIGURED'],observedAt};
+  const configured=attempts.some(result=>result.status!=='not_configured');
+  if(!configured) return {status:'not_configured',comparableCount:0,sources:[],notes:['MARKET_SEARCH_PROVIDER_NOT_CONFIGURED'],observedAt};
   const insufficient=attempts.find(result=>result.status==='insufficient');
   if(insufficient) return {...insufficient,notes:[...insufficient.notes,...attempts.flatMap(result=>result===insufficient?[]:result.notes.map(note=>`${result.provider}:${note}`)).slice(0,6)]};
   return {status:'provider_error',provider:attempts[attempts.length-1].provider,comparableCount:0,sources:[],notes:attempts.flatMap(result=>result.notes.map(note=>`${result.provider}:${note}`)).slice(0,8),observedAt};
