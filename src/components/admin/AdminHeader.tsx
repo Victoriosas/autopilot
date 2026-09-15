@@ -63,17 +63,17 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5 text-emerald-400 font-semibold font-mono">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-              SISTEMA AUTOPILOT REAL CONECTADO
+              AUTOPILOT V4 SHADOW CONECTADO
             </span>
             <span className="hidden sm:inline-flex text-white/20">|</span>
             <span className="hidden sm:inline-flex items-center gap-1 text-slate-400 font-mono text-[11px]">
               <Database className="w-3 h-3 text-indigo-400" />
-              Firestore Database
+              Supabase Durable Engine
             </span>
             <span className="hidden md:inline-flex text-white/20">|</span>
             <span className="hidden md:inline-flex items-center gap-1 text-slate-400 font-mono text-[11px]">
               <Cpu className="w-3 h-3 text-blue-400" />
-              Gemini AI Pipeline Real
+              CJ + Market Evidence
             </span>
           </div>
 
