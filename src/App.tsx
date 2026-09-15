@@ -18,7 +18,6 @@ import { AutopilotDashboard } from './components/admin/AutopilotDashboard';
 import { SupplierManagement } from './components/admin/SupplierManagement';
 import { FulfillmentOrdersTable } from './components/admin/FulfillmentOrdersTable';
 import { CandidateDetailModal } from './components/admin/CandidateDetailModal';
-import { DiscoveryModal } from './components/admin/DiscoveryModal';
 import { AutopilotRunnerModal } from './components/admin/AutopilotRunnerModal';
 import { AutopilotSettingsModal } from './components/admin/AutopilotSettingsModal';
 import { AutopilotHistoryModal } from './components/admin/AutopilotHistoryModal';
@@ -51,7 +50,6 @@ export function App() {
   // Admin State & Modals
   const [adminTab, setAdminTab] = useState<'pipeline' | 'fulfillment' | 'suppliers'>('pipeline');
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
-  const [isDiscoveryOpen, setIsDiscoveryOpen] = useState(false);
   const [isRunnerOpen, setIsRunnerOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -164,7 +162,7 @@ export function App() {
             adminTab={adminTab}
             onSelectAdminTab={setAdminTab}
             onOpenGlobalSearch={() => setIsGlobalSearchOpen(true)}
-            onOpenDiscovery={() => setIsDiscoveryOpen(true)}
+            onOpenDiscovery={() => setIsRunnerOpen(true)}
             onOpenRunner={() => setIsRunnerOpen(true)}
             onOpenSettings={() => setIsSettingsOpen(true)}
             onOpenHistory={() => setIsHistoryOpen(true)}
@@ -175,7 +173,7 @@ export function App() {
             {adminTab === 'pipeline' ? (
               <AutopilotDashboard
                 onInspectCandidate={(product) => setSelectedCandidateForReview(product)}
-                onOpenDiscovery={() => setIsDiscoveryOpen(true)}
+                onOpenDiscovery={() => setIsRunnerOpen(true)}
                 onOpenRunner={() => setIsRunnerOpen(true)}
               />
             ) : adminTab === 'fulfillment' ? (
@@ -196,7 +194,7 @@ export function App() {
             onSelectProduct={(product) => setSelectedCandidateForReview(product)}
             onSelectSupplier={() => setAdminTab('suppliers')}
             onSelectRun={() => setIsHistoryOpen(true)}
-            onOpenDiscovery={() => setIsDiscoveryOpen(true)}
+            onOpenDiscovery={() => setIsRunnerOpen(true)}
             onOpenRunner={() => setIsRunnerOpen(true)}
             onOpenSettings={() => setIsSettingsOpen(true)}
             onOpenHistory={() => setIsHistoryOpen(true)}
@@ -207,7 +205,6 @@ export function App() {
             <CandidateDetailModal product={selectedCandidateForReview} onClose={() => setSelectedCandidateForReview(null)} />
           )}
 
-          {isDiscoveryOpen && <DiscoveryModal onClose={() => setIsDiscoveryOpen(false)} />}
           {isRunnerOpen && <AutopilotRunnerModal onClose={() => setIsRunnerOpen(false)} />}
           {isSettingsOpen && <AutopilotSettingsModal onClose={() => setIsSettingsOpen(false)} />}
           {isHistoryOpen && <AutopilotHistoryModal onClose={() => setIsHistoryOpen(false)} />}
