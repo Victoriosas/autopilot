@@ -30,15 +30,18 @@ test('Victoriosa filter forces Uruguay regulatory review for topical cosmetic',(
   assert.match(fit.reasons.join(','),/COSMETIC_REGISTRATION/);
 });
 
-test('OpenRouter market request uses exactly one bounded fast web plugin search',()=>{
+test('OpenRouter market request uses one bounded fast web search plus response healing',()=>{
   const body:any=buildOpenRouterMarketRequest(candidate('Pearl rhinestone headband'));
   assert.equal(body.model,'openrouter/auto');
   assert.equal(body.tools,undefined);
-  assert.equal(body.plugins.length,1);
+  assert.equal(body.plugins.length,2);
   assert.equal(body.plugins[0].id,'web');
   assert.equal(body.plugins[0].engine,'exa');
   assert.equal(body.plugins[0].mode,'fast');
   assert.equal(body.plugins[0].max_results,5);
+  assert.equal(body.plugins[1].id,'response-healing');
+  assert.equal(body.response_format?.type,'json_schema');
+  assert.equal(body.provider?.require_parameters,true);
 });
 
 test('grounded market evidence enriches price and market signals without overwriting supplier facts',()=>{
