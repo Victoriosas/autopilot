@@ -15,7 +15,7 @@ import type { SourcingConfig } from '../autopilot/sourcingEvidence';
 
 export interface CJSourcingReadProvider {
   searchProducts(params: { keyword?: string; pageNum?: number; pageSize?: number }): Promise<{ products: CJProduct[]; total: number }>;
-  getVariants(productId: string): Promise<CJVariant[]>;
+  getVariants(productId: string, productSku?: string): Promise<CJVariant[]>;
   getVariantStock(variantId: string): Promise<CJVariantStock | null>;
   calculateShipping(params: { variantId: string; countryCode: string; quantity?: number; startCountryCode?: string }): Promise<CJFreightOption[]>;
   drainTrace(): string[];
@@ -91,16 +91,27 @@ function mapMcpVariant(item: any, fallbackPid = ''): CJVariant {
     skuName: firstString(item?.variantNameEn, item?.variantName, item?.nameEn, item?.name),
     skuImage: firstString(item?.variantImage, item?.bigImage, item?.image),
     salePrice: price,
-    stockQuantity: observedStock(item?.stockQuantity ?? item?.totalInventory ?? item?.totalInventoryNum),
+    stockQuantity: observedStock(item?.stockQuantity ?? item?.variantStock ?? item?.totalInventory ?? item?.totalInventoryNum ?? item?.inventory),
   };
 }
 
 function rowsFrom(value: any): any[] {
   if (Array.isArray(value)) return value;
-  for (const key of ['list', 'records', 'content', 'data', 'inventories']) {
+  for (const key of ['list', 'records', 'content', 'data', 'variants', 'skuList']) {
     if (Array.isArray(value?.[key])) return value[key];
   }
   return [];
+}
+
+function skuRows(value: any): any[] {
+  const direct = rowsFrom(value);
+  if (direct.length) return direct;
+  for (const key of ['result', 'product', 'detail']) {
+    const nested = rowsFrom(value?.[key]);
+    if (nested.length) return nested;
+    if (value?.[key] && typeof value[key] === 'object') return [value[key]];
+  }
+  return value && typeof value === 'object' ? [value] : [];
 }
 
 function mapMcpStock(variantId: string, value: any): CJVariantStock | null {
@@ -165,6 +176,7 @@ function errorStatus(error: unknown): number | undefined {
 
 export class CJMcpFirstSourcingProvider implements CJSourcingReadProvider {
   private trace: string[] = [];
+  private readonly observedVariantStock = new Map<string, number>();
 
   constructor(
     private readonly mcp: CJMcpReadOnlyClient | null,
@@ -219,22 +231,46 @@ export class CJMcpFirstSourcingProvider implements CJSourcingReadProvider {
     }, async () => this.rest!.searchProducts(params));
   }
 
-  async getVariants(productId: string) {
-    return this.withFallback('get_product_variants', async () => {
-      const data = await this.mcp!.callReadOnlyJsonTool('get_product_variants', { pid: productId });
-      const variants = rowsFrom(data).map((row) => mapMcpVariant(row, productId)).filter((variant) => Boolean(variant.vid));
-      if (!variants.length) throw new CJMcpError('CJ_MCP_VARIANTS_EMPTY', 'CJ_MCP_VARIANTS_EMPTY');
+  async getVariants(productId: string, productSku?: string) {
+    return this.withFallback('query_sku_details', async () => {
+      if (!productSku) throw new CJMcpError('CJ_MCP_PRODUCT_SKU_MISSING', 'CJ_MCP_PRODUCT_SKU_MISSING');
+      const data = await this.mcp!.callReadOnlyJsonTool('query_sku_details', { sku: productSku });
+      const variants = skuRows(data).map((row) => mapMcpVariant(row, productId)).filter((variant) => Boolean(variant.vid));
+      if (!variants.length) throw new CJMcpError('CJ_MCP_SKU_DETAILS_EMPTY', 'CJ_MCP_SKU_DETAILS_EMPTY');
+      for (const variant of variants) {
+        if (variant.stockQuantity !== undefined) this.observedVariantStock.set(variant.vid, variant.stockQuantity);
+      }
       return variants;
     }, async () => this.rest!.getVariants(productId));
   }
 
   async getVariantStock(variantId: string) {
-    return this.withFallback('query_cj_inventory', async () => {
-      const data = await this.mcp!.callReadOnlyJsonTool('query_cj_inventory', { vid: variantId });
-      const stock = mapMcpStock(variantId, data);
-      if (!stock) throw new CJMcpError('CJ_MCP_INVENTORY_EMPTY', 'CJ_MCP_INVENTORY_EMPTY');
+    const observed = this.observedVariantStock.get(variantId);
+    if (observed !== undefined) {
+      this.note('CJ_MCP_QUERY_SKU_DETAILS_STOCK_OBSERVED');
+      return {
+        variantId,
+        totalInventory: observed,
+        warehouses: [{
+          countryCode: '',
+          totalInventory: observed,
+          cjInventory: null,
+          factoryInventory: null,
+          verifiedWarehouse: null,
+        }],
+      };
+    }
+    if (!this.rest) {
+      this.note('CJ_MCP_QUERY_SKU_DETAILS_STOCK_UNKNOWN');
+      return null;
+    }
+    try {
+      const stock = await this.rest.getVariantStock(variantId);
+      this.note('CJ_REST_QUERY_CJ_INVENTORY_OBSERVED');
       return stock;
-    }, async () => this.rest!.getVariantStock(variantId));
+    } catch (error) {
+      throw new CJReadChainError(`CJ_REST_ONLY_${errorCode(error)}`, errorStatus(error));
+    }
   }
 
   async calculateShipping(params: { variantId: string; countryCode: string; quantity?: number; startCountryCode?: string }) {
