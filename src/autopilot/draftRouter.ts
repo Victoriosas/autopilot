@@ -50,6 +50,7 @@ export function createDraftRouter(): Router {
           councilQuorum: '2_of_3',
           highRiskOrFinancialActionsRequireOwnerApproval: true,
           persistencePerformed: Boolean(persisted),
+          persistedDraftsAreShadowOnly: true,
         },
         persistence: draftPersistenceStatus(),
       });
@@ -93,7 +94,7 @@ export function createDraftRouter(): Router {
         council,
         policy: {
           standardCatalogApproval: 'majority_2_of_3',
-          publicationAllowedAfterCouncilApproval: reviewed.status === 'ai_approved',
+          publicationAllowedAfterCouncilApproval: reviewed.status === 'ai_approved' && reviewed.publicationEligible && !reviewed.createdInShadowMode,
           ownerApprovalStillRequiredFor: ['supplier_purchase', 'refund', 'production_secrets', 'medical_claims', 'regulated_products'],
         },
       });
@@ -102,60 +103,26 @@ export function createDraftRouter(): Router {
     }
   });
 
-  router.post('/:id/auto-publish', async (req, res) => {
-    try {
-      const persisted = await getPersistedProductDraft(req.params.id);
-      assertDraftPublishable(persisted);
-      if (persisted.status === 'published' && persisted.publishedProductId) {
-        return res.json({ draft: persisted, product: { id: persisted.publishedProductId, status: 'published' }, policy: { idempotentReplay: true } });
-      }
-      if (persisted.status !== 'draft') {
-        return res.status(409).json({ error: 'draft must be in draft state for governed auto-publication', status: persisted.status });
-      }
-
-      const council = await runApprovalCouncil(persisted.draft);
-      if (council.ownerEscalationRequired || council.decision !== 'approve') {
-        return res.status(409).json({
-          error: 'draft did not satisfy autonomous publication policy',
-          draft: persisted,
-          council,
-          policy: { published: false, ownerApprovalRequired: true },
-        });
-      }
-
-      const reason = [
-        council.summary,
-        ...council.votes.map((vote) => `${vote.agent}: ${vote.decision} (${vote.confidence}%) - ${vote.reason}`),
-      ].join(' | ').slice(0, 4000);
-      const reviewed = await reviewProductDraft({
-        id: req.params.id,
-        decision: 'approve',
-        reviewer: `autopilot-council:${council.quorum}`,
-        reason,
+  // Kept for backwards-compatible clients, but intentionally fail-closed.
+  // Automatic publication is not part of the owner-approved release policy.
+  router.post('/:id/auto-publish', async (_req, res) => {
+    if (process.env.AUTOPILOT_AUTO_PUBLISH_ENABLED !== 'true' || process.env.AUTOPILOT_V4_AUTO_PUBLISH_ENABLED !== 'true') {
+      return res.status(403).json({
+        error: 'AUTO_PUBLICATION_DISABLED',
+        policy: { manualAdminReleaseRequired: true, supplierPurchaseAllowed: false },
       });
-      if (reviewed.status !== 'ai_approved') {
-        return res.status(409).json({ error: 'council approval did not produce publishable state', draft: reviewed, council });
-      }
-
-      const published = await publishProductDraftAtomically(req.params.id);
-      return res.json({
-        draft: published,
-        product: { id: published.publishedProductId, status: 'published' },
-        council,
-        policy: {
-          automatedCouncil: true,
-          supplierPurchaseTriggered: false,
-          autonomousPurchaseAllowed: false,
-          inventoryDefaultsToZeroUntilVerified: true,
-        },
-      });
-    } catch (error: any) {
-      return res.status(400).json({ error: error?.message || 'Governed auto-publication failed' });
     }
+    return res.status(403).json({
+      error: 'AUTO_PUBLICATION_NOT_APPROVED_FOR_CURRENT_RELEASE',
+      policy: { manualAdminReleaseRequired: true },
+    });
   });
 
   router.post('/:id/publish', async (req, res) => {
     try {
+      const principal = getAutopilotPrincipal(res);
+      if (principal.role !== 'admin') return res.status(403).json({ error: 'ADMIN_REQUIRED_FOR_MANUAL_RELEASE' });
+
       const persisted = await getPersistedProductDraft(req.params.id);
       assertDraftPublishable(persisted);
 
@@ -163,7 +130,7 @@ export function createDraftRouter(): Router {
         return res.json({
           draft: persisted,
           product: { id: persisted.publishedProductId, status: 'published' },
-          policy: { idempotentReplay: true, autonomousPurchaseAllowed: false },
+          policy: { idempotentReplay: true, autonomousPurchaseAllowed: false, manualRelease: true },
         });
       }
 
@@ -186,13 +153,17 @@ export function createDraftRouter(): Router {
         product,
         policy: {
           approvedByCouncil: true,
+          manualAdminRelease: true,
+          freshProductionEvidenceRequired: true,
           supplierPurchaseTriggered: false,
           autonomousPurchaseAllowed: false,
           inventoryDefaultsToZeroUntilVerified: true,
         },
       });
     } catch (error: any) {
-      return res.status(400).json({ error: error?.message || 'Governed publication failed' });
+      const code=error?.message || 'Governed publication failed';
+      const status=/STALE|PRODUCTION_READY|SHADOW|COUNCIL|ADMIN/.test(code)?409:400;
+      return res.status(status).json({ error: code });
     }
   });
 
