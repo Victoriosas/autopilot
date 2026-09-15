@@ -11,6 +11,7 @@ import { createOpportunityRouter } from './opportunityRouter';
 import { createPricingRouter } from './pricingRouter';
 import { createCJSourcingRouter } from './cjSourcingRouter';
 import { createCJMcpRouter } from './cjMcpRouter';
+import { createReleaseOperationsRouter } from './releaseOperationsRouter';
 import { createReleaseReadinessRouter } from './releaseReadinessRouter';
 import { createSourcingRouter } from './sourcingRouter';
 
@@ -22,6 +23,7 @@ export function mountAutopilotV4(app: Express): void {
   // AUTOPILOT_ADMIN_TOKEN / AUTOPILOT_CODEX_TOKEN.
   app.use('/api/autopilot/v4/cj-mcp', createCJMcpRouter());
   app.use('/api/autopilot/v4/release-readiness', createReleaseReadinessRouter());
+  app.use('/api/autopilot/v4/release-operations', createReleaseOperationsRouter());
 
   app.use('/api/autopilot/v4', createAutopilotV4Router());
   app.use('/api/autopilot/v4/pricing', createPricingRouter());
