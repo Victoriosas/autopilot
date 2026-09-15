@@ -72,6 +72,69 @@ function openRouterSources(data:any) {
   }).slice(0,8);
 }
 
+function normalizeUyuNumber(raw:string):number|undefined {
+  let text=raw.replace(/\s/g,'').trim();
+  if(!text) return undefined;
+  const hasDot=text.includes('.'),hasComma=text.includes(',');
+  if(hasDot&&hasComma){
+    if(text.lastIndexOf(',')>text.lastIndexOf('.')) text=text.replace(/\./g,'').replace(',','.');
+    else text=text.replace(/,/g,'');
+  } else if(hasDot) {
+    const parts=text.split('.');
+    text=parts.length>1 && parts.slice(1).every(part=>part.length===3) ? parts.join('') : text;
+  } else if(hasComma) {
+    const parts=text.split(',');
+    text=parts.length===2 && parts[1].length===3 ? parts.join('') : text.replace(',','.');
+  }
+  const value=Number(text);
+  return Number.isFinite(value)&&value>=100&&value<=100000 ? value : undefined;
+}
+
+function extractUyuPrice(text:string,url:string):number|undefined {
+  if(!text) return undefined;
+  let local=false;
+  try {
+    const host=new URL(url).hostname.toLowerCase();
+    local=host.endsWith('.uy') || host.includes('mercadolibre.com.uy') || host.includes('tiendamia.com.uy');
+  } catch { local=false; }
+  const patterns=[
+    /(?:UYU|UY\$|\$U)\s*([0-9][0-9.,\s]{1,14})/gi,
+    /([0-9][0-9.,\s]{1,14})\s*(?:UYU|UY\$|\$U)/gi,
+    ...(local?[/\$\s*([0-9][0-9.,\s]{1,14})/g]:[]),
+  ];
+  for(const pattern of patterns){
+    for(const match of text.matchAll(pattern)){
+      const value=normalizeUyuNumber(match[1]||'');
+      if(value!==undefined) return value;
+    }
+  }
+  return undefined;
+}
+
+export function deriveAnnotationMarketEvidence(data:any,observedAt:string):MarketEvidence|null {
+  const annotations=data?.choices?.[0]?.message?.annotations || [];
+  const rows=annotations.flatMap((annotation:any)=>{
+    const citation=annotation?.type==='url_citation'?annotation?.url_citation:null;
+    const url=String(citation?.url||'');
+    const title=String(citation?.title||'Fuente de mercado').slice(0,200);
+    const content=String(citation?.content||'');
+    const price=extractUyuPrice(`${title}\n${content}`,url);
+    return url&&price!==undefined?[{url,title,price}]:[];
+  });
+  const unique=[...new Map(rows.map(row=>[row.url,row])).values()].slice(0,8);
+  if(unique.length<2) return null;
+  const prices=unique.map(row=>row.price).sort((a,b)=>a-b);
+  const middle=Math.floor(prices.length/2);
+  const median=prices.length%2?prices[middle]:(prices[middle-1]+prices[middle])/2;
+  const confidence=Math.min(80,55+unique.length*5);
+  return {
+    status:'ok',provider:'openrouter_web_search',marketPriceUyu:median,minPriceUyu:prices[0],maxPriceUyu:prices[prices.length-1],
+    demandScore:Math.min(75,50+unique.length*5),competitionScore:Math.min(75,45+unique.length*5),confidence,
+    comparableCount:unique.length,sources:unique.map(({title,url})=>({title,url})),
+    notes:['DETERMINISTIC_GROUNDED_ANNOTATION_PRICE_FALLBACK','UYU_PRICES_EXTRACTED_FROM_OPENROUTER_CITATION_CONTENT'],observedAt,
+  };
+}
+
 function normalizeResult(parsed:any,sources:Array<{title:string;url:string}>,observedAt:string,provider:MarketEvidence['provider']):MarketEvidence {
   if(!parsed || typeof parsed!=='object') {
     return {status:'insufficient',provider,comparableCount:0,sources,notes:['MARKET_RESPONSE_JSON_UNREADABLE'],observedAt};
@@ -169,7 +232,10 @@ async function searchWithOpenRouter(candidate:OpportunityCandidate,apiKey:string
     if(!response.ok) return {status:'provider_error',provider:'openrouter_web_search',comparableCount:0,sources:[],notes:[`OPENROUTER_MARKET_SEARCH_HTTP_${response.status}`],observedAt};
     const data:any=await response.json();
     const content=data?.choices?.[0]?.message?.content;
-    return normalizeResult(parseJson(content),openRouterSources(data),observedAt,'openrouter_web_search');
+    const structured=normalizeResult(parseJson(content),openRouterSources(data),observedAt,'openrouter_web_search');
+    if(structured.status==='ok') return structured;
+    const annotationFallback=deriveAnnotationMarketEvidence(data,observedAt);
+    return annotationFallback || structured;
   } catch(error:any) {
     return {status:'provider_error',provider:'openrouter_web_search',comparableCount:0,sources:[],notes:[error?.name==='AbortError'?'OPENROUTER_MARKET_SEARCH_TIMEOUT':'OPENROUTER_MARKET_SEARCH_FAILED'],observedAt};
   } finally { clearTimeout(timeout); }
