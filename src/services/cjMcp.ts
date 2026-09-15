@@ -6,12 +6,15 @@ type JsonRpcResponse = {
 };
 
 /**
- * Explicit read-only allowlist for CJ's documented remote MCP server.
+ * Explicit read-only allowlist for CJ's official remote MCP server.
  * Keep this list intentionally smaller than tools/list: the sourcing bridge must
  * never gain write capability simply because CJ adds a new remote tool.
  */
 export const CJ_MCP_READ_ONLY_TOOLS = [
   'search_products',
+  'get_product_detail',
+  'get_product_variants',
+  'query_cj_inventory',
   'query_sku_details',
   'get_order_list',
   'get_pay_order_list',
