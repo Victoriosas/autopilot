@@ -5,9 +5,11 @@ import { CJMcpFirstSourcingProvider } from '../services/cjSourcingProvider';
 import type CJDropshippingClient from '../services/cjDropshipping';
 import { errorClass } from './sourcingOrchestrator';
 
+const DIRECT_URL = 'https://developers.cjdropshipping.com/mcp/MCP@CJTEST@CJ:fake-token';
+
 function mcpClient(handler: (name: string, args: any) => unknown) {
   return new CJMcpReadOnlyClient(
-    'https://developers.cjdropshipping.com/mcp/fake-token',
+    DIRECT_URL,
     (async (_input: RequestInfo | URL, init?: RequestInit) => {
       const body = JSON.parse(String(init?.body || '{}'));
       if (body.method === 'tools/call') {
@@ -85,7 +87,7 @@ test('MCP-first provider maps variants, public inventory and freight for V4 evid
 
 test('falls back to REST when an MCP read fails and records only a sanitized code', async () => {
   const mcp = new CJMcpReadOnlyClient(
-    'https://developers.cjdropshipping.com/mcp/fake-token',
+    DIRECT_URL,
     (async () => new Response('upstream secret', { status: 503 })) as typeof fetch,
   );
   const rest = {
@@ -122,7 +124,7 @@ test('persists whether a 401 came from REST-only or an MCP-to-REST fallback chai
   );
 
   const mcp401 = new CJMcpReadOnlyClient(
-    'https://developers.cjdropshipping.com/mcp/fake-token',
+    DIRECT_URL,
     (async () => new Response('mcp secret', { status: 401 })) as typeof fetch,
   );
   const hybrid = new CJMcpFirstSourcingProvider(mcp401, rest401);
@@ -130,6 +132,22 @@ test('persists whether a 401 came from REST-only or an MCP-to-REST fallback chai
     () => hybrid.searchProducts({ keyword: 'test' }),
     (error: any) => error.code === 'CJ_MCP_FALLBACK_CJ_MCP_HTTP_401_CJ_REST_HTTP_401'
       && errorClass(error).code === 'CJ_MCP_FALLBACK_CJ_MCP_HTTP_401_CJ_REST_HTTP_401'
+      && !String(error.message).includes('secret'),
+  );
+});
+
+test('preserves an invalid MCP configuration reason when REST fallback also fails', async () => {
+  const rest401 = {
+    searchProducts: async () => {
+      const error: any = new Error('rest secret');
+      error.status = 401;
+      throw error;
+    },
+  } as unknown as CJDropshippingClient;
+  const provider = new CJMcpFirstSourcingProvider(null, rest401, 'CJ_MCP_DIRECT_TOKEN_FORMAT_REQUIRED');
+  await assert.rejects(
+    () => provider.searchProducts({ keyword: 'test' }),
+    (error: any) => error.code === 'CJ_MCP_FALLBACK_CJ_MCP_DIRECT_TOKEN_FORMAT_REQUIRED_CJ_REST_HTTP_401'
       && !String(error.message).includes('secret'),
   );
 });
