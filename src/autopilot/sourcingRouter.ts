@@ -91,7 +91,7 @@ export function createSourcingRouter(
    const config={...policyConfig,mode:'shadow' as const,
     maxCandidates:Math.max(1,Math.min(policyConfig.maxCandidates,authorization.maxCandidates,5)),
     maxAiCalls:Math.max(1,Math.min(policyConfig.maxAiCalls,authorization.maxAiCalls,3)),
-    durationMs:Math.max(5000,Math.min(policyConfig.durationMs,authorization.durationMs,20000))};
+    durationMs:Math.max(5000,Math.min(authorization.durationMs,40000))};
    const result=await runner(storeFactory(),config,`production-shadow-once:${authorization.id}`);
    return res.json({...result,manual:true,cronEnabled:base.enabled,shadow:true,policyVersion:authorization.policy?.policyVersion||null});
  };
