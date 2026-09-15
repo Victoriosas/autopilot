@@ -13,9 +13,19 @@ test('rejects non-official MCP hosts', () => {
   );
 });
 
-test('constructs official MCP URL from token without exposing it elsewhere', () => {
-  const url = resolveCJMcpUrl({ CJ_MCP_TOKEN: 'MCP@test-token' } as NodeJS.ProcessEnv);
-  assert.equal(url, 'https://developers.cjdropshipping.com/mcp/MCP%40test-token');
+test('preserves CJ direct-token delimiters while encoding token payload', () => {
+  const url = resolveCJMcpUrl({
+    CJ_MCP_TOKEN: 'MCP@CJ4623764@CJ:abc+/= token',
+  } as NodeJS.ProcessEnv);
+  assert.equal(
+    url,
+    'https://developers.cjdropshipping.com/mcp/MCP@CJ4623764@CJ:abc%2B%2F%3D%20token',
+  );
+});
+
+test('keeps opaque MCP tokens safely URL encoded for compatibility', () => {
+  const url = resolveCJMcpUrl({ CJ_MCP_TOKEN: 'opaque token/value' } as NodeJS.ProcessEnv);
+  assert.equal(url, 'https://developers.cjdropshipping.com/mcp/opaque%20token%2Fvalue');
 });
 
 test('shadow safety requires explicit enablement and zero purchase capability', () => {
@@ -47,6 +57,18 @@ test('blocks write tools before any network request', async () => {
 
   await assert.rejects(() => client.callReadOnlyTool('create_order', {}), /CJ_MCP_TOOL_BLOCKED/);
   assert.equal(calls, 0);
+});
+
+test('reports upstream HTTP status without exposing response body', async () => {
+  const client = new CJMcpReadOnlyClient(
+    'https://developers.cjdropshipping.com/mcp/fake-token',
+    (async () => new Response('secret upstream body', { status: 400 })) as typeof fetch,
+  );
+
+  await assert.rejects(
+    () => client.listTools(),
+    (error: any) => error?.code === 'CJ_MCP_HTTP_400' && !String(error?.message || '').includes('secret'),
+  );
 });
 
 test('calls an allowed read-only tool through StreamableHTTP JSON-RPC', async () => {
