@@ -66,7 +66,7 @@ function normalizeAuthorization(data: unknown): ShadowRunAuthorization | null {
   const limits = (data as any).limits || {};
   const maxCandidates = Math.max(1, Math.min(Number(limits.maxCandidates || 3), 5));
   const maxAiCalls = Math.max(1, Math.min(Number(limits.maxAiCalls || 2), 3));
-  const durationMs = Math.max(5000, Math.min(Number(limits.durationMs || 15000), 20000));
+  const durationMs = Math.max(5000, Math.min(Number(limits.durationMs || 15000), 40000));
   return { id: String((data as any).id), maxCandidates, maxAiCalls, durationMs, policy: normalizePolicy(limits.policy) };
 }
 
