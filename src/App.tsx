@@ -31,6 +31,7 @@ import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 export function App() {
   const {
     viewMode,
+    userRole,
     products,
     selectedCandidateForReview,
     setSelectedCandidateForReview,
@@ -39,6 +40,10 @@ export function App() {
     isAuthModalOpen,
     setIsAuthModalOpen,
   } = useApp();
+
+  // Never render privileged admin UI while the resolved profile is not admin.
+  // Backend authorization remains authoritative; this is a fail-closed UI barrier.
+  const effectiveViewMode: 'store' | 'admin' = viewMode === 'admin' && userRole !== 'admin' ? 'store' : viewMode;
 
   // Public Store State
   const [activeCategory, setActiveCategory] = useState('Todos');
@@ -57,7 +62,7 @@ export function App() {
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && viewMode === 'admin') {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && effectiveViewMode === 'admin') {
         event.preventDefault();
         setIsGlobalSearchOpen((previous) => !previous);
       }
@@ -65,15 +70,15 @@ export function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [viewMode]);
+  }, [effectiveViewMode]);
 
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   return (
-    <div className={`${viewMode === 'store' ? 'storefront-editorial min-h-screen bg-[#f8f1e8] text-[#3b2b28] selection:bg-[#7b594c] selection:text-white' : 'min-h-screen bg-[#0a0c14] text-slate-200 selection:bg-indigo-500 selection:text-white'} font-sans flex flex-col relative overflow-x-hidden`}>
-      {viewMode !== 'store' && <>
+    <div className={`${effectiveViewMode === 'store' ? 'storefront-editorial min-h-screen bg-[#f8f1e8] text-[#3b2b28] selection:bg-[#7b594c] selection:text-white' : 'min-h-screen bg-[#0a0c14] text-slate-200 selection:bg-indigo-500 selection:text-white'} font-sans flex flex-col relative overflow-x-hidden`}>
+      {effectiveViewMode !== 'store' && <>
         <div className="fixed top-0 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="fixed bottom-10 right-10 w-[30rem] h-[30rem] bg-blue-600/10 rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="fixed top-1/2 right-1/3 w-80 h-80 bg-purple-600/5 rounded-full blur-3xl pointer-events-none -z-10" />
@@ -97,7 +102,7 @@ export function App() {
         </div>
       )}
 
-      {viewMode === 'store' ? (
+      {effectiveViewMode === 'store' ? (
         <div className="flex-1 flex flex-col">
           <StoreHeader
             activeCategory={activeCategory}
@@ -215,7 +220,7 @@ export function App() {
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
-        adminRequiredNotice={viewMode !== 'admin'}
+        adminRequiredNotice={effectiveViewMode !== 'admin'}
       />
     </div>
   );
