@@ -34,6 +34,43 @@ function attachProviderTrace(evidence:Evidence,notes:string[]) {
   return evidence;
 }
 
+function operationalEvidenceReasons(evidence:Evidence,config:SourcingConfig) {
+  return validateEvidence(evidence,config).filter((reason)=>
+    !reason.startsWith('COMMERCIAL_EVIDENCE_REQUIRED:') && !reason.startsWith('OBSERVED_SCORE_REQUIRED:'),
+  );
+}
+
+function enrichSupplierReliability(candidate:OpportunityCandidate,evidence:Evidence):OpportunityCandidate {
+  if(typeof candidate.supplierReliabilityScore==='number' && Number.isFinite(candidate.supplierReliabilityScore)) return candidate;
+  if(evidence.stock===null || evidence.stock<=0 || !evidence.shippingVerified) return candidate;
+  let score=55;
+  if(evidence.stock>=100) score+=5;
+  if(evidence.stock>=1000) score+=5;
+  const shippingDays=Number(evidence.facts.shippingDaysMax);
+  if(Number.isFinite(shippingDays) && shippingDays>0 && shippingDays<=25) score+=5;
+  return {
+    ...candidate,
+    supplierReliabilityScore:Math.min(score,70),
+    evidence:{...candidate.evidence,supplierReliability:'inferred'},
+    metadata:{...candidate.metadata,supplierReliabilityBasis:'observed_stock_and_verified_shipping_v1'},
+  };
+}
+
+function commercialEvidenceReasons(candidate:OpportunityCandidate):string[] {
+  const missing:string[]=[];
+  for(const key of ['demand','supplierReliability','logistics','competition'] as const){
+    if(!['observed','verified','inferred'].includes(candidate.evidence?.[key] || '')) missing.push(`COMMERCIAL_EVIDENCE_REQUIRED:${key}`);
+  }
+  for(const key of ['demandScore','supplierReliabilityScore','logisticsScore','competitionScore'] as const){
+    const value=candidate[key];
+    if(typeof value!=='number' || !Number.isFinite(value) || value<0 || value>100) missing.push(`OBSERVED_SCORE_REQUIRED:${key}`);
+  }
+  if(typeof candidate.pricing.marketPrice!=='number' || !Number.isFinite(candidate.pricing.marketPrice) || candidate.pricing.marketPrice<=0) {
+    missing.push('MARKET_PRICE_EVIDENCE_REQUIRED');
+  }
+  return [...new Set(missing)];
+}
+
 export const liveSourcing: SourcingDependencies={
   async discover(config) {
     const cj=getCJSourcingReadProvider(config);
@@ -99,7 +136,7 @@ export async function runSourcing(store:SourcingStore, config:SourcingConfig, ke
         if(item.status==='failed_retryable') item.status=item.checkpoint.resumeStage || 'normalized';
         if(item.status==='discovered') await checkpoint(item,'normalized');
         if(item.status==='normalized'){
-          const reasons=validateEvidence(item.payload,config);
+          const reasons=operationalEvidenceReasons(item.payload,config);
           if(reasons.length){await checkpoint(item,'needs_evidence',{reasons});continue;}
           const fit=assessVictoriosaFit(item.payload.candidate!,item.payload.facts);
           if(fit.decision==='reject') {await checkpoint(item,'evidence_rejected',{reasons:fit.reasons,victoriosaFit:fit});continue;}
@@ -110,6 +147,7 @@ export async function runSourcing(store:SourcingStore, config:SourcingConfig, ke
           const fit=item.checkpoint.victoriosaFit || assessVictoriosaFit(item.payload.candidate!,item.payload.facts);
           if(fit.regulatoryReviewRequired){await checkpoint(item,'needs_evidence',{reasons:fit.reasons,victoriosaFit:fit});continue;}
           let candidate:OpportunityCandidate={...item.payload.candidate!,risk:fit.risk,pricing:{...item.payload.candidate!.pricing,targetNetMarginPct:config.minMargin!}};
+          candidate=enrichSupplierReliability(candidate,item.payload);
           let market:MarketEvidence|undefined;
           if(config.mode==='shadow' && deps.marketEvidence){
             await reserveModelCall();
@@ -120,6 +158,8 @@ export async function runSourcing(store:SourcingStore, config:SourcingConfig, ke
             }
             candidate=applyMarketEvidence(candidate,market);
           }
+          const commercialReasons=commercialEvidenceReasons(candidate);
+          if(commercialReasons.length){await checkpoint(item,'needs_evidence',{reasons:commercialReasons,marketEvidence:market||null,victoriosaFit:fit,candidate});continue;}
           const quote=evaluateOpportunity(candidate);
           await checkpoint(item,'opportunity_scored',{quote,candidate,marketEvidence:market||null,victoriosaFit:fit,pricingVersion:market?'existing-v4+grounded-market-v1':'existing-v4',calculatedAt:new Date().toISOString()});
         }
@@ -144,8 +184,10 @@ export async function runSourcing(store:SourcingStore, config:SourcingConfig, ke
           deps.afterCheckpoint?.(item.status);
         }
         if(item.status==='council_approved'){
-          const reasons=validateEvidence(item.payload,config);
-          if(reasons.length){await checkpoint(item,'needs_evidence',{reasons});continue;}
+          const reasons=operationalEvidenceReasons(item.payload,config);
+          const commercialReasons=commercialEvidenceReasons(item.checkpoint.candidate);
+          const allReasons=[...new Set([...reasons,...commercialReasons])];
+          if(allReasons.length){await checkpoint(item,'needs_evidence',{reasons:allReasons});continue;}
           await call('publish',{item:item.id});deps.afterCheckpoint?.(config.mode==='shadow'?'shadow_completed':'published');
         }
       } catch(error){
