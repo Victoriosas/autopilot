@@ -6,16 +6,12 @@ type JsonRpcResponse = {
 };
 
 /**
- * Explicit read-only allowlist for CJ's remote MCP server. Some of the public
- * catalog tools are present in CJ's maintained MCP repository even when the
- * short integration guide omits them, so keep this list reviewed rather than
- * mirroring tools/list blindly.
+ * Explicit read-only allowlist for CJ's documented remote MCP server.
+ * Keep this list intentionally smaller than tools/list: the sourcing bridge must
+ * never gain write capability simply because CJ adds a new remote tool.
  */
 export const CJ_MCP_READ_ONLY_TOOLS = [
   'search_products',
-  'get_product_detail',
-  'get_product_variants',
-  'query_cj_inventory',
   'query_sku_details',
   'get_order_list',
   'get_pay_order_list',
@@ -109,8 +105,6 @@ function parseMcpPayload(text: string): JsonRpcResponse {
     return parsed;
   }
 
-  // StreamableHTTP can answer as SSE. Use the last JSON `data:` event carrying
-  // a JSON-RPC result/error and ignore keepalive/event metadata.
   const events = trimmed.split(/\r?\n/)
     .filter((line) => line.startsWith('data:'))
     .map((line) => line.slice(5).trim())
@@ -130,9 +124,6 @@ function parseJsonText(text: string): unknown {
   try {
     return JSON.parse(trimmed);
   } catch {
-    // CJ's MCP tools sometimes prepend a short human-readable line before the
-    // JSON payload (for example "Found N products"). Parse only the observed
-    // JSON body; never infer missing fields from the prose prefix.
     const objectStart = trimmed.indexOf('{');
     const objectEnd = trimmed.lastIndexOf('}');
     if (objectStart >= 0 && objectEnd > objectStart) {
