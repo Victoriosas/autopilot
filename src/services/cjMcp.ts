@@ -44,10 +44,27 @@ export class CJMcpError extends Error {
   }
 }
 
+/**
+ * CJ's current remote MCP route parser recognizes structural direct-token URLs:
+ *   MCP@{userId}@CJ:{accessToken}
+ *   API@{userId}@CJ:{accessToken}
+ * The delimiters must remain literal in the URL path. Encoding the whole token
+ * turns @ / : into percent escapes and CJ rejects the route before MCP starts.
+ */
+function encodeCJMcpTokenPath(token: string): string {
+  const trimmed = token.trim();
+  const structured = trimmed.match(/^(API|MCP)@([^@]+)@CJ:(.+)$/s);
+  if (!structured) return encodeURIComponent(trimmed);
+
+  const [, prefix, userId, accessToken] = structured;
+  return `${prefix}@${encodeURIComponent(userId)}@CJ:${encodeURIComponent(accessToken)}`;
+}
+
 export function resolveCJMcpUrl(env: NodeJS.ProcessEnv = process.env): string | null {
+  const token = env.CJ_MCP_TOKEN?.trim();
   const raw = env.CJ_MCP_SERVER_URL?.trim()
-    || (env.CJ_MCP_TOKEN?.trim()
-      ? `https://developers.cjdropshipping.com/mcp/${encodeURIComponent(env.CJ_MCP_TOKEN.trim())}`
+    || (token
+      ? `https://developers.cjdropshipping.com/mcp/${encodeCJMcpTokenPath(token)}`
       : '');
   if (!raw) return null;
 
@@ -129,7 +146,9 @@ export class CJMcpReadOnlyClient {
         signal: controller.signal,
       });
       const text = await response.text();
-      if (!response.ok) throw new CJMcpError(`CJ_MCP_HTTP_${response.status}`, 'CJ_MCP_HTTP_ERROR');
+      if (!response.ok) {
+        throw new CJMcpError(`CJ_MCP_HTTP_${response.status}`, `CJ_MCP_HTTP_${response.status}`);
+      }
       const payload = parseMcpPayload(text);
       if (payload.error) {
         throw new CJMcpError(payload.error.message || 'CJ_MCP_RPC_ERROR', `CJ_MCP_RPC_${payload.error.code ?? 'UNKNOWN'}`);
