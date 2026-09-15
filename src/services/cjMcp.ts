@@ -5,18 +5,20 @@ type JsonRpcResponse = {
   error?: { code?: number; message?: string; data?: unknown };
 };
 
+/**
+ * Read-only tools currently documented by CJ's official remote MCP guide.
+ * Keep this list intentionally smaller than the discovered tool list: unknown
+ * or write-capable tools must remain blocked until explicitly reviewed.
+ */
 export const CJ_MCP_READ_ONLY_TOOLS = [
   'search_products',
-  'get_product_detail',
-  'get_product_variants',
-  'query_cj_inventory',
+  'query_sku_details',
+  'get_order_list',
+  'get_pay_order_list',
   'calculate_freight',
   'get_logistics_timeliness',
   'get_warehouses',
   'list_shops',
-  'get_account_settings',
-  'get_order_list',
-  'get_pay_order_list',
   'list_disputes',
   'get_dispute_detail',
   'check_login_status',
