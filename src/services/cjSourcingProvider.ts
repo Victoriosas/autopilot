@@ -169,6 +169,7 @@ export class CJMcpFirstSourcingProvider implements CJSourcingReadProvider {
   constructor(
     private readonly mcp: CJMcpReadOnlyClient | null,
     private readonly rest: CJDropshippingClient | null,
+    private readonly initialMcpFailure: string | null = null,
   ) {}
 
   private note(value: string) {
@@ -176,7 +177,7 @@ export class CJMcpFirstSourcingProvider implements CJSourcingReadProvider {
   }
 
   private async withFallback<T>(tool: string, mcpCall: () => Promise<T>, restCall: () => Promise<T>): Promise<T> {
-    let mcpFailure: string | null = null;
+    let mcpFailure: string | null = this.initialMcpFailure;
     if (this.mcp) {
       try {
         const value = await mcpCall();
@@ -187,8 +188,12 @@ export class CJMcpFirstSourcingProvider implements CJSourcingReadProvider {
         this.note(`CJ_MCP_${tool.toUpperCase()}_FALLBACK_${mcpFailure}`);
         if (!this.rest) throw new CJReadChainError(`CJ_MCP_ONLY_${mcpFailure}`, errorStatus(error));
       }
+    } else if (mcpFailure) {
+      this.note(`CJ_MCP_${tool.toUpperCase()}_CONFIG_FALLBACK_${mcpFailure}`);
     }
-    if (!this.rest) throw new CJReadChainError('CJ_READ_PROVIDER_NOT_CONFIGURED');
+    if (!this.rest) {
+      throw new CJReadChainError(mcpFailure ? `CJ_MCP_CONFIG_${mcpFailure}` : 'CJ_READ_PROVIDER_NOT_CONFIGURED');
+    }
     try {
       const value = await restCall();
       this.note(`CJ_REST_${tool.toUpperCase()}_OBSERVED`);
@@ -257,16 +262,28 @@ export class CJMcpFirstSourcingProvider implements CJSourcingReadProvider {
   }
 }
 
+function safeMcpClient(config: Pick<SourcingConfig, 'mode'>, env: NodeJS.ProcessEnv): { client: CJMcpReadOnlyClient | null; failure: string | null } {
+  if (config.mode !== 'shadow' || !cjMcpShadowSafetyReady(env)) return { client: null, failure: null };
+  try {
+    return { client: getCJMcpReadOnlyClient(env), failure: null };
+  } catch (error) {
+    return { client: null, failure: errorCode(error) };
+  }
+}
+
 export function cjSourcingReadConfigured(config: Pick<SourcingConfig, 'mode'>, env: NodeJS.ProcessEnv = process.env): boolean {
-  const mcpReady = config.mode === 'shadow' && cjMcpShadowSafetyReady(env) && Boolean(getCJMcpReadOnlyClient(env));
-  return mcpReady || Boolean(env.CJ_API_KEY?.trim());
+  const mcp = safeMcpClient(config, env);
+  return Boolean(mcp.client) || Boolean(env.CJ_API_KEY?.trim());
 }
 
 export function getCJSourcingReadProvider(config: Pick<SourcingConfig, 'mode'>, env: NodeJS.ProcessEnv = process.env): CJSourcingReadProvider | null {
-  const mcp = config.mode === 'shadow' && cjMcpShadowSafetyReady(env) ? getCJMcpReadOnlyClient(env) : null;
+  const mcp = safeMcpClient(config, env);
   const rest = getCJClient();
-  if (!mcp && !rest) return null;
-  const transport = mcp ? (rest ? 'mcp-first-rest-fallback' : 'mcp-only') : 'rest-only';
-  console.info(`[CJ Sourcing] transport=${transport}`);
-  return new CJMcpFirstSourcingProvider(mcp, rest);
+  if (!mcp.client && !rest && !mcp.failure) return null;
+  const transport = mcp.client
+    ? (rest ? 'mcp-first-rest-fallback' : 'mcp-only')
+    : (mcp.failure ? 'mcp-config-fallback-rest' : 'rest-only');
+  const mcpState = mcp.failure ? ` invalid=${mcp.failure}` : '';
+  console.info(`[CJ Sourcing] transport=${transport}${mcpState}`);
+  return new CJMcpFirstSourcingProvider(mcp.client, rest, mcp.failure);
 }
