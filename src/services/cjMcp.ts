@@ -5,12 +5,6 @@ type JsonRpcResponse = {
   error?: { code?: number; message?: string; data?: unknown };
 };
 
-/**
- * Explicit read-only allowlist for CJ's remote MCP server. Some of the public
- * catalog tools are present in CJ's maintained MCP repository even when the
- * short integration guide omits them, so keep this list reviewed rather than
- * mirroring tools/list blindly.
- */
 export const CJ_MCP_READ_ONLY_TOOLS = [
   'search_products',
   'get_product_detail',
@@ -43,6 +37,7 @@ export const CJ_MCP_BLOCKED_TOOLS = [
 
 const READ_ONLY_SET = new Set<string>(CJ_MCP_READ_ONLY_TOOLS);
 const OFFICIAL_HOSTS = new Set(['developers.cjdropshipping.com', 'developers.cjdropshipping.cn']);
+const DIRECT_TOKEN_PATH = /^\/mcp\/(API|MCP)@([^@/]+)@CJ:(.+)$/;
 
 export class CJMcpError extends Error {
   constructor(message: string, public code = 'CJ_MCP_ERROR') {
@@ -50,19 +45,16 @@ export class CJMcpError extends Error {
   }
 }
 
-/**
- * CJ's current remote MCP route parser recognizes structural direct-token URLs:
- *   MCP@{userId}@CJ:{accessToken}
- *   API@{userId}@CJ:{accessToken}
- * The delimiters must remain literal in the URL path. Encoding the whole token
- * turns @ / : into percent escapes and CJ rejects the route before MCP starts.
- */
 function encodeCJMcpTokenPath(token: string): string {
   const trimmed = token.trim();
   const structured = trimmed.match(/^(API|MCP)@([^@]+)@CJ:(.+)$/s);
-  if (!structured) return encodeURIComponent(trimmed);
-
+  if (!structured) {
+    throw new CJMcpError('CJ_MCP_DIRECT_TOKEN_FORMAT_REQUIRED', 'CJ_MCP_DIRECT_TOKEN_FORMAT_REQUIRED');
+  }
   const [, prefix, userId, accessToken] = structured;
+  if (!userId.trim() || !accessToken.trim()) {
+    throw new CJMcpError('CJ_MCP_DIRECT_TOKEN_FORMAT_REQUIRED', 'CJ_MCP_DIRECT_TOKEN_FORMAT_REQUIRED');
+  }
   return `${prefix}@${encodeURIComponent(userId)}@CJ:${encodeURIComponent(accessToken)}`;
 }
 
@@ -80,8 +72,11 @@ export function resolveCJMcpUrl(env: NodeJS.ProcessEnv = process.env): string | 
   } catch {
     throw new CJMcpError('CJ_MCP_URL_INVALID', 'CJ_MCP_URL_INVALID');
   }
-  if (parsed.protocol !== 'https:' || !OFFICIAL_HOSTS.has(parsed.hostname) || !parsed.pathname.startsWith('/mcp/')) {
+  if (parsed.protocol !== 'https:' || !OFFICIAL_HOSTS.has(parsed.hostname)) {
     throw new CJMcpError('CJ_MCP_URL_NOT_OFFICIAL', 'CJ_MCP_URL_NOT_OFFICIAL');
+  }
+  if (!DIRECT_TOKEN_PATH.test(parsed.pathname)) {
+    throw new CJMcpError('CJ_MCP_DIRECT_TOKEN_URL_REQUIRED', 'CJ_MCP_DIRECT_TOKEN_URL_REQUIRED');
   }
   parsed.hash = '';
   parsed.search = '';
@@ -109,8 +104,6 @@ function parseMcpPayload(text: string): JsonRpcResponse {
     return parsed;
   }
 
-  // StreamableHTTP can answer as SSE. Use the last JSON `data:` event carrying
-  // a JSON-RPC result/error and ignore keepalive/event metadata.
   const events = trimmed.split(/\r?\n/)
     .filter((line) => line.startsWith('data:'))
     .map((line) => line.slice(5).trim())
@@ -130,9 +123,6 @@ function parseJsonText(text: string): unknown {
   try {
     return JSON.parse(trimmed);
   } catch {
-    // CJ's MCP tools sometimes prepend a short human-readable line before the
-    // JSON payload (for example "Found N products"). Parse only the observed
-    // JSON body; never infer missing fields from the prose prefix.
     const objectStart = trimmed.indexOf('{');
     const objectEnd = trimmed.lastIndexOf('}');
     if (objectStart >= 0 && objectEnd > objectStart) {
