@@ -1,10 +1,10 @@
 import { timingSafeEqual } from 'node:crypto';
 import { Router } from 'express';
 import { requireControlPlaneAuth,getAutopilotPrincipal } from './auth';
-import { sourcingConfig } from './sourcingEvidence';
+import { sourcingConfig, type SourcingConfig } from './sourcingEvidence';
 import { runSourcing } from './sourcingOrchestrator';
 import { createSourcingStore, type SourcingStore } from './sourcingStore';
-import { consumeShadowRunAuthorization,consumeShadowRunAuthorizationById,type ShadowRunAuthorization } from './shadowRunAuthorization';
+import { consumeShadowRunAuthorization,consumeShadowRunAuthorizationById,type ShadowRunAuthorization,type ShadowEconomicPolicy } from './shadowRunAuthorization';
 
 export function validCronToken(header:string|undefined,secret=process.env.CRON_SECRET) {
   if(!secret || !secret.trim() || !header) return false;
@@ -25,6 +25,27 @@ function productionShadowSafetyReady() {
     && Number.isFinite(purchaseLimit)
     && purchaseLimit===0
     && process.env.AUTOPILOT_LEGACY_SOURCING_ENABLED!=='true';
+}
+
+function applyAuthorizedShadowPolicy(base:SourcingConfig,policy?:ShadowEconomicPolicy):SourcingConfig {
+  if(!policy) return base;
+  if(base.destination!=='UY' || base.currency!=='UYU' || base.providerCurrency!=='USD') {
+    throw new Error('URUGUAY_SHADOW_POLICY_CONTEXT_MISMATCH');
+  }
+  return {
+    ...base,
+    providerToStoreRate:policy.providerToStoreRate ?? base.providerToStoreRate,
+    minMargin:policy.minMargin ?? base.minMargin,
+    customsRatePct:policy.customsRatePct ?? base.customsRatePct,
+    paymentFeePct:policy.paymentFeePct ?? base.paymentFeePct,
+    paymentFeeFixed:policy.paymentFeeFixed ?? base.paymentFeeFixed,
+    returnReservePct:policy.returnReservePct ?? base.returnReservePct,
+    acquisitionCost:policy.acquisitionCost ?? base.acquisitionCost,
+    taxRatePct:policy.taxRatePct ?? base.taxRatePct,
+    imageSaleUseAllowed:policy.imageSaleUseAllowed ?? base.imageSaleUseAllowed,
+    commercialProxiesAllowed:policy.commercialProxiesAllowed ?? base.commercialProxiesAllowed,
+    version:policy.policyVersion ? `${base.version}:${policy.policyVersion}` : base.version,
+  };
 }
 
 export function createSourcingRouter(
@@ -66,12 +87,13 @@ export function createSourcingRouter(
  const executeAuthorizedShadow=async(authorization:ShadowRunAuthorization,res:any)=>{
    const base=sourcingConfig();
    if(base.mode!=='shadow') return res.status(403).json({error:'SHADOW_MODE_REQUIRED'});
-   const config={...base,mode:'shadow' as const,
-    maxCandidates:Math.max(1,Math.min(base.maxCandidates,authorization.maxCandidates,5)),
-    maxAiCalls:Math.max(1,Math.min(base.maxAiCalls,authorization.maxAiCalls,3)),
-    durationMs:Math.max(5000,Math.min(base.durationMs,authorization.durationMs,20000))};
+   const policyConfig=applyAuthorizedShadowPolicy(base,authorization.policy);
+   const config={...policyConfig,mode:'shadow' as const,
+    maxCandidates:Math.max(1,Math.min(policyConfig.maxCandidates,authorization.maxCandidates,5)),
+    maxAiCalls:Math.max(1,Math.min(policyConfig.maxAiCalls,authorization.maxAiCalls,3)),
+    durationMs:Math.max(5000,Math.min(policyConfig.durationMs,authorization.durationMs,20000))};
    const result=await runner(storeFactory(),config,`production-shadow-once:${authorization.id}`);
-   return res.json({...result,manual:true,cronEnabled:base.enabled,shadow:true});
+   return res.json({...result,manual:true,cronEnabled:base.enabled,shadow:true,policyVersion:authorization.policy?.policyVersion||null});
  };
 
  // Explicit operator-only escape hatch for a SINGLE bounded production shadow run.
