@@ -36,7 +36,7 @@ export async function computeReleaseReadiness():Promise<ReleaseReadiness>{
   const db=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
   const [publishedResult,eligibleResult,shadowDraftResult,settingsResult]=await Promise.all([
     db.from('products').select('*',{count:'exact',head:true}).eq('status','published'),
-    db.from('products').select('*',{count:'exact',head:true}).eq('status','published').eq('publication_eligible',true).eq('created_in_shadow_mode',false),
+    db.from('products').select('*',{count:'exact',head:true}).eq('status','published').eq('publication_eligible',true),
     db.from('autopilot_product_drafts').select('*',{count:'exact',head:true}).eq('created_in_shadow_mode',true),
     db.from('settings').select('value').eq('key','autopilot_config').maybeSingle(),
   ]);
@@ -57,7 +57,8 @@ export async function computeReleaseReadiness():Promise<ReleaseReadiness>{
   const checkout=truthy(process.env.CHECKOUT_ENABLED);
   const purchaseLimit=positive(process.env.AUTOPILOT_PURCHASE_LIMIT_USD);
   const legacyOff=!truthy(process.env.AUTOPILOT_LEGACY_SOURCING_ENABLED);
-  const autoPublishOff=settings.autoPublishApproved!==true;
+  const settingsAutoPublishOff=settings.autoPublishApproved!==true;
+  const runtimeAutoPublishOff=!truthy(process.env.AUTOPILOT_AUTO_PUBLISH_ENABLED)&&!truthy(process.env.AUTOPILOT_V4_AUTO_PUBLISH_ENABLED);
   const v4CronOff=!truthy(process.env.AUTOPILOT_V4_SOURCING_ENABLED);
   const shadowMode=process.env.AUTOPILOT_SHADOW_MODE!=='false';
   const hasMarketProvider=market.mercadoLibre||market.gemini||market.openRouter;
@@ -69,16 +70,17 @@ export async function computeReleaseReadiness():Promise<ReleaseReadiness>{
     {id:'production_catalog',ok:productionEligible>0,requiredForCommerce:true,detail:`${productionEligible} production-eligible published products`},
     {id:'payment_provider',ok:hasPaymentProvider,requiredForCommerce:true,detail:hasPaymentProvider?'At least one payment provider configured':'No production payment provider configured'},
     {id:'legacy_scheduler_off',ok:legacyOff,requiredForCommerce:true,detail:legacyOff?'Legacy sourcing disabled':'Legacy sourcing must be disabled'},
-    {id:'auto_publish_off',ok:autoPublishOff,requiredForCommerce:true,detail:autoPublishOff?'Automatic publication disabled':'Automatic publication must be disabled for manual release'},
+    {id:'auto_publish_settings_off',ok:settingsAutoPublishOff,requiredForCommerce:true,detail:settingsAutoPublishOff?'Settings auto-publication disabled':'Settings auto-publication must be disabled for manual release'},
+    {id:'auto_publish_runtime_off',ok:runtimeAutoPublishOff,requiredForCommerce:true,detail:runtimeAutoPublishOff?'Runtime auto-publication disabled':'Runtime auto-publication flags must be disabled for manual release'},
     {id:'autonomous_purchase_off',ok:!purchaseLimit,requiredForCommerce:true,detail:!purchaseLimit?'Autonomous purchase limit is zero':'Autonomous purchasing must remain disabled for manual release'},
     {id:'v4_cron_off',ok:v4CronOff,requiredForCommerce:false,detail:v4CronOff?'Automatic sourcing cron disabled':'Automatic sourcing cron enabled'},
-    {id:'shadow_mode',ok:shadowMode,requiredForCommerce:false,detail:shadowMode?'Autopilot remains in Shadow':'Autopilot Shadow flag is off'},
+    {id:'shadow_mode',ok:shadowMode,requiredForCommerce:false,detail:shadowMode?'Default Autopilot mode remains Shadow':'Default Autopilot Shadow flag is off'},
     {id:'checkout_off',ok:!checkout,requiredForCommerce:false,detail:!checkout?'Checkout remains disabled':'Checkout is enabled'},
   ];
 
   const blockers=checks.filter(check=>check.requiredForCommerce&&!check.ok).map(check=>check.id);
   const readyForManualRelease=blockers.length===0;
-  const commerceEnabled=checkout||purchaseLimit||settings.autoPublishApproved===true;
+  const commerceEnabled=checkout||purchaseLimit||settings.autoPublishApproved===true||!runtimeAutoPublishOff;
   const state:ReleaseState=commerceEnabled&&!readyForManualRelease?'blocked_for_commerce':readyForManualRelease?'ready_for_manual_release':'safe_shadow';
 
   return {
