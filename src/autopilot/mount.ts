@@ -11,6 +11,7 @@ import { createOpportunityRouter } from './opportunityRouter';
 import { createPricingRouter } from './pricingRouter';
 import { createCJSourcingRouter } from './cjSourcingRouter';
 import { createCJMcpRouter } from './cjMcpRouter';
+import { createReleaseReadinessRouter } from './releaseReadinessRouter';
 import { createSourcingRouter } from './sourcingRouter';
 
 export function mountAutopilotV4(app: Express): void {
@@ -20,6 +21,7 @@ export function mountAutopilotV4(app: Express): void {
   // the generic V4 control-plane router, whose router-level middleware expects
   // AUTOPILOT_ADMIN_TOKEN / AUTOPILOT_CODEX_TOKEN.
   app.use('/api/autopilot/v4/cj-mcp', createCJMcpRouter());
+  app.use('/api/autopilot/v4/release-readiness', createReleaseReadinessRouter());
 
   app.use('/api/autopilot/v4', createAutopilotV4Router());
   app.use('/api/autopilot/v4/pricing', createPricingRouter());
