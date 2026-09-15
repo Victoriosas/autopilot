@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyMarketEvidence, buildOpenRouterMarketRequest, deriveAnnotationMarketEvidence } from './marketEvidence';
+import { applyMarketEvidence, buildOpenRouterMarketRequest, deriveAnnotationMarketEvidence, mercadoLibreEvidenceFromSearch } from './marketEvidence';
 import { assessVictoriosaFit } from './victoriosaProductFilter';
 import type { OpportunityCandidate } from './opportunityEngine';
 
@@ -42,6 +42,32 @@ test('OpenRouter market request uses one bounded fast web search plus response h
   assert.equal(body.plugins[1].id,'response-healing');
   assert.equal(body.response_format?.type,'json_schema');
   assert.equal(body.provider?.require_parameters,true);
+});
+
+test('Mercado Libre Uruguay adapter keeps relevant UYU comparables and uses median price',()=>{
+  const evidence=mercadoLibreEvidenceFromSearch({results:[
+    {title:'Vincha facial spa skincare',price:890,currency_id:'UYU',permalink:'https://articulo.mercadolibre.com.uy/a',sold_quantity:12},
+    {title:'Vincha facial skincare maquillaje',price:1290,currency_id:'UYU',permalink:'https://articulo.mercadolibre.com.uy/b',sold_quantity:40},
+    {title:'Vincha facial para spa',price:1090,currency_id:'UYU',permalink:'https://articulo.mercadolibre.com.uy/c',sold_quantity:3},
+    {title:'Cable USB',price:500,currency_id:'UYU',permalink:'https://articulo.mercadolibre.com.uy/noise',sold_quantity:100},
+    {title:'Vincha facial',price:25,currency_id:'USD',permalink:'https://articulo.mercadolibre.com.uy/usd',sold_quantity:4},
+  ]},'facial headband skincare','2026-09-15T00:00:00.000Z');
+  assert.equal(evidence.status,'ok');
+  assert.equal(evidence.provider,'mercadolibre_uy');
+  assert.equal(evidence.comparableCount,3);
+  assert.equal(evidence.minPriceUyu,890);
+  assert.equal(evidence.marketPriceUyu,1090);
+  assert.equal(evidence.maxPriceUyu,1290);
+  assert.ok((evidence.confidence || 0)>=50);
+});
+
+test('Mercado Libre Uruguay adapter fails closed when only one relevant listing remains',()=>{
+  const evidence=mercadoLibreEvidenceFromSearch({results:[
+    {title:'Vincha facial spa skincare',price:890,currency_id:'UYU',permalink:'https://articulo.mercadolibre.com.uy/a'},
+    {title:'Cable USB',price:1200,currency_id:'UYU',permalink:'https://articulo.mercadolibre.com.uy/noise'},
+  ]},'facial headband skincare','2026-09-15T00:00:00.000Z');
+  assert.equal(evidence.status,'insufficient');
+  assert.equal(evidence.comparableCount,1);
 });
 
 test('grounded annotation fallback extracts one UYU price per Uruguay source',()=>{
