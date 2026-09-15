@@ -15,6 +15,8 @@ export interface MarketEvidence {
   observedAt: string;
 }
 
+type GroundedPriceRow={url:string;title:string;price:number};
+
 function clamp(value: unknown, min=0, max=100): number | undefined {
   const n=Number(value);
   return Number.isFinite(n) ? Math.min(max,Math.max(min,n)) : undefined;
@@ -113,7 +115,7 @@ function extractUyuPrice(text:string,url:string):number|undefined {
 
 export function deriveAnnotationMarketEvidence(data:any,observedAt:string):MarketEvidence|null {
   const annotations=data?.choices?.[0]?.message?.annotations || [];
-  const rows=annotations.flatMap((annotation:any)=>{
+  const rows:GroundedPriceRow[]=annotations.flatMap((annotation:any):GroundedPriceRow[]=>{
     const citation=annotation?.type==='url_citation'?annotation?.url_citation:null;
     const url=String(citation?.url||'');
     const title=String(citation?.title||'Fuente de mercado').slice(0,200);
@@ -121,7 +123,7 @@ export function deriveAnnotationMarketEvidence(data:any,observedAt:string):Marke
     const price=extractUyuPrice(`${title}\n${content}`,url);
     return url&&price!==undefined?[{url,title,price}]:[];
   });
-  const unique=[...new Map(rows.map(row=>[row.url,row])).values()].slice(0,8);
+  const unique:GroundedPriceRow[]=[...new Map<string,GroundedPriceRow>(rows.map(row=>[row.url,row])).values()].slice(0,8);
   if(unique.length<2) return null;
   const prices=unique.map(row=>row.price).sort((a,b)=>a-b);
   const middle=Math.floor(prices.length/2);
