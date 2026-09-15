@@ -281,7 +281,7 @@ export const AutopilotRunnerModal: React.FC<AutopilotRunnerModalProps> = ({ onCl
               <div className="space-y-3">
                 {items.length === 0 ? (
                   <div className="p-8 rounded-2xl border border-white/10 bg-white/[0.02] text-center text-sm text-slate-500">La ejecución aún no tiene candidatos persistidos.</div>
-                ) : items.map(item => <CandidateCard key={item.id} item={item} />)}
+                ) : items.map(item => <div key={item.id}><CandidateCard item={item} /></div>)}
               </div>
             </>
           ) : (
