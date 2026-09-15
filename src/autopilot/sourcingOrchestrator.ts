@@ -44,7 +44,7 @@ export const liveSourcing: SourcingDependencies={
     for(const product of result.products.slice(0,enrichmentLimit)) {
       const searchObservation=normalizeCJ(product,config);
       try {
-        const variants=await cj.getVariants(product.pid);
+        const variants=await cj.getVariants(product.pid,product.productSku);
         const selected=selectCJVariant(variants);
         if(!selected) {
           evidence.push(attachProviderTrace(searchObservation,cj.drainTrace()));
