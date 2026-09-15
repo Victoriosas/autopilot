@@ -4,6 +4,8 @@ create table if not exists public.autopilot_market_observations (
   title text not null,
   url text not null,
   price_uyu numeric(12,2) not null check (price_uyu >= 100 and price_uyu <= 1000000),
+  sold_quantity integer null check (sold_quantity is null or sold_quantity >= 0),
+  rating_count integer null check (rating_count is null or rating_count >= 0),
   source text not null default 'curated_web_research',
   observed_at timestamptz not null default now(),
   expires_at timestamptz not null default (now() + interval '7 days'),
@@ -27,6 +29,10 @@ revoke all on table public.autopilot_market_observations from anon, authenticate
 grant select, insert, update, delete on table public.autopilot_market_observations to service_role;
 
 comment on table public.autopilot_market_observations is
-  'Durable, source-linked Uruguay market price observations used as evidence. Never treated as supplier inventory or audited sales.';
+  'Durable, source-linked Uruguay market observations used as evidence. Never treated as supplier inventory or audited sales.';
 comment on column public.autopilot_market_observations.price_uyu is
   'Observed retail asking price in Uruguayan pesos from the linked source at observed_at.';
+comment on column public.autopilot_market_observations.sold_quantity is
+  'Optional sold-count signal explicitly visible at the source at observation time; null when not shown.';
+comment on column public.autopilot_market_observations.rating_count is
+  'Optional rating-count signal explicitly visible at the source at observation time; null when not shown.';
