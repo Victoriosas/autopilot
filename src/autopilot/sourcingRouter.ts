@@ -6,6 +6,7 @@ import { sourcingConfig, type SourcingConfig } from './sourcingEvidence';
 import { runSourcing } from './sourcingOrchestrator';
 import { createSourcingStore, type SourcingStore } from './sourcingStore';
 import { inspectShadowRun } from './shadowInspector';
+import { optimizeCJSearchKeyword } from './searchKeywordOptimizer';
 import { consumeShadowRunAuthorization,consumeShadowRunAuthorizationById,type ShadowRunAuthorization,type ShadowEconomicPolicy } from './shadowRunAuthorization';
 
 export function validCronToken(header:string|undefined,secret=process.env.CRON_SECRET) {
@@ -64,10 +65,10 @@ const UI_SHADOW_POLICY: ShadowEconomicPolicy = {
   policyVersion:'uy-shadow-ui-v1-2026-09-14',
 };
 
-function uiShadowConfig(body:any):SourcingConfig {
+function uiShadowConfig(body:any,keywordOverride?:string):SourcingConfig {
   const base=sourcingConfig();
   const policyConfig=applyAuthorizedShadowPolicy(base,UI_SHADOW_POLICY);
-  const rawKeyword=typeof body?.keyword==='string'?body.keyword.trim():'';
+  const rawKeyword=typeof keywordOverride==='string'?keywordOverride:(typeof body?.keyword==='string'?body.keyword.trim():'');
   const keyword=(rawKeyword || 'facial headband').replace(/[\r\n\t]/g,' ').replace(/\s+/g,' ').slice(0,80);
   const requested=Number(body?.maxCandidates || 3);
   const maxCandidates=Number.isFinite(requested)?Math.max(1,Math.min(Math.floor(requested),3)):3;
@@ -126,7 +127,9 @@ export function createSourcingRouter(
   if(!productionShadowSafetyReady()) return res.status(403).json({error:'PRODUCTION_SHADOW_SAFETY_NOT_READY'});
   if(!process.env.CJ_API_KEY?.trim()) return res.status(503).json({error:'CJ_API_NOT_CONFIGURED'});
   try {
-   const config=uiShadowConfig(req.body);
+   const rawKeyword=typeof req.body?.keyword==='string'?req.body.keyword:'facial headband';
+   const searchQuery=await optimizeCJSearchKeyword(rawKeyword);
+   const config=uiShadowConfig(req.body,searchQuery.keyword);
    const result=await runner(storeFactory(),config,`admin-ui-shadow:${randomUUID()}`);
    const inspection=await inspectShadowRun(result.run_id);
    return res.json({
@@ -135,6 +138,7 @@ export function createSourcingRouter(
     shadow:true,
     cronEnabled:false,
     policyVersion:UI_SHADOW_POLICY.policyVersion,
+    searchQuery,
     safety:{checkout:false,purchases:false,autoPublish:false,maxCandidates:config.maxCandidates,maxAiCalls:config.maxAiCalls},
     inspection,
    });
@@ -172,6 +176,9 @@ export function createSourcingRouter(
    return res.json({...result,manual:true,cronEnabled:base.enabled,shadow:true,policyVersion:authorization.policy?.policyVersion||null});
  };
 
+ // Explicit operator-only escape hatch for a SINGLE bounded production shadow run.
+ // It does not enable the cron or accept a mode parameter. Authorization is
+ // atomically consumed from Supabase before any provider call is made.
  router.post('/sourcing/production-shadow-once',async(req,res)=>{
   if(!productionShadowSafetyReady()) return res.status(403).json({error:'PRODUCTION_SHADOW_SAFETY_NOT_READY'});
   if(!process.env.CJ_API_KEY?.trim()) return res.status(503).json({error:'CJ_API_NOT_CONFIGURED'});
@@ -184,6 +191,9 @@ export function createSourcingRouter(
   } catch {return res.status(503).json({error:'PRODUCTION_SHADOW_RUN_INCOMPLETE'});}
  });
 
+ // GET is intentionally capability-based so operator tooling that cannot send a
+ // POST/header can execute one authorized shadow cycle. The UUID is random,
+ // expires, is consumed atomically, and cannot be replayed.
  router.get('/sourcing/production-shadow-once',async(req,res)=>{
   if(!productionShadowSafetyReady()) return res.status(403).json({error:'PRODUCTION_SHADOW_SAFETY_NOT_READY'});
   if(!process.env.CJ_API_KEY?.trim()) return res.status(503).json({error:'CJ_API_NOT_CONFIGURED'});
