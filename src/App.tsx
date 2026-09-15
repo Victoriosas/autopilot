@@ -11,6 +11,7 @@ import { CartDrawer } from './components/store/CartDrawer';
 import { CheckoutModal } from './components/store/CheckoutModal';
 import { CustomerAccountModal } from './components/store/CustomerAccountModal';
 import { StoreFooter } from './components/store/StoreFooter';
+import { WaitlistSection } from './components/store/WaitlistSection';
 
 // Admin Components
 import { AdminHeader } from './components/admin/AdminHeader';
@@ -129,6 +130,7 @@ export function App() {
             />
 
             <StoreTrustSections onSelectCategory={setActiveCategory} />
+            <WaitlistSection />
           </main>
 
           <StoreFooter />
