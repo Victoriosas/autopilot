@@ -9,6 +9,7 @@ const keys = [
   'VERCEL_ENV','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY','CJ_API_KEY','AUTOPILOT_SHADOW_MODE',
   'CHECKOUT_ENABLED','AUTOPILOT_PURCHASE_LIMIT_USD','AUTOPILOT_LEGACY_SOURCING_ENABLED',
   'AUTOPILOT_V4_SOURCING_ENABLED','MAX_CANDIDATES_PER_RUN','MAX_AI_CALLS_PER_RUN','MAX_RUN_DURATION_MS',
+  'STORE_CURRENCY','AUTOPILOT_CJ_CURRENCY',
 ] as const;
 function snapshotEnv(){return Object.fromEntries(keys.map(key=>[key,process.env[key]]));}
 function restoreEnv(before:Record<string,string|undefined>){for(const key of keys){const value=before[key];if(value===undefined)delete process.env[key];else process.env[key]=value;}}
@@ -31,6 +32,8 @@ function safeProductionEnv(){
  process.env.MAX_CANDIDATES_PER_RUN='30';
  process.env.MAX_AI_CALLS_PER_RUN='12';
  process.env.MAX_RUN_DURATION_MS='40000';
+ process.env.STORE_CURRENCY='UYU';
+ process.env.AUTOPILOT_CJ_CURRENCY='USD';
 }
 
 test('one-time production shadow POST is bounded, shadow-only and does not enable cron',async()=>{
@@ -47,17 +50,43 @@ test('one-time production shadow POST is bounded, shadow-only and does not enabl
  }finally{restoreEnv(before);}
 });
 
-test('one-time production shadow GET consumes UUID capability and remains bounded',async()=>{
+test('one-time production shadow GET injects bounded Uruguay economic policy only in shadow',async()=>{
  const before=snapshotEnv();safeProductionEnv();let consumedById=0,ran=0;const store={} as SourcingStore;
  const capability='123e4567-e89b-42d3-a456-426614174000';
  try{
   const router=createSourcingRouter(()=>store,async()=>null,
-   (async(_store,config,key)=>{ran++;assert.equal(config.mode,'shadow');assert.equal(config.maxCandidates,2);assert.equal(config.maxAiCalls,1);assert.equal(config.durationMs,10000);assert.equal(key,'production-shadow-once:auth-get');return {status:'completed_no_candidates',run_id:'run-get',mode:'shadow'};}) as any,
-   async id=>{consumedById++;return id===capability?{id:'auth-get',maxCandidates:2,maxAiCalls:1,durationMs:10000}:null;});
+   (async(_store,config,key)=>{
+    ran++;
+    assert.equal(config.mode,'shadow');
+    assert.equal(config.enabled,false);
+    assert.equal(config.maxCandidates,2);
+    assert.equal(config.maxAiCalls,1);
+    assert.equal(config.durationMs,10000);
+    assert.equal(config.destination,'UY');
+    assert.equal(config.currency,'UYU');
+    assert.equal(config.providerCurrency,'USD');
+    assert.equal(config.providerToStoreRate,41.02);
+    assert.equal(config.minMargin,30);
+    assert.equal(config.customsRatePct,60);
+    assert.equal(config.paymentFeePct,7.31);
+    assert.equal(config.paymentFeeFixed,0);
+    assert.equal(config.returnReservePct,5);
+    assert.equal(config.acquisitionCost,150);
+    assert.equal(config.taxRatePct,18.03);
+    assert.equal(config.imageSaleUseAllowed,true);
+    assert.equal(config.commercialProxiesAllowed,true);
+    assert.match(config.version,/uy-shadow-v1/);
+    assert.equal(key,'production-shadow-once:auth-get');
+    return {status:'completed_no_candidates',run_id:'run-get',mode:'shadow'};
+   }) as any,
+   async id=>{consumedById++;return id===capability?{
+    id:'auth-get',maxCandidates:2,maxAiCalls:1,durationMs:10000,
+    policy:{providerToStoreRate:41.02,minMargin:30,customsRatePct:60,paymentFeePct:7.31,paymentFeeFixed:0,returnReservePct:5,acquisitionCost:150,taxRatePct:18.03,imageSaleUseAllowed:true,commercialProxiesAllowed:true,policyVersion:'uy-shadow-v1'},
+   }:null;});
   await withServer(router,async base=>{
    assert.equal((await fetch(`${base}/sourcing/production-shadow-once`)).status,401);
    const ok=await fetch(`${base}/sourcing/production-shadow-once?authorization=${capability}`);
-   assert.equal(ok.status,200);const body=await ok.json() as any;assert.equal(body.shadow,true);assert.equal(body.cronEnabled,false);assert.equal(body.status,'completed_no_candidates');
+   assert.equal(ok.status,200);const body=await ok.json() as any;assert.equal(body.shadow,true);assert.equal(body.cronEnabled,false);assert.equal(body.status,'completed_no_candidates');assert.equal(body.policyVersion,'uy-shadow-v1');
   });
   assert.equal(consumedById,1);assert.equal(ran,1);
  }finally{restoreEnv(before);}
