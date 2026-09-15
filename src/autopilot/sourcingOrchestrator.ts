@@ -96,9 +96,11 @@ export async function runSourcing(store:SourcingStore, config:SourcingConfig, ke
           let candidate:OpportunityCandidate={...item.payload.candidate!,risk:fit.risk,pricing:{...item.payload.candidate!.pricing,targetNetMarginPct:config.minMargin!}};
           let market:MarketEvidence|undefined;
           if(config.mode==='shadow' && deps.marketEvidence){
-            market=await sourcingModelBudget.run({deadline,beforeCall:reserveModelCall},()=>deps.marketEvidence!(candidate));
+            await reserveModelCall();
+            market=await deps.marketEvidence(candidate);
             if(market.status!=='ok'){
-              await checkpoint(item,'needs_evidence',{reasons:[market.status==='not_configured'?'MARKET_SEARCH_NOT_CONFIGURED':'MARKET_EVIDENCE_INSUFFICIENT'],marketEvidence:market,victoriosaFit:fit});continue;
+              const marketReason=market.status==='not_configured'?'MARKET_SEARCH_NOT_CONFIGURED':market.status==='provider_error'?'MARKET_SEARCH_PROVIDER_ERROR':'MARKET_EVIDENCE_INSUFFICIENT';
+              await checkpoint(item,'needs_evidence',{reasons:[marketReason],marketEvidence:market,victoriosaFit:fit});continue;
             }
             candidate=applyMarketEvidence(candidate,market);
           }
