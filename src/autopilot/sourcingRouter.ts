@@ -1,6 +1,7 @@
 import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { Router } from 'express';
 import { requireSupabaseAdminAuth } from '../security/adminAuth';
+import { cjSourcingReadConfigured } from '../services/cjSourcingProvider';
 import { requireControlPlaneAuth,getAutopilotPrincipal } from './auth';
 import { sourcingConfig, type SourcingConfig } from './sourcingEvidence';
 import { runSourcing } from './sourcingOrchestrator';
@@ -106,7 +107,7 @@ export function createSourcingRouter(
     lastCompletedNoCandidates:runs.find(r=>r.status==='completed_no_candidates')||null,
     currentlyRunning:runs.some(r=>Date.parse(r.lease_expires_at)>Date.now()),
     resumableRuns:runs.filter(r=>['queued','running','resuming','failed_retryable'].includes(r.status)).length},
-    sourcing:{provider:'cj',configured:Boolean(process.env.CJ_API_KEY)},governance:{councilEnabled:true,autonomousPurchaseAllowed:false},
+    sourcing:{provider:'cj',configured:cjSourcingReadConfigured(config),transportPolicy:config.mode==='shadow'?'mcp_first_rest_fallback':'rest'},governance:{councilEnabled:true,autonomousPurchaseAllowed:false},
     commerce:{checkoutEnabled:process.env.CHECKOUT_ENABLED==='true'}});
   }catch{return res.status(503).json({error:'SOURCING_STATUS_UNAVAILABLE'});}
  });
@@ -125,7 +126,7 @@ export function createSourcingRouter(
  // purchase/publication flag can be supplied by the client.
  router.post('/sourcing/admin-shadow-run',requireSupabaseAdminAuth,async(req,res)=>{
   if(!productionShadowSafetyReady()) return res.status(403).json({error:'PRODUCTION_SHADOW_SAFETY_NOT_READY'});
-  if(!process.env.CJ_API_KEY?.trim()) return res.status(503).json({error:'CJ_API_NOT_CONFIGURED'});
+  if(!cjSourcingReadConfigured({mode:'shadow'})) return res.status(503).json({error:'CJ_READ_PROVIDER_NOT_CONFIGURED'});
   try {
    const rawKeyword=typeof req.body?.keyword==='string'?req.body.keyword:'facial headband';
    const searchQuery=await optimizeCJSearchKeyword(rawKeyword);
@@ -138,6 +139,7 @@ export function createSourcingRouter(
     shadow:true,
     cronEnabled:false,
     policyVersion:UI_SHADOW_POLICY.policyVersion,
+    transportPolicy:'mcp_first_rest_fallback',
     searchQuery,
     safety:{checkout:false,purchases:false,autoPublish:false,maxCandidates:config.maxCandidates,maxAiCalls:config.maxAiCalls},
     inspection,
@@ -155,6 +157,7 @@ export function createSourcingRouter(
    return res.json({
     shadow:true,
     cronEnabled:sourcingConfig().enabled,
+    transportPolicy:'mcp_first_rest_fallback',
     safety:{checkout:process.env.CHECKOUT_ENABLED==='true',purchaseLimitUsd:Number(process.env.AUTOPILOT_PURCHASE_LIMIT_USD || '0'),autoPublish:false},
     ...inspection,
    });
@@ -173,7 +176,7 @@ export function createSourcingRouter(
     maxAiCalls:Math.max(1,Math.min(policyConfig.maxAiCalls,authorization.maxAiCalls,3)),
     durationMs:Math.max(5000,Math.min(authorization.durationMs,40000))};
    const result=await runner(storeFactory(),config,`production-shadow-once:${authorization.id}`);
-   return res.json({...result,manual:true,cronEnabled:base.enabled,shadow:true,policyVersion:authorization.policy?.policyVersion||null});
+   return res.json({...result,manual:true,cronEnabled:base.enabled,shadow:true,transportPolicy:'mcp_first_rest_fallback',policyVersion:authorization.policy?.policyVersion||null});
  };
 
  // Explicit operator-only escape hatch for a SINGLE bounded production shadow run.
@@ -181,7 +184,7 @@ export function createSourcingRouter(
  // atomically consumed from Supabase before any provider call is made.
  router.post('/sourcing/production-shadow-once',async(req,res)=>{
   if(!productionShadowSafetyReady()) return res.status(403).json({error:'PRODUCTION_SHADOW_SAFETY_NOT_READY'});
-  if(!process.env.CJ_API_KEY?.trim()) return res.status(503).json({error:'CJ_API_NOT_CONFIGURED'});
+  if(!cjSourcingReadConfigured({mode:'shadow'})) return res.status(503).json({error:'CJ_READ_PROVIDER_NOT_CONFIGURED'});
   const token=req.header('x-autopilot-shadow-token')?.trim();
   if(!token || token.length<32 || token.length>256) return res.status(401).json({error:'SHADOW_AUTH_REQUIRED'});
   try {
@@ -196,7 +199,7 @@ export function createSourcingRouter(
  // expires, is consumed atomically, and cannot be replayed.
  router.get('/sourcing/production-shadow-once',async(req,res)=>{
   if(!productionShadowSafetyReady()) return res.status(403).json({error:'PRODUCTION_SHADOW_SAFETY_NOT_READY'});
-  if(!process.env.CJ_API_KEY?.trim()) return res.status(503).json({error:'CJ_API_NOT_CONFIGURED'});
+  if(!cjSourcingReadConfigured({mode:'shadow'})) return res.status(503).json({error:'CJ_READ_PROVIDER_NOT_CONFIGURED'});
   const authorizationId=typeof req.query.authorization==='string'?req.query.authorization:'';
   if(!authorizationId) return res.status(401).json({error:'SHADOW_AUTH_REQUIRED'});
   try {
