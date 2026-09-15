@@ -59,8 +59,6 @@ export const liveSourcing: SourcingDependencies={
         evidence.push(attachProviderTrace({...searchObservation,evidenceNotes:[...(searchObservation.evidenceNotes||[]),'CJ_ENRICHMENT_FAILED']},trace));
       }
     }
-    // If search returns no candidates, retain its transport trace only in logs;
-    // the durable run will correctly become completed_no_candidates.
     cj.drainTrace();
     return evidence;
   },
@@ -69,9 +67,10 @@ export const liveSourcing: SourcingDependencies={
 };
 
 export function errorClass(error:unknown) {
-  const e=error as {message?:string;status?:number;retryAfterMs?:number};
+  const e=error as {message?:string;status?:number;retryAfterMs?:number;code?:string};
   const retryable=[408,429,502,503,504].includes(e.status || 0) || /timeout|fetch failed|network|database|budget/i.test(e.message || '');
-  return {code:e.status ? `PROVIDER_HTTP_${e.status}` : retryable?'TRANSIENT_FAILURE':'INVALID_EVIDENCE_OR_CONFIGURATION',retryable,
+  const explicitCode=typeof e.code==='string' && /^[A-Z0-9_:.-]{3,160}$/.test(e.code) ? e.code.slice(0,160) : null;
+  return {code:explicitCode || (e.status ? `PROVIDER_HTTP_${e.status}` : retryable?'TRANSIENT_FAILURE':'INVALID_EVIDENCE_OR_CONFIGURATION'),retryable,
     delay:Math.min(Math.max(e.retryAfterMs || 10000,1000),3600000)};
 }
 
