@@ -23,6 +23,7 @@ import { AutopilotSettingsModal } from './components/admin/AutopilotSettingsModa
 import { AutopilotHistoryModal } from './components/admin/AutopilotHistoryModal';
 import { ConnectorsDirectoryModal } from './components/admin/ConnectorsDirectoryModal';
 import { GlobalAdminSearchModal } from './components/admin/GlobalAdminSearchModal';
+import { ReleaseReadinessCard } from './components/admin/ReleaseReadinessCard';
 import { AuthModal } from './components/auth/AuthModal';
 
 import type { Product, Order } from './types';
@@ -175,6 +176,7 @@ export function App() {
           />
 
           <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <ReleaseReadinessCard />
             {adminTab === 'pipeline' ? (
               <AutopilotDashboard
                 onInspectCandidate={(product) => setSelectedCandidateForReview(product)}
