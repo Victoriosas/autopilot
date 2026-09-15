@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { getCJClient } from '../services/cjDropshipping';
 import { runApprovalCouncil } from './approvalCouncil';
 import { buildCommercialDraft } from './draftBuilder';
-import { evaluateOpportunity } from './opportunityEngine';
+import { evaluateOpportunity, type OpportunityCandidate } from './opportunityEngine';
 import { applyMarketEvidence, findGroundedMarketEvidence, type MarketEvidence } from './marketEvidence';
 import {
   buildCJLiveEvidence,
@@ -93,7 +93,7 @@ export async function runSourcing(store:SourcingStore, config:SourcingConfig, ke
         }
         if(item.status==='evidence_validated') {
           const fit=item.checkpoint.victoriosaFit || assessVictoriosaFit(item.payload.candidate!,item.payload.facts);
-          let candidate={...item.payload.candidate!,risk:fit.risk,pricing:{...item.payload.candidate!.pricing,targetNetMarginPct:config.minMargin!}};
+          let candidate:OpportunityCandidate={...item.payload.candidate!,risk:fit.risk,pricing:{...item.payload.candidate!.pricing,targetNetMarginPct:config.minMargin!}};
           let market:MarketEvidence|undefined;
           if(config.mode==='shadow' && deps.marketEvidence){
             market=await sourcingModelBudget.run({deadline,beforeCall:reserveModelCall},()=>deps.marketEvidence!(candidate));
