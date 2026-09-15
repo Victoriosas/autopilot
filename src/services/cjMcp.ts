@@ -6,12 +6,16 @@ type JsonRpcResponse = {
 };
 
 /**
- * Read-only tools currently documented by CJ's official remote MCP guide.
- * Keep this list intentionally smaller than the discovered tool list: unknown
- * or write-capable tools must remain blocked until explicitly reviewed.
+ * Explicit read-only allowlist for CJ's remote MCP server. Some of the public
+ * catalog tools are present in CJ's maintained MCP repository even when the
+ * short integration guide omits them, so keep this list reviewed rather than
+ * mirroring tools/list blindly.
  */
 export const CJ_MCP_READ_ONLY_TOOLS = [
   'search_products',
+  'get_product_detail',
+  'get_product_variants',
+  'query_cj_inventory',
   'query_sku_details',
   'get_order_list',
   'get_pay_order_list',
@@ -120,6 +124,43 @@ function parseMcpPayload(text: string): JsonRpcResponse {
   return response;
 }
 
+function parseJsonText(text: string): unknown {
+  const trimmed = text.trim();
+  if (!trimmed) throw new CJMcpError('CJ_MCP_EMPTY_TOOL_RESPONSE', 'CJ_MCP_EMPTY_TOOL_RESPONSE');
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    // CJ's MCP tools sometimes prepend a short human-readable line before the
+    // JSON payload (for example "Found N products"). Parse only the observed
+    // JSON body; never infer missing fields from the prose prefix.
+    const objectStart = trimmed.indexOf('{');
+    const objectEnd = trimmed.lastIndexOf('}');
+    if (objectStart >= 0 && objectEnd > objectStart) {
+      try { return JSON.parse(trimmed.slice(objectStart, objectEnd + 1)); } catch { /* continue */ }
+    }
+    const arrayStart = trimmed.indexOf('[');
+    const arrayEnd = trimmed.lastIndexOf(']');
+    if (arrayStart >= 0 && arrayEnd > arrayStart) {
+      try { return JSON.parse(trimmed.slice(arrayStart, arrayEnd + 1)); } catch { /* continue */ }
+    }
+    throw new CJMcpError('CJ_MCP_TOOL_JSON_UNREADABLE', 'CJ_MCP_TOOL_JSON_UNREADABLE');
+  }
+}
+
+export function extractCJMcpToolJson(result: any): unknown {
+  if (result?.structuredContent && typeof result.structuredContent === 'object') {
+    return result.structuredContent;
+  }
+  const textParts = Array.isArray(result?.content)
+    ? result.content.filter((part: any) => part?.type === 'text' && typeof part.text === 'string').map((part: any) => part.text)
+    : [];
+  if (!textParts.length) throw new CJMcpError('CJ_MCP_TOOL_TEXT_MISSING', 'CJ_MCP_TOOL_TEXT_MISSING');
+  for (const text of textParts) {
+    try { return parseJsonText(text); } catch { /* try next text part */ }
+  }
+  throw new CJMcpError('CJ_MCP_TOOL_JSON_UNREADABLE', 'CJ_MCP_TOOL_JSON_UNREADABLE');
+}
+
 export class CJMcpReadOnlyClient {
   private requestId = 0;
 
@@ -176,6 +217,10 @@ export class CJMcpReadOnlyClient {
     const result = await this.rpc('tools/call', { name, arguments: args });
     if (result?.isError) throw new CJMcpError(`CJ_MCP_TOOL_ERROR:${name}`, 'CJ_MCP_TOOL_ERROR');
     return result;
+  }
+
+  async callReadOnlyJsonTool(name: string, args: Record<string, unknown> = {}): Promise<unknown> {
+    return extractCJMcpToolJson(await this.callReadOnlyTool(name, args));
   }
 }
 

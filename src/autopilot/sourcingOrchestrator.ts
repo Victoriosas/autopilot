@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { getCJClient } from '../services/cjDropshipping';
+import { getCJSourcingReadProvider } from '../services/cjSourcingProvider';
 import { runApprovalCouncil } from './approvalCouncil';
 import { buildCommercialDraft } from './draftBuilder';
 import { evaluateOpportunity, type OpportunityCandidate } from './opportunityEngine';
@@ -26,9 +26,17 @@ export interface SourcingDependencies {
   afterCheckpoint?:(stage:string)=>void;
 }
 
+function attachProviderTrace(evidence:Evidence,notes:string[]) {
+  if(!notes.length) return evidence;
+  evidence.evidenceNotes=[...(evidence.evidenceNotes||[]),...notes];
+  const metadata=evidence.candidate?.metadata as any;
+  if(metadata) metadata.evidenceNotes=[...(Array.isArray(metadata.evidenceNotes)?metadata.evidenceNotes:[]),...notes];
+  return evidence;
+}
+
 export const liveSourcing: SourcingDependencies={
   async discover(config) {
-    const cj=getCJClient();
+    const cj=getCJSourcingReadProvider(config);
     if(!cj) throw new Error('CJ_NOT_CONFIGURED');
     const enrichmentLimit=Math.max(1,Math.min(config.maxCandidates,config.durationMs>=30000?6:4));
     const result=await cj.searchProducts({keyword:config.keyword,pageSize:enrichmentLimit});
@@ -38,14 +46,22 @@ export const liveSourcing: SourcingDependencies={
       try {
         const variants=await cj.getVariants(product.pid);
         const selected=selectCJVariant(variants);
-        if(!selected) { evidence.push(searchObservation); continue; }
+        if(!selected) {
+          evidence.push(attachProviderTrace(searchObservation,cj.drainTrace()));
+          continue;
+        }
         const stock=await cj.getVariantStock(selected.vid);
         const freight=await cj.calculateShipping({variantId:selected.vid,countryCode:config.destination,quantity:1});
-        evidence.push(buildCJLiveEvidence({product,variants,stock,freight,config,imageSaleUseAllowed:config.imageSaleUseAllowed}));
+        const observed=buildCJLiveEvidence({product,variants,stock,freight,config,imageSaleUseAllowed:config.imageSaleUseAllowed});
+        evidence.push(attachProviderTrace(observed,cj.drainTrace()));
       } catch {
-        evidence.push({...searchObservation,evidenceNotes:[...(searchObservation.evidenceNotes||[]),'CJ_ENRICHMENT_FAILED']});
+        const trace=cj.drainTrace();
+        evidence.push(attachProviderTrace({...searchObservation,evidenceNotes:[...(searchObservation.evidenceNotes||[]),'CJ_ENRICHMENT_FAILED']},trace));
       }
     }
+    // If search returns no candidates, retain its transport trace only in logs;
+    // the durable run will correctly become completed_no_candidates.
+    cj.drainTrace();
     return evidence;
   },
   marketEvidence:findGroundedMarketEvidence,
