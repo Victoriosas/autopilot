@@ -23,28 +23,28 @@ alter function public.autopilot_sourcing_command(text,jsonb)
 
 create function public.autopilot_sourcing_command(command text, args jsonb) returns jsonb
 language plpgsql security invoker set search_path='' as $$
-declare result jsonb; run_id uuid;
+declare result jsonb; target_run_id uuid;
 begin
   result := public.autopilot_sourcing_command_v1(command,args);
   if command<>'release' then return result; end if;
 
-  run_id := nullif(result->>'id','')::uuid;
-  if run_id is null or result->>'status'<>'queued' then return result; end if;
+  target_run_id := nullif(result->>'id','')::uuid;
+  if target_run_id is null or result->>'status'<>'queued' then return result; end if;
 
-  if exists(select 1 from public.autopilot_sourcing_runs r where r.id=run_id and r.discovery_done)
+  if exists(select 1 from public.autopilot_sourcing_runs r where r.id=target_run_id and r.discovery_done)
      and not exists(
        select 1 from public.autopilot_sourcing_items i
-       where i.run_id=run_id and i.status not in (
+       where i.run_id=target_run_id and i.status not in (
          'needs_evidence','evidence_rejected','pricing_rejected','council_rejected',
          'shadow_completed','production_ready','published','failed_terminal'
        )
      ) then
-    update public.autopilot_sourcing_runs
-      set status=case when exists(select 1 from public.autopilot_sourcing_items i where i.run_id=run_id and i.draft_id is not null)
+    update public.autopilot_sourcing_runs r
+      set status=case when exists(select 1 from public.autopilot_sourcing_items i where i.run_id=target_run_id and i.draft_id is not null)
                       then 'completed' else 'completed_no_candidates' end,
-          completed_at=coalesce(completed_at,now()),updated_at=now()
-      where id=run_id;
-    select to_jsonb(r) into result from public.autopilot_sourcing_runs r where r.id=run_id;
+          completed_at=coalesce(r.completed_at,now()),updated_at=now()
+      where r.id=target_run_id;
+    select to_jsonb(r) into result from public.autopilot_sourcing_runs r where r.id=target_run_id;
   end if;
   return result;
 end $$;
@@ -83,8 +83,9 @@ begin
  return new;
 end $$;
 
--- Manual publication is service-role only, idempotent, and requires a durable
--- production_ready item backed by Council approval and fresh production evidence.
+-- Manual publication is service-role only, idempotent for a given draft, and
+-- requires a durable production_ready item backed by Council approval and fresh
+-- production evidence.
 create or replace function public.publish_autopilot_draft_manual(draft_id uuid)
 returns jsonb language plpgsql security invoker set search_path='' as $$
 declare d public.autopilot_product_drafts%rowtype; r public.autopilot_sourcing_runs%rowtype;
