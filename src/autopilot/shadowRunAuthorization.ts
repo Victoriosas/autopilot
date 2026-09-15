@@ -20,6 +20,7 @@ export interface ShadowRunAuthorization {
   maxCandidates: number;
   maxAiCalls: number;
   durationMs: number;
+  keyword?: string;
   policy?: ShadowEconomicPolicy;
 }
 
@@ -40,6 +41,14 @@ function client() {
 function bounded(value: unknown, min: number, max: number): number | undefined {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed >= min && parsed <= max ? parsed : undefined;
+}
+
+function normalizeKeyword(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.replace(/[\r\n\t]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+  if (normalized.length < 3) return undefined;
+  if (!/^[a-zA-Z0-9À-ÿ '&()+,./_-]+$/.test(normalized)) return undefined;
+  return normalized;
 }
 
 function normalizePolicy(input: unknown): ShadowEconomicPolicy | undefined {
@@ -67,7 +76,15 @@ function normalizeAuthorization(data: unknown): ShadowRunAuthorization | null {
   const maxCandidates = Math.max(1, Math.min(Number(limits.maxCandidates || 3), 5));
   const maxAiCalls = Math.max(1, Math.min(Number(limits.maxAiCalls || 2), 3));
   const durationMs = Math.max(5000, Math.min(Number(limits.durationMs || 15000), 40000));
-  return { id: String((data as any).id), maxCandidates, maxAiCalls, durationMs, policy: normalizePolicy(limits.policy) };
+  const keyword = normalizeKeyword(limits.keyword);
+  return {
+    id: String((data as any).id),
+    maxCandidates,
+    maxAiCalls,
+    durationMs,
+    ...(keyword ? { keyword } : {}),
+    policy: normalizePolicy(limits.policy),
+  };
 }
 
 export async function consumeShadowRunAuthorization(token: string): Promise<ShadowRunAuthorization | null> {
