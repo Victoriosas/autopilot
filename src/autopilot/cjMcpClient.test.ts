@@ -6,9 +6,11 @@ import {
   resolveCJMcpUrl,
 } from '../services/cjMcp';
 
+const DIRECT_URL = 'https://developers.cjdropshipping.com/mcp/MCP@CJTEST@CJ:fake-token';
+
 test('rejects non-official MCP hosts', () => {
   assert.throws(
-    () => resolveCJMcpUrl({ CJ_MCP_SERVER_URL: 'https://evil.example/mcp/token' } as NodeJS.ProcessEnv),
+    () => resolveCJMcpUrl({ CJ_MCP_SERVER_URL: 'https://evil.example/mcp/MCP@CJTEST@CJ:token' } as NodeJS.ProcessEnv),
     /CJ_MCP_URL_NOT_OFFICIAL/,
   );
 });
@@ -23,9 +25,15 @@ test('preserves CJ direct-token delimiters while encoding token payload', () => 
   );
 });
 
-test('keeps opaque MCP tokens safely URL encoded for compatibility', () => {
-  const url = resolveCJMcpUrl({ CJ_MCP_TOKEN: 'opaque token/value' } as NodeJS.ProcessEnv);
-  assert.equal(url, 'https://developers.cjdropshipping.com/mcp/opaque%20token%2Fvalue');
+test('rejects obsolete opaque MCP token paths before any network call', () => {
+  assert.throws(
+    () => resolveCJMcpUrl({ CJ_MCP_TOKEN: 'opaque token/value' } as NodeJS.ProcessEnv),
+    /CJ_MCP_DIRECT_TOKEN_FORMAT_REQUIRED/,
+  );
+  assert.throws(
+    () => resolveCJMcpUrl({ CJ_MCP_SERVER_URL: 'https://developers.cjdropshipping.com/mcp/old-api-key' } as NodeJS.ProcessEnv),
+    /CJ_MCP_DIRECT_TOKEN_URL_REQUIRED/,
+  );
 });
 
 test('shadow safety requires explicit enablement and zero purchase capability', () => {
@@ -48,7 +56,7 @@ test('shadow safety requires explicit enablement and zero purchase capability', 
 test('blocks write tools before any network request', async () => {
   let calls = 0;
   const client = new CJMcpReadOnlyClient(
-    'https://developers.cjdropshipping.com/mcp/fake-token',
+    DIRECT_URL,
     (async () => {
       calls += 1;
       return new Response('{}', { status: 200 });
@@ -61,7 +69,7 @@ test('blocks write tools before any network request', async () => {
 
 test('reports upstream HTTP status without exposing response body', async () => {
   const client = new CJMcpReadOnlyClient(
-    'https://developers.cjdropshipping.com/mcp/fake-token',
+    DIRECT_URL,
     (async () => new Response('secret upstream body', { status: 400 })) as typeof fetch,
   );
 
@@ -74,7 +82,7 @@ test('reports upstream HTTP status without exposing response body', async () => 
 test('calls an allowed read-only tool through StreamableHTTP JSON-RPC', async () => {
   let requestBody: any = null;
   const client = new CJMcpReadOnlyClient(
-    'https://developers.cjdropshipping.com/mcp/fake-token',
+    DIRECT_URL,
     (async (_input: RequestInfo | URL, init?: RequestInit) => {
       requestBody = JSON.parse(String(init?.body || '{}'));
       return new Response(JSON.stringify({
