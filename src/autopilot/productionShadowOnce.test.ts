@@ -36,11 +36,11 @@ function safeProductionEnv(){
  process.env.AUTOPILOT_CJ_CURRENCY='USD';
 }
 
-test('one-time production shadow POST is bounded, shadow-only and does not enable cron',async()=>{
+test('one-time production shadow POST is bounded, shadow-only and can authorize the 40s research window',async()=>{
  const before=snapshotEnv();safeProductionEnv();let consumed=0,ran=0;const store={} as SourcingStore;
  try{
-  const router=createSourcingRouter(()=>store,async token=>{consumed++;return token==='valid-shadow-token-abcdefghijklmnopqrstuvwxyz'?{id:'auth-1',maxCandidates:3,maxAiCalls:2,durationMs:15000}:null;},
-   (async(_store,config,key)=>{ran++;assert.equal(config.mode,'shadow');assert.equal(config.enabled,false);assert.equal(config.maxCandidates,3);assert.equal(config.maxAiCalls,2);assert.equal(config.durationMs,15000);assert.equal(key,'production-shadow-once:auth-1');return {status:'completed_no_candidates',run_id:'run-1',mode:'shadow'};}) as any);
+  const router=createSourcingRouter(()=>store,async token=>{consumed++;return token==='valid-shadow-token-abcdefghijklmnopqrstuvwxyz'?{id:'auth-1',maxCandidates:3,maxAiCalls:2,durationMs:40000}:null;},
+   (async(_store,config,key)=>{ran++;assert.equal(config.mode,'shadow');assert.equal(config.enabled,false);assert.equal(config.maxCandidates,3);assert.equal(config.maxAiCalls,2);assert.equal(config.durationMs,40000);assert.equal(key,'production-shadow-once:auth-1');return {status:'completed_no_candidates',run_id:'run-1',mode:'shadow'};}) as any);
   await withServer(router,async base=>{
    assert.equal((await fetch(`${base}/sourcing/production-shadow-once`,{method:'POST'})).status,401);
    const ok=await fetch(`${base}/sourcing/production-shadow-once`,{method:'POST',headers:{'x-autopilot-shadow-token':'valid-shadow-token-abcdefghijklmnopqrstuvwxyz'}});

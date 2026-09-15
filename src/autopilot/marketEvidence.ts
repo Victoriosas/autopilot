@@ -99,7 +99,7 @@ function normalizeResult(parsed:any,sources:Array<{title:string;url:string}>,obs
 async function searchWithGemini(candidate:OpportunityCandidate,apiKey:string,observedAt:string):Promise<MarketEvidence>{
   const model=(process.env.AUTOPILOT_MARKET_MODEL || 'gemini-2.5-flash').trim();
   const controller=new AbortController();
-  const timeout=setTimeout(()=>controller.abort(),9000);
+  const timeout=setTimeout(()=>controller.abort(),12000);
   try {
     const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{
       method:'POST',headers:{'content-type':'application/json','x-goog-api-key':apiKey},
@@ -116,9 +116,11 @@ async function searchWithGemini(candidate:OpportunityCandidate,apiKey:string,obs
 }
 
 async function searchWithOpenRouter(candidate:OpportunityCandidate,apiKey:string,observedAt:string):Promise<MarketEvidence>{
-  const model=(process.env.AUTOPILOT_MARKET_OPENROUTER_MODEL || process.env.OPENROUTER_FAST_MODEL || 'qwen/qwen3-8b').trim();
+  // Use OpenRouter's tool-aware auto router by default instead of inheriting the
+  // generic fast model, which may not be optimal for a web-search tool call.
+  const model=(process.env.AUTOPILOT_MARKET_OPENROUTER_MODEL || 'openrouter/auto').trim();
   const controller=new AbortController();
-  const timeout=setTimeout(()=>controller.abort(),9000);
+  const timeout=setTimeout(()=>controller.abort(),15000);
   try {
     const response=await fetch('https://openrouter.ai/api/v1/chat/completions',{
       method:'POST',
