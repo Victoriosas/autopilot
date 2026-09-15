@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyMarketEvidence } from './marketEvidence';
+import { applyMarketEvidence, buildOpenRouterMarketRequest } from './marketEvidence';
 import { assessVictoriosaFit } from './victoriosaProductFilter';
 import type { OpportunityCandidate } from './opportunityEngine';
 
@@ -28,6 +28,17 @@ test('Victoriosa filter forces Uruguay regulatory review for topical cosmetic',(
   assert.equal(fit.decision,'review');
   assert.equal(fit.regulatoryReviewRequired,true);
   assert.match(fit.reasons.join(','),/COSMETIC_REGISTRATION/);
+});
+
+test('OpenRouter market request uses exactly one bounded fast web plugin search',()=>{
+  const body:any=buildOpenRouterMarketRequest(candidate('Pearl rhinestone headband'));
+  assert.equal(body.model,'openrouter/auto');
+  assert.equal(body.tools,undefined);
+  assert.equal(body.plugins.length,1);
+  assert.equal(body.plugins[0].id,'web');
+  assert.equal(body.plugins[0].engine,'exa');
+  assert.equal(body.plugins[0].mode,'fast');
+  assert.equal(body.plugins[0].max_results,5);
 });
 
 test('grounded market evidence enriches price and market signals without overwriting supplier facts',()=>{
