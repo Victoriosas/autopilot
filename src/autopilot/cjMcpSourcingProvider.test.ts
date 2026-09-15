@@ -3,6 +3,7 @@ import test from 'node:test';
 import { CJMcpReadOnlyClient, extractCJMcpToolJson } from '../services/cjMcp';
 import { CJMcpFirstSourcingProvider } from '../services/cjSourcingProvider';
 import type CJDropshippingClient from '../services/cjDropshipping';
+import { errorClass } from './sourcingOrchestrator';
 
 function mcpClient(handler: (name: string, args: any) => unknown) {
   return new CJMcpReadOnlyClient(
@@ -101,4 +102,34 @@ test('falls back to REST when an MCP read fails and records only a sanitized cod
   assert.match(trace, /CJ_MCP_SEARCH_PRODUCTS_FALLBACK_CJ_MCP_HTTP_503/);
   assert.match(trace, /CJ_REST_SEARCH_PRODUCTS_OBSERVED/);
   assert.equal(trace.includes('secret'), false);
+});
+
+test('persists whether a 401 came from REST-only or an MCP-to-REST fallback chain', async () => {
+  const rest401 = {
+    searchProducts: async () => {
+      const error: any = new Error('provider body must not leak');
+      error.status = 401;
+      throw error;
+    },
+  } as unknown as CJDropshippingClient;
+
+  const restOnly = new CJMcpFirstSourcingProvider(null, rest401);
+  await assert.rejects(
+    () => restOnly.searchProducts({ keyword: 'test' }),
+    (error: any) => error.code === 'CJ_REST_ONLY_CJ_REST_HTTP_401'
+      && errorClass(error).code === 'CJ_REST_ONLY_CJ_REST_HTTP_401'
+      && !String(error.message).includes('provider body'),
+  );
+
+  const mcp401 = new CJMcpReadOnlyClient(
+    'https://developers.cjdropshipping.com/mcp/fake-token',
+    (async () => new Response('mcp secret', { status: 401 })) as typeof fetch,
+  );
+  const hybrid = new CJMcpFirstSourcingProvider(mcp401, rest401);
+  await assert.rejects(
+    () => hybrid.searchProducts({ keyword: 'test' }),
+    (error: any) => error.code === 'CJ_MCP_FALLBACK_CJ_MCP_HTTP_401_CJ_REST_HTTP_401'
+      && errorClass(error).code === 'CJ_MCP_FALLBACK_CJ_MCP_HTTP_401_CJ_REST_HTTP_401'
+      && !String(error.message).includes('secret'),
+  );
 });
