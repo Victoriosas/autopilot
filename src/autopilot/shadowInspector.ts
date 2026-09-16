@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { diagnoseShadowItems } from './shadowDiagnostics';
 
 function adminDb() {
   const url = process.env.SUPABASE_URL;
@@ -7,8 +8,7 @@ function adminDb() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
-export async function inspectShadowRun(runId?: string) {
-  const db = adminDb();
+export async function inspectShadowRun(runId?: string, db = adminDb()) {
 
   const { data: runs, error: runsError } = await db
     .from('autopilot_sourcing_runs')
@@ -17,11 +17,17 @@ export async function inspectShadowRun(runId?: string) {
     .limit(10);
   if (runsError) throw runsError;
 
-  const selectedRun = runId
-    ? (runs || []).find((run: any) => run.id === runId)
-    : (runs || [])[0];
+  let selectedRun = (runs || [])[0];
+  if (runId) {
+    // The recent-runs sidebar must not limit addressable run history.
+    const { data, error } = await db.from('autopilot_sourcing_runs')
+      .select('id,status,mode,run_key,scope,model_calls,error_count,error_code,metrics,created_at,started_at,completed_at,resume_count,config')
+      .eq('id', runId).maybeSingle();
+    if (error) throw error;
+    selectedRun = data;
+  }
 
-  if (!selectedRun) return { runs: runs || [], run: null, items: [] };
+  if (!selectedRun) return { runs: runs || [], run: null, items: [], diagnostics: diagnoseShadowItems([]) };
 
   const { data: items, error: itemsError } = await db
     .from('autopilot_sourcing_items')
@@ -33,6 +39,7 @@ export async function inspectShadowRun(runId?: string) {
   return {
     runs: runs || [],
     run: selectedRun,
+    diagnostics: diagnoseShadowItems((items || []).map((item: any) => ({ status: item.status, reasons: item.checkpoint?.reasons }))),
     items: (items || []).map((item: any) => ({
       id: item.id,
       identity: item.identity,
