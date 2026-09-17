@@ -18,7 +18,7 @@ export interface ReleaseReadiness {
   checks:ReleaseCheck[];
   providers:{
     cj:boolean;
-    marketEvidence:{mercadoLibre:boolean;gemini:boolean;openRouter:boolean;openRouterCircuitOpen:boolean};
+    marketEvidence:{marketMemory:boolean;mercadoLibre:boolean;gemini:boolean;openRouter:boolean;openRouterCircuitOpen:boolean};
     payments:{mercadoPago:boolean;paypal:boolean};
   };
   catalog:{published:number;productionEligible:number;shadowDrafts:number};
@@ -61,7 +61,7 @@ export async function computeReleaseReadiness():Promise<ReleaseReadiness>{
   const runtimeAutoPublishOff=!truthy(process.env.AUTOPILOT_AUTO_PUBLISH_ENABLED)&&!truthy(process.env.AUTOPILOT_V4_AUTO_PUBLISH_ENABLED);
   const v4CronOff=!truthy(process.env.AUTOPILOT_V4_SOURCING_ENABLED);
   const shadowMode=process.env.AUTOPILOT_SHADOW_MODE!=='false';
-  const hasMarketProvider=market.mercadoLibre||market.gemini||market.openRouter;
+  const hasMarketProvider=market.marketMemory||market.mercadoLibre||market.gemini||market.openRouter;
   const hasPaymentProvider=mercadoPago||paypal;
 
   const checks:ReleaseCheck[]=[

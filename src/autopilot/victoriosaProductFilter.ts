@@ -34,7 +34,9 @@ const regulatedCosmetic = [
 
 const regulatedDevice = [
   /\blaser\b/i,/\bipl\b/i,/\bradiofrequency\b/i,/\bmicrocurrent\b/i,/\bled therapy\b/i,
-  /\bmedical\b/i,/\btreatment\b/i,/\btherapeutic\b/i,/\btratamiento\b/i,/\bterap[eé]utic/i,
+  /\bmedical\s+(?:device|equipment|instrument|apparatus)\b/i,
+  /\b(?:treatment|therapy|therapeutic|tratamiento|terap[eé]utic[oa]?)\s+(?:device|machine|equipment|instrument|apparatus)\b/i,
+  /\b(?:device|machine|equipment|instrument|apparatus)\s+(?:for\s+)?(?:treatment|therapy|tratamiento|terapia)\b/i,
 ];
 
 function haystack(candidate: OpportunityCandidate, facts: CommercialFacts) {

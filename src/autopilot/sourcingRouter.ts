@@ -200,7 +200,7 @@ export function createSourcingRouter(
   if(releaseBlockers.length){console.warn('[Autopilot V4] release candidate safety blocked',releaseBlockers);return res.status(403).json({error:'PRODUCTION_RELEASE_CANDIDATE_SAFETY_NOT_READY',blockers:releaseBlockers});}
   if(!cjSourcingReadConfigured({mode:'production'})) return res.status(503).json({error:'CJ_READ_PROVIDER_NOT_CONFIGURED'});
   const providers=marketProviderStatus();
-  if(!providers.mercadoLibre && !providers.gemini && !providers.openRouter) return res.status(503).json({error:'MARKET_EVIDENCE_PROVIDER_NOT_CONFIGURED'});
+  if(!providers.marketMemory && !providers.mercadoLibre && !providers.gemini && !providers.openRouter) return res.status(503).json({error:'MARKET_EVIDENCE_PROVIDER_NOT_CONFIGURED'});
   try{
    const rawKeyword=typeof req.body?.keyword==='string'?req.body.keyword:'facial headband';
    const searchQuery=await optimizeCJSearchKeyword(rawKeyword);

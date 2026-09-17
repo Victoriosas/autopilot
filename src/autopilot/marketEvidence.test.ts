@@ -23,6 +23,18 @@ test('Victoriosa filter accepts ordinary beauty accessory',()=>{
   assert.equal(fit.risk,'low');
 });
 
+test('Victoriosa filter keeps ordinary spa headbands out of medical-device review',()=>{
+  const fit=assessVictoriosaFit(candidate('Easy French Retro Headband'),facts('soft hair band for facial treatments and makeup','Hair Accessories'));
+  assert.equal(fit.decision,'eligible');
+  assert.equal(fit.regulatoryReviewRequired,false);
+});
+
+test('Victoriosa filter still reviews actual treatment devices',()=>{
+  const fit=assessVictoriosaFit(candidate('IPL facial treatment device'),facts('beauty device for treatment','Skin Care'));
+  assert.equal(fit.decision,'review');
+  assert.equal(fit.regulatoryReviewRequired,true);
+});
+
 test('Victoriosa filter forces Uruguay regulatory review for topical cosmetic',()=>{
   const fit=assessVictoriosaFit(candidate('Hydrating Facial Skin Toner'),facts('topical facial toner','Skin Care'));
   assert.equal(fit.decision,'review');

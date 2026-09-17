@@ -94,6 +94,19 @@ test('shadow-only CJ proxies use observed platform signals but production ignore
  assert.ok(validateEvidence(prodEvidence,production,now).includes('COMMERCIAL_EVIDENCE_REQUIRED:demand'));
 });
 
+test('CJ-hosted supplier image is valid for sale of that same CJ product',()=>{
+ const config=sourcingConfig({STORE_CURRENCY:'USD',AUTOPILOT_CJ_CURRENCY:'USD',AUTOPILOT_V4_MIN_MARGIN_PCT:'35',AUTOPILOT_CUSTOMS_RATE_PCT:'0',AUTOPILOT_PAYMENT_FEE_PCT:'4',AUTOPILOT_PAYMENT_FEE_FIXED:'0',AUTOPILOT_RETURN_RESERVE_PCT:'4',AUTOPILOT_ACQUISITION_COST:'0',AUTOPILOT_TAX_RATE_PCT:'0'});
+ const evidence=buildCJLiveEvidence({
+  product:{pid:'cj-img',productNameEn:'Spa Headband',productImage:'https://cf.cjdropshipping.com/product/a.jpg',productUrl:'https://www.cjdropshipping.com/product/spa-headband-p-cj-img.html'} as CJProduct,
+  variants:[{vid:'v-img',pid:'cj-img',variantNameEn:'Pink',variantSku:'VIMG',variantImage:'https://cf.cjdropshipping.com/product/a.jpg',variantWeight:50,variantSellPrice:2,variantSugSellPrice:null}],
+  stock:{variantId:'v-img',totalInventory:8,warehouses:[]},
+  freight:[{logisticName:'CJ',logisticAging:'10-15',logisticPrice:2,taxesFee:0,clearanceOperationFee:0,totalPostageFee:2,totalCostUsd:2}],
+  config,
+ });
+ assert.equal(evidence.imageRightsVerified,true);
+ assert.ok(evidence.evidenceNotes?.includes('CJ_VENDOR_IMAGE_SALE_USE_POLICY'));
+});
+
 test('CJ evidence never guesses FX or image rights',()=>{
  const config=sourcingConfig({STORE_CURRENCY:'UYU',AUTOPILOT_CJ_CURRENCY:'USD',AUTOPILOT_V4_MIN_MARGIN_PCT:'35'});
  const evidence=buildCJLiveEvidence({

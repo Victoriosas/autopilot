@@ -172,6 +172,13 @@ export function selectCJFreight(options: CJFreightOption[]): CJFreightOption | n
     .sort((a, b) => a.totalCostUsd - b.totalCostUsd)[0] || null;
 }
 
+
+function cjHostedSaleImageAllowed(image:string|undefined,sourceUrl:string):boolean {
+  if(!image) return false;
+  const official=(value:string)=>{try{const host=new URL(value).hostname.toLowerCase();return host==='cjdropshipping.com'||host.endsWith('.cjdropshipping.com')||host==='cjdropshipping.cn'||host.endsWith('.cjdropshipping.cn');}catch{return false;}};
+  return official(image)&&official(sourceUrl);
+}
+
 function convertProviderAmount(amount: number | null, config: SourcingConfig): number | null {
   if (amount === null || !Number.isFinite(amount) || amount < 0) return null;
   if (config.providerCurrency === config.currency) return amount;
@@ -209,7 +216,9 @@ export function buildCJLiveEvidence(input: {
     if (config.providerToStoreRate) notes.push('CONFIGURED_PROVIDER_TO_STORE_FX');
     else notes.push('FX_RATE_REQUIRED');
   }
-  if (!input.imageSaleUseAllowed) notes.push('IMAGE_SALE_USE_POLICY_NOT_CONFIRMED');
+  const cjImagePolicyAllowed=cjHostedSaleImageAllowed(image,sourceUrl);
+  if(cjImagePolicyAllowed) notes.push('CJ_VENDOR_IMAGE_SALE_USE_POLICY');
+  if (!input.imageSaleUseAllowed && !cjImagePolicyAllowed) notes.push('IMAGE_SALE_USE_POLICY_NOT_CONFIRMED');
 
   const policyComplete = [
     config.customsRatePct,
@@ -289,7 +298,7 @@ export function buildCJLiveEvidence(input: {
     shippingCost,
     destination: config.destination,
     shippingVerified: Boolean(freight),
-    imageRightsVerified: Boolean(input.imageSaleUseAllowed && image),
+    imageRightsVerified: Boolean(image && (input.imageSaleUseAllowed || cjImagePolicyAllowed)),
     evidenceNotes: notes,
     candidate,
     facts: {

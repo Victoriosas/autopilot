@@ -5,7 +5,7 @@ import { apiFetch } from '../../lib/api';
 type Readiness={
   state:'safe_shadow'|'blocked_for_commerce'|'ready_for_manual_release';
   blockers:string[];
-  providers:{cj:boolean;marketEvidence:{mercadoLibre:boolean;gemini:boolean;openRouter:boolean;openRouterCircuitOpen:boolean};payments:{mercadoPago:boolean;paypal:boolean}};
+  providers:{cj:boolean;marketEvidence:{marketMemory:boolean;mercadoLibre:boolean;gemini:boolean;openRouter:boolean;openRouterCircuitOpen:boolean};payments:{mercadoPago:boolean;paypal:boolean}};
   catalog:{published:number;productionEligible:number;shadowDrafts:number};
   generatedAt:string;
 };
@@ -131,7 +131,7 @@ export const ReleaseReadinessCard:React.FC=()=>{
   const Icon=ready?CheckCircle2:blocked?AlertTriangle:ShieldCheck;
   const market=data.providers.marketEvidence;
   const releaseItems=releaseRun?.inspection?.items||[];
-  const hasMarketProvider=market.mercadoLibre||market.gemini||(market.openRouter&&!market.openRouterCircuitOpen);
+  const hasMarketProvider=market.marketMemory||market.mercadoLibre||market.gemini||(market.openRouter&&!market.openRouterCircuitOpen);
   const canRevalidate=data.providers.cj&&hasMarketProvider;
 
   return <div className="mb-5 space-y-3">
@@ -146,7 +146,8 @@ export const ReleaseReadinessCard:React.FC=()=>{
         </div>
         <div className="flex flex-wrap gap-1.5 text-[9px]">
           <Pill ok={data.providers.cj} label="CJ"/>
-          <Pill ok={market.mercadoLibre} label="Mercado Libre UY"/>
+          <Pill ok={market.marketMemory} label="Market Memory UY"/>
+          <Pill ok={market.mercadoLibre} label="Mercado Libre UY API"/>
           <Pill ok={market.gemini} label="Gemini"/>
           <Pill ok={market.openRouter&&!market.openRouterCircuitOpen} label={market.openRouterCircuitOpen?'OpenRouter 402':'OpenRouter'}/>
           <Pill ok={data.providers.payments.mercadoPago} label="Mercado Pago"/>
