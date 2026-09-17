@@ -1,4 +1,4 @@
-import { orderIdentity, checkoutEnabled, paymentDatabaseConfigured, requireCheckoutEnabled, validateCheckoutItems, assertStock, assertPaymentAmount } from './safety';
+import { orderIdentity, validateCustomer, publicPaymentError, paypalAvailability, checkoutEnabled, paymentDatabaseConfigured, requireCheckoutEnabled, validateCheckoutItems, assertStock, assertPaymentAmount } from './safety';
 import { createClient } from '@supabase/supabase-js';
 import { Router } from 'express';
 
@@ -60,21 +60,6 @@ function storeConfig() {
   const freeShippingFrom = Math.max(0, Number(process.env.STORE_FREE_SHIPPING_FROM || process.env.VITE_FREE_SHIPPING_FROM || '0') || 0);
   const storeToUsdRate = currency === 'USD' ? 1 : Number(process.env.PAYPAL_STORE_TO_USD_RATE || '0');
   return { currency, shippingFlat, freeShippingFrom, storeToUsdRate };
-}
-
-function validateCustomer(value: unknown): CustomerInput {
-  const customer = (value || {}) as CustomerInput;
-  const name = String(customer.fullName || customer.name || '').trim();
-  const email = String(customer.email || '').trim();
-  const phone = String(customer.phone || '').trim();
-  const address = String(customer.address || '').trim();
-  const city = String(customer.city || '').trim();
-  const postalCode = String(customer.postalCode || '').trim();
-  const country = String(customer.country || '').trim();
-  if (!name || !email || !phone || !address || !city || !postalCode || !country) {
-    throw new Error('CUSTOMER_FIELDS_REQUIRED');
-  }
-  return { name, fullName: name, email, phone, address, city, postalCode, country };
 }
 
 
@@ -153,7 +138,7 @@ async function insertOrder(params: {
     created_at: new Date().toISOString(),
   };
   const { error } = await db.from('orders').insert(row);
-  if (error) throw new Error(`ORDER_CREATE_FAILED:${error.message}`);
+  if (error) throw new Error('ORDER_CREATE_FAILED');
   return orderId;
 }
 
@@ -207,13 +192,19 @@ export function createPaymentV2Router(): Router {
 
   router.get('/config', (_req, res) => {
     const cfg = storeConfig();
+    const availability = paypalAvailability();
     res.json({
       storeCurrency: cfg.currency,
       checkoutEnabled: checkoutEnabled(),
       paypalClientId: process.env.PAYPAL_CLIENT_ID || null,
-      paypalConfigured: checkoutEnabled() && paymentDatabaseConfigured() && Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET),
+      paypalConfigured: availability.configured,
+      paypalUnavailableReason: availability.reason,
+      paypalEnvironment: process.env.PAYPAL_ENV === 'live' ? 'live' : 'sandbox',
+      paypalConversionRate: availability.rate,
+      shippingFlat: cfg.shippingFlat,
+      freeShippingFrom: cfg.freeShippingFrom,
       paypalCurrency: 'USD',
-      paypalConversionConfigured: cfg.currency === 'USD' || cfg.storeToUsdRate > 0,
+      paypalConversionConfigured: availability.conversionConfigured,
       transferConfigured: checkoutEnabled() && paymentDatabaseConfigured() && Boolean(process.env.BANK_TRANSFER_PUBLIC_INSTRUCTIONS || process.env.VITE_BANK_TRANSFER_INSTRUCTIONS),
     });
   });
@@ -247,7 +238,7 @@ export function createPaymentV2Router(): Router {
       });
     } catch (error: any) {
       const message = String(error?.message || 'TRANSFER_ORDER_FAILED');
-      return res.status(message.includes('NOT_CONFIGURED') ? 503 : 400).json({ error: message });
+      return res.status(message.includes('NOT_CONFIGURED') ? 503 : 400).json(publicPaymentError(error));
     }
   });
 
@@ -296,7 +287,7 @@ export function createPaymentV2Router(): Router {
     } catch (error: any) {
       const message = String(error?.message || 'PAYPAL_ORDER_FAILED');
       const status = message.includes('NOT_CONFIGURED') || message.includes('RATE_REQUIRED') ? 503 : 400;
-      return res.status(status).json({ error: message });
+      return res.status(status).json(publicPaymentError(error));
     }
   });
 
@@ -352,7 +343,7 @@ export function createPaymentV2Router(): Router {
       return res.json({ success: true, orderId, paymentId, paymentStatus: 'paid' });
     } catch (error: any) {
       const message = String(error?.message || 'PAYMENT_CAPTURE_FAILED');
-      return res.status(message.includes('NOT_CONFIGURED') || message.includes('RATE_REQUIRED') ? 503 : 500).json({ error: message });
+      return res.status(message.includes('NOT_CONFIGURED') || message.includes('RATE_REQUIRED') ? 503 : 500).json(publicPaymentError(error));
     }
   });
 
@@ -381,7 +372,7 @@ export function createPaymentV2Router(): Router {
       return res.status(200).json({ received: true, eventType, orderId });
     } catch (error: any) {
       const message = String(error?.message || 'PAYPAL_WEBHOOK_FAILED');
-      return res.status(message.includes('NOT_CONFIGURED') ? 503 : 500).json({ error: message });
+      return res.status(message.includes('NOT_CONFIGURED') ? 503 : 500).json(publicPaymentError(error));
     }
   });
 

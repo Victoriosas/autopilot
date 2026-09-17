@@ -201,7 +201,6 @@ export const FulfillmentOrdersTable: React.FC = () => {
           {filteredOrders.map((order) => {
             const isExpanded = expandedOrderId === order.id;
             const verification = order.prePurchaseVerification;
-            const isAutoConnector = order.sourcePlatform === 'Supplier Hub B2B';
 
             return (
               <div 
@@ -272,7 +271,7 @@ export const FulfillmentOrdersTable: React.FC = () => {
                       <span className="hidden sm:inline">Verificar</span>
                     </button>
 
-                    {/* Auto-buy (if B2B supported) or Manual-buy button */}
+                    {/* Supplier purchases are recorded manually after a real external purchase. */}
                     {order.status === 'human_action_required' ? (
                       <button
                         type="button"
@@ -282,15 +281,14 @@ export const FulfillmentOrdersTable: React.FC = () => {
                         <UserCheck className="w-3.5 h-3.5" />
                         <span>Registrar Compra Asistida</span>
                       </button>
-                    ) : order.status === 'ready_to_order' && isAutoConnector ? (
+                    ) : order.status === 'ready_to_order' ? (
                       <button
                         type="button"
-                        disabled={buyingId === order.id}
-                        onClick={() => handleExecutePurchase(order)}
-                        className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition-all shadow-md shadow-indigo-600/25 flex items-center gap-1.5"
+                        onClick={() => setManualBuyOrder(order)}
+                        className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-md shadow-amber-600/20 flex items-center gap-1.5"
                       >
-                        <DollarSign className="w-3.5 h-3.5" />
-                        <span>{buyingId === order.id ? 'Tramitando...' : 'Ordenar Automático'}</span>
+                        <UserCheck className="w-3.5 h-3.5" />
+                        <span>Registrar compra real</span>
                       </button>
                     ) : null}
 

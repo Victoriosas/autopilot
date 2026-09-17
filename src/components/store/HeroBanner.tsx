@@ -21,10 +21,10 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onExploreClick, onEvalua
           <div className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(59,43,40,.14),rgba(59,43,40,.34)_48%,rgba(59,43,40,.76))]" />
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_35%,rgba(255,250,244,.22),transparent_45%)]" />
 
-          <div className="flex min-h-[560px] flex-col items-center justify-center px-6 py-20 text-center text-[#fffaf4] sm:min-h-[620px] lg:min-h-[680px]">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/15 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] backdrop-blur-md sm:text-xs">
+          <div className="flex min-h-[560px] flex-col items-center justify-center px-4 py-16 text-center text-[#fffaf4] sm:min-h-[620px] sm:px-6 sm:py-20 lg:min-h-[680px]">
+            <div className="mb-5 inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-white/30 bg-white/15 px-3 py-2 text-center text-[9px] font-semibold uppercase leading-4 tracking-[0.18em] backdrop-blur-md sm:px-4 sm:text-xs sm:tracking-[0.28em]">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>Selección de belleza en apertura progresiva</span>
+              <span className="min-w-0">Selección de belleza en apertura progresiva</span>
             </div>
 
             <h1 className="max-w-4xl font-serif text-5xl leading-[.98] tracking-[-.04em] sm:text-7xl lg:text-[7.25rem]">
@@ -32,7 +32,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onExploreClick, onEvalua
               <span className="block font-normal italic">en calma</span>
             </h1>
 
-            <p className="mt-7 max-w-2xl text-sm leading-7 text-white/85 sm:text-base">
+            <p className="mt-7 w-full max-w-2xl px-1 text-sm leading-7 text-white/85 sm:text-base">
               Un espacio para descubrir productos, herramientas y rituales elegidos con criterio, sin convertir el cuidado personal en otra lista interminable.
             </p>
 

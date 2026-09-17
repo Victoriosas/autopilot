@@ -1,4 +1,4 @@
-import { orderIdentity, checkoutEnabled, paymentDatabaseConfigured, requireCheckoutEnabled, validateCheckoutItems, assertStock, assertPaymentAmount } from './safety';
+import { orderIdentity, validateCustomer, publicPaymentError, paypalAvailability, checkoutEnabled, paymentDatabaseConfigured, requireCheckoutEnabled, validateCheckoutItems, assertStock, assertPaymentAmount } from './safety';
 import { createClient } from '@supabase/supabase-js';
 import { Router } from 'express';
 
@@ -49,19 +49,6 @@ function storeConfig() {
   const shippingFlat = Math.max(0, Number(process.env.STORE_SHIPPING_FLAT || process.env.VITE_SHIPPING_FLAT || '0') || 0);
   const freeShippingFrom = Math.max(0, Number(process.env.STORE_FREE_SHIPPING_FROM || process.env.VITE_FREE_SHIPPING_FROM || '0') || 0);
   return { currency, shippingFlat, freeShippingFrom };
-}
-
-function validateCustomer(value: unknown): Required<Pick<CustomerInput, 'email'>> & CustomerInput {
-  const customer = (value || {}) as CustomerInput;
-  const email = String(customer.email || '').trim();
-  const name = String(customer.fullName || customer.name || '').trim();
-  const phone = String(customer.phone || '').trim();
-  const address = String(customer.address || '').trim();
-  const city = String(customer.city || '').trim();
-  const postalCode = String(customer.postalCode || '').trim();
-  const country = String(customer.country || '').trim();
-  if (!email || !name || !phone || !address || !city || !postalCode || !country) throw new Error('CUSTOMER_FIELDS_REQUIRED');
-  return { email, name, fullName: name, phone, address, city, postalCode, country };
 }
 
 
@@ -125,7 +112,7 @@ async function createLocalOrder(customer: CustomerInput, priced: Awaited<ReturnT
     estimated_delivery: '',
     created_at: new Date().toISOString(),
   });
-  if (error) throw new Error(`ORDER_CREATE_FAILED:${error.message}`);
+  if (error) throw new Error('ORDER_CREATE_FAILED');
   return orderId;
 }
 
@@ -282,7 +269,7 @@ export function createMercadoPagoRouter(): Router {
       const message = String(error?.message || 'MERCADOPAGO_ORDER_FAILED');
       if (localOrderId) await audit('MERCADOPAGO_ORDER_CREATE_FAILED', localOrderId, { error: message });
       const status = message.includes('NOT_CONFIGURED') || message.includes('PUBLIC_APP_URL') ? 503 : 400;
-      return res.status(status).json({ error: message, orderId: localOrderId });
+      return res.status(status).json({ ...publicPaymentError(error), orderId: localOrderId });
     }
   });
 
@@ -308,7 +295,7 @@ export function createMercadoPagoRouter(): Router {
       const result = await reconcileMpOrder(mpOrderId);
       return res.json(result);
     } catch (error: any) {
-      return res.status(400).json({ error: String(error?.message || 'MERCADOPAGO_RECONCILE_FAILED') });
+      return res.status(400).json(publicPaymentError(error));
     }
   });
 

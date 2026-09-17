@@ -1,6 +1,7 @@
-﻿// @ts-nocheck
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+// @ts-nocheck
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import supabase from '../lib/supabase';
+import { restoreCart, cartLimit } from '../storefront/cartState';
 import { apiFetch } from '../lib/api';
 import type { User } from '@supabase/supabase-js';
 import { INITIAL_PRODUCTS, INITIAL_RUNS } from '../data/initialProducts';
@@ -25,16 +26,11 @@ import type {
 } from '../types';
 
 const DEFAULT_SETTINGS: AutopilotSettings = {
-  autoApproveScoreThreshold: 85,
-  maxRiskLevelAllowed: 'medium',
-  minMarginPercentage: 45,
-  autoPublishApproved: true,
-  brandTone: 'luxury_lifestyle',
-  activeSources: ['Amazon Global', 'AliExpress Direct', 'Trendyol Select', 'Wholesale Hub', 'Artisan Feed'],
-  blacklistedKeywords: ['fake', 'replica', 'imitation', 'cure', 'medical', 'miracle', 'toxic', 'unauthorized'],
-  targetCategories: ['TecnologÃ­a & Gadgets', 'Hogar & DiseÃ±o', 'Moda & Accesorios', 'Belleza & Bienestar', 'Fitness & Outdoor'],
-  defaultCurrency: 'EUR (â‚¬)',
-  autoDiscoveryIntervalHours: 6
+  autoApproveScoreThreshold: 85, maxRiskLevelAllowed: 'low', minMarginPercentage: 30,
+  autoPublishApproved: false, brandTone: 'premium_beauty_uruguay', activeSources: ['CJ Dropshipping'],
+  blacklistedKeywords: ['fake', 'replica', 'cure', 'medical', 'miracle'],
+  targetCategories: ['Belleza y cuidado personal', 'Accesorios de skincare', 'Cuidado corporal'],
+  defaultCurrency: 'UYU ($)', autoDiscoveryIntervalHours: 6
 };
 
 function toSnakeCase(str: string): string {
@@ -189,7 +185,7 @@ function supabaseRowToOrder(row: any): Order {
       address: row.customer_address || '',
       city: row.customer_city || '',
       postalCode: row.customer_postal_code || '',
-      country: row.customer_country || 'EspaÃ±a'
+      country: row.customer_country || 'Uruguay'
     },
     items: row.items || [],
     subtotal: row.subtotal || 0,
@@ -269,7 +265,6 @@ interface AppContextType {
   viewMode: 'store' | 'admin';
   setViewMode: (mode: 'store' | 'admin') => void;
   userRole: 'admin' | 'customer';
-  setUserRole: (role: 'admin' | 'customer') => void;
   user: User | null;
   userProfile: UserProfile | null;
   isAuthLoading: boolean;
@@ -297,6 +292,7 @@ interface AppContextType {
   selectedCandidateForReview: Product | null;
   setSelectedCandidateForReview: (p: Product | null) => void;
   isLoading: boolean;
+  catalogError: string | null;
   isAutopilotRunning: boolean;
   activeLogs: string[];
   autopilotLiveLogs: AutopilotLog[];
@@ -346,7 +342,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [viewMode, setViewModeState] = useState<'store' | 'admin'>('store');
-  const [userRole, setUserRole] = useState<'admin' | 'customer'>('admin');
+  const [userRole, setUserRole] = useState<'admin' | 'customer'>('customer');
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
@@ -361,7 +357,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setViewModeState(mode);
   };
 
-  const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true' || import.meta.env.MODE === 'development';
+  const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true' && import.meta.env.DEV;
 
   const [products, setProducts] = useState<Product[]>(isDemoMode ? INITIAL_PRODUCTS : []);
   const [runs, setRuns] = useState<AutopilotRun[]>(isDemoMode ? INITIAL_RUNS : []);
@@ -380,6 +376,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [selectedCandidateForReview, setSelectedCandidateForReview] = useState<Product | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const cartRestored = useRef(false);
+  useEffect(() => {
+    if (isLoading || catalogError) return;
+    if (!cartRestored.current) {
+      try {
+        setCart(restoreCart(JSON.parse(localStorage.getItem('victoriosa.cart.v1') || '[]'), products));
+        const saved = JSON.parse(localStorage.getItem('victoriosa.wishlist.v1') || '[]');
+        setWishlist(Array.isArray(saved) ? saved.filter(id => products.some(p => p.id === id && p.status === 'published')) : []);
+      } catch { /* Storage is optional; no customer data is sent. */ }
+      cartRestored.current = true;
+    } else {
+      setCart(previous => restoreCart(previous.map(item => ({productId:item.product.id, quantity:item.quantity, selectedVariant:item.selectedVariant})), products));
+      setWishlist(previous => previous.filter(id => products.some(p => p.id === id && p.status === 'published')));
+    }
+  }, [products, isLoading, catalogError]);
+  useEffect(() => {
+    if (!cartRestored.current) return;
+    try {
+      localStorage.setItem('victoriosa.cart.v1', JSON.stringify(cart.map(item => ({productId:item.product.id, quantity:item.quantity, selectedVariant:item.selectedVariant}))));
+      localStorage.setItem('victoriosa.wishlist.v1', JSON.stringify(wishlist));
+    } catch { /* Shopping remains available without local storage. */ }
+  }, [cart, wishlist]);
   const [isAutopilotRunning, setIsAutopilotRunning] = useState(false);
   const [autopilotLiveLogs, setAutopilotLiveLogs] = useState<AutopilotLog[]>([]);
 
@@ -456,7 +475,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           id: data.user.id,
           full_name: name?.trim() || 'Cliente Victoriosa',
           role: 'customer'
-        });
+        }).throwOnError();
         setUser(data.user);
         const profile: UserProfile = { uid: data.user.id, email: data.user.email || '', displayName: name?.trim() || 'Cliente Victoriosa', role: 'customer' };
         setUserProfile(profile);
@@ -485,7 +504,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const { data, error } = await supabase.auth.signInAnonymously();
         if (!error && data.user) {
           setUser(data.user);
-          await supabase.from('profiles').upsert({ id: data.user.id, full_name: 'Cliente Victoriosa', role: 'customer' });
+          await supabase.from('profiles').upsert({ id: data.user.id, full_name: 'Cliente Victoriosa', role: 'customer' }).throwOnError();
           const guestProfile: UserProfile = { uid: data.user.id, email: data.user.email || 'anonimo@victoriosa.com', displayName: 'Cliente Victoriosa', role: 'customer' };
           setUserProfile(guestProfile);
           setUserRole('customer');
@@ -541,7 +560,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const { data, error } = await supabase.auth.signInAnonymously();
           if (!error && data.user) {
             setUser(data.user);
-            await supabase.from('profiles').upsert({ id: data.user.id, full_name: 'Cliente Victoriosa', role: 'customer' });
+            await supabase.from('profiles').upsert({ id: data.user.id, full_name: 'Cliente Victoriosa', role: 'customer' }).throwOnError();
             const profile: UserProfile = { uid: data.user.id, email: data.user.email || 'anonimo@victoriosa.com', displayName: 'Cliente Victoriosa', role: 'customer' };
             setUserProfile(profile);
             setUserRole('customer');
@@ -564,7 +583,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (settingsRow?.value) {
           setSettings(settingsRow.value as AutopilotSettings);
         } else {
-          await supabase.from('settings').upsert(settingsToDbRow(DEFAULT_SETTINGS));
+          await supabase.from('settings').upsert(settingsToDbRow(DEFAULT_SETTINGS)).throwOnError();
           setSettings(DEFAULT_SETTINGS);
         }
 
@@ -601,8 +620,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 created_at: r.startedAt,
                 updated_at: r.completedAt || r.startedAt
               }));
-              await supabase.from('products').upsert(productRows);
-              await supabase.from('autopilot_runs').upsert(runRows);
+              await supabase.from('products').upsert(productRows).throwOnError();
+              await supabase.from('autopilot_runs').upsert(runRows).throwOnError();
             } catch (seedErr) {
               console.warn('Batch seed error, using memory fallback:', seedErr);
             }
@@ -840,367 +859,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const publishedProducts = products.filter((p) => p.status === 'published');
   const candidateProducts = products.filter((p) => p.status !== 'published');
 
-  const runPipelineOnCandidate = async (candidate: Product): Promise<Product | null> => {
-    try {
-      showToast(`Autopilot analizando "${candidate.title.slice(0, 30)}..."`, 'info');
-      const updatedCandidate: Product = {
-        ...candidate,
-        status: 'analyzing',
-        traceability: {
-          ...candidate.traceability,
-          updatedAt: new Date().toISOString(),
-          history: [
-            ...(candidate.traceability?.history || []),
-            {
-              timestamp: new Date().toISOString(),
-              stage: 'analysis',
-              fromStatus: candidate.status,
-              toStatus: 'analyzing',
-              action: 'Inicio de anÃ¡lisis multi-etapa por Autopilot',
-              actor: 'Autopilot Coordinator'
-            }
-          ]
-        }
-      };
+  const unavailableLegacy = () => showToast('Esta herramienta anterior está retirada. Abrí Ejecutar Autopilot V4 para buscar con datos reales y revisar evidencia.', 'info');
+  const runPipelineOnCandidate = async (_candidate: Product): Promise<Product | null> => { unavailableLegacy(); return null; };
+  const discoverNewCandidates = async (..._args: unknown[]) => { unavailableLegacy(); };
+  const triggerFullAutopilotRun = async (..._args: unknown[]) => { unavailableLegacy(); };
 
-      try {
-        await supabase.from('products').upsert(productToSupabaseRow(updatedCandidate));
-      } catch (e) {
-        console.warn('Direct supabase update failed:', e);
-      }
-
-      const res = await apiFetch('/api/autopilot/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ candidate, settings })
-      });
-
-      if (!res.ok) {
-        throw new Error(`Pipeline API returned status ${res.status}`);
-      }
-
-      const data = await res.json();
-      if (data.success && data.product) {
-        const transformed: Product = data.product;
-        try {
-          await supabase.from('products').upsert(productToSupabaseRow(transformed));
-          await supabase.from('audit_logs').insert({
-            event_type: 'AUTOPILOT_ANALYZE_COMPLETE',
-            entity_id: transformed.id,
-            new_values: {
-              score: transformed.traceability?.analysis?.overallScore,
-              status: transformed.status,
-              price: transformed.price
-            }
-          });
-        } catch (dbErr) {
-          console.warn('Supabase set failed, updating local state:', dbErr);
-          setProducts((prev) => prev.map((p) => (p.id === transformed.id ? transformed : p)));
-        }
-
-        if (transformed.status === 'published') {
-          showToast(`Â¡"${transformed.title.slice(0, 30)}..." aprobado y publicado en Victoriosa!`, 'success');
-        } else if (transformed.status === 'ready_for_review') {
-          showToast(`AnÃ¡lisis completado. Listo para revisiÃ³n manual en el panel.`, 'info');
-        } else if (transformed.status === 'rejected') {
-          showToast(`Candidato descartado por no cumplir criterios de calidad/riesgo.`, 'error');
-        }
-
-        return transformed;
-      }
-      return null;
-    } catch (err: any) {
-      console.error('Error running pipeline:', err);
-      showToast(`Error al procesar el producto: ${err.message}`, 'error');
-      return null;
-    }
+  const approveProduct = async (_productId: string, _autoPublish = false) => {
+    showToast('La publicación requiere un borrador validado por Council. Usá Preparar publicación y la acción Publicar del panel V4.', 'info');
   };
-
-  const discoverNewCandidates = async (category?: string, source?: string, keyword?: string) => {
-    try {
-      setIsAutopilotRunning(true);
-      showToast('Autopilot explorando fuentes globales de catÃ¡logo...', 'info');
-
-      const res = await apiFetch('/api/autopilot/discover', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, source, keyword, count: 3 })
-      });
-
-      const data = await res.json();
-      if (data.success && Array.isArray(data.candidates)) {
-        let addedCount = 0;
-        for (const raw of data.candidates) {
-          const newId = `vic-cand-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-          const candidateProduct: Product = {
-            id: newId,
-            status: 'discovered',
-            title: raw.originalTitle || 'Producto Descubierto',
-            originalTitle: raw.originalTitle || 'Producto Descubierto',
-            subtitle: 'Oportunidad detectada por Autopilot Discovery Stream',
-            slug: `descubierto-${newId}`,
-            category: raw.rawCategory || category || 'TecnologÃ­a & Gadgets',
-            tags: ['Descubrimiento', raw.sourcePlatform || 'Marketplace'],
-            brand: 'Victoriosa',
-            description: raw.productConcept || 'Candidato detectado en fuentes de comercio global.',
-            originalDescription: raw.productConcept,
-            features: raw.rawFeatures || ['CaracterÃ­sticas en proceso de extracciÃ³n y validaciÃ³n'],
-            specs: {
-              'Fuente': raw.sourcePlatform || 'Global Feed',
-              'Proveedor': raw.supplierName || 'Distribuidor Mayorista',
-              'PaÃ­s Origen': raw.supplierCountry || 'UE / Global'
-            },
-            images: raw.rawImages || ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=900&auto=format&fit=crop&q=80'],
-            originalImages: raw.rawImages || [],
-            price: raw.costPriceEur ? +(raw.costPriceEur * 2.4).toFixed(2) : 49.95,
-            costPrice: raw.costPriceEur || 20,
-            inventory: 30,
-            sku: raw.sourceSku || `RAW-${Math.floor(Math.random() * 89999 + 10000)}`,
-            badges: ['Oportunidad ReciÃ©n Detectada'],
-            rating: raw.sourceRating || 4.7,
-            reviewCount: 12,
-            traceability: {
-              createdBy: 'Autopilot Discovery Engine v3.0',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              source: {
-                name: raw.supplierName || 'Marketplace Seller',
-                url: raw.sourceUrl || 'https://source-feed.internal',
-                platform: (raw.sourcePlatform as any) || 'Amazon Global',
-                sku: raw.sourceSku || 'SKU-AUTO',
-                rating: raw.sourceRating || 4.7,
-                rawCategory: raw.rawCategory || 'General'
-              },
-              supplier: {
-                name: raw.supplierName || 'Global Supplier',
-                reliabilityScore: raw.supplierReliability || 88,
-                country: raw.supplierCountry || 'EspaÃ±a / UE',
-                shippingDaysMin: raw.shippingDaysMin || 2,
-                shippingDaysMax: raw.shippingDaysMax || 5,
-                returnPolicy: '30 dÃ­as'
-              },
-              pricing: {
-                originalCostEur: raw.costPriceEur || 20,
-                originalCurrency: 'EUR',
-                supplierShippingCost: raw.supplierShippingCost || 3.5,
-                estimatedCustoms: 0.8,
-                gatewayFee: 1.5,
-                targetMarginPct: 55,
-                suggestedPrice: +((raw.costPriceEur || 20) * 2.3).toFixed(2),
-                retailPrice: +((raw.costPriceEur || 20) * 2.3).toFixed(2),
-                potentialProfit: +((raw.costPriceEur || 20) * 1.2).toFixed(2),
-                psychologicalEnding: '95'
-              },
-              analysis: {
-                demandScore: 85,
-                competitionLevel: 'medium',
-                marginPotential: 88,
-                brandFitScore: 84,
-                brandFitJustification: 'Pendiente de anÃ¡lisis completo por Gemini.',
-                qualityScore: 86,
-                logisticsScore: 88,
-                overallScore: 85,
-                scoreTier: 'A',
-                targetAudience: 'Compradores Victoriosa',
-                keySellingPoints: ['Potencial de margen saludable', 'Buena reputaciÃ³n de origen'],
-                validatedClaims: [],
-                potentialIssues: []
-              },
-              risk: {
-                level: 'low',
-                copyrightRisk: 'none',
-                claimsRisk: 'safe',
-                supplierRisk: 'safe',
-                returnRisk: 'low',
-                details: ['Pendiente de moderaciÃ³n automÃ¡tica.']
-              },
-              history: [
-                {
-                  timestamp: new Date().toISOString(),
-                  stage: 'discovery',
-                  fromStatus: 'discovered',
-                  toStatus: 'discovered',
-                  action: `Descubierto en ${raw.sourcePlatform || 'fuente automatizada'}`,
-                  actor: 'Autopilot Discovery Crawler'
-                }
-              ]
-            }
-          };
-
-          try {
-            await supabase.from('products').upsert(productToSupabaseRow(candidateProduct));
-          } catch (e) {
-            setProducts((prev) => [candidateProduct, ...prev]);
-          }
-          addedCount++;
-        }
-        showToast(`Se descubrieron ${addedCount} nuevos candidatos potenciales.`, 'success');
-      }
-    } catch (e: any) {
-      console.error('Discovery error:', e);
-      showToast(`Error en Discovery: ${e.message}`, 'error');
-    } finally {
-      setIsAutopilotRunning(false);
-    }
-  };
-
-  const triggerFullAutopilotRun = async (category?: string, source?: string) => {
-    setIsAutopilotRunning(true);
-    const runId = `run-${Date.now()}`;
-    const startTime = new Date().toISOString();
-
-    const logs: AutopilotLog[] = [
-      { timestamp: new Date().toISOString(), level: 'info', message: `Iniciando ejecuciÃ³n completa de Autopilot (${runId}).` },
-      { timestamp: new Date().toISOString(), level: 'info', message: `Filtros: CategorÃ­a "${category || 'Todas'}", Fuente "${source || 'Multi-Fuente'}".` }
-    ];
-    setAutopilotLiveLogs([...logs]);
-
-    try {
-      logs.push({ timestamp: new Date().toISOString(), level: 'info', message: 'Fase 1/3: Descubriendo nuevos candidatos...' });
-      setAutopilotLiveLogs([...logs]);
-
-      const discRes = await apiFetch('/api/autopilot/discover', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, source, count: 2 })
-      });
-      const discData = await discRes.json();
-      const rawCandidates = discData.candidates || [];
-
-      logs.push({ timestamp: new Date().toISOString(), level: 'success', message: `Fase 1 completada: ${rawCandidates.length} oportunidades identificadas.` });
-      setAutopilotLiveLogs([...logs]);
-
-      let approvedCount = 0;
-      let publishedCount = 0;
-      let rejectedCount = 0;
-
-      for (let i = 0; i < rawCandidates.length; i++) {
-        const item = rawCandidates[i];
-        logs.push({ timestamp: new Date().toISOString(), level: 'info', message: `Fase 2/3: Analizando candidato [${i + 1}/${rawCandidates.length}] "${item.originalTitle.slice(0, 30)}..."` });
-        setAutopilotLiveLogs([...logs]);
-
-        const analyzeRes = await apiFetch('/api/autopilot/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ candidate: item, settings })
-        });
-        const analyzeData = await analyzeRes.json();
-
-        if (analyzeData.success && analyzeData.product) {
-          const prod: Product = analyzeData.product;
-          try {
-            await supabase.from('products').upsert(productToSupabaseRow(prod));
-          } catch (e) {
-            setProducts((prev) => [prod, ...prev]);
-          }
-
-          if (prod.status === 'published') {
-            publishedCount++;
-            approvedCount++;
-            logs.push({ timestamp: new Date().toISOString(), level: 'success', message: `âœ“ Aprobado y Publicado: "${prod.title.slice(0, 25)}..." (Score: ${prod.traceability.analysis.overallScore})` });
-          } else if (prod.status === 'approved') {
-            approvedCount++;
-            logs.push({ timestamp: new Date().toISOString(), level: 'success', message: `âœ“ Aprobado para Draft: "${prod.title.slice(0, 25)}..."` });
-          } else if (prod.status === 'rejected') {
-            rejectedCount++;
-            logs.push({ timestamp: new Date().toISOString(), level: 'warn', message: `âœ— Rechazado: Riesgo o margen no apto.` });
-          } else {
-            logs.push({ timestamp: new Date().toISOString(), level: 'info', message: `â†’ En espera de revisiÃ³n manual (Score: ${prod.traceability?.analysis?.overallScore || 'N/A'})` });
-          }
-          setAutopilotLiveLogs([...logs]);
-        }
-      }
-
-      const completedAt = new Date().toISOString();
-      const newRun: AutopilotRun = {
-        id: runId,
-        startedAt: startTime,
-        completedAt,
-        status: 'completed',
-        trigger: 'manual',
-        itemsFound: rawCandidates.length,
-        itemsProcessed: rawCandidates.length,
-        itemsApproved: approvedCount,
-        itemsPublished: publishedCount,
-        itemsRejected: rejectedCount,
-        durationSeconds: Math.round((new Date(completedAt).getTime() - new Date(startTime).getTime()) / 1000),
-        logs
-      };
-
-      try {
-        await supabase.from('autopilot_runs').upsert({
-          id: runId,
-          status: 'completed',
-          trigger_type: 'manual',
-          items_found: rawCandidates.length,
-          items_processed: rawCandidates.length,
-          items_approved: approvedCount,
-          items_published: publishedCount,
-          items_rejected: rejectedCount,
-          duration_seconds: newRun.durationSeconds,
-          created_at: startTime,
-          updated_at: completedAt
-        });
-      } catch (e) {
-        setRuns((prev) => [newRun, ...prev]);
-      }
-
-      logs.push({ timestamp: new Date().toISOString(), level: 'success', message: `EjecuciÃ³n finalizada con Ã©xito. ${publishedCount} productos nuevos en Victoriosa.` });
-      setAutopilotLiveLogs([...logs]);
-      showToast(`EjecuciÃ³n de Autopilot finalizada: ${publishedCount} publicados, ${approvedCount} aprobados.`, 'success');
-
-    } catch (err: any) {
-      console.error('Autopilot run error:', err);
-      logs.push({ timestamp: new Date().toISOString(), level: 'error', message: `Error en la ejecuciÃ³n: ${err.message}` });
-      setAutopilotLiveLogs([...logs]);
-      showToast(`Fallo en ejecuciÃ³n del Autopilot: ${err.message}`, 'error');
-    } finally {
-      setIsAutopilotRunning(false);
-    }
-  };
-
-  const approveProduct = async (productId: string, autoPublish: boolean = true) => {
-    const target = products.find((p) => p.id === productId);
-    if (!target) return;
-
-    const newStatus: ProductStatus = autoPublish ? 'published' : 'approved';
-    const updated: Product = {
-      ...target,
-      status: newStatus,
-      traceability: {
-        ...target.traceability,
-        updatedAt: new Date().toISOString(),
-        history: [
-          ...(target.traceability?.history || []),
-          {
-            timestamp: new Date().toISOString(),
-            stage: autoPublish ? 'publication' : 'draft',
-            fromStatus: target.status,
-            toStatus: newStatus,
-            action: autoPublish ? 'Aprobado y publicado en tienda pÃºblica' : 'Aprobado por el Administrador',
-            actor: 'Administrador (Panel Victoriosa)'
-          }
-        ]
-      }
-    };
-
-    try {
-      await supabase.from('products').upsert(productToSupabaseRow(updated));
-      await supabase.from('audit_logs').insert({
-        event_type: autoPublish ? 'PRODUCT_PUBLISHED_MANUAL' : 'PRODUCT_APPROVED_MANUAL',
-        entity_id: productId,
-        new_values: { previousStatus: target.status, newStatus }
-      });
-    } catch (e) {
-      setProducts((prev) => prev.map((p) => (p.id === productId ? updated : p)));
-    }
-
-    showToast(autoPublish ? `"${target.title.slice(0, 30)}..." ya estÃ¡ visible en la tienda pÃºblica.` : `Producto aprobado exitosamente.`, 'success');
-  };
-
-  const publishProduct = async (productId: string) => {
-    await approveProduct(productId, true);
-  };
+  const publishProduct = async (productId: string) => approveProduct(productId);
 
   const unpublishProduct = async (productId: string) => {
     const target = products.find((p) => p.id === productId);
@@ -1227,14 +894,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     try {
-      await supabase.from('products').upsert(productToSupabaseRow(updated));
+      await supabase.from('products').upsert(productToSupabaseRow(updated)).throwOnError();
       await supabase.from('audit_logs').insert({
         event_type: 'PRODUCT_UNPUBLISHED',
         entity_id: productId,
         new_values: { previousStatus: target.status }
-      });
-    } catch (e) {
-      setProducts((prev) => prev.map((p) => (p.id === productId ? updated : p)));
+      }).throwOnError();
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
     }
 
     showToast(`El producto ha sido despublicado y retirado de la tienda pÃºblica.`, 'info');
@@ -1266,14 +934,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     try {
-      await supabase.from('products').upsert(productToSupabaseRow(updated));
+      await supabase.from('products').upsert(productToSupabaseRow(updated)).throwOnError();
       await supabase.from('audit_logs').insert({
         event_type: 'PRODUCT_REJECTED',
         entity_id: productId,
         new_values: { reason }
-      });
-    } catch (e) {
-      setProducts((prev) => prev.map((p) => (p.id === productId ? updated : p)));
+      }).throwOnError();
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
     }
 
     showToast(`Producto marcado como rechazado. No se publicarÃ¡.`, 'error');
@@ -1298,14 +967,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     try {
-      await supabase.from('products').upsert(productToSupabaseRow(updated));
+      await supabase.from('products').upsert(productToSupabaseRow(updated)).throwOnError();
       await supabase.from('audit_logs').insert({
         event_type: 'PRODUCT_MANUAL_EDIT',
         entity_id: product.id,
         new_values: { title: product.title, price: product.price }
-      });
-    } catch (e) {
-      setProducts((prev) => prev.map((p) => (p.id === product.id ? updated : p)));
+      }).throwOnError();
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
     }
 
     showToast('Cambios guardados correctamente.', 'success');
@@ -1313,28 +983,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const deleteProduct = async (productId: string) => {
     try {
-      await supabase.from('products').delete().eq('id', productId);
+      await supabase.from('products').delete().eq('id', productId).throwOnError();
       await supabase.from('audit_logs').insert({
         event_type: 'PRODUCT_DELETED',
         entity_id: productId,
         new_values: {}
-      });
+      }).throwOnError();
       setProducts((prev) => prev.filter((p) => p.id !== productId));
       showToast('Producto eliminado del sistema.', 'info');
-    } catch (e) {
-      setProducts((prev) => prev.filter((p) => p.id !== productId));
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
     }
   };
 
-  const updateSettings = async (newSettings: Partial<AutopilotSettings>) => {
-    const merged = { ...settings, ...newSettings };
-    setSettings(merged);
-    try {
-      await supabase.from('settings').upsert(settingsToDbRow(merged));
-      showToast('ConfiguraciÃ³n del Autopilot actualizada.', 'success');
-    } catch (e) {
-      console.warn('Failed to save settings to Supabase:', e);
-    }
+  const updateSettings = async (_newSettings: Partial<AutopilotSettings>) => {
+    showToast('Los límites V4 se configuran en el servidor. Este panel muestra la política vigente; no modifica permisos de publicación ni compras.', 'info');
+    return false;
   };
 
   const resetToInitialData = async () => {
@@ -1358,57 +1023,45 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         created_at: r.startedAt,
         updated_at: r.completedAt || r.startedAt
       }));
-      await supabase.from('products').upsert(productRows);
-      await supabase.from('autopilot_runs').upsert(runRows);
+      await supabase.from('products').upsert(productRows).throwOnError();
+      await supabase.from('autopilot_runs').upsert(runRows).throwOnError();
       setProducts(INITIAL_PRODUCTS);
       setRuns(INITIAL_RUNS);
       showToast('Base de datos restablecida con datos iniciales verificados.', 'success');
-    } catch (e) {
-      setProducts(INITIAL_PRODUCTS);
-      setRuns(INITIAL_RUNS);
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
     }
   };
 
   const addToCart = (product: Product, quantity = 1, selectedVariant?: string) => {
-    setCart((prev) => {
-      const existingIndex = prev.findIndex(
-        (item) => item.product.id === product.id && item.selectedVariant === selectedVariant
-      );
-      if (existingIndex > -1) {
-        const next = [...prev];
-        next[existingIndex].quantity += quantity;
-        return next;
-      }
-      return [...prev, { product, quantity, selectedVariant }];
+    const current = products.find(p => p.id === product.id && p.status === 'published');
+    if (!current || !Number.isSafeInteger(quantity) || quantity < 1 || cartLimit(current) < 1) {
+      showToast('Este producto no tiene stock disponible para esa cantidad.', 'error'); return;
+    }
+    setCart(previous => {
+      const existing = previous.find(item => item.product.id === product.id && item.selectedVariant === selectedVariant);
+      const otherQuantity = previous.filter(item => item.product.id === product.id && item !== existing).reduce((sum,item) => sum+item.quantity,0);
+      const available = Math.max(0, cartLimit(current)-otherQuantity);
+      const nextQuantity = Math.min(available, (existing?.quantity || 0)+quantity);
+      if (!nextQuantity) return previous;
+      return existing ? previous.map(item => item === existing ? {...item,product:current,quantity:nextQuantity} : item) : [...previous,{product:current,quantity:nextQuantity,selectedVariant}];
     });
     setIsCartOpen(true);
-    showToast(`"${product.title.slice(0, 25)}..." aÃ±adido a tu bolsa`, 'success');
   };
-
   const removeFromCart = (productId: string, selectedVariant?: string) => {
-    setCart((prev) =>
-      prev.filter((item) => !(item.product.id === productId && item.selectedVariant === selectedVariant))
-    );
+    setCart(previous => previous.filter(item => !(item.product.id === productId && item.selectedVariant === selectedVariant)));
   };
-
   const updateCartQuantity = (productId: string, quantity: number, selectedVariant?: string) => {
-    if (quantity <= 0) {
-      removeFromCart(productId, selectedVariant);
-      return;
-    }
-    setCart((prev) =>
-      prev.map((item) => {
-        if (item.product.id === productId && item.selectedVariant === selectedVariant) {
-          return { ...item, quantity };
-        }
-        return item;
-      })
-    );
+    if (!Number.isSafeInteger(quantity)) return;
+    if (quantity <= 0) { removeFromCart(productId, selectedVariant); return; }
+    setCart(previous => restoreCart(previous.map(item => ({productId:item.product.id,selectedVariant:item.selectedVariant,quantity:item.product.id === productId && item.selectedVariant === selectedVariant ? quantity : item.quantity})), products));
   };
 
   const clearCart = () => setCart([]);
 
   const toggleWishlist = (productId: string) => {
+    if (!products.some(p => p.id === productId && p.status === 'published')) return;
     setWishlist((prev) => {
       const exists = prev.includes(productId);
       const next = exists ? prev.filter((id) => id !== productId) : [...prev, productId];
@@ -1453,7 +1106,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           await supabase.from('supplier_orders').update({
             verification: verification,
             updated_at: new Date().toISOString()
-          }).eq('id', supplierOrderId);
+          }).eq('id', supplierOrderId).throwOnError();
         }
 
         showToast(
@@ -1464,56 +1117,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return verification;
       }
       return null;
-    } catch (err: any) {
-      console.error('Pre-purchase verification error:', err);
-      showToast(`Error al verificar proveedor: ${err.message}`, 'error');
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
       return null;
     }
   };
 
-  const executeSupplierPurchase = async (supplierOrderId: string): Promise<void> => {
-    const sOrder = supplierOrders.find(o => o.id === supplierOrderId);
-    if (!sOrder) return;
-
-    try {
-      showToast(`Conectando con proveedor para tramitar pedido #${supplierOrderId.slice(-6)}...`, 'info');
-      const res = await apiFetch('/api/fulfillment/create-supplier-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ supplierOrder: sOrder })
-      });
-
-      const data = await res.json();
-      const now = new Date().toISOString();
-
-      if (data.status === 'order_placed') {
-        const updatedFields = {
-          status: 'order_placed',
-          supplier_order_reference: data.supplierOrderReference,
-          tracking_number: data.trackingNumber,
-          carrier: data.carrier,
-          updated_at: now
-        };
-        await supabase.from('supplier_orders').update(updatedFields).eq('id', supplierOrderId);
-        await supabase.from('audit_logs').insert({
-          event_type: 'SUPPLIER_ORDER_PLACED',
-          entity_id: supplierOrderId,
-          new_values: { reference: data.supplierOrderReference }
-        });
-        showToast(`âœ“ Pedido a proveedor completado con Ã©xito (Ref: ${data.supplierOrderReference})`, 'success');
-      } else {
-        const updatedFields = {
-          status: 'human_action_required',
-          human_action_reason: data.humanActionReason || 'Requiere compra manual en el marketplace.',
-          updated_at: now
-        };
-        await supabase.from('supplier_orders').update(updatedFields).eq('id', supplierOrderId);
-        showToast('AcciÃ³n requerida: La orden requiere compra manual por operador.', 'info');
-      }
-    } catch (err: any) {
-      console.error('Execute supplier purchase error:', err);
-      showToast(`Error al tramitar con proveedor: ${err.message}`, 'error');
-    }
+  const executeSupplierPurchase = async (_supplierOrderId: string): Promise<void> => {
+    showToast('Compra automática bloqueada. Verificá la orden y registrá manualmente una compra real solo después de completarla con el proveedor.', 'info');
   };
 
   const markSupplierOrderAsManualBought = async (
@@ -1535,21 +1146,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         tracking_number: trackingNumber || sOrder.trackingNumber,
         carrier: carrier || sOrder.carrier,
         updated_at: now
-      }).eq('id', supplierOrderId);
+      }).eq('id', supplierOrderId).throwOnError();
       await supabase.from('audit_logs').insert({
         event_type: 'SUPPLIER_ORDER_MANUAL_BOUGHT',
         entity_id: supplierOrderId,
         new_values: { notes, trackingNumber }
-      });
+      }).throwOnError();
 
       const relAlert = alerts.find(a => a.supplierOrderId === supplierOrderId && !a.resolved);
       if (relAlert) {
-        await supabase.from('alerts').update({ resolved: true, resolved_at: now }).eq('id', relAlert.id);
+        await supabase.from('alerts').update({ resolved: true, resolved_at: now }).eq('id', relAlert.id).throwOnError();
       }
 
       showToast(`Orden #${supplierOrderId.slice(-6)} marcada como comprada exitosamente.`, 'success');
-    } catch (err: any) {
-      console.warn('Supabase update supplier order error:', err);
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
     }
   };
 
@@ -1565,15 +1177,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         tracking_number: trackingNumber,
         carrier,
         updated_at: now
-      }).eq('id', supplierOrderId);
+      }).eq('id', supplierOrderId).throwOnError();
       await supabase.from('audit_logs').insert({
         event_type: 'SUPPLIER_ORDER_TRACKING_UPDATED',
         entity_id: supplierOrderId,
         new_values: { trackingNumber, carrier }
-      });
+      }).throwOnError();
       showToast(`Seguimiento actualizado para #${supplierOrderId.slice(-6)}: ${trackingNumber}`, 'success');
-    } catch (err: any) {
-      console.warn('Supabase update tracking error:', err);
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
     }
   };
 
@@ -1588,15 +1201,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         status: 'cancelled',
         human_action_reason: `Cancelado: ${reason}`,
         updated_at: now
-      }).eq('id', supplierOrderId);
+      }).eq('id', supplierOrderId).throwOnError();
       await supabase.from('audit_logs').insert({
         event_type: 'SUPPLIER_ORDER_CANCELLED',
         entity_id: supplierOrderId,
         new_values: { reason }
-      });
+      }).throwOnError();
       showToast(`Orden #${supplierOrderId.slice(-6)} cancelada.`, 'info');
-    } catch (err: any) {
-      console.warn('Supabase cancel order error:', err);
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
     }
   };
 
@@ -1605,10 +1219,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!alert) return;
 
     try {
-      await supabase.from('alerts').update({ resolved: true, resolved_at: new Date().toISOString() }).eq('id', alertId);
+      await supabase.from('alerts').update({ resolved: true, resolved_at: new Date().toISOString() }).eq('id', alertId).throwOnError();
       showToast('Alerta marcada como resuelta.', 'success');
-    } catch (err: any) {
-      console.warn('Supabase resolve alert error:', err);
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
     }
   };
 
@@ -1617,10 +1232,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!alert) return;
 
     try {
-      await supabase.from('alerts').update({ dismissed: true }).eq('id', alertId);
+      await supabase.from('alerts').update({ dismissed: true }).eq('id', alertId).throwOnError();
       showToast('Alerta descartada.', 'info');
-    } catch (err: any) {
-      console.warn('Supabase dismiss alert error:', err);
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
     }
   };
 
@@ -1641,9 +1257,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         resolved: alertData.resolved || false,
         dismissed: alertData.dismissed || false,
         created_at: new Date().toISOString()
-      });
-    } catch (err: any) {
-      console.warn('Supabase create alert error:', err);
+      }).throwOnError();
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
     }
   };
 
@@ -1667,9 +1284,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
       showToast('No se pudo procesar la URL indicada.', 'error');
       return null;
-    } catch (err: any) {
-      console.error('Import product from URL error:', err);
-      showToast(`Error al importar URL: ${err.message}`, 'error');
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
       return null;
     }
   };
@@ -1689,20 +1305,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     try {
-      await supabase.from('suppliers').upsert(supplierToSupabaseRow(newSupplier));
+      await supabase.from('suppliers').upsert(supplierToSupabaseRow(newSupplier)).throwOnError();
       await supabase.from('audit_logs').insert({
         event_type: 'SUPPLIER_CREATED',
         entity_id: newId,
         new_values: { name: newSupplier.name, code: newSupplier.code }
-      });
+      }).throwOnError();
       setSuppliers(prev => [newSupplier, ...prev]);
       showToast(`Proveedor "${newSupplier.name}" registrado correctamente.`, 'success');
       return newSupplier;
-    } catch (err: any) {
-      console.warn('Supabase write supplier error, updating local state:', err);
-      setSuppliers(prev => [newSupplier, ...prev]);
-      showToast(`Proveedor guardado localmente: ${newSupplier.name}`, 'info');
-      return newSupplier;
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
     }
   };
 
@@ -1713,32 +1327,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     try {
-      await supabase.from('suppliers').upsert(supplierToSupabaseRow(updated));
+      await supabase.from('suppliers').upsert(supplierToSupabaseRow(updated)).throwOnError();
       await supabase.from('audit_logs').insert({
         event_type: 'SUPPLIER_UPDATED',
         entity_id: supplier.id,
         new_values: { name: supplier.name, reliabilityScore: supplier.metrics.reliabilityScore }
-      });
+      }).throwOnError();
       setSuppliers(prev => prev.map(s => s.id === supplier.id ? updated : s));
       showToast(`Acuerdos y datos de "${supplier.name}" actualizados.`, 'success');
-    } catch (err: any) {
-      console.warn('Supabase update supplier error:', err);
-      setSuppliers(prev => prev.map(s => s.id === supplier.id ? updated : s));
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
     }
   };
 
   const deleteSupplier = async (supplierId: string): Promise<void> => {
     try {
-      await supabase.from('suppliers').delete().eq('id', supplierId);
+      await supabase.from('suppliers').delete().eq('id', supplierId).throwOnError();
       await supabase.from('audit_logs').insert({
         event_type: 'SUPPLIER_DELETED',
         entity_id: supplierId,
         new_values: {}
-      });
+      }).throwOnError();
       setSuppliers(prev => prev.filter(s => s.id !== supplierId));
       showToast('Proveedor eliminado del directorio.', 'info');
-    } catch (err: any) {
-      setSuppliers(prev => prev.filter(s => s.id !== supplierId));
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
     }
   };
 
@@ -1785,16 +1400,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     try {
-      await supabase.from('products').upsert(productToSupabaseRow(updated));
+      await supabase.from('products').upsert(productToSupabaseRow(updated)).throwOnError();
       await supabase.from('audit_logs').insert({
         event_type: 'PRODUCT_SUPPLIER_ASSIGNED',
         entity_id: productId,
         new_values: { supplierId: sup.id, supplierName: sup.name }
-      });
+      }).throwOnError();
       setProducts(prev => prev.map(p => p.id === productId ? updated : p));
       showToast(`Proveedor "${sup.name}" vinculado a "${prod.title.slice(0, 25)}..."`, 'success');
-    } catch (e) {
-      setProducts(prev => prev.map(p => p.id === productId ? updated : p));
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
     }
   };
 
@@ -1811,7 +1427,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const { enhancedResult, updatedProduct } = await enhanceAndPersistProductImage(prod, imageIndex, options);
 
       try {
-        await supabase.from('products').upsert(productToSupabaseRow(updatedProduct));
+        await supabase.from('products').upsert(productToSupabaseRow(updatedProduct)).throwOnError();
         await supabase.from('audit_logs').insert({
           event_type: 'PRODUCT_IMAGE_ENHANCED',
           entity_id: productId,
@@ -1820,17 +1436,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             appliedFilters: enhancedResult.appliedFilters,
             dimensions: enhancedResult.dimensions
           }
-        });
-      } catch (dbErr) {
-        console.warn('Supabase product image update notice:', dbErr);
-      }
+        }).throwOnError();
+      } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
+    }
 
       setProducts(prev => prev.map(p => p.id === productId ? updatedProduct : p));
       showToast(`Â¡Imagen #${imageIndex + 1} optimizada y guardada!`, 'success');
       return enhancedResult;
-    } catch (err: any) {
-      console.error('Error enhancing product image:', err);
-      showToast(`Error al retocar imagen: ${err.message}`, 'error');
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
       return null;
     }
   };
@@ -1850,179 +1466,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
 
     try {
-      await supabase.from('products').upsert(productToSupabaseRow(currentProd));
-    } catch (e) {
-      console.warn('Supabase batch image set error:', e);
+      await supabase.from('products').upsert(productToSupabaseRow(currentProd)).throwOnError();
+    } catch (error) {
+      showToast('No se pudo guardar o completar la acción. Revisá tu conexión y permisos; los cambios no fueron confirmados.', 'error');
+      return null;
     }
 
     setProducts(prev => prev.map(p => p.id === productId ? currentProd : p));
     showToast(`Todas las imÃ¡genes (${currentProd.images.length}) han sido optimizadas con Ã©xito.`, 'success');
   };
 
-  const runFullAutopilotBatch = async ({
-    category = 'RelojerÃ­a',
-    maxCandidates = 2,
-    autoPublishApproved = false,
-    targetMarginPct = 55
-  }: {
-    category?: string;
-    maxCandidates?: number;
-    autoPublishApproved?: boolean;
-    targetMarginPct?: number;
-  }) => {
-    setIsAutopilotRunning(true);
-    const runId = `run-${Date.now()}`;
-    const startTime = new Date().toISOString();
-
-    const batchLogs: AutopilotLog[] = [
-      { timestamp: new Date().toISOString(), level: 'info', message: `Autopilot Batch Run (${runId}) inicializado.` },
-      { timestamp: new Date().toISOString(), level: 'info', message: `ParÃ¡metros: CategorÃ­a "${category}", Lote ${maxCandidates} Ã­tems, Margen Min ${targetMarginPct}%.` }
-    ];
-    setAutopilotLiveLogs([...batchLogs]);
-
-    try {
-      batchLogs.push({ timestamp: new Date().toISOString(), level: 'info', message: `Etapa 1/4: Descubriendo ${maxCandidates} candidatos en fuentes globales...` });
-      setAutopilotLiveLogs([...batchLogs]);
-
-      const discRes = await apiFetch('/api/autopilot/discover', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, count: maxCandidates })
-      });
-      const discData = await discRes.json();
-      const rawCandidates = discData.candidates?.slice(0, maxCandidates) || [];
-
-      batchLogs.push({ timestamp: new Date().toISOString(), level: 'success', message: `âœ“ Etapa 1 completada: ${rawCandidates.length} oportunidades extraÃ­das.` });
-      setAutopilotLiveLogs([...batchLogs]);
-
-      let approvedCount = 0;
-      let publishedCount = 0;
-      let rejectedCount = 0;
-
-      for (let i = 0; i < rawCandidates.length; i++) {
-        const item = rawCandidates[i];
-        batchLogs.push({ timestamp: new Date().toISOString(), level: 'info', message: `Etapa 2/4: Evaluando [${i + 1}/${rawCandidates.length}] "${item.originalTitle.slice(0, 28)}..." con Gemini AI...` });
-        setAutopilotLiveLogs([...batchLogs]);
-
-        const matchedSupplier = suppliers.find(s =>
-          s.catalogs.categories.some(c => c.toLowerCase().includes(category.toLowerCase())) ||
-          s.name.toLowerCase().includes((item.supplierName || '').toLowerCase())
-        );
-
-        if (matchedSupplier) {
-          item.supplierName = matchedSupplier.name;
-          item.supplierReliability = matchedSupplier.metrics.reliabilityScore;
-          item.supplierCountry = matchedSupplier.contact.country;
-          item.supplierShippingCost = matchedSupplier.pricingAgreements.avgShippingPerUnit;
-          batchLogs.push({ timestamp: new Date().toISOString(), level: 'success', message: `âœ“ Proveedor verificado en base de datos: ${matchedSupplier.name} (Score: ${matchedSupplier.metrics.reliabilityScore}%)` });
-          setAutopilotLiveLogs([...batchLogs]);
-        }
-
-        const analyzeRes = await apiFetch('/api/autopilot/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            candidate: item,
-            settings: {
-              ...settings,
-              minMarginPercentage: targetMarginPct,
-              autoPublishApproved
-            }
-          })
-        });
-
-        const analyzeData = await analyzeRes.json();
-        if (analyzeData.success && analyzeData.product) {
-          let prod: Product = analyzeData.product;
-
-          batchLogs.push({ timestamp: new Date().toISOString(), level: 'info', message: `Etapa 3/4: Pipeline de mejora de imagen para "${prod.title.slice(0, 24)}..."` });
-          setAutopilotLiveLogs([...batchLogs]);
-
-          try {
-            if (prod.images && prod.images[0]) {
-              const { updatedProduct } = await enhanceAndPersistProductImage(prod, 0, {
-                aspectRatio: '1:1',
-                studioBackdrop: 'dark_studio',
-                removeBackground: true,
-                studioLighting: true
-              });
-              prod = updatedProduct;
-              batchLogs.push({ timestamp: new Date().toISOString(), level: 'success', message: `âœ“ Imagen de producto optimizada en estudio digital (1000x1000px, Obsidian Dark)` });
-              setAutopilotLiveLogs([...batchLogs]);
-            }
-          } catch (imgErr) {
-            console.warn('Image auto-enhancement warning:', imgErr);
-          }
-
-          try {
-            await supabase.from('products').upsert(productToSupabaseRow(prod));
-          } catch (e) {
-            setProducts(prev => [prod, ...prev]);
-          }
-
-          if (prod.status === 'published') {
-            publishedCount++;
-            approvedCount++;
-            batchLogs.push({ timestamp: new Date().toISOString(), level: 'success', message: `Producto Publicado en Tienda: "${prod.title.slice(0, 25)}..."` });
-          } else if (prod.status === 'approved' || prod.status === 'ready_for_review') {
-            approvedCount++;
-            batchLogs.push({ timestamp: new Date().toISOString(), level: 'info', message: `âœ“ Guardado para revisiÃ³n manual (Score: ${prod.traceability?.analysis?.overallScore}/100)` });
-          } else {
-            rejectedCount++;
-            batchLogs.push({ timestamp: new Date().toISOString(), level: 'warn', message: `âœ— Descartado por no cumplir criterios.` });
-          }
-          setAutopilotLiveLogs([...batchLogs]);
-        }
-      }
-
-      const completedAt = new Date().toISOString();
-      const newRun: AutopilotRun = {
-        id: runId,
-        startedAt: startTime,
-        completedAt,
-        status: 'completed',
-        trigger: 'manual',
-        itemsFound: rawCandidates.length,
-        itemsProcessed: rawCandidates.length,
-        itemsApproved: approvedCount,
-        itemsPublished: publishedCount,
-        itemsRejected: rejectedCount,
-        durationSeconds: Math.round((new Date(completedAt).getTime() - new Date(startTime).getTime()) / 1000),
-        logs: batchLogs
-      };
-
-      try {
-        await supabase.from('autopilot_runs').upsert({
-          id: runId,
-          status: 'completed',
-          trigger_type: 'manual',
-          items_found: rawCandidates.length,
-          items_processed: rawCandidates.length,
-          items_approved: approvedCount,
-          items_published: publishedCount,
-          items_rejected: rejectedCount,
-          duration_seconds: newRun.durationSeconds,
-          created_at: startTime,
-          updated_at: completedAt
-        });
-        setRuns(prev => [newRun, ...prev]);
-      } catch (e) {
-        setRuns(prev => [newRun, ...prev]);
-      }
-
-      batchLogs.push({ timestamp: new Date().toISOString(), level: 'success', message: `Pipeline completado: ${publishedCount} publicados, ${approvedCount} aprobados.` });
-      setAutopilotLiveLogs([...batchLogs]);
-      showToast(`EjecuciÃ³n de Autopilot finalizada (${publishedCount} publicados, ${approvedCount} aprobados)`, 'success');
-
-    } catch (err: any) {
-      console.error('Batch run error:', err);
-      batchLogs.push({ timestamp: new Date().toISOString(), level: 'error', message: `Error crÃ­tico en batch: ${err.message}` });
-      setAutopilotLiveLogs([...batchLogs]);
-      showToast(`Error en la ejecuciÃ³n: ${err.message}`, 'error');
-    } finally {
-      setIsAutopilotRunning(false);
-    }
-  };
+  const runFullAutopilotBatch = async (_options: unknown) => { unavailableLegacy(); };
 
   return (
     <AppContext.Provider
@@ -2030,7 +1484,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         viewMode,
         setViewMode,
         userRole,
-        setUserRole,
         user,
         userProfile,
         isAuthLoading,
@@ -2058,6 +1511,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         selectedCandidateForReview,
         setSelectedCandidateForReview,
         isLoading,
+        catalogError,
         isAutopilotRunning,
         activeLogs,
         autopilotLiveLogs,

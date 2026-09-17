@@ -1,0 +1,58 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "username": "victoriosa",
+  "default_agent": "build",
+  "logLevel": "INFO",
+  "share": "manual",
+  "autoupdate": true,
+  "instructions": ["AGENTS.md"],
+  "agent": {
+    "build": {
+      "description": "Main agent for Victoriosa Autopilot platform development",
+      "mode": "primary"
+    },
+    "sourcing": {
+      "description": "Specialized agent for finding and importing products from CJ Dropshipping. Use when sourcing new products, importing from CJ URLs, or managing product inventory.",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-6"
+    },
+    "analyzer": {
+      "description": "AI-powered product analysis agent. Use when analyzing product quality, market potential, pricing optimization, or competitive analysis.",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-6"
+    },
+    "seo": {
+      "description": "SEO optimization agent for product listings. Use when optimizing titles, descriptions, tags, or improving search visibility.",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-6"
+    },
+    "deploy": {
+      "description": "Deployment automation agent. Use when deploying to Vercel, Railway, or managing DNS configuration for victoriosa.click.",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-6"
+    },
+    "monitor": {
+      "description": "Platform monitoring agent. Use when checking system health, AI provider status, CJ API status, or database performance.",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-6"
+    }
+  },
+  "provider": {
+    "anthropic": {
+      "options": {
+        "apiKey": "{env:ANTHROPIC_API_KEY}"
+      }
+    }
+  },
+  "mcp": {},
+  "permission": {
+    "edit": "allow",
+    "bash": {
+      "git *": "allow",
+      "npm *": "allow",
+      "npx *": "allow",
+      "node *": "allow",
+      "*": "ask"
+    }
+  }
+}

@@ -176,6 +176,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
       const data = await response.json();
       if (!response.ok || !data.checkoutUrl || !data.orderId) throw new Error(data.error || 'No se pudo iniciar Mercado Pago.');
       await trackRevenueEvent('mercadopago_order_started', { orderId: data.orderId, value: Number(data.total), currency: data.currency, itemCount, channel: 'mercadopago' });
+      sessionStorage.setItem('victoriosa-mp-order', JSON.stringify({ orderId: data.orderId, providerOrderId: data.providerOrderId, createdAt: Date.now() }));
       window.location.assign(data.checkoutUrl);
     } catch (error: any) {
       setMercadoPagoBusy(false);

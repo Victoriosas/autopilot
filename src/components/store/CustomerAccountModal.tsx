@@ -15,11 +15,13 @@ import { useApp } from '../../context/AppContext';
 import type { Product } from '../../types';
 
 interface CustomerAccountModalProps {
+  initialTab?: 'orders' | 'wishlist' | 'profile';
   onClose: () => void;
   onSelectProduct: (p: Product) => void;
 }
 
 export const CustomerAccountModal: React.FC<CustomerAccountModalProps> = ({
+  initialTab = 'orders',
   onClose,
   onSelectProduct
 }) => {
@@ -35,9 +37,9 @@ export const CustomerAccountModal: React.FC<CustomerAccountModalProps> = ({
     setIsAuthModalOpen, 
     setViewMode 
   } = useApp();
-  const [activeTab, setActiveTab] = useState<'orders' | 'wishlist' | 'profile'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'wishlist' | 'profile'>(initialTab);
 
-  const wishlistedProducts = products.filter((p) => wishlist.includes(p.id));
+  const wishlistedProducts = products.filter((p) => p.status === 'published' && wishlist.includes(p.id));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-xl overflow-y-auto animate-fadeIn">
@@ -273,7 +275,7 @@ export const CustomerAccountModal: React.FC<CustomerAccountModalProps> = ({
                 <div>
                   <span className="block text-[10px] uppercase text-slate-500">Identificador</span>
                   <span className="text-slate-300 font-mono text-[11px] truncate block">
-                    {user?.uid || 'Sin sesión activa'}
+                    {user?.id || 'Sin sesión activa'}
                   </span>
                 </div>
                 <div>

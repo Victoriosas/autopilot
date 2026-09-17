@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { useApp } from './context/AppContext';
 
 // Store Components
@@ -12,19 +12,20 @@ import { CheckoutModal } from './components/store/CheckoutModal';
 import { CustomerAccountModal } from './components/store/CustomerAccountModal';
 import { StoreFooter } from './components/store/StoreFooter';
 import { WaitlistSection } from './components/store/WaitlistSection';
+import { PaymentReturn } from './components/store/PaymentReturn';
 
 // Admin Components
-import { AdminHeader } from './components/admin/AdminHeader';
-import { AutopilotDashboard } from './components/admin/AutopilotDashboard';
-import { SupplierManagement } from './components/admin/SupplierManagement';
-import { FulfillmentOrdersTable } from './components/admin/FulfillmentOrdersTable';
-import { CandidateDetailModal } from './components/admin/CandidateDetailModal';
-import { AutopilotRunnerModal } from './components/admin/AutopilotRunnerModal';
-import { AutopilotSettingsModal } from './components/admin/AutopilotSettingsModal';
-import { AutopilotHistoryModal } from './components/admin/AutopilotHistoryModal';
-import { ConnectorsDirectoryModal } from './components/admin/ConnectorsDirectoryModal';
-import { GlobalAdminSearchModal } from './components/admin/GlobalAdminSearchModal';
-import { ReleaseReadinessCard } from './components/admin/ReleaseReadinessCard';
+const AdminHeader = lazy(() => import('./components/admin/AdminHeader').then((module) => ({ default: module.AdminHeader })));
+const AutopilotDashboard = lazy(() => import('./components/admin/AutopilotDashboard').then((module) => ({ default: module.AutopilotDashboard })));
+const SupplierManagement = lazy(() => import('./components/admin/SupplierManagement').then((module) => ({ default: module.SupplierManagement })));
+const FulfillmentOrdersTable = lazy(() => import('./components/admin/FulfillmentOrdersTable').then((module) => ({ default: module.FulfillmentOrdersTable })));
+const CandidateDetailModal = lazy(() => import('./components/admin/CandidateDetailModal').then((module) => ({ default: module.CandidateDetailModal })));
+const AutopilotRunnerModal = lazy(() => import('./components/admin/AutopilotRunnerModal').then((module) => ({ default: module.AutopilotRunnerModal })));
+const AutopilotSettingsModal = lazy(() => import('./components/admin/AutopilotSettingsModal').then((module) => ({ default: module.AutopilotSettingsModal })));
+const AutopilotHistoryModal = lazy(() => import('./components/admin/AutopilotHistoryModal').then((module) => ({ default: module.AutopilotHistoryModal })));
+const ConnectorsDirectoryModal = lazy(() => import('./components/admin/ConnectorsDirectoryModal').then((module) => ({ default: module.ConnectorsDirectoryModal })));
+const GlobalAdminSearchModal = lazy(() => import('./components/admin/GlobalAdminSearchModal').then((module) => ({ default: module.GlobalAdminSearchModal })));
+const ReleaseReadinessCard = lazy(() => import('./components/admin/ReleaseReadinessCard').then((module) => ({ default: module.ReleaseReadinessCard })));
 import { AuthModal } from './components/auth/AuthModal';
 
 import type { Product, Order } from './types';
@@ -53,6 +54,7 @@ export function App() {
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [accountTab, setAccountTab] = useState<'orders' | 'wishlist'>('orders');
 
   // Admin State & Modals
   const [adminTab, setAdminTab] = useState<'pipeline' | 'fulfillment' | 'suppliers'>('pipeline');
@@ -98,8 +100,8 @@ export function App() {
             {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
             {toast.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-400" />}
             {toast.type === 'info' && <Info className="w-4 h-4 text-indigo-400" />}
-            <span>{toast.message}</span>
-            <button onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-white transition-colors"><X className="w-3.5 h-3.5" /></button>
+            <span role="status">{toast.message}</span>
+            <button aria-label="Cerrar aviso" onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-white transition-colors"><X className="w-3.5 h-3.5" /></button>
           </div>
         </div>
       )}
@@ -111,8 +113,11 @@ export function App() {
             onSelectCategory={setActiveCategory}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            onOpenAccount={() => setIsAccountOpen(true)}
+            onOpenAccount={() => { setAccountTab('orders'); setIsAccountOpen(true); }}
+            onOpenWishlist={() => { setAccountTab('wishlist'); setIsAccountOpen(true); }}
           />
+
+          <PaymentReturn />
 
           <main className="flex-1">
             <HeroBanner
@@ -156,6 +161,7 @@ export function App() {
 
           {isAccountOpen && (
             <CustomerAccountModal
+              initialTab={accountTab}
               onClose={() => setIsAccountOpen(false)}
               onSelectProduct={(product) => {
                 setIsAccountOpen(false);
@@ -165,7 +171,7 @@ export function App() {
           )}
         </div>
       ) : (
-        <div className="flex-1 flex flex-col bg-neutral-950">
+        <Suspense fallback={<p role="status" className="p-8">Cargando administración…</p>}><div className="flex-1 flex flex-col bg-neutral-950">
           <AdminHeader
             adminTab={adminTab}
             onSelectAdminTab={setAdminTab}
@@ -218,7 +224,7 @@ export function App() {
           {isSettingsOpen && <AutopilotSettingsModal onClose={() => setIsSettingsOpen(false)} />}
           {isHistoryOpen && <AutopilotHistoryModal onClose={() => setIsHistoryOpen(false)} />}
           {isConnectorsOpen && <ConnectorsDirectoryModal onClose={() => setIsConnectorsOpen(false)} />}
-        </div>
+        </div></Suspense>
       )}
 
       <AuthModal

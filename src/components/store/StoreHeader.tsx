@@ -32,8 +32,8 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
   return (
     <header className="sticky top-0 z-40 border-b border-[#7b594c]/15 bg-[#fffaf4]/90 backdrop-blur-2xl">
       <div className="border-b border-[#7b594c]/10 bg-[#3b2b28] px-4 py-2 text-[11px] text-white/75">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4">
-          <span>Apertura progresiva · las compras se habilitan solo con stock, precio y envío validados</span>
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 text-center sm:text-left">
+          <span className="min-w-0 flex-1 leading-4">Apertura progresiva · las compras se habilitan solo con stock, precio y envío validados</span>
           {!isAuthLoading && userRole === 'admin' && (
             <button
               onClick={() => setViewMode('admin')}
@@ -49,13 +49,13 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-20 items-center justify-between gap-4">
-          <button onClick={() => { onSelectCategory('Todos'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="group flex flex-col items-start text-left">
+        <div className="flex h-20 items-center justify-between gap-2 sm:gap-4">
+          <button onClick={() => { onSelectCategory('Todos'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="group flex min-w-0 flex-col items-start text-left">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[#7b594c]/30 bg-[#f6ede2] font-serif text-lg font-black text-[#7b594c]">V</div>
-              <span className="font-serif text-xl font-normal tracking-[0.2em] text-[#3b2b28] transition-colors group-hover:text-[#7b594c] sm:text-2xl">VICTORIOSA</span>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#7b594c]/30 bg-[#f6ede2] font-serif text-base font-black text-[#7b594c] sm:h-9 sm:w-9 sm:text-lg">V</div>
+              <span className="font-serif text-[17px] font-normal tracking-[0.14em] text-[#3b2b28] transition-colors group-hover:text-[#7b594c] sm:text-2xl sm:tracking-[0.2em]">VICTORIOSA</span>
             </div>
-            <span className="ml-11 mt-0.5 text-[9px] font-medium uppercase tracking-[0.25em] text-[#76635c] sm:text-[10px]">Belleza en calma</span>
+            <span className="ml-10 mt-0.5 text-[8px] font-medium uppercase tracking-[0.2em] text-[#76635c] sm:ml-11 sm:text-[10px] sm:tracking-[0.25em]">Belleza en calma</span>
           </button>
 
           <div className="hidden max-w-lg flex-1 md:block">
@@ -73,7 +73,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-3">
             {onOpenWishlist && (
               <button onClick={onOpenWishlist} className="relative rounded-full p-2.5 text-[#76635c] transition hover:bg-[#f6ede2] hover:text-[#3b2b28]" title="Favoritos">
                 <Heart className="h-5 w-5" />
@@ -81,14 +81,14 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
               </button>
             )}
 
-            <button onClick={() => setIsAuthModalOpen(true)} className="flex items-center gap-1.5 rounded-xl border border-[#7b594c]/15 bg-white/60 px-3 py-2 text-[#76635c] transition hover:bg-white hover:text-[#3b2b28]" title="Cuenta">
+            <button onClick={() => setIsAuthModalOpen(true)} className="flex items-center gap-1.5 rounded-xl border border-[#7b594c]/15 bg-white/60 px-2.5 py-2 text-[#76635c] transition hover:bg-white hover:text-[#3b2b28] sm:px-3" title="Cuenta">
               <UserIcon className="h-4 w-4 text-[#7b594c]" />
               <span className="hidden text-xs sm:inline">{user && !user.isAnonymous ? (user.user_metadata?.full_name || user.email?.split('@')[0] || 'Cuenta') : 'Ingresar'}</span>
             </button>
 
             <button onClick={onOpenAccount} className="hidden rounded-full p-2.5 text-[#76635c] transition hover:bg-[#f6ede2] hover:text-[#3b2b28] sm:block" title="Mis pedidos"><UserIcon className="h-5 w-5" /></button>
 
-            <button onClick={() => setIsCartOpen(true)} className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#3b2b28] px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#7b594c]/20 transition hover:bg-[#7b594c] sm:px-4">
+            <button onClick={() => setIsCartOpen(true)} className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#3b2b28] px-2.5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#7b594c]/20 transition hover:bg-[#7b594c] sm:px-4">
               <ShoppingBag className="h-4 w-4" /><span className="hidden sm:inline">Bolsa</span><span className="rounded-full bg-white/15 px-2 py-0.5 text-xs font-bold text-white">{cartItemCount}</span>
             </button>
           </div>

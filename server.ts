@@ -706,41 +706,16 @@ app.post("/api/fulfillment/verify", async (req, res) => {
 
 // 9. Create Supplier Order / Fulfillment Dispatch Endpoint
 app.post("/api/fulfillment/create-supplier-order", async (req, res) => {
-  try {
-    const { supplierOrder } = req.body;
-    if (!supplierOrder) {
-      return res.status(400).json({ error: "Missing supplierOrder payload" });
-    }
-
-    const platform = supplierOrder.sourcePlatform || "Supplier Hub B2B";
-    const isAutoSupported = platform === "Supplier Hub B2B";
-
-    if (isAutoSupported) {
-      const supplierRef = `B2B-PO-${Date.now().toString().slice(-6)}`;
-
-      // NOTE: In production, this would call the actual B2B supplier API.
-      // Tracking number is NOT generated here - it comes from the supplier after shipment.
-      res.json({
-        success: true,
-        status: "order_placed",
-        supplierOrderReference: supplierRef,
-        trackingNumber: undefined,
-        carrier: undefined,
-        trackingUrl: undefined,
-        message: "Orden de compra registrada. El tracking será proporcionado por el proveedor tras el envío."
-      });
-    } else {
-      res.json({
-        success: true,
-        status: "human_action_required",
-        humanActionReason: `La plataforma ${platform} no tiene API de compra automatizada configurada o requiere autorización bancaria manual.`,
-        message: "Orden de compra generada en estado ACCIÓN HUMANA REQUERIDA."
-      });
-    }
-  } catch (err: any) {
-    console.error("Create supplier order error:", err);
-    res.status(500).json({ success: false, error: err.message });
-  }
+  const platform = String(req.body?.supplierOrder?.sourcePlatform || "Proveedor");
+  // Fail closed: Victoriosa never simulates or performs a supplier purchase.
+  // Real spend requires an explicit human action and a verifiable supplier reference.
+  return res.status(409).json({
+    success: false,
+    status: "human_action_required",
+    error: "SUPPLIER_PURCHASE_REQUIRES_HUMAN_APPROVAL",
+    humanActionReason: `La compra en ${platform} debe realizarse y verificarse manualmente; no se ejecutó ningún gasto.`,
+    message: "Compra automática bloqueada por política de seguridad."
+  });
 });
 
 // ============================================================
