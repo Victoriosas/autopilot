@@ -7,6 +7,7 @@ import CJDropshippingClient, {
 } from './cjDropshipping';
 import {
   CJMcpError,
+  cjMcpReadSafetyReady,
   cjMcpShadowSafetyReady,
   getCJMcpReadOnlyClient,
   type CJMcpReadOnlyClient,
@@ -286,12 +287,14 @@ export class CJMcpFirstSourcingProvider implements CJSourcingReadProvider {
 }
 
 export function cjSourcingReadConfigured(config: Pick<SourcingConfig, 'mode'>, env: NodeJS.ProcessEnv = process.env): boolean {
-  const mcpReady = config.mode === 'shadow' && cjMcpShadowSafetyReady(env) && Boolean(getCJMcpReadOnlyClient(env));
+  const mcpSafetyReady = config.mode === 'shadow' ? cjMcpShadowSafetyReady(env) : cjMcpReadSafetyReady(env);
+  const mcpReady = mcpSafetyReady && Boolean(getCJMcpReadOnlyClient(env));
   return mcpReady || Boolean(env.CJ_API_KEY?.trim());
 }
 
 export function getCJSourcingReadProvider(config: Pick<SourcingConfig, 'mode'>, env: NodeJS.ProcessEnv = process.env): CJSourcingReadProvider | null {
-  const mcp = config.mode === 'shadow' && cjMcpShadowSafetyReady(env) ? getCJMcpReadOnlyClient(env) : null;
+  const mcpSafetyReady = config.mode === 'shadow' ? cjMcpShadowSafetyReady(env) : cjMcpReadSafetyReady(env);
+  const mcp = mcpSafetyReady ? getCJMcpReadOnlyClient(env) : null;
   const rest = getCJClient();
   if (!mcp && !rest) return null;
   const transport = mcp ? (rest ? 'mcp-first-rest-fallback' : 'mcp-only') : 'rest-only';

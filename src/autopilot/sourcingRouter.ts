@@ -26,19 +26,31 @@ function zeroPurchaseLimit(){
   return Number.isFinite(purchaseLimit) && purchaseLimit===0;
 }
 
+function productionShadowSafetyBlockers() {
+  const blockers:string[]=[];
+  const supabaseUrl=process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+  if(process.env.VERCEL_ENV!=='production') blockers.push('VERCEL_PRODUCTION_REQUIRED');
+  if(!supabaseUrl.includes('jfjzpwlrhzqbcrvqxhzf')) blockers.push('SUPABASE_PROJECT_MISMATCH');
+  if(process.env.AUTOPILOT_SHADOW_MODE==='false') blockers.push('SHADOW_MODE_DISABLED');
+  if(!zeroPurchaseLimit()) blockers.push('AUTONOMOUS_PURCHASE_LIMIT_NOT_ZERO');
+  if(process.env.AUTOPILOT_LEGACY_SOURCING_ENABLED==='true') blockers.push('LEGACY_SOURCING_ENABLED');
+  return blockers;
+}
+
 function productionShadowSafetyReady() {
-  return process.env.VERCEL_ENV==='production'
-    && (process.env.SUPABASE_URL || '').includes('jfjzpwlrhzqbcrvqxhzf')
-    && process.env.AUTOPILOT_SHADOW_MODE!=='false'
-    && process.env.CHECKOUT_ENABLED!=='true'
-    && zeroPurchaseLimit()
-    && process.env.AUTOPILOT_LEGACY_SOURCING_ENABLED!=='true';
+  return productionShadowSafetyBlockers().length===0;
+}
+
+function productionReleaseCandidateSafetyBlockers(){
+  const blockers=productionShadowSafetyBlockers();
+  if(process.env.AUTOPILOT_V4_AUTO_PUBLISH_ENABLED==='true' || process.env.AUTOPILOT_AUTO_PUBLISH_ENABLED==='true') {
+    blockers.push('AUTO_PUBLICATION_ENABLED');
+  }
+  return blockers;
 }
 
 function productionReleaseCandidateSafetyReady(){
-  return productionShadowSafetyReady()
-    && process.env.AUTOPILOT_V4_AUTO_PUBLISH_ENABLED!=='true'
-    && process.env.AUTOPILOT_AUTO_PUBLISH_ENABLED!=='true';
+  return productionReleaseCandidateSafetyBlockers().length===0;
 }
 
 function applyAuthorizedShadowPolicy(base:SourcingConfig,policy?:ShadowEconomicPolicy):SourcingConfig {
@@ -157,7 +169,8 @@ export function createSourcingRouter(
  });
 
  router.post('/sourcing/admin-shadow-run',requireSupabaseAdminAuth,async(req,res)=>{
-  if(!productionShadowSafetyReady()) return res.status(403).json({error:'PRODUCTION_SHADOW_SAFETY_NOT_READY'});
+  const shadowBlockers=productionShadowSafetyBlockers();
+  if(shadowBlockers.length){console.warn('[Autopilot V4] shadow safety blocked',shadowBlockers);return res.status(403).json({error:'PRODUCTION_SHADOW_SAFETY_NOT_READY',blockers:shadowBlockers});}
   if(!cjSourcingReadConfigured({mode:'shadow'})) return res.status(503).json({error:'CJ_READ_PROVIDER_NOT_CONFIGURED'});
   try {
    const rawKeyword=typeof req.body?.keyword==='string'?req.body.keyword:'facial headband';
@@ -183,7 +196,8 @@ export function createSourcingRouter(
  // The resulting draft is production-origin, publication-eligible and still
  // requires a separate authenticated admin publication action.
  router.post('/sourcing/admin-release-candidate',requireSupabaseAdminAuth,async(req,res)=>{
-  if(!productionReleaseCandidateSafetyReady()) return res.status(403).json({error:'PRODUCTION_RELEASE_CANDIDATE_SAFETY_NOT_READY'});
+  const releaseBlockers=productionReleaseCandidateSafetyBlockers();
+  if(releaseBlockers.length){console.warn('[Autopilot V4] release candidate safety blocked',releaseBlockers);return res.status(403).json({error:'PRODUCTION_RELEASE_CANDIDATE_SAFETY_NOT_READY',blockers:releaseBlockers});}
   if(!cjSourcingReadConfigured({mode:'production'})) return res.status(503).json({error:'CJ_READ_PROVIDER_NOT_CONFIGURED'});
   const providers=marketProviderStatus();
   if(!providers.mercadoLibre && !providers.gemini && !providers.openRouter) return res.status(503).json({error:'MARKET_EVIDENCE_PROVIDER_NOT_CONFIGURED'});
@@ -195,7 +209,7 @@ export function createSourcingRouter(
    const inspection=await inspectShadowRun(result.run_id);
    return res.json({
     ...result,manual:true,shadow:false,releaseCandidate:true,cronEnabled:false,
-    policyVersion:`${UI_SHADOW_POLICY.policyVersion}:production-revalidation-v1`,transportPolicy:'rest_or_safe_read_chain',
+    policyVersion:`${UI_SHADOW_POLICY.policyVersion}:production-revalidation-v1`,transportPolicy:'mcp_read_first_rest_fallback',
     marketEvidence:{priority:['mercadolibre_uy','gemini_google_search','openrouter_web_search'],...marketProviderStatus()},
     searchQuery,
     safety:{checkout:false,purchases:false,autoPublish:false,manualPublishRequired:true,maxCandidates:config.maxCandidates,maxAiCalls:config.maxAiCalls},
@@ -236,7 +250,8 @@ export function createSourcingRouter(
  };
 
  router.post('/sourcing/production-shadow-once',async(req,res)=>{
-  if(!productionShadowSafetyReady()) return res.status(403).json({error:'PRODUCTION_SHADOW_SAFETY_NOT_READY'});
+  const shadowBlockers=productionShadowSafetyBlockers();
+  if(shadowBlockers.length)return res.status(403).json({error:'PRODUCTION_SHADOW_SAFETY_NOT_READY',blockers:shadowBlockers});
   if(!cjSourcingReadConfigured({mode:'shadow'})) return res.status(503).json({error:'CJ_READ_PROVIDER_NOT_CONFIGURED'});
   const token=req.header('x-autopilot-shadow-token')?.trim();
   if(!token || token.length<32 || token.length>256) return res.status(401).json({error:'SHADOW_AUTH_REQUIRED'});
@@ -248,7 +263,8 @@ export function createSourcingRouter(
  });
 
  router.get('/sourcing/production-shadow-once',async(req,res)=>{
-  if(!productionShadowSafetyReady()) return res.status(403).json({error:'PRODUCTION_SHADOW_SAFETY_NOT_READY'});
+  const shadowBlockers=productionShadowSafetyBlockers();
+  if(shadowBlockers.length)return res.status(403).json({error:'PRODUCTION_SHADOW_SAFETY_NOT_READY',blockers:shadowBlockers});
   if(!cjSourcingReadConfigured({mode:'shadow'})) return res.status(503).json({error:'CJ_READ_PROVIDER_NOT_CONFIGURED'});
   const authorizationId=typeof req.query.authorization==='string'?req.query.authorization:'';
   if(!authorizationId) return res.status(401).json({error:'SHADOW_AUTH_REQUIRED'});

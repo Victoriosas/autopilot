@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CJMcpReadOnlyClient,
+  cjMcpReadSafetyReady,
   cjMcpShadowSafetyReady,
   resolveCJMcpUrl,
 } from '../services/cjMcp';
@@ -28,21 +29,18 @@ test('keeps opaque MCP tokens safely URL encoded for compatibility', () => {
   assert.equal(url, 'https://developers.cjdropshipping.com/mcp/opaque%20token%2Fvalue');
 });
 
-test('shadow safety requires explicit enablement and zero purchase capability', () => {
-  assert.equal(cjMcpShadowSafetyReady({
+test('read-only MCP stays available with checkout enabled while purchase capability remains zero', () => {
+  const env = {
     CJ_MCP_SHADOW_ENABLED: 'true',
     AUTOPILOT_SHADOW_MODE: 'true',
-    CHECKOUT_ENABLED: 'false',
+    CHECKOUT_ENABLED: 'true',
     AUTOPILOT_PURCHASE_LIMIT_USD: '0',
     AUTOPILOT_LEGACY_SOURCING_ENABLED: 'false',
-  } as NodeJS.ProcessEnv), true);
-
-  assert.equal(cjMcpShadowSafetyReady({
-    CJ_MCP_SHADOW_ENABLED: 'true',
-    AUTOPILOT_SHADOW_MODE: 'true',
-    CHECKOUT_ENABLED: 'false',
-    AUTOPILOT_PURCHASE_LIMIT_USD: '10',
-  } as NodeJS.ProcessEnv), false);
+  } as NodeJS.ProcessEnv;
+  assert.equal(cjMcpReadSafetyReady(env), true);
+  assert.equal(cjMcpShadowSafetyReady(env), true);
+  assert.equal(cjMcpReadSafetyReady({ ...env, AUTOPILOT_PURCHASE_LIMIT_USD: '10' }), false);
+  assert.equal(cjMcpShadowSafetyReady({ ...env, AUTOPILOT_SHADOW_MODE: 'false' }), false);
 });
 
 test('blocks write tools before any network request', async () => {

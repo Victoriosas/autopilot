@@ -87,14 +87,17 @@ export function resolveCJMcpUrl(env: NodeJS.ProcessEnv = process.env): string | 
   return parsed.toString();
 }
 
-export function cjMcpShadowSafetyReady(env: NodeJS.ProcessEnv = process.env): boolean {
+export function cjMcpReadSafetyReady(env: NodeJS.ProcessEnv = process.env): boolean {
   const purchaseLimit = Number(env.AUTOPILOT_PURCHASE_LIMIT_USD || '0');
-  return env.CJ_MCP_SHADOW_ENABLED === 'true'
-    && env.AUTOPILOT_SHADOW_MODE !== 'false'
-    && env.CHECKOUT_ENABLED !== 'true'
+  const enabled = env.CJ_MCP_READ_ENABLED === 'true' || env.CJ_MCP_SHADOW_ENABLED === 'true';
+  return enabled
     && Number.isFinite(purchaseLimit)
     && purchaseLimit === 0
     && env.AUTOPILOT_LEGACY_SOURCING_ENABLED !== 'true';
+}
+
+export function cjMcpShadowSafetyReady(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.AUTOPILOT_SHADOW_MODE !== 'false' && cjMcpReadSafetyReady(env);
 }
 
 function parseMcpPayload(text: string): JsonRpcResponse {

@@ -92,6 +92,20 @@ test('one-time production shadow GET injects bounded Uruguay economic policy onl
  }finally{restoreEnv(before);}
 });
 
+
+test('production shadow remains safe when checkout is enabled because purchasing and publication stay blocked',async()=>{
+ const before=snapshotEnv();safeProductionEnv();process.env.CHECKOUT_ENABLED='true';let ran=0;
+ try{
+  const router=createSourcingRouter(()=>({} as SourcingStore),async()=>({id:'auth-checkout',maxCandidates:1,maxAiCalls:1,durationMs:5000}),
+   (async()=>{ran++;return {status:'completed_no_candidates',run_id:'run-checkout',mode:'shadow'};}) as any);
+  await withServer(router,async base=>{
+   const response=await fetch(`${base}/sourcing/production-shadow-once`,{method:'POST',headers:{'x-autopilot-shadow-token':'valid-shadow-token-abcdefghijklmnopqrstuvwxyz'}});
+   assert.equal(response.status,200);
+  });
+  assert.equal(ran,1);
+ }finally{restoreEnv(before);}
+});
+
 test('one-time production shadow route fails closed when production safety flags are not safe',async()=>{
  const before=snapshotEnv();safeProductionEnv();process.env.AUTOPILOT_SHADOW_MODE='false';let consumed=0;
  try{

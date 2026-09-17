@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CJMcpReadOnlyClient, extractCJMcpToolJson } from '../services/cjMcp';
-import { CJMcpFirstSourcingProvider } from '../services/cjSourcingProvider';
+import { CJMcpFirstSourcingProvider, cjSourcingReadConfigured } from '../services/cjSourcingProvider';
 import type CJDropshippingClient from '../services/cjDropshipping';
 import { errorClass } from './sourcingOrchestrator';
 
@@ -21,6 +21,19 @@ function mcpClient(handler: (name: string, args: any) => unknown) {
     }) as typeof fetch,
   );
 }
+
+
+test('production candidate can use the read-only MCP channel even when checkout is enabled', () => {
+  const configured = cjSourcingReadConfigured({ mode: 'production' }, {
+    CJ_MCP_SHADOW_ENABLED: 'true',
+    CJ_MCP_SERVER_URL: 'https://developers.cjdropshipping.com/mcp/fake-token',
+    AUTOPILOT_SHADOW_MODE: 'true',
+    CHECKOUT_ENABLED: 'true',
+    AUTOPILOT_PURCHASE_LIMIT_USD: '0',
+    AUTOPILOT_LEGACY_SOURCING_ENABLED: 'false',
+  } as NodeJS.ProcessEnv);
+  assert.equal(configured, true);
+});
 
 test('extracts grounded JSON from CJ tool text with a human-readable prefix', () => {
   const data = extractCJMcpToolJson({ content: [{ type: 'text', text: 'Found 1 product\n\n{"totalRecords":1}' }] }) as any;
