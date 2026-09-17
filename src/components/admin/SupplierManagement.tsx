@@ -77,8 +77,8 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onOpenPr
         const q = searchQuery.toLowerCase();
         const matchesName = s.name.toLowerCase().includes(q);
         const matchesCode = s.code.toLowerCase().includes(q);
-        const matchesCountry = s.contact.country.toLowerCase().includes(q);
-        const matchesContact = s.contact.contactName.toLowerCase().includes(q);
+        const matchesCountry = (s.contact.country || '').toLowerCase().includes(q);
+        const matchesContact = (s.contact.contactName || s.contact.representative || '').toLowerCase().includes(q);
         const matchesCat = s.catalogs.categories.some(c => c.toLowerCase().includes(q));
         if (!matchesName && !matchesCode && !matchesCountry && !matchesContact && !matchesCat) return false;
       }

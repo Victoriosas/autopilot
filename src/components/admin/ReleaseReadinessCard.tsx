@@ -5,7 +5,7 @@ import { apiFetch } from '../../lib/api';
 type Readiness={
   state:'safe_shadow'|'blocked_for_commerce'|'ready_for_manual_release';
   blockers:string[];
-  providers:{cj:boolean;marketEvidence:{marketMemory:boolean;mercadoLibre:boolean;gemini:boolean;openRouter:boolean;openRouterCircuitOpen:boolean};payments:{mercadoPago:boolean;paypal:boolean}};
+  providers:{cj:boolean;marketEvidence:{marketMemory:boolean;mercadoLibre:boolean;mercadoLibreOAuthConfigured?:boolean;gemini:boolean;openRouter:boolean;openRouterCircuitOpen:boolean};payments:{mercadoPago:boolean;paypal:boolean}};
   catalog:{published:number;productionEligible:number;shadowDrafts:number};
   generatedAt:string;
 };
@@ -27,6 +27,8 @@ type ReleaseRun={
   inspection?:{run?:any;items?:ReleaseItem[]};
   searchQuery?:{input?:string;keyword?:string};
 };
+
+type MercadoLibreStatus={configured:boolean;connected:boolean;expiresAt?:string|null;externalUserId?:string|null;redirectUri?:string};
 
 const labels:Record<Readiness['state'],string>={
   safe_shadow:'Shadow seguro',
@@ -57,6 +59,8 @@ export const ReleaseReadinessCard:React.FC=()=>{
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState<string|null>(null);
   const [query,setQuery]=useState('facial headband');
+  const [providerProfile,setProviderProfile]=useState<'all'|'phofay'>('all');
+  const [mlStatus,setMlStatus]=useState<MercadoLibreStatus|null>(null);
   const [revalidating,setRevalidating]=useState(false);
   const [publishing,setPublishing]=useState<string|null>(null);
   const [releaseRun,setReleaseRun]=useState<ReleaseRun|null>(null);
@@ -71,14 +75,26 @@ export const ReleaseReadinessCard:React.FC=()=>{
     finally{setLoading(false);}
   };
 
-  useEffect(()=>{void load();},[]);
+  const loadMl=async()=>{
+    try{setMlStatus(await jsonRequest('/api/integrations/mercadolibre/status'));}
+    catch{setMlStatus(null);}
+  };
+
+  useEffect(()=>{void load();void loadMl();},[]);
+
+  const connectMercadoLibre=async()=>{
+    try{
+      const body=await jsonRequest('/api/integrations/mercadolibre/authorize');
+      if(body?.authorizationUrl) window.location.assign(body.authorizationUrl);
+    }catch(err:any){setError(err.message==='MERCADOLIBRE_OAUTH_NOT_CONFIGURED'?'Mercado Libre OAuth todavía necesita Client ID/Secret seguros en Vercel.':`Mercado Libre: ${err.message}`);}
+  };
 
   const revalidate=async()=>{
     if(!query.trim()||revalidating) return;
     setRevalidating(true);setReleaseMessage(null);setError(null);
     try{
       const body=await jsonRequest('/api/autopilot/v4/sourcing/admin-release-candidate',{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword:query.trim(),maxCandidates:1}),
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword:query.trim(),maxCandidates:1,providerProfile:providerProfile==='phofay'?'phofay':undefined}),
       }) as ReleaseRun;
       setReleaseRun(body);
       const ready=(body.inspection?.items||[]).filter(item=>item.status==='production_ready').length;
@@ -131,7 +147,7 @@ export const ReleaseReadinessCard:React.FC=()=>{
   const Icon=ready?CheckCircle2:blocked?AlertTriangle:ShieldCheck;
   const market=data.providers.marketEvidence;
   const releaseItems=releaseRun?.inspection?.items||[];
-  const hasMarketProvider=market.marketMemory||market.mercadoLibre||market.gemini||(market.openRouter&&!market.openRouterCircuitOpen);
+  const hasMarketProvider=market.marketMemory||market.mercadoLibre||Boolean(mlStatus?.connected)||market.gemini||(market.openRouter&&!market.openRouterCircuitOpen);
   const canRevalidate=data.providers.cj&&hasMarketProvider;
 
   return <div className="mb-5 space-y-3">
@@ -147,7 +163,8 @@ export const ReleaseReadinessCard:React.FC=()=>{
         <div className="flex flex-wrap gap-1.5 text-[9px]">
           <Pill ok={data.providers.cj} label="CJ"/>
           <Pill ok={market.marketMemory} label="Market Memory UY"/>
-          <Pill ok={market.mercadoLibre} label="Mercado Libre UY API"/>
+          <Pill ok={Boolean(mlStatus?.connected)||market.mercadoLibre} label={mlStatus?.connected?'Mercado Libre conectado':'Mercado Libre UY'}/>
+          {!mlStatus?.connected&&<button onClick={()=>void connectMercadoLibre()} className="px-2 py-1 rounded-md border border-sky-500/20 bg-sky-500/[0.06] text-sky-300 hover:bg-sky-500/[0.12]">Conectar ML</button>}
           <Pill ok={market.gemini} label="Gemini"/>
           <Pill ok={market.openRouter&&!market.openRouterCircuitOpen} label={market.openRouterCircuitOpen?'OpenRouter 402':'OpenRouter'}/>
           <Pill ok={data.providers.payments.mercadoPago} label="Mercado Pago"/>
@@ -170,6 +187,10 @@ export const ReleaseReadinessCard:React.FC=()=>{
       </div>
 
       <div className="mt-4 flex flex-col sm:flex-row gap-2">
+        <select value={providerProfile} onChange={e=>{const value=e.target.value as 'all'|'phofay';setProviderProfile(value);if(value==='phofay')setQuery('makeup');}} className="px-3 py-2.5 rounded-lg bg-black/20 border border-white/10 text-xs text-white outline-none focus:border-emerald-500/40">
+          <option value="all">CJ · catálogo general</option>
+          <option value="phofay">PHOFAY · shop CJ</option>
+        </select>
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500"/>
           <input value={query} onChange={e=>setQuery(e.target.value)} maxLength={120} placeholder="ej: vincha facial de spa" className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-black/20 border border-white/10 text-xs text-white placeholder:text-slate-600 outline-none focus:border-emerald-500/40"/>
