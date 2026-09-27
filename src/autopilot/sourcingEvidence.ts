@@ -25,6 +25,10 @@ export interface SourcingConfig {
   taxRatePct: number | null;
   imageSaleUseAllowed: boolean;
   commercialProxiesAllowed: boolean;
+  preferredSupplierName?: string;
+  preferredSupplierCode?: string;
+  preferredSupplierRecordId?: string;
+  preferredShopId?: string;
 }
 
 function integer(value: string | undefined, fallback: number, max: number) {
@@ -305,7 +309,12 @@ export function buildCJLiveEvidence(input: {
       category: detail.categoryName || product.categoryName || undefined,
       description: (detail.description || detail.productNameEn || detail.productName || '').slice(0, 2000),
       images: image ? [image] : [],
-      supplierName: detail.supplierName || product.supplierName || undefined,
+      supplierName: config.preferredSupplierName || detail.supplierName || product.supplierName || undefined,
+      supplierCode: config.preferredSupplierCode,
+      supplierRecordId: config.preferredSupplierRecordId,
+      supplierShopId: config.preferredShopId,
+      supplierExternalId: detail.supplierId || product.supplierId || undefined,
+      sourceSku: variant?.variantSku || product.productSku || undefined,
       sourceUrl,
       shippingDaysMax: freight ? parseAgingDays(freight.logisticAging) ?? undefined : undefined,
       specs: {

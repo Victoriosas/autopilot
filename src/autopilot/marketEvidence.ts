@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { getMercadoLibreAccessToken, mercadoLibreOAuthConfig } from '../integrations/mercadoLibre';
 import type { OpportunityCandidate } from './opportunityEngine';
 
 export type MarketEvidenceProvider='curated_uy_observations'|'mercadolibre_uy'|'gemini_google_search'|'openrouter_web_search';
@@ -335,9 +336,11 @@ async function searchWithOpenRouter(candidate:OpportunityCandidate,apiKey:string
 }
 
 export function marketProviderStatus(){
+  const mlOAuth=mercadoLibreOAuthConfig();
   return {
     marketMemory:Boolean(process.env.SUPABASE_URL?.trim()&&process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()),
     mercadoLibre:Boolean(process.env.MERCADOLIBRE_ACCESS_TOKEN?.trim() || process.env.ML_ACCESS_TOKEN?.trim()),
+    mercadoLibreOAuthConfigured:mlOAuth.configured,
     gemini:Boolean(process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_API_KEY?.trim()),
     openRouter:Boolean(process.env.OPENROUTER_API_KEY?.trim()) && process.env.AUTOPILOT_MARKET_OPENROUTER_DISABLED!=='true',
     openRouterCircuitOpen:Date.now()<openRouterBlockedUntil,
@@ -348,7 +351,8 @@ export async function findGroundedMarketEvidence(candidate: OpportunityCandidate
   const observedAt=new Date().toISOString();
   const attempts:MarketEvidence[]=[];
   const memory=await searchWithMarketMemory(candidate,observedAt); attempts.push(memory); if(memory.status==='ok') return memory;
-  const mercadoLibreKey=process.env.MERCADOLIBRE_ACCESS_TOKEN?.trim() || process.env.ML_ACCESS_TOKEN?.trim();
+  let mercadoLibreKey=process.env.MERCADOLIBRE_ACCESS_TOKEN?.trim() || process.env.ML_ACCESS_TOKEN?.trim() || null;
+  if(!mercadoLibreKey){try{mercadoLibreKey=await getMercadoLibreAccessToken();}catch{/* fall through to other providers */}}
   if(mercadoLibreKey){
     const result=await searchWithMercadoLibre(candidate,mercadoLibreKey,observedAt); attempts.push(result); if(result.status==='ok') return result;
   }

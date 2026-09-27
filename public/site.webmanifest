@@ -1,0 +1,11 @@
+{
+  "name": "Victoriosa — Belleza en calma",
+  "short_name": "Victoriosa",
+  "description": "Belleza, cuidado facial y rituales de autocuidado seleccionados con criterio para Uruguay.",
+  "lang": "es-UY",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f1e8",
+  "theme_color": "#3b2b28",
+  "icons": []
+}

@@ -93,9 +93,20 @@ function normalizedKeyword(body:any,keywordOverride?:string){
   return (rawKeyword || 'facial headband').replace(/[\r\n\t]/g,' ').replace(/\s+/g,' ').slice(0,120);
 }
 
+function applyProviderProfile(config:SourcingConfig,body:any):SourcingConfig {
+  if(body?.providerProfile!=='phofay') return config;
+  return {
+    ...config,
+    preferredSupplierName:'PHOFAY',
+    preferredSupplierCode:'SUP-CJ-PHOFAY',
+    preferredShopId:'1823998030406676481',
+    version:`${config.version}:provider-phofay-v1`,
+  };
+}
+
 function uiShadowConfig(body:any,keywordOverride?:string):SourcingConfig {
   const base=sourcingConfig();
-  const policyConfig=applyAuthorizedShadowPolicy(base,UI_SHADOW_POLICY);
+  const policyConfig=applyProviderProfile(applyAuthorizedShadowPolicy(base,UI_SHADOW_POLICY),body);
   const requested=Number(body?.maxCandidates || 3);
   const maxCandidates=Number.isFinite(requested)?Math.max(1,Math.min(Math.floor(requested),3)):3;
   return {
@@ -112,7 +123,7 @@ function uiShadowConfig(body:any,keywordOverride?:string):SourcingConfig {
 
 function uiProductionCandidateConfig(body:any,keywordOverride?:string):SourcingConfig {
   const base=sourcingConfig();
-  const policyConfig=applyAuthorizedShadowPolicy(base,UI_SHADOW_POLICY);
+  const policyConfig=applyProviderProfile(applyAuthorizedShadowPolicy(base,UI_SHADOW_POLICY),body);
   const requested=Number(body?.maxCandidates || 1);
   const maxCandidates=Number.isFinite(requested)?Math.max(1,Math.min(Math.floor(requested),3)):1;
   return {
