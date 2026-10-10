@@ -85,3 +85,36 @@ test('HTTP key replacement is authorized only by verified released database stat
     server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve()));
   }
 });
+
+test('invalid configured shipping cannot reserve stock or call the payment gateway', async () => {
+  const keys = ['STORE_SHIPPING_FLAT', 'VITE_SHIPPING_FLAT', 'STORE_FREE_SHIPPING_FROM', 'VITE_FREE_SHIPPING_FROM'] as const;
+  const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
+  for (const key of keys) delete process.env[key];
+  let reservations = 0; let gatewayCalls = 0;
+  const app = express(); app.use(express.json());
+  app.use('/mp', createMercadoPagoRouter({
+    available: async () => ({ requested: true, available: true, reason: null }),
+    command: async () => { reservations++; throw new Error('reserve should not execute'); },
+    gateway: { async create() { gatewayCalls++; throw new Error('gateway should not execute'); }, async lookup() { throw new Error('unused'); } },
+  }));
+  const server = createServer(app).listen(0, '127.0.0.1'); await once(server, 'listening');
+  const { port } = server.address() as { port: number };
+  try {
+    for (const key of keys) {
+      for (const invalid of ['0.015', '-1', 'Infinity', 'NaN', '1e2', ' ', '100000000', '9007199254740992']) {
+        process.env[key] = invalid;
+        const response = await fetch(`http://127.0.0.1:${port}/mp/order`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': 'stable-client-checkout-key' },
+          body: JSON.stringify({ customer: { name: 'Test', email: 'buyer@example.test', phone: '099123456', address: 'Calle 1', city: 'Montevideo', postalCode: '11000', country: 'UY' }, items: [{ productId: '11111111-1111-4111-8111-111111111111', quantity: 1 }] }),
+        });
+        assert.equal(response.status, 503, `${key}=${invalid}`);
+        assert.equal((await response.json()).error, 'SHIPPING_NOT_CONFIGURED');
+        delete process.env[key];
+      }
+    }
+    assert.equal(reservations, 0); assert.equal(gatewayCalls, 0);
+  } finally {
+    for (const key of keys) if (previous[key] === undefined) delete process.env[key]; else process.env[key] = previous[key];
+    server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve()));
+  }
+});

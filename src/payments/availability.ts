@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { checkoutEnabled, paymentDatabaseConfigured } from './safety';
 import type { CommerceCommand } from './atomicCheckout';
+import { checkoutShippingConfig } from './shipping';
 
 export const commerceCommand: CommerceCommand = async (command, args) => {
   const db = createClient(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY || '',
@@ -32,6 +33,7 @@ export async function paymentAvailability(provider: string, credentials: boolean
 
 export function mercadoPagoCredentialsReady() {
   try {
+    checkoutShippingConfig();
     const url = new URL(process.env.PUBLIC_APP_URL || '');
     return paymentDatabaseConfigured() && Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN?.trim()) &&
       (process.env.STORE_CURRENCY || process.env.VITE_STORE_CURRENCY || 'UYU').toUpperCase() === 'UYU' &&

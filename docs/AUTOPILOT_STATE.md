@@ -38,3 +38,13 @@ Actualizado 2026-10-10, America/Montevideo. Leer primero y verificar Git; no asu
 2. Verificar y corregir importes de envío fraccionario: snapshot SQL inicial y replay pueden diferir por escala/redondeo; primero regresión, sin modificar migraciones aplicadas.
 3. Preparar entorno Supabase aislado compatible y recuperación legacy; validar sandbox con usuario de prueba autorizado cuando esté disponible. No usar credenciales reales para simular sandbox.
 4. Completar scheduler operativo y administración de tareas manuales bajo configuración autorizada. Mantener disponibilidad false hasta evidencia de cobro y entrega recuperable.
+
+## Envío en centavos — revisión posterior a 368923a
+
+PR #66/base 368923a verificados: ambos runs CI success. Trabajo en worktree aislado, preservando cambios previos y recuperación por referencia. ECC sigue no disponible en este runtime; revisión independiente por agente Codex. Automatización local registrada como activa por checkpoint del usuario; la automatización ChatGPT distinta sigue pausada y no fue duplicada ni alterada.
+
+Corrección: configuración de envío y umbral gratis solo admite importes decimales no negativos con hasta dos decimales y dentro de DECIMAL(10,2). Valores fraccionarios, no finitos, vacíos, notación exponencial y fuera de rango deshabilitan disponibilidad; la ruta rechaza antes de reservar o llamar al proveedor. La configuración del servidor tiene precedencia, incluso si es inválida: no cae silenciosamente a otra fuente. Mensaje público en español. Sin cambios SQL, migraciones o pagos.
+
+RED: 0.015 antes se anunciaba disponible y llegaba a reserva; rango 100000000 también reproducido antes de limitarlo. GREEN: 4 pruebas focalizadas y suite 110/110, cero omitidas; TypeScript, secret scan y whitespace correctos. Pruebas HTTP verifican cero reservas/llamadas de gateway con configuración inválida. SQL sin cambios: evidencia previa PG11/11 no repetida localmente. Builds finales y PostgreSQL exigidos por CI deben verificarse en el commit publicado.
+
+Limitación: importe total depende del subtotal; un total fuera de DECIMAL(10,2) sigue rechazado transaccionalmente por DB. No se afirma Supabase integrado ni proveedor sandbox validado. Próximo: verificar CI/preview exactos; preparar Supabase aislado compatible y sandbox autorizado. Mantener pagos deshabilitados.
