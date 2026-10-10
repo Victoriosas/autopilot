@@ -6,7 +6,7 @@ import { commerceCommand } from './availability';
 import { mercadoPagoGateway } from './mercadoPago';
 
 export async function recoverPaymentReference(command: CommerceCommand, gateway: CheckoutGateway, orderId: string, providerOrderId: string) {
-  if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/.test(orderId) || !/^[A-Za-z0-9_-]{1,128}$/.test(providerOrderId)) throw new Error('INVALID_RECOVERY_REFERENCE');
+  if (typeof orderId !== 'string' || typeof providerOrderId !== 'string' || !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/.test(orderId) || !/^[A-Za-z0-9_-]{1,128}$/.test(providerOrderId)) throw new Error('INVALID_RECOVERY_REFERENCE');
   const truth = await gateway.lookup(providerOrderId);
   if (truth.id !== providerOrderId || truth.external_reference !== orderId) throw new Error('PAYMENT_REFERENCE_MISMATCH');
   const money = (value: unknown) => typeof value === 'number' ? value : typeof value === 'string' && /^\d+(?:\.\d+)?$/.test(value) ? Number(value) : NaN;

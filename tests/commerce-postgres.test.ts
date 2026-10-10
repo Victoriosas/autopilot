@@ -50,6 +50,16 @@ test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
     await recover(proof);
     assert.equal(await sql('select count(*) from public.commerce_fulfillment_jobs;'), '1');
     await assert.rejects(sql(`set role authenticated; select public.commerce_recover_provider_order(${quote(proof)});`), /permission denied/);
+    await reset(2);
+    const [one, two] = await Promise.all([command('reserve', request()), command('reserve', request())]);
+    await command('begin_provider', { orderId: one.orderId }); await command('begin_provider', { orderId: two.orderId });
+    const results = await Promise.allSettled([one, two].map(row => recover({ ...proof, orderId: row.orderId, reference: row.orderId })));
+    assert.equal(results.filter(row => row.status === 'fulfilled').length, 1);
+    const winner = results[0].status === 'fulfilled' ? one : two;
+    await command('payment', { orderId: winner.orderId, providerOrderId: proof.providerOrderId, amount: 100, currency: 'UYU', status: 'failed' });
+    await command('reject', { orderId: winner.orderId });
+    await assert.rejects(recover({ ...proof, orderId: winner.orderId, reference: winner.orderId }), /RESERVATION_NOT_ACTIVE/);
+    assert.equal(await sql('select inventory from public.products;'), '1');
   });
   await t.test('two concurrent shoppers cannot reserve the last unit twice', async () => {
     await reset();
