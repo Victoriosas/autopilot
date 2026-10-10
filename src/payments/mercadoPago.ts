@@ -151,10 +151,12 @@ async function reconcileMpOrder(mpOrderId: string) {
   const expected = Number(local.total);
   const providerTotal = Number(provider.total_amount);
   const paidTotal = Number(provider.total_paid_amount ?? 0);
-  if (!Number.isFinite(providerTotal) || Math.round(providerTotal * 100) !== Math.round(expected * 100)) {
+  if (!Number.isFinite(expected) || expected <= 0 || !Number.isFinite(providerTotal) || providerTotal <= 0 || Math.round(providerTotal * 100) !== Math.round(expected * 100)) {
     await audit('MERCADOPAGO_AMOUNT_MISMATCH', localOrderId, { mpOrderId, expected, providerTotal, paidTotal });
     throw new Error('MERCADOPAGO_AMOUNT_MISMATCH');
   }
+
+  if (!Number.isFinite(paidTotal) || paidTotal < 0) throw new Error('MERCADOPAGO_PAID_AMOUNT_INVALID');
 
   if (local.currency !== 'UYU' || (provider.currency_id && provider.currency_id !== local.currency)) throw new Error('PAYMENT_CURRENCY_MISMATCH');
   const processed = provider.status === 'processed' && paidTotal + 0.001 >= expected;
