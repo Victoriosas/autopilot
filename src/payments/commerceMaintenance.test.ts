@@ -35,6 +35,13 @@ test('admin recovery reads existing provider truth without creating payment and 
   assert.ok(!calls.includes('reject')); assert.ok(!calls.includes('payment'));
 });
 
+test('malformed recovery identifiers never reach the provider', async () => {
+  let lookups = 0;
+  const gateway = { async create() { throw new Error('unused'); }, async lookup() { lookups++; throw new Error('unexpected'); } };
+  for (const id of [undefined, null, ['remote'], 123]) await assert.rejects(recoverPaymentReference(async () => ({}), gateway, '11111111-1111-4111-8111-111111111111', id as any));
+  assert.equal(lookups, 0);
+});
+
 test('maintenance releases safe expiry, holds unknown payment and creates a recoverable manual fulfillment task', async () => {
   const calls: any[] = []; let claimed = false;
   const command = async (action: string, args: any) => {
