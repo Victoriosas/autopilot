@@ -5,15 +5,17 @@ import { createAtomicCheckout, runFulfillmentJob } from './atomicCheckout';
 test('checkout retries use one stable provider key and server snapshot; unknown outcomes retain reservation', async () => {
   let providerCalls = 0; let reserved = 0;
   let bound: any;
+  let begun = false;
   const row = { orderId: 'server-order', total: 100, currency: 'UYU', shipping: 0, items: [{ title: 'Vincha', price: 100, quantity: 1 }], state: 'held', checkoutUrl: null };
   const store = async (command: string, args: any) => {
     if (command === 'reserve') { reserved++; return { ...row, ...bound }; }
     if (command === 'bind') { bound = { checkoutUrl: args.checkoutUrl, providerOrderId: args.providerOrderId }; return { ok: true }; }
+    if (command === 'begin_provider') { begun = true; return { ok: true }; }
     throw new Error(`Unexpected command: ${command}`);
   };
   let uncertain = true;
   const gateway = { async create(snapshot: any) {
-    providerCalls++; assert.equal(snapshot.orderId, 'server-order'); assert.equal(snapshot.total, 100);
+    providerCalls++; assert.equal(begun, true, 'mark uncertain provider operation before HTTP'); assert.equal(snapshot.orderId, 'server-order'); assert.equal(snapshot.total, 100);
     if (uncertain) throw new Error('SIMULATED_NETWORK_TIMEOUT');
     return { id: 'provider-order', checkoutUrl: 'https://example.test/pay' };
   }, async lookup() { throw new Error('unused'); } };
@@ -24,6 +26,14 @@ test('checkout retries use one stable provider key and server snapshot; unknown 
   const first = await checkout.start(request);
   const replay = await checkout.start(request);
   assert.equal(first.orderId, replay.orderId); assert.equal(providerCalls, 2); assert.equal(reserved, 3);
+});
+
+test('expired checkout cannot offer a payment URL or initiate a gateway operation', async () => {
+  let calls = 0;
+  const checkout = createAtomicCheckout(async () => ({ state: 'held', expired: true, checkoutUrl: 'https://example.test/pay' }), {
+    async create() { calls++; return { id: 'order', checkoutUrl: 'https://example.test/pay' }; }, async lookup() { throw new Error('unused'); },
+  });
+  await assert.rejects(checkout.start({}), /RESERVATION_EXPIRED/); assert.equal(calls, 0);
 });
 
 test('provider truth must match local order, currency, amount and terminal status before confirmation', async () => {

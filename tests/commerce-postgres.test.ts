@@ -52,6 +52,7 @@ test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
       await reset();
       const reserved = await command('reserve', request());
       await command('bind', { orderId: reserved.orderId, providerOrderId: 'provider-one', checkoutUrl: 'https://example.test/pay' });
+      await command('payment', { orderId: reserved.orderId, providerOrderId: 'provider-one', amount: 100, currency: 'UYU', status: 'cancelled' });
       if (action === 'expire') await sql("update public.commerce_checkout_sessions set expires_at=now()-interval '1 second';");
       await command(action, { orderId: reserved.orderId });
       await command(action, { orderId: reserved.orderId });
@@ -69,6 +70,9 @@ test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
     }
     assert.equal((await command('payment', { ...payment, status: 'pending' })).paymentStatus, 'pending');
     await Promise.all([command('payment', payment), command('payment', payment)]);
+    await sql("update public.orders set status='shipped';");
+    await command('payment', payment);
+    assert.equal(await sql('select status from public.orders;'), 'shipped', 'duplicate webhook cannot undo fulfillment progress');
     assert.equal(await sql("select count(*) from public.orders where payment_status='paid';"), '1');
     assert.equal(await sql('select count(*) from public.commerce_fulfillment_jobs;'), '1');
     assert.equal(await sql('select inventory from public.products;'), '0');
@@ -84,6 +88,27 @@ test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
     await assert.rejects(command('finish_fulfillment', { id: job.id, owner: job.owner, generation: job.generation }), /FULFILLMENT_FENCE_REJECTED/);
     await command('finish_fulfillment', { id: recovered.id, owner: recovered.owner, generation: recovered.generation });
     assert.equal((await command('claim_fulfillment', { owner: 'worker-d' })).job, null);
+  });
+  await t.test('expired retries cannot initiate payment; uncertain provider operations retain stock', async () => {
+    await reset();
+    const input = request();
+    const reserved = await command('reserve', input);
+    await command('begin_provider', { orderId: reserved.orderId });
+    await sql("update public.commerce_checkout_sessions set expires_at=now()-interval '1 second';");
+    assert.equal((await command('reserve', input)).expired, true);
+    await assert.rejects(command('begin_provider', { orderId: reserved.orderId }), /RESERVATION_EXPIRED/);
+    await assert.rejects(command('expire', { orderId: reserved.orderId }), /PROVIDER_OUTCOME_UNKNOWN/);
+    assert.equal(await sql('select inventory from public.products;'), '0');
+    // Provider creation may have finished before the timeout; recording its ID
+    // is allowed for recovery, but must not advertise a payable expired URL.
+    assert.equal((await command('bind', { orderId: reserved.orderId, providerOrderId: 'late', checkoutUrl: 'https://example.test/pay' })).expired, true);
+    await command('payment', { orderId: reserved.orderId, providerOrderId: 'late', amount: 100, currency: 'UYU', status: 'processed' });
+    assert.equal(await sql("select payment_status from public.orders;"), 'paid', 'late paid truth is valid while stock remains held');
+    await reset();
+    const unstarted = await command('reserve', request());
+    await sql("update public.commerce_checkout_sessions set expires_at=now()-interval '1 second';");
+    await command('expire', { orderId: unstarted.orderId });
+    assert.equal(await sql('select inventory from public.products;'), '1');
   });
   await t.test('anonymous roles cannot mutate reservations or attest readiness', async () => {
     for (const role of ['anon', 'authenticated']) {
