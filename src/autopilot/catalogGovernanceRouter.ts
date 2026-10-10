@@ -54,7 +54,7 @@ export function createCatalogGovernanceRouter(): Router {
     try {
       const body = req.body || {};
       if (!body.observation) return res.status(400).json({ error: 'observation is required' });
-      const proposal = buildRepricingProposal(body.observation);
+      const proposal = buildRepricingProposal(body.observation, body.costEvidence);
       const persisted = body.persist === true && proposal.status === 'review_required'
         ? await persistRepricingProposal(proposal)
         : null;

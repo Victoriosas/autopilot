@@ -1,6 +1,32 @@
 import { calculatePricingQuote, type PricingQuote } from './pricingEngine';
 import type { CatalogObservation } from './catalogMonitor';
 
+// Explicit owner/supplier cost sheet, in the same currency as the observation.
+// A zero is accepted only when supplied explicitly; missing costs never use defaults.
+export interface RepricingCostEvidence {
+  currency: string;
+  sourceReference: string;
+  supplierShipping: number;
+  customsRatePct: number;
+  paymentFeePct: number;
+  paymentFeeFixed: number;
+  returnReservePct: number;
+  acquisitionCost: number;
+  taxRatePct: number;
+}
+
+export function validRepricingCosts(value: unknown, currency: string): value is RepricingCostEvidence {
+  if (!value || typeof value !== 'object') return false;
+  const c = value as RepricingCostEvidence;
+  if (!/^[A-Z]{3}$/.test(currency) || c.currency !== currency
+    || typeof c.sourceReference !== 'string' || !c.sourceReference.trim()) return false;
+  const amounts = [c.supplierShipping, c.paymentFeeFixed, c.acquisitionCost];
+  const rates = [c.customsRatePct, c.paymentFeePct, c.returnReservePct, c.taxRatePct];
+  return amounts.every(n => typeof n === 'number' && Number.isFinite(n) && n >= 0)
+    && rates.every(n => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 100)
+    && c.paymentFeePct + c.returnReservePct + c.taxRatePct < 60;
+}
+
 export type RepricingProposalStatus = 'no_change' | 'review_required' | 'block_sale';
 
 export interface RepricingProposal {
@@ -12,6 +38,7 @@ export interface RepricingProposal {
   deltaPct?: number;
   reason: string;
   quote?: PricingQuote;
+  costEvidence?: RepricingCostEvidence;
   provenance: {
     supplierCost: 'observed' | 'unknown';
     stock: 'observed' | 'unknown';
@@ -37,7 +64,7 @@ function policy(ownerApprovalRequired: boolean) {
   };
 }
 
-export function buildRepricingProposal(observation: CatalogObservation): RepricingProposal {
+export function buildRepricingProposal(observation: CatalogObservation, costs?: RepricingCostEvidence): RepricingProposal {
   const currency = String(observation.currency || process.env.STORE_CURRENCY || 'UYU').toUpperCase();
   const provenance = {
     supplierCost: observation.provenance.supplierCost === 'observed' ? 'observed' as const : 'unknown' as const,
@@ -68,7 +95,20 @@ export function buildRepricingProposal(observation: CatalogObservation): Reprici
     };
   }
 
+  if (!validRepricingCosts(costs, currency) || observation.currency !== currency
+    || provenance.supplierCost !== 'observed'
+    || !Number.isFinite(observation.currentPrice) || observation.currentPrice <= 0
+    || !Number.isFinite(observation.observedSupplierCost)) {
+    return {
+      productId: observation.productId, status: 'no_change',
+      currentPrice: observation.currentPrice, currency, provenance,
+      reason: 'Faltan costos completos documentados, moneda coincidente o precio válido; no se propone repricing comercial.',
+      policy: policy(false),
+    };
+  }
+
   const quote = calculatePricingQuote({
+    ...costs,
     supplierCost: observation.observedSupplierCost,
     targetNetMarginPct: 35,
     strategy: 'balanced',
@@ -95,6 +135,7 @@ export function buildRepricingProposal(observation: CatalogObservation): Reprici
       ? `Cambio sugerido de ${deltaPct}% por variación observada del costo y margen objetivo.`
       : `La variación sugerida (${deltaPct}%) está dentro del umbral de estabilidad.`,
     quote,
+    costEvidence: { ...costs },
     provenance,
     policy: policy(ownerApprovalRequired),
   };
