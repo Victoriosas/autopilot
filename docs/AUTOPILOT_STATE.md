@@ -3,7 +3,7 @@
 Actualizado: 2026-10-10, America/Montevideo. Leer este archivo y verificar Git antes de continuar. No asumir ejecución fuera de la sesión.
 
 ## Referencia y restricciones
-- Continuado desde 42be14e, rama codex/autopilot-v4-durable-orchestrator. Último código: 494801a. Sin push, merge, despliegue, migraciones externas ni pagos reales.
+- Continuado desde 42be14e, rama codex/autopilot-v4-durable-orchestrator. Último código: 494801a. Solicitud posterior: subir a Git/Vercel. Push realizado y preview verificado; sin merge a main, despliegue de producción, migraciones externas ni pagos reales.
 - Preservados .audit/, .playwright-cli/ y scripts raíz ajenos sin seguimiento.
 - ECC tdd-workflow y database-migrations aplicados. Mantener pruebas antes de implementación, migraciones aditivas y pagos bloqueados hasta evidencia real. Sin compras a proveedores ni cambios sensibles.
 
@@ -36,3 +36,11 @@ Actualizado: 2026-10-10, America/Montevideo. Leer este archivo y verificar Git a
 5. Preparar scheduler autenticado y operación de tareas manuales cuando se autorice infraestructura. Cola done significa preparación manual durable, no envío ni compra externa.
 
 No hay datos reales suficientes de ventas/conversión/ingresos. Continuar recuperación segura y compatibilidad legacy sin desplegar ni ejecutar pagos reales.
+
+## Git/Vercel — solicitud posterior
+- Rama subida a origin; PR #65 actualizado: https://github.com/Victoriosas/autopilot/pull/65 .
+- Preview Vercel READY del commit 523fba46ad4cb0a9a9940c9cc03d41b12cd76a6e: https://autopilot-7xif12ofi-autopilot12.vercel.app .
+- GET autenticado por conector /api/health y /api/payments/mercadopago/config: HTTP 200, checkoutEnabled false y configured false, CHECKOUT_DISABLED. Protección Vercel vigente.
+- GitHub validate pasó en ambos runs. Preview Supabase omitido por integración; no equivale a validación de migraciones.
+- Producción conserva versión previa. No promover mientras falten compatibilidad legacy/esquema y validación del proveedor.
+
