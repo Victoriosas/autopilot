@@ -47,7 +47,7 @@ begin
  if command='reserve' then
   key:=args->>'key';
   if key is null or key !~ '^[a-zA-Z0-9_-]{16,128}$' then raise exception 'IDEMPOTENCY_KEY_REQUIRED'; end if;
-  if args->>'provider'<>'mercadopago' or args->>'currency'<>'UYU' then raise exception 'CHECKOUT_PROVIDER_NOT_SUPPORTED'; end if;
+  if args->>'provider' is distinct from 'mercadopago' or args->>'currency' is distinct from 'UYU' then raise exception 'CHECKOUT_PROVIDER_NOT_SUPPORTED'; end if;
   if jsonb_typeof(args->'items') is distinct from 'array' or jsonb_array_length(args->'items') not between 1 and 50 then raise exception 'INVALID_CHECKOUT_ITEMS'; end if;
   shipping:=coalesce((args->>'shipping')::numeric,0);
   if shipping<0 or shipping::text in ('NaN','Infinity','-Infinity') then raise exception 'INVALID_SHIPPING'; end if;
@@ -95,7 +95,7 @@ begin
  end if;
  if command in ('finish_fulfillment','retry_fulfillment') then
   select * into strict j from public.commerce_fulfillment_jobs where id=(args->>'id')::uuid for update;
-  if j.state<>'running' or j.owner is distinct from args->>'owner' or j.generation<>(args->>'generation')::integer or j.lease_until<now() then raise exception 'FULFILLMENT_FENCE_REJECTED'; end if;
+  if j.state<>'running' or j.owner is distinct from args->>'owner' or j.generation is distinct from (args->>'generation')::integer or j.lease_until is null or j.lease_until<clock_timestamp() then raise exception 'FULFILLMENT_FENCE_REJECTED'; end if;
   update public.commerce_fulfillment_jobs set state=case when command='finish_fulfillment' then 'done' else 'pending' end,
    last_error=case when command='retry_fulfillment' then 'FULFILLMENT_RETRY_REQUIRED' else null end,result=args->'result',lease_until=null where id=j.id;
   return jsonb_build_object('ok',true);
