@@ -50,3 +50,38 @@ test('atomic HTTP checkout forwards only server-approved intent and reuses the p
     server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve()));
   }
 });
+
+test('HTTP key replacement is authorized only by verified released database state', async () => {
+  let snapshot: any = { state: 'released', expired: true };
+  let forged = false;
+  let gatewayCalls = 0;
+  const app = express(); app.use(express.json());
+  app.use('/mp', createMercadoPagoRouter({
+    available: async () => ({ requested: true, available: true, reason: null }),
+    command: async () => {
+      if (forged) throw Object.assign(new Error('CHECKOUT_RESERVATION_RELEASED'), { retryAllowed: true });
+      return snapshot;
+    },
+    gateway: { async create() { gatewayCalls++; throw new Error('must not call'); }, async lookup() { throw new Error('unused'); } },
+  }));
+  const server = createServer(app).listen(0, '127.0.0.1'); await once(server, 'listening');
+  const { port } = server.address() as { port: number };
+  const post = () => fetch(`http://127.0.0.1:${port}/mp/order`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': 'stable-client-checkout-key' },
+    body: JSON.stringify({ customer: { name: 'Test', email: 'buyer@example.test', phone: '099123456', address: 'Calle 1', city: 'Montevideo', postalCode: '11000', country: 'UY' }, items: [{ productId: '11111111-1111-4111-8111-111111111111', quantity: 1 }], retryAllowed: true }),
+  });
+  try {
+    const released = await post(); assert.equal(released.status, 409);
+    assert.equal((await released.json()).retryAllowed, true);
+    for (const state of ['held', 'paid']) {
+      snapshot = { state, expired: true };
+      const response = await post();
+      assert.notEqual((await response.json()).retryAllowed, true);
+    }
+    forged = true;
+    assert.notEqual((await (await post()).json()).retryAllowed, true);
+    assert.equal(gatewayCalls, 0);
+  } finally {
+    server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve()));
+  }
+});

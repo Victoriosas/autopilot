@@ -47,6 +47,26 @@ test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
     assert.equal(await sql('select count(*) from public.orders;'), '1');
     await assert.rejects(command('reserve', { ...input, items: [{ productId, quantity: 2 }] }), /IDEMPOTENCY_CONFLICT/);
   });
+  await t.test('multi-product reservation failure rolls back all preceding stock changes', async () => {
+    await reset(2);
+    const secondId = '22222222-2222-4222-8222-222222222222';
+    await sql(`insert into public.products(id,title,price,currency,status,inventory) values('${secondId}','Sin stock',100,'UYU','published',0);`);
+    await assert.rejects(command('reserve', { ...request(), items: [{ productId, quantity: 1 }, { productId: secondId, quantity: 1 }] }), /PRODUCT_OUT_OF_STOCK/);
+    assert.equal(await sql(`select inventory from public.products where id='${productId}';`), '2');
+    assert.equal(await sql('select count(*) from public.orders;'), '0');
+    assert.equal(await sql('select count(*) from public.commerce_checkout_sessions;'), '0');
+  });
+  await t.test('invalid quantities and unsupported variants reject without reservation effects', async () => {
+    await reset(20);
+    for (const quantity of [0, -1, 21, 1.5, '1', null]) {
+      await assert.rejects(command('reserve', { ...request(), items: [{ productId, quantity }] }), /INVALID_CHECKOUT_ITEM/);
+    }
+    await assert.rejects(command('reserve', { ...request(), items: [{ productId, quantity: 1, selectedVariant: 'Large' }] }), /INVALID_CHECKOUT_ITEM/);
+    await assert.rejects(command('reserve', { ...request(), items: [{ productId, quantity: 1 }, { productId, quantity: 1 }] }), /INVALID_CHECKOUT_ITEMS/);
+    assert.equal(await sql('select inventory from public.products;'), '20');
+    assert.equal(await sql('select count(*) from public.orders;'), '0');
+    assert.equal(await sql('select count(*) from public.commerce_checkout_sessions;'), '0');
+  });
   await t.test('failure and expiry release a reservation once; released orders cannot confirm', async () => {
     for (const action of ['reject', 'expire']) {
       await reset();

@@ -73,7 +73,11 @@ const BLOCKED_ROUTES = new Map<string, {
 
 export function createLegacySafetyGate() {
   return (req: Request, res: Response, next: NextFunction) => {
-    const key = `${req.method.toUpperCase()} ${req.path}`;
+    // Express treats path case and a trailing slash as aliases; HEAD runs GET
+    // handlers, which must retain the same safety restrictions.
+    const pathname = req.path.toLowerCase().replace(/\/+$/, '') || '/';
+    const method = req.method.toUpperCase() === 'HEAD' ? 'GET' : req.method.toUpperCase();
+    const key = `${method} ${pathname}`;
     const block = BLOCKED_ROUTES.get(key);
 
     if (block) {

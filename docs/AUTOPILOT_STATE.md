@@ -44,3 +44,18 @@ No hay datos reales suficientes de ventas/conversión/ingresos. Continuar recupe
 - GitHub validate pasó en ambos runs. Preview Supabase omitido por integración; no equivale a validación de migraciones.
 - Producción conserva versión previa. No promover mientras falten compatibilidad legacy/esquema y validación del proveedor.
 
+
+## Revisión posterior al merge — 2026-10-10
+
+Base verificada: main 722f2ce (PR #65 integrado). Trabajo aislado en codex/post-merge-review-20261010; copia previa con cambios preservada. ECC no instalado en este entorno: cinco agentes generalistas de Codex cubrieron pagos, seguridad/CI, storefront/E2E, SQL y revisión independiente.
+
+- Pagos terminales con dinero cobrado no liberan stock; importes coercibles se rechazan antes de RPC.
+- Claves solo se retiran tras reserva released verificada, error tipado y HTTP409; no hay nuevo pago automático. Resultados inciertos conservan clave/stock.
+- Barreras legacy normalizan mayúsculas, barra final y HEAD; guard administrativo delimita V4 por segmento. Suite security incluida en npm test.
+- Comparables UYU no se mezclan con otra moneda; código de error explícito.
+- Diálogos tienen foco/Escape/nombres y scroll móvil; cantidad adicional descuenta carrito agregado.
+- CI incorpora comercio PostgreSQL en base dedicada después de sourcing; roles fixture idempotentes y restricciones relevantes legacy. Añadidas pruebas rollback multítem e inputs inválidos. Runner conserva diagnóstico de arranque y no declara cluster detenido si no arrancó.
+
+Validación local: main limpio 95/95 pruebas. Rama modificada: suite completa/TypeScript/builds y secret scan según ejecución final; E2E Chromium aislado desktop1440/mobile390 aprobado (incluye cambio de clave y ausencia de reintento automático), capturas sintéticas docs/evidence. PostgreSQL local no ejecutable (initdb no instalado y runtime no permite cambio UID); validación SQL requiere GitHub CI aislado. Sin migraciones externas, pagos reales, compras, merge ni promoción a producción.
+
+Siguiente: verificar resultado CI PostgreSQL de esta rama y corregir cualquier fallo; comprobar esquema Supabase completo/compatibilidad de pedidos legacy y sandbox Mercado Pago antes de activar comercio. Recuperación administrativa sin provider ID, scheduler operativo y envío fraccionario requieren ciclos posteriores.

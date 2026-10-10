@@ -14,6 +14,13 @@ export function cartLimit(product: Pick<Product, 'inventory' | 'status'>): numbe
   return Math.min(20, inventory);
 }
 
+/** Additional units available across all variants already in the bag. */
+export function remainingCartQuantity(product: Product, cart: CartItem[]): number {
+  const existing = cart.filter((item) => item.product.id === product.id)
+    .reduce((sum, item) => sum + item.quantity, 0);
+  return Math.max(0, cartLimit(product) - existing);
+}
+
 export function restoreCart(value: unknown, products: Product[]): CartItem[] {
   if (!Array.isArray(value)) return [];
   const published = new Map(

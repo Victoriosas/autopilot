@@ -1,4 +1,5 @@
 import React from 'react';
+import { useStoreDialog } from './useStoreDialog';
 import { X, Trash2, ShoppingBag, ArrowRight, ShieldCheck, Truck, LockKeyhole } from 'lucide-react';
 import { calculateCartTotals, STORE_CURRENCY, FREE_SHIPPING_FROM } from '../../services/revenue';
 import { useApp } from '../../context/AppContext';
@@ -11,6 +12,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onProceedToCheckout }) =
   const { cart, isCartOpen, setIsCartOpen, updateCartQuantity, removeFromCart } = useApp();
   const checkoutEnabled = import.meta.env.VITE_CHECKOUT_ENABLED === 'true';
 
+  const dialogRef = useStoreDialog(() => setIsCartOpen(false), isCartOpen);
+
   if (!isCartOpen) return null;
 
   const totals = calculateCartTotals(cart);
@@ -21,6 +24,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onProceedToCheckout }) =
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-xl animate-fadeIn">
       <div
+        ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="cart-dialog-title" tabIndex={-1}
         className="w-full max-w-md bg-[#0d111d]/90 h-full border-l border-white/10 flex flex-col justify-between shadow-2xl backdrop-blur-2xl animate-slideLeft"
         onClick={(e) => e.stopPropagation()}
       >
@@ -29,12 +33,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onProceedToCheckout }) =
             <div className="w-8 h-8 rounded-lg bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
               <ShoppingBag className="w-4 h-4" />
             </div>
-            <h2 className="font-serif font-bold text-lg text-white">Tu Bolsa Victoriosa</h2>
+            <h2 id="cart-dialog-title" className="font-serif font-bold text-lg text-white">Tu Bolsa Victoriosa</h2>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/10 text-indigo-300 font-mono border border-white/10">
               {cart.reduce((a, b) => a + b.quantity, 0)}
             </span>
           </div>
-          <button onClick={() => setIsCartOpen(false)} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
+          <button aria-label="Cerrar bolsa" onClick={() => setIsCartOpen(false)} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -76,11 +80,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onProceedToCheckout }) =
                   <span className="text-xs font-bold text-white block mt-1 font-mono">{STORE_CURRENCY} {item.product.price.toFixed(2)}</span>
                   <div className="flex items-center gap-3 mt-2">
                     <div className="flex items-center border border-white/10 rounded-lg bg-black/40">
-                      <button onClick={() => updateCartQuantity(item.product.id, item.quantity - 1, item.selectedVariant)} className="px-2 py-0.5 text-xs text-slate-400 hover:text-white">-</button>
+                      <button aria-label={`Reducir cantidad de ${item.product.title}`} onClick={() => updateCartQuantity(item.product.id, item.quantity - 1, item.selectedVariant)} className="px-2 py-0.5 text-xs text-slate-400 hover:text-white">-</button>
                       <span className="px-2 text-xs font-mono text-slate-200">{item.quantity}</span>
-                      <button onClick={() => updateCartQuantity(item.product.id, item.quantity + 1, item.selectedVariant)} className="px-2 py-0.5 text-xs text-slate-400 hover:text-white">+</button>
+                      <button aria-label={`Aumentar cantidad de ${item.product.title}`} onClick={() => updateCartQuantity(item.product.id, item.quantity + 1, item.selectedVariant)} className="px-2 py-0.5 text-xs text-slate-400 hover:text-white">+</button>
                     </div>
-                    <button onClick={() => removeFromCart(item.product.id, item.selectedVariant)} className="text-slate-500 hover:text-rose-400 text-xs flex items-center gap-1 transition-colors">
+                    <button aria-label={`Eliminar ${item.product.title} de la bolsa`} onClick={() => removeFromCart(item.product.id, item.selectedVariant)} className="text-slate-500 hover:text-rose-400 text-xs flex items-center gap-1 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>

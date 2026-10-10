@@ -9,7 +9,8 @@ const ADMIN_PREFIXES = [
 ] as const;
 
 function isProtectedAdminPath(pathname: string): boolean {
-  if (pathname.startsWith('/api/autopilot/v4')) return false;
+  pathname = pathname.toLowerCase().replace(/\/+$/, '') || '/';
+  if (pathname === '/api/autopilot/v4' || pathname.startsWith('/api/autopilot/v4/')) return false;
   return ADMIN_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { validateCustomer, validateCheckoutItems, publicPaymentError } from './safety';
-import { createAtomicCheckout, type CheckoutGateway, type CommerceCommand } from './atomicCheckout';
+import { CheckoutTerminalError, createAtomicCheckout, type CheckoutGateway, type CommerceCommand } from './atomicCheckout';
 import { commerceCommand, mercadoPagoCredentialsReady, paymentAvailability } from './availability';
 
 const MP_API = 'https://api.mercadopago.com';
@@ -61,6 +61,7 @@ export function createMercadoPagoRouter(dependencies: {
       });
       return res.status(201).json({ orderId: snapshot.orderId, providerOrderId: snapshot.providerOrderId, checkoutUrl: snapshot.checkoutUrl, total: snapshot.total, currency: snapshot.currency });
     } catch (error) {
+      if (error instanceof CheckoutTerminalError) return res.status(409).json({ error: error.message, message: 'La reserva anterior fue cancelada. Podés iniciar una nueva compra.', retryAllowed: true });
       const code = error instanceof Error ? error.message : '';
       return res.status(code.includes('IDEMPOTENCY_CONFLICT') ? 409 : code.includes('DATABASE') || code.includes('MERCADOPAGO') ? 503 : 400).json(publicPaymentError(error));
     }

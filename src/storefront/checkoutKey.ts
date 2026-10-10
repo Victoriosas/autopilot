@@ -17,3 +17,12 @@ export function forgetCheckoutKey(storage: Pick<Storage, 'getItem' | 'removeItem
   if (storageKey && storage.getItem(storageKey) === key) storage.removeItem(storageKey);
   storage.removeItem(reference);
 }
+
+// Rotate only after a server conflict proves that this reservation was released.
+// The buyer must click again; never create a replacement charge automatically.
+export function retireReleasedCheckoutKey(storage: Pick<Storage, 'getItem' | 'removeItem'>,
+  key: string, status: number, result: { error?: unknown; retryAllowed?: unknown }): boolean {
+  if (status !== 409 || result.error !== 'CHECKOUT_RESERVATION_RELEASED' || result.retryAllowed !== true) return false;
+  forgetCheckoutKey(storage, key);
+  return true;
+}
