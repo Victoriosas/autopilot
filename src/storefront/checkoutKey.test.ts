@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkoutKey } from './checkoutKey';
+import { checkoutKey, forgetCheckoutKey } from './checkoutKey';
 
 test('browser retry and remount keep an opaque key for the same intent; changed intent gets a new key', async () => {
   const values = new Map<string, string>();
@@ -10,4 +10,15 @@ test('browser retry and remount keep an opaque key for the same intent; changed 
   assert.equal(first, concurrent); assert.equal(await checkoutKey(storage, intent), first);
   assert.notEqual(await checkoutKey(storage, { ...intent, items: [{ productId: 'one', quantity: 2 }] }), first);
   assert.ok(![...values.values()].join('').includes('buyer@example.test'));
+});
+
+test('terminal checkout retires only its own key and allows the same intent to be purchased again', async () => {
+  const values = new Map<string, string>();
+  const storage = { getItem: (key: string) => values.get(key) || null, setItem: (key: string, value: string) => { values.set(key, value); }, removeItem: (key: string) => { values.delete(key); } };
+  const first = await checkoutKey(storage, { items: ['one'] });
+  forgetCheckoutKey(storage, first);
+  const second = await checkoutKey(storage, { items: ['one'] });
+  assert.notEqual(first, second);
+  forgetCheckoutKey(storage, first);
+  assert.equal(await checkoutKey(storage, { items: ['one'] }), second);
 });
