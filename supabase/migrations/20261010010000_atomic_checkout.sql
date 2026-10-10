@@ -9,6 +9,7 @@ create table public.commerce_checkout_sessions (
  checkout_url text,
  provider_order_id text,
  provider_started boolean not null default false,
+ expiry_checked_at timestamptz,
  provider_terminal boolean not null default false
 );
 create table public.commerce_fulfillment_jobs (
@@ -54,8 +55,17 @@ begin
     and c.verified_at<=now() and c.valid_until>now() and c.fulfillment_verified));
  end if;
  if command='expired' then
-  return jsonb_build_object('reservations',coalesce((select jsonb_agg(jsonb_build_object('orderId',x.order_id,'providerOrderId',x.provider_order_id,'providerStarted',x.provider_started)) from
-   (select cs.order_id,cs.provider_order_id,cs.provider_started from public.commerce_checkout_sessions cs where cs.state='held' and cs.expires_at<=now() order by cs.expires_at limit 20) x),'[]'::jsonb));
+  with candidates as (
+   select cs.order_id from public.commerce_checkout_sessions cs
+   where cs.state='held' and cs.expires_at<=now()
+   order by cs.expiry_checked_at nulls first,cs.expires_at,cs.order_id
+   limit 20 for update skip locked
+  ), checked as (
+   update public.commerce_checkout_sessions cs set expiry_checked_at=clock_timestamp()
+   from candidates c where cs.order_id=c.order_id
+   returning cs.order_id,cs.provider_order_id,cs.provider_started
+  ) select jsonb_build_object('reservations',coalesce(jsonb_agg(jsonb_build_object('orderId',x.order_id,'providerOrderId',x.provider_order_id,'providerStarted',x.provider_started)),'[]'::jsonb)) into item from checked x;
+  return item;
  end if;
  if command='manual_tasks' then
   return jsonb_build_object('tasks',coalesce((select jsonb_agg(to_jsonb(t)) from
