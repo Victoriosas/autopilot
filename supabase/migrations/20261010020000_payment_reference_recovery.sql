@@ -40,3 +40,23 @@ begin
 end $$;
 revoke all on function public.commerce_recovery_context(jsonb) from public,anon,authenticated;
 grant execute on function public.commerce_recovery_context(jsonb) to service_role;
+
+-- Bound external recovery work per invocation and rotate the selected row only.
+create function public.commerce_maintenance_expired()
+returns jsonb language plpgsql security invoker set search_path='' as $$
+declare result jsonb;
+begin
+ with candidate as (
+  select cs.order_id from public.commerce_checkout_sessions cs
+  where cs.state='held' and cs.expires_at<=now()
+  order by cs.expiry_checked_at nulls first,cs.expires_at,cs.order_id
+  limit 1 for update skip locked
+ ), checked as (
+  update public.commerce_checkout_sessions cs set expiry_checked_at=clock_timestamp()
+  from candidate c where cs.order_id=c.order_id
+  returning cs.order_id,cs.provider_order_id,cs.provider_started
+ ) select jsonb_build_object('reservations',coalesce(jsonb_agg(jsonb_build_object('orderId',x.order_id,'providerOrderId',x.provider_order_id,'providerStarted',x.provider_started)),'[]'::jsonb)) into result from checked x;
+ return result;
+end $$;
+revoke all on function public.commerce_maintenance_expired() from public,anon,authenticated;
+grant execute on function public.commerce_maintenance_expired() to service_role;

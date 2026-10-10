@@ -41,7 +41,7 @@ export async function runCommerceMaintenance(command: CommerceCommand, gateway: 
       } catch { uncertainReservations++; }
     } else uncertainReservations++;
   }
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 1; i++) {
     const result = await runFulfillmentJob(command, owner, job => command('prepare_fulfillment', {
       id: job.id, owner: job.owner, generation: job.generation,
     }));

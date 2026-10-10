@@ -5,7 +5,9 @@ import type { CommerceCommand } from './atomicCheckout';
 export const commerceCommand: CommerceCommand = async (command, args) => {
   const db = createClient(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data, error } = command === 'recovery_context'
+  const { data, error } = command === 'expired'
+    ? await db.rpc('commerce_maintenance_expired')
+    : command === 'recovery_context'
     ? await db.rpc('commerce_recovery_context', { args })
     : command === 'recover_provider'
     ? await db.rpc('commerce_recover_provider_order', { args })
