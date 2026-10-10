@@ -1,311 +1,84 @@
-import { orderIdentity, validateCustomer, publicPaymentError, paypalAvailability, checkoutEnabled, paymentDatabaseConfigured, requireCheckoutEnabled, validateCheckoutItems, assertStock, assertPaymentAmount } from './safety';
-import { createClient } from '@supabase/supabase-js';
 import { Router } from 'express';
-
-interface CheckoutItemInput {
-  productId: string;
-  quantity: number;
-  selectedVariant?: string;
-}
-
-interface CustomerInput {
-  name?: string;
-  fullName?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  postalCode?: string;
-  country?: string;
-}
+import { validateCustomer, validateCheckoutItems, publicPaymentError } from './safety';
+import { createAtomicCheckout, type CheckoutGateway, type CommerceCommand } from './atomicCheckout';
+import { commerceCommand, mercadoPagoCredentialsReady, paymentAvailability } from './availability';
 
 const MP_API = 'https://api.mercadopago.com';
+export const mercadoPagoAvailability = () => paymentAvailability('mercadopago', mercadoPagoCredentialsReady());
 
-function getDb() {
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error('PAYMENT_DATABASE_NOT_CONFIGURED');
-  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-}
-
-function accessToken() {
-  const token = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim();
-  if (!token) throw new Error('MERCADOPAGO_NOT_CONFIGURED');
-  return token;
-}
-
-function publicAppUrl() {
-  const raw = process.env.PUBLIC_APP_URL?.trim();
-  if (!raw) throw new Error('PUBLIC_APP_URL_REQUIRED');
-  const parsed = new URL(raw);
-  if (parsed.protocol !== 'https:' && process.env.NODE_ENV === 'production') {
-    throw new Error('PUBLIC_APP_URL_MUST_USE_HTTPS');
-  }
-  return parsed.toString().replace(/\/$/, '');
-}
-
-function storeConfig() {
-  const currency = (process.env.STORE_CURRENCY || process.env.VITE_STORE_CURRENCY || 'UYU').toUpperCase();
-  const shippingFlat = Math.max(0, Number(process.env.STORE_SHIPPING_FLAT || process.env.VITE_SHIPPING_FLAT || '0') || 0);
-  const freeShippingFrom = Math.max(0, Number(process.env.STORE_FREE_SHIPPING_FROM || process.env.VITE_FREE_SHIPPING_FROM || '0') || 0);
-  return { currency, shippingFlat, freeShippingFrom };
-}
-
-
-async function priceCheckout(itemsInput: CheckoutItemInput[]) {
-  const db = getDb();
-  const ids = [...new Set(itemsInput.map((item) => item.productId))];
-  const { data: products, error } = await db.from('products').select('id,title,price,sku,images,status,inventory,currency').in('id', ids);
-  if (error) throw new Error('PRODUCT_LOOKUP_FAILED');
-  if (!products || products.length !== ids.length) throw new Error('PRODUCT_NOT_FOUND');
-
-  const map = new Map(products.map((product: any) => [product.id, product]));
-  const items = itemsInput.map((input) => {
-    const product: any = map.get(input.productId);
-    if (!product || product.status !== 'published') throw new Error('PRODUCT_NOT_AVAILABLE');
-    assertStock(product, input.quantity);
-    const price = Number(product.price);
-    if (!Number.isFinite(price) || price <= 0) throw new Error('INVALID_PRODUCT_PRICE');
-    return {
-      productId: product.id,
-      title: String(product.title || 'Producto Victoriosa').slice(0, 120),
-      price,
-      quantity: input.quantity,
-      image: Array.isArray(product.images) ? product.images[0] || '' : '',
-      selectedVariant: input.selectedVariant,
-      sku: String(product.sku || ''),
-    };
-  });
-
-  const cfg = storeConfig();
-  const subtotal = Number(items.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2));
-  const shipping = cfg.freeShippingFrom > 0 && subtotal >= cfg.freeShippingFrom ? 0 : cfg.shippingFlat;
-  const total = Number((subtotal + shipping).toFixed(2));
-  if (total <= 0) throw new Error('INVALID_ORDER_TOTAL');
-  return { db, cfg, items, subtotal, shipping, total };
-}
-
-async function createLocalOrder(customer: CustomerInput, priced: Awaited<ReturnType<typeof priceCheckout>>) {
-  const { id: orderId, orderNumber } = orderIdentity('MP');
-  const { error } = await priced.db.from('orders').insert({
-    id: orderId,
-    order_number: orderNumber,
-    customer_email: customer.email,
-    customer_name: customer.fullName || customer.name,
-    customer_phone: customer.phone,
-    customer_address: customer.address,
-    customer_city: customer.city,
-    customer_postal_code: customer.postalCode,
-    customer_country: customer.country,
-    items: priced.items,
-    subtotal: priced.subtotal,
-    shipping_cost: priced.shipping,
-    discount: 0,
-    total: priced.total,
-    currency: priced.cfg.currency,
-    payment_method: 'mercadopago',
-    payment_status: 'pending',
-    payment_id: null,
-    payment_gateway: 'mercadopago',
-    status: 'pending_payment',
-    tracking_number: '',
-    estimated_delivery: '',
-    created_at: new Date().toISOString(),
-  });
-  if (error) throw new Error('ORDER_CREATE_FAILED');
-  return orderId;
-}
-
-async function audit(eventType: string, entityId: string, values: Record<string, unknown>) {
-  try {
-    await getDb().from('audit_logs').insert({ event_type: eventType, entity_id: entityId, new_values: values });
-  } catch (error) {
-    console.warn('Mercado Pago audit write failed:', error);
-  }
-}
-
-async function fetchMpOrder(orderId: string) {
-  const response = await fetch(`${MP_API}/v1/orders/${encodeURIComponent(orderId)}`, {
-    headers: { Authorization: `Bearer ${accessToken()}`, Accept: 'application/json' },
-  });
-  const data: any = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(`MERCADOPAGO_ORDER_LOOKUP_FAILED:${response.status}`);
-  return data;
-}
-
-async function reconcileMpOrder(mpOrderId: string) {
-  const provider = await fetchMpOrder(mpOrderId);
-  const localOrderId = String(provider.external_reference || '').trim();
-  if (!localOrderId) throw new Error('MERCADOPAGO_EXTERNAL_REFERENCE_MISSING');
-
-  const db = getDb();
-  const { data: local, error } = await db
-    .from('orders')
-    .select('id,total,currency,payment_method,payment_status,provider_order_id')
-    .eq('id', localOrderId)
-    .single();
-  if (error || !local) throw new Error('ORDER_NOT_FOUND');
-  if (local.payment_method !== 'mercadopago') throw new Error('ORDER_PROVIDER_MISMATCH');
-
-  if (local.provider_order_id !== mpOrderId) throw new Error('ORDER_PROVIDER_ID_MISMATCH');
-  const expected = Number(local.total);
-  const providerTotal = Number(provider.total_amount);
-  const paidTotal = Number(provider.total_paid_amount ?? 0);
-  if (!Number.isFinite(expected) || expected <= 0 || !Number.isFinite(providerTotal) || providerTotal <= 0 || Math.round(providerTotal * 100) !== Math.round(expected * 100)) {
-    await audit('MERCADOPAGO_AMOUNT_MISMATCH', localOrderId, { mpOrderId, expected, providerTotal, paidTotal });
-    throw new Error('MERCADOPAGO_AMOUNT_MISMATCH');
-  }
-
-  if (!Number.isFinite(paidTotal) || paidTotal < 0) throw new Error('MERCADOPAGO_PAID_AMOUNT_INVALID');
-
-  if (local.currency !== 'UYU' || (provider.currency_id && provider.currency_id !== local.currency)) throw new Error('PAYMENT_CURRENCY_MISMATCH');
-  const processed = provider.status === 'processed' && paidTotal + 0.001 >= expected;
-  if (processed && local.payment_status !== 'paid') {
-    const { error: updateError } = await db.from('orders').update({
-      payment_status: 'paid',
-      payment_id: mpOrderId,
-      payment_gateway: 'mercadopago',
-      status: 'confirmed',
-    }).eq('id', localOrderId).eq('payment_method', 'mercadopago').eq('payment_status', 'pending');
-    if (updateError) throw new Error('ORDER_PAYMENT_UPDATE_FAILED');
-    await audit('REVENUE_PAYMENT_COMPLETED', localOrderId, { provider: 'mercadopago', mpOrderId, total: expected, currency: local.currency });
-  }
-
-  return {
-    orderId: localOrderId,
-    providerOrderId: mpOrderId,
-    providerStatus: provider.status,
-    paymentStatus: processed ? 'paid' : 'pending',
-    total: expected,
-    currency: local.currency,
-  };
-}
-
-export function createMercadoPagoRouter(): Router {
-  const router = Router();
-
-  router.get('/config', (_req, res) => {
-    let configured = false;
-    try {
-      accessToken();
-      publicAppUrl();
-      configured = checkoutEnabled() && paymentDatabaseConfigured() && storeConfig().currency === 'UYU';
-    } catch { /* Invalid provider configuration must not advertise an available payment method. */ }
-    res.json({
-      configured,
-      provider: 'mercadopago',
-      checkout: 'pro-orders',
-      storeCurrency: storeConfig().currency,
+export const mercadoPagoGateway: CheckoutGateway = {
+  async create(snapshot, request) {
+    const appUrl = String(request.returnUrl);
+    const items = snapshot.items.map((item: any) => ({ title: item.title, unit_price: Number(item.price).toFixed(2), quantity: item.quantity, unit_measure: 'unit', total_amount: (Number(item.price) * item.quantity).toFixed(2) }));
+    if (snapshot.shipping > 0) items.push({ title: 'Envío', unit_price: Number(snapshot.shipping).toFixed(2), quantity: 1, unit_measure: 'unit', total_amount: Number(snapshot.shipping).toFixed(2) });
+    const response = await fetch(`${MP_API}/v1/orders`, {
+      method: 'POST', signal: AbortSignal.timeout(15000),
+      headers: { Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`, 'Content-Type': 'application/json', Accept: 'application/json', 'X-Idempotency-Key': snapshot.orderId },
+      body: JSON.stringify({ type: 'online', processing_mode: 'manual', capture_mode: 'automatic_async',
+        total_amount: Number(snapshot.total).toFixed(2), external_reference: snapshot.orderId,
+        payer: { email: (request.customer as any).email }, items, description: `Pedido Victoriosa ${snapshot.orderId}`,
+        config: { notification_url: `${appUrl}/api/payments/mercadopago/webhook`, online: {
+          success_url: `${appUrl}/?payment=success&provider=mercadopago&order=${encodeURIComponent(snapshot.orderId)}`,
+          failure_url: `${appUrl}/?payment=failure&provider=mercadopago&order=${encodeURIComponent(snapshot.orderId)}`,
+          pending_url: `${appUrl}/?payment=pending&provider=mercadopago&order=${encodeURIComponent(snapshot.orderId)}`, auto_return: 'all',
+        } },
+      }),
     });
-  });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || typeof data.id !== 'string' || typeof data.checkout_url !== 'string') throw new Error('MERCADOPAGO_ORDER_CREATE_FAILED');
+    return { id: data.id, checkoutUrl: data.checkout_url };
+  },
+  async lookup(id) {
+    if (!process.env.MERCADOPAGO_ACCESS_TOKEN?.trim()) throw new Error('MERCADOPAGO_NOT_CONFIGURED');
+    const response = await fetch(`${MP_API}/v1/orders/${encodeURIComponent(id)}`, { signal: AbortSignal.timeout(15000), headers: { Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`, Accept: 'application/json' } });
+    if (!response.ok) throw new Error('MERCADOPAGO_ORDER_LOOKUP_FAILED');
+    return response.json();
+  },
+};
 
+// Dependencies are server-only test seams; request flags never replace capability checks.
+export function createMercadoPagoRouter(dependencies: {
+  command?: CommerceCommand; gateway?: CheckoutGateway;
+  available?: () => Promise<{ requested: boolean; available: boolean; reason: string | null }>;
+} = {}): Router {
+  const router = Router();
+  const availability = dependencies.available || mercadoPagoAvailability;
+  const checkout = createAtomicCheckout(dependencies.command || commerceCommand, dependencies.gateway || mercadoPagoGateway);
+  router.get('/config', async (_req, res) => {
+    const state = await availability();
+    res.json({ configured: state.available, checkoutRequested: state.requested, unavailableReason: state.reason, provider: 'mercadopago', checkout: 'atomic-pro-orders', storeCurrency: 'UYU' });
+  });
   router.post('/order', async (req, res) => {
-    let localOrderId: string | null = null;
     try {
-      requireCheckoutEnabled();
-      accessToken();
-      publicAppUrl();
-      if (storeConfig().currency !== 'UYU') throw new Error('MERCADOPAGO_CURRENCY_NOT_CONFIGURED');
-      const customer = validateCustomer(req.body?.customer);
-      const requestedItems = validateCheckoutItems(req.body?.items);
-      const priced = await priceCheckout(requestedItems);
-      localOrderId = await createLocalOrder(customer, priced);
-      const appUrl = publicAppUrl();
-
-      const mpItems = priced.items.map((item) => ({
-        title: item.title,
-        unit_price: item.price.toFixed(2),
-        quantity: item.quantity,
-        unit_measure: 'unit',
-        total_amount: (item.price * item.quantity).toFixed(2),
-      }));
-      if (priced.shipping > 0) {
-        mpItems.push({
-          title: 'Envío',
-          unit_price: priced.shipping.toFixed(2),
-          quantity: 1,
-          unit_measure: 'unit',
-          total_amount: priced.shipping.toFixed(2),
-        });
-      }
-
-      const response = await fetch(`${MP_API}/v1/orders`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken()}`,
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          'X-Idempotency-Key': localOrderId,
-        },
-        body: JSON.stringify({
-          type: 'online',
-          processing_mode: 'manual',
-          capture_mode: 'automatic_async',
-          total_amount: priced.total.toFixed(2),
-          external_reference: localOrderId,
-          payer: { email: customer.email },
-          items: mpItems,
-          description: `Pedido Victoriosa ${localOrderId}`,
-          config: {
-            notification_url: `${appUrl}/api/payments/mercadopago/webhook`,
-            online: {
-              success_url: `${appUrl}/?payment=success&provider=mercadopago&order=${encodeURIComponent(localOrderId)}`,
-              failure_url: `${appUrl}/?payment=failure&provider=mercadopago&order=${encodeURIComponent(localOrderId)}`,
-              pending_url: `${appUrl}/?payment=pending&provider=mercadopago&order=${encodeURIComponent(localOrderId)}`,
-              auto_return: 'all',
-            },
-          },
-        }),
+      if (!(await availability()).available) return res.status(503).json({ error: 'CHECKOUT_NOT_CONFIGURED', message: 'Los pagos online todavía no están disponibles.' });
+      const key = req.header('Idempotency-Key') || '';
+      if (!/^[a-zA-Z0-9_-]{16,128}$/.test(key)) return res.status(400).json({ error: 'IDEMPOTENCY_KEY_REQUIRED' });
+      const snapshot = await checkout.start({ key, provider: 'mercadopago', currency: 'UYU',
+        customer: validateCustomer(req.body?.customer), items: validateCheckoutItems(req.body?.items),
+        shipping: Number(process.env.STORE_SHIPPING_FLAT || process.env.VITE_SHIPPING_FLAT || '0'),
+        freeShippingFrom: Number(process.env.STORE_FREE_SHIPPING_FROM || process.env.VITE_FREE_SHIPPING_FROM || '0'),
+        returnUrl: (process.env.PUBLIC_APP_URL || '').replace(/\/$/, ''),
       });
-      const provider: any = await response.json().catch(() => ({}));
-      if (!response.ok || !provider.id || !provider.checkout_url) {
-        await audit('MERCADOPAGO_ORDER_CREATE_FAILED', localOrderId, { status: response.status, code: provider.code || null });
-        return res.status(502).json({ error: 'MERCADOPAGO_ORDER_CREATE_FAILED', orderId: localOrderId });
-      }
-
-      const { error: bindError } = await priced.db.from('orders').update({ provider_order_id: String(provider.id), provider_amount: priced.total, provider_currency: priced.cfg.currency }).eq('id', localOrderId);
-      if (bindError) throw new Error('ORDER_PROVIDER_BIND_FAILED');
-      await audit('MERCADOPAGO_ORDER_CREATED', localOrderId, { providerOrderId: provider.id, total: priced.total, currency: priced.cfg.currency });
-      return res.status(201).json({
-        orderId: localOrderId,
-        providerOrderId: provider.id,
-        checkoutUrl: provider.checkout_url,
-        total: priced.total,
-        currency: priced.cfg.currency,
-      });
-    } catch (error: any) {
-      const message = String(error?.message || 'MERCADOPAGO_ORDER_FAILED');
-      if (localOrderId) await audit('MERCADOPAGO_ORDER_CREATE_FAILED', localOrderId, { error: message });
-      const status = message.includes('NOT_CONFIGURED') || message.includes('PUBLIC_APP_URL') ? 503 : 400;
-      return res.status(status).json({ ...publicPaymentError(error), orderId: localOrderId });
+      return res.status(201).json({ orderId: snapshot.orderId, providerOrderId: snapshot.providerOrderId, checkoutUrl: snapshot.checkoutUrl, total: snapshot.total, currency: snapshot.currency });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : '';
+      return res.status(code.includes('IDEMPOTENCY_CONFLICT') ? 409 : code.includes('DATABASE') || code.includes('MERCADOPAGO') ? 503 : 400).json(publicPaymentError(error));
     }
   });
-
   router.post('/webhook', async (req, res) => {
-    // The notification is treated only as a hint. Payment truth is fetched from Mercado Pago with the server Access Token.
     const candidate = req.body?.data?.id || req.body?.id || req.query?.['data.id'] || req.query?.id;
-    const mpOrderId = typeof candidate === 'string' || typeof candidate === 'number' ? String(candidate) : '';
-    if (!mpOrderId) return res.status(200).json({ received: true, reconciled: false });
+    if (!candidate || !['string', 'number'].includes(typeof candidate)) return res.json({ received: true, reconciled: false });
     try {
-      const result = await reconcileMpOrder(mpOrderId);
-      return res.status(200).json({ received: true, reconciled: true, ...result });
-    } catch (error: any) {
-      console.warn('Mercado Pago webhook reconcile failed:', error?.message || error);
-      // Preserve provider retries after transient database/API failures.
-      return res.status(503).json({ received: true, reconciled: false });
-    }
+      // Previously created orders still reconcile when new sales are disabled.
+      const result = await checkout.reconcile(String(candidate));
+      return res.json({ received: true, reconciled: true, ...result });
+    } catch { return res.status(503).json({ received: true, reconciled: false }); }
   });
-
   router.post('/reconcile', async (req, res) => {
-    try {
-      const mpOrderId = typeof req.body?.providerOrderId === 'string' ? req.body.providerOrderId.trim() : '';
-      if (!mpOrderId) return res.status(400).json({ error: 'PROVIDER_ORDER_ID_REQUIRED' });
-      const result = await reconcileMpOrder(mpOrderId);
-      return res.json(result);
-    } catch (error: any) {
-      return res.status(400).json(publicPaymentError(error));
-    }
+    const id = typeof req.body?.providerOrderId === 'string' ? req.body.providerOrderId.trim() : '';
+    if (!id) return res.status(400).json({ error: 'PROVIDER_ORDER_ID_REQUIRED' });
+    try { return res.json(await checkout.reconcile(id)); }
+    catch (error) { return res.status(400).json(publicPaymentError(error)); }
   });
-
   return router;
 }
