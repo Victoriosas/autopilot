@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { Router } from 'express';
 import { requireSupabaseAdminAuth } from '../security/adminAuth';
 import { createAtomicCheckout, runFulfillmentJob, type CheckoutGateway, type CommerceCommand } from './atomicCheckout';
@@ -51,18 +51,39 @@ export async function runCommerceMaintenance(command: CommerceCommand, gateway: 
   return { expiryChecks, uncertainReservations, manualTasks };
 }
 
-export function createCommerceMaintenanceRouter() {
+export function createCommerceMaintenanceRouter(dependencies: {
+  command?: CommerceCommand; gateway?: CheckoutGateway; env?: () => NodeJS.ProcessEnv;
+} = {}) {
   const router = Router();
+  const command = dependencies.command ?? commerceCommand;
+  const gateway = dependencies.gateway ?? mercadoPagoGateway;
+  const environment = dependencies.env ?? (() => process.env);
+  // Scheduling/activation is separate from deploying this disabled entry point.
+  // The worker only reconciles existing payments and prepares manual fulfillment.
+  router.get('/cron', async (req, res) => {
+    if (req.method !== 'GET') return res.set('Allow', 'GET').status(405).end();
+    const env = environment();
+    const secret = env.COMMERCE_MAINTENANCE_CRON_SECRET;
+    const header = req.header('authorization');
+    if (!secret?.trim() || !header) return res.status(401).json({ error: 'COMMERCE_CRON_AUTH_REQUIRED' });
+    const expected = Buffer.from(`Bearer ${secret}`), actual = Buffer.from(header);
+    if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
+      return res.status(401).json({ error: 'COMMERCE_CRON_AUTH_REQUIRED' });
+    }
+    if (env.COMMERCE_MAINTENANCE_CRON_ENABLED !== 'true') return res.json({ status: 'skipped_disabled' });
+    try { return res.json(await runCommerceMaintenance(command, gateway, `cron-${randomUUID()}`)); }
+    catch { return res.status(503).json({ error: 'COMMERCE_MAINTENANCE_UNAVAILABLE' }); }
+  });
   router.post('/recover', requireSupabaseAdminAuth, async (req, res) => {
-    try { return res.json(await recoverPaymentReference(commerceCommand, mercadoPagoGateway, req.body?.orderId, req.body?.providerOrderId)); }
+    try { return res.json(await recoverPaymentReference(command, gateway, req.body?.orderId, req.body?.providerOrderId)); }
     catch { return res.status(409).json({ error: 'PAYMENT_RECOVERY_UNRESOLVED', message: 'No se confirmó la recuperación. Conservá la referencia para revisión administrativa.' }); }
   });
   router.post('/run', requireSupabaseAdminAuth, async (_req, res) => {
-    try { return res.json(await runCommerceMaintenance(commerceCommand, mercadoPagoGateway, `manual-${randomUUID()}`)); }
+    try { return res.json(await runCommerceMaintenance(command, gateway, `manual-${randomUUID()}`)); }
     catch { return res.status(503).json({ error: 'COMMERCE_MAINTENANCE_UNAVAILABLE' }); }
   });
   router.get('/tasks', requireSupabaseAdminAuth, async (_req, res) => {
-    try { return res.json(await commerceCommand('manual_tasks', {})); }
+    try { return res.json(await command('manual_tasks', {})); }
     catch { return res.status(503).json({ error: 'COMMERCE_MAINTENANCE_UNAVAILABLE' }); }
   });
   return router;

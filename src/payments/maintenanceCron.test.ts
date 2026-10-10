@@ -33,6 +33,9 @@ test('maintenance cron requires its own secret, defaults disabled and never init
     assert.deepEqual(await (await request()).json(), { status: 'skipped_disabled' });
     assert.deepEqual(actions, []);
     env.COMMERCE_MAINTENANCE_CRON_ENABLED = 'true';
+    const head = await fetch(url, { method: 'HEAD', headers: { authorization: 'Bearer fixture-maintenance-only' } });
+    assert.equal(head.status, 405);
+    assert.deepEqual(actions, []);
     for (let retry = 0; retry < 2; retry++) {
       const response = await request(); assert.equal(response.status, 200);
       assert.deepEqual(await response.json(), { expiryChecks: 0, uncertainReservations: 0, manualTasks: 0 });
