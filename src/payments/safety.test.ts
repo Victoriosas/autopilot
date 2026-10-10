@@ -50,3 +50,38 @@ test('disabled checkout rejects all order routes before any database or provider
     assert.equal(config.transferConfigured, false);
   } finally { server.closeAllConnections(); server.close(); }
 });
+
+test('Mercado Pago availability rejects unsupported currency and invalid production return URLs', async () => {
+  const env = {
+    CHECKOUT_ENABLED: 'true', SUPABASE_URL: 'https://payments.example.test',
+    SUPABASE_SERVICE_ROLE_KEY: 'test-only-key', MERCADOPAGO_ACCESS_TOKEN: 'test-only-token',
+    PUBLIC_APP_URL: 'https://store.example.test', STORE_CURRENCY: 'UYU', NODE_ENV: 'production',
+  };
+  const previous = Object.fromEntries(Object.keys(env).map(key => [key, process.env[key]]));
+  Object.assign(process.env, env);
+  const app = express(); app.use('/mp', createMercadoPagoRouter());
+  const server = createServer(app).listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const { port } = server.address() as { port: number };
+  const config = async () => {
+    const response = await fetch(`http://127.0.0.1:${port}/mp/config`);
+    assert.equal(response.status, 200);
+    return response.json();
+  };
+  try {
+    assert.equal((await config()).configured, true);
+    process.env.STORE_CURRENCY = 'USD';
+    assert.equal((await config()).configured, false, 'unsupported currency must hide the payment option');
+    process.env.STORE_CURRENCY = 'UYU';
+    for (const url of ['invalid-url', 'http://store.example.test']) {
+      process.env.PUBLIC_APP_URL = url;
+      assert.equal((await config()).configured, false, `invalid production return URL: ${url}`);
+    }
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
+    server.closeAllConnections();
+    await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+  }
+});
