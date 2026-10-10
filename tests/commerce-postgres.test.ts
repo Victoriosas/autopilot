@@ -39,6 +39,8 @@ test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
     const recover = (args: any) => sql(`set role service_role; select public.commerce_recover_provider_order(${quote(args)});`).then(JSON.parse);
     await assert.rejects(recover(proof), /PROVIDER_OPERATION_NOT_STARTED/);
     await command('begin_provider', { orderId: reserved.orderId });
+    const context = JSON.parse(await sql(`set role service_role; select public.commerce_recovery_context(${quote({ orderId: reserved.orderId })});`));
+    assert.ok(Number.isFinite(Date.parse(context.createdAt)));
     await sql("update public.commerce_checkout_sessions set expires_at=now()-interval '1 second';");
     for (const change of [{ reference: randomUUID() }, { amount: 99 }, { currency: 'USD' }]) await assert.rejects(recover({ ...proof, ...change }));
     const recovered = await Promise.all([recover(proof), recover(proof)]);

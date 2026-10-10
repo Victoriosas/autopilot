@@ -27,3 +27,16 @@ begin
 end $$;
 revoke all on function public.commerce_recover_provider_order(jsonb) from public,anon,authenticated;
 grant execute on function public.commerce_recover_provider_order(jsonb) to service_role;
+
+create function public.commerce_recovery_context(args jsonb)
+returns jsonb language plpgsql security invoker set search_path='' as $$
+declare result jsonb;
+begin
+ select jsonb_build_object('createdAt',o.created_at) into strict result
+ from public.orders o join public.commerce_checkout_sessions s on s.order_id=o.id
+ where s.order_id=(args->>'orderId')::uuid and s.state='held' and s.provider_started
+ and s.provider_order_id is null and o.payment_method='mercadopago';
+ return result;
+end $$;
+revoke all on function public.commerce_recovery_context(jsonb) from public,anon,authenticated;
+grant execute on function public.commerce_recovery_context(jsonb) to service_role;

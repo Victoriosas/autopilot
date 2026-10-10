@@ -1,5 +1,6 @@
 export type CommerceCommand = (command: string, args: Record<string, unknown>) => Promise<any>;
 export interface CheckoutGateway {
+  find?(orderId: string, createdAt: string): Promise<string | null>;
   create(snapshot: any, request: Record<string, unknown>): Promise<{ id: string; checkoutUrl: string }>;
   lookup(id: string): Promise<any>;
 }

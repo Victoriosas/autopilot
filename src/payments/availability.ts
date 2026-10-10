@@ -5,7 +5,9 @@ import type { CommerceCommand } from './atomicCheckout';
 export const commerceCommand: CommerceCommand = async (command, args) => {
   const db = createClient(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data, error } = command === 'recover_provider'
+  const { data, error } = command === 'recovery_context'
+    ? await db.rpc('commerce_recovery_context', { args })
+    : command === 'recover_provider'
     ? await db.rpc('commerce_recover_provider_order', { args })
     : await db.rpc('commerce_checkout_command', { command, args });
   if (error) throw new Error(/^[A-Z][A-Z0-9_]+$/.test(error.message) ? error.message : 'COMMERCE_DATABASE_UNAVAILABLE');

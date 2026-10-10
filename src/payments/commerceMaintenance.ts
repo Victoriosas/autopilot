@@ -32,6 +32,13 @@ export async function runCommerceMaintenance(command: CommerceCommand, gateway: 
         // Pending provider payments remain reserved; there is no automatic
         // cancellation or purchase authorization in this maintenance worker.
       } catch { uncertainReservations++; }
+    } else if (gateway.find) {
+      try {
+        const context = await command('recovery_context', { orderId: reservation.orderId });
+        const providerOrderId = await gateway.find(reservation.orderId, context.createdAt);
+        if (!providerOrderId) { uncertainReservations++; continue; }
+        await recoverPaymentReference(command, gateway, reservation.orderId, providerOrderId); expiryChecks++;
+      } catch { uncertainReservations++; }
     } else uncertainReservations++;
   }
   for (let i = 0; i < 10; i++) {
