@@ -26,10 +26,31 @@ test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
   await sql(readFileSync('tests/commerce-baseline.sql', 'utf8'));
   // During RED, absence of the proposed RPC is the intended missing implementation.
   if (existsSync(migration)) await sql(readFileSync(migration, 'utf8'));
+  const recoveryMigration = 'supabase/migrations/20261010020000_payment_reference_recovery.sql';
+  if (existsSync(recoveryMigration)) await sql(readFileSync(recoveryMigration, 'utf8'));
   const reset = async (stock = 1) => {
     await sql(`truncate public.products,public.orders cascade;
       insert into public.products(id,title,price,currency,status,inventory) values('${productId}','Vincha',100,'UYU','published',${stock});`);
   };
+  await t.test('verified provider reference recovery is durable, conflict-safe and never releases uncertain stock', async () => {
+    await reset();
+    const reserved = await command('reserve', request());
+    const proof = { orderId: reserved.orderId, reference: reserved.orderId, providerOrderId: 'verified-remote', amount: 100, currency: 'UYU' };
+    const recover = (args: any) => sql(`set role service_role; select public.commerce_recover_provider_order(${quote(args)});`).then(JSON.parse);
+    await assert.rejects(recover(proof), /PROVIDER_OPERATION_NOT_STARTED/);
+    await command('begin_provider', { orderId: reserved.orderId });
+    await sql("update public.commerce_checkout_sessions set expires_at=now()-interval '1 second';");
+    for (const change of [{ reference: randomUUID() }, { amount: 99 }, { currency: 'USD' }]) await assert.rejects(recover({ ...proof, ...change }));
+    const recovered = await Promise.all([recover(proof), recover(proof)]);
+    assert.ok(recovered.every(row => row.providerOrderId === proof.providerOrderId));
+    assert.equal(await sql('select inventory from public.products;'), '0');
+    await assert.rejects(recover({ ...proof, providerOrderId: 'different' }), /PAYMENT_PROVIDER_MISMATCH/);
+    await assert.rejects(command('expire', { orderId: reserved.orderId }), /PROVIDER_OUTCOME_UNKNOWN/);
+    await command('payment', { ...proof, status: 'processed' });
+    await recover(proof);
+    assert.equal(await sql('select count(*) from public.commerce_fulfillment_jobs;'), '1');
+    await assert.rejects(sql(`set role authenticated; select public.commerce_recover_provider_order(${quote(proof)});`), /permission denied/);
+  });
   await t.test('two concurrent shoppers cannot reserve the last unit twice', async () => {
     await reset();
     const results = await Promise.allSettled([command('reserve', request()), command('reserve', request())]);
