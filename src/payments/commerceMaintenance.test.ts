@@ -69,3 +69,22 @@ test('maintenance releases safe expiry, holds unknown payment and creates a reco
   assert.ok(calls.some(call => call.action === 'finish_fulfillment'));
   assert.equal(result.manualTasks, 1); assert.equal(result.uncertainReservations, 1);
 });
+
+test('maintenance discovers an uncertain payment without human ID or a new charge', async () => {
+  const orderId = '11111111-1111-4111-8111-111111111111'; const calls: string[] = [];
+  const command = async (action: string) => {
+    calls.push(action);
+    if (action === 'expired') return { reservations: [{ orderId, providerStarted: true }] };
+    if (action === 'recovery_context') return { createdAt: '2026-10-10T00:00:00Z' };
+    if (action === 'claim_fulfillment') return { job: null };
+    return { paymentStatus: 'paid' };
+  };
+  const gateway = {
+    async create() { throw new Error('must not charge'); },
+    async find(reference: string) { assert.equal(reference, orderId); return 'remote-one'; },
+    async lookup() { return { id: 'remote-one', external_reference: orderId, total_amount: '100', total_paid_amount: '100', currency_id: 'UYU', status: 'processed' }; },
+  };
+  const result = await runCommerceMaintenance(command, gateway, 'worker');
+  assert.ok(calls.includes('recover_provider')); assert.ok(calls.includes('payment'));
+  assert.equal(result.uncertainReservations, 0); assert.equal(result.expiryChecks, 1);
+});

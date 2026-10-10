@@ -43,3 +43,19 @@ test('Mercado Pago lookup fetches provider truth and rejects unavailable respons
     await assert.rejects(mercadoPagoGateway.lookup('provider-order'), /NOT_CONFIGURED/);
   } finally { if (old === undefined) delete process.env.MERCADOPAGO_ACCESS_TOKEN; else process.env.MERCADOPAGO_ACCESS_TOKEN = old; }
 });
+test('provider discovery uses only GET with reference and dates; ambiguous or absent results stay unresolved', async t => {
+  const old = process.env.MERCADOPAGO_ACCESS_TOKEN; process.env.MERCADOPAGO_ACCESS_TOKEN = 'test-only-token';
+  let result: any = { data: [{ id: 'remote-one', external_reference: 'order-one' }], paging: { total: 1 } };
+  t.mock.method(globalThis, 'fetch', async (input: any, init: RequestInit) => {
+    const url = new URL(String(input)); assert.equal(url.pathname, '/v1/orders');
+    assert.equal(init.method, 'GET'); assert.equal(url.searchParams.get('external_reference'), 'order-one');
+    assert.ok(url.searchParams.get('begin_date')); assert.ok(url.searchParams.get('end_date'));
+    return Response.json(result);
+  });
+  try {
+    assert.equal(await mercadoPagoGateway.find!('order-one', '2026-10-10T00:00:00Z'), 'remote-one');
+    for (const response of [{ data: [], paging: { total: 0 } }, { ...result, paging: { total: 2 } }, { data: [{ id: 'remote-one', external_reference: 'other' }], paging: { total: 1 } }]) {
+      result = response; assert.equal(await mercadoPagoGateway.find!('order-one', '2026-10-10T00:00:00Z'), null);
+    }
+  } finally { if (old === undefined) delete process.env.MERCADOPAGO_ACCESS_TOKEN; else process.env.MERCADOPAGO_ACCESS_TOKEN = old; }
+});
