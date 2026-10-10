@@ -41,6 +41,7 @@ export function publicPaymentError(error: unknown) {
   // Never return database/provider diagnostics or credential-bearing exceptions.
   const code = /^[A-Z][A-Z0-9_]{1,80}$/.test(raw) ? raw : 'PAYMENT_REQUEST_FAILED';
   const messages: Record<string, string> = {
+    SHIPPING_NOT_CONFIGURED: 'El costo de envío no está disponible temporalmente. Intentá nuevamente más tarde.',
     CUSTOMER_FIELDS_REQUIRED: 'Revisá y completá tus datos de contacto y entrega.',
     INVALID_CUSTOMER_EMAIL: 'Ingresá un email válido.',
     INVALID_CUSTOMER_PHONE: 'Ingresá un teléfono válido.',

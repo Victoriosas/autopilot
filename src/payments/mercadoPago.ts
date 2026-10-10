@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { validateCustomer, validateCheckoutItems, publicPaymentError } from './safety';
 import { CheckoutTerminalError, createAtomicCheckout, type CheckoutGateway, type CommerceCommand } from './atomicCheckout';
 import { commerceCommand, mercadoPagoCredentialsReady, paymentAvailability } from './availability';
+import { checkoutShippingConfig } from './shipping';
 
 const MP_API = 'https://api.mercadopago.com';
 export const mercadoPagoAvailability = () => paymentAvailability('mercadopago', mercadoPagoCredentialsReady());
@@ -70,15 +71,14 @@ export function createMercadoPagoRouter(dependencies: {
       if (!/^[a-zA-Z0-9_-]{16,128}$/.test(key)) return res.status(400).json({ error: 'IDEMPOTENCY_KEY_REQUIRED' });
       const snapshot = await checkout.start({ key, provider: 'mercadopago', currency: 'UYU',
         customer: validateCustomer(req.body?.customer), items: validateCheckoutItems(req.body?.items),
-        shipping: Number(process.env.STORE_SHIPPING_FLAT || process.env.VITE_SHIPPING_FLAT || '0'),
-        freeShippingFrom: Number(process.env.STORE_FREE_SHIPPING_FROM || process.env.VITE_FREE_SHIPPING_FROM || '0'),
+        ...checkoutShippingConfig(),
         returnUrl: (process.env.PUBLIC_APP_URL || '').replace(/\/$/, ''),
       });
       return res.status(201).json({ orderId: snapshot.orderId, providerOrderId: snapshot.providerOrderId, checkoutUrl: snapshot.checkoutUrl, total: snapshot.total, currency: snapshot.currency });
     } catch (error) {
       if (error instanceof CheckoutTerminalError) return res.status(409).json({ error: error.message, message: 'La reserva anterior fue cancelada. Podés iniciar una nueva compra.', retryAllowed: true });
       const code = error instanceof Error ? error.message : '';
-      return res.status(code.includes('IDEMPOTENCY_CONFLICT') ? 409 : code.includes('DATABASE') || code.includes('MERCADOPAGO') ? 503 : 400).json(publicPaymentError(error));
+      return res.status(code.includes('IDEMPOTENCY_CONFLICT') ? 409 : code.includes('DATABASE') || code.includes('MERCADOPAGO') || code === 'SHIPPING_NOT_CONFIGURED' ? 503 : 400).json(publicPaymentError(error));
     }
   });
   router.post('/webhook', async (req, res) => {
