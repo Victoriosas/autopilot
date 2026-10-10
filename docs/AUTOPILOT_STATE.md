@@ -48,3 +48,10 @@ Corrección: configuración de envío y umbral gratis solo admite importes decim
 RED: 0.015 antes se anunciaba disponible y llegaba a reserva; rango 100000000 también reproducido antes de limitarlo. GREEN: 4 pruebas focalizadas y suite 110/110, cero omitidas; TypeScript, secret scan y whitespace correctos. Pruebas HTTP verifican cero reservas/llamadas de gateway con configuración inválida. SQL sin cambios: evidencia previa PG11/11 no repetida localmente. Builds finales y PostgreSQL exigidos por CI deben verificarse en el commit publicado.
 
 Limitación: importe total depende del subtotal; un total fuera de DECIMAL(10,2) sigue rechazado transaccionalmente por DB. No se afirma Supabase integrado ni proveedor sandbox validado. Próximo: verificar CI/preview exactos; preparar Supabase aislado compatible y sandbox autorizado. Mantener pagos deshabilitados.
+
+### Entrega verificada del cambio de envío
+- Código publicado: 8b70694ac48a479bd9014cc183716f14f66ef48d, PR #66 actualizado y en borrador.
+- GitHub Actions 38094434319 y 38094436976: success; validate y postgres aprobados. Log commerce PostgreSQL: 11/11, cero omitidas. Suite Node: 110/110. Builds validados por CI del mismo código, sin repetirlos localmente.
+- Preview Vercel dpl_6PK7u6WHNmqyxEYxynMTGhafMkEA READY, target preview. https://autopilot-nw0vkbg3h-autopilot12.vercel.app
+- GET protegido /api/health y /api/payments/mercadopago/config: HTTP200; health confirma commit8b70694, checkoutEnabled=false; config configured=false, CHECKOUT_DISABLED.
+- Revisión independiente: rango DECIMAL(10,2) corregido, sin bloqueantes de esta entrega. Supabase integrado/sandbox pendientes; no promoción productiva ni migraciones externas. Esta actualización solo registra evidencia; no cambia código.
