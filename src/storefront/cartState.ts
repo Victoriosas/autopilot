@@ -9,7 +9,7 @@ type StoredCartItem = {
 
 export function cartLimit(product: Pick<Product, 'inventory' | 'status'>): number {
   if (product.status !== 'published') return 0;
-  const inventory = Number(product.inventory);
+  const inventory = product.inventory;
   if (!Number.isSafeInteger(inventory) || inventory <= 0) return 0;
   return Math.min(20, inventory);
 }
