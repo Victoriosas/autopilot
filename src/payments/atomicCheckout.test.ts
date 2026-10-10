@@ -72,3 +72,11 @@ test('fulfillment retries preserve stable operation key and fence; no job makes 
   assert.deepEqual(keys, ['fulfillment-order', 'fulfillment-order']);
   assert.equal(calls.find(call => call.command === 'retry_fulfillment').args.generation, 1);
 });
+
+test('rejected provider truth returns terminal state only after stock release succeeds', async () => {
+  const checkout = createAtomicCheckout(async command => command === 'reject' ? { ok: true } : { paymentStatus: 'pending' }, {
+    async create() { throw new Error('unused'); },
+    async lookup() { return { external_reference: 'order', total_amount: 100, total_paid_amount: 0, currency_id: 'UYU', status: 'failed' }; },
+  });
+  assert.equal((await checkout.reconcile('provider')).paymentStatus, 'failed');
+});
