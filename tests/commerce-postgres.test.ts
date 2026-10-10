@@ -126,4 +126,12 @@ test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
     const capability = await command('capabilities', { provider: 'mercadopago', environment: 'live', currency: 'UYU' });
     assert.equal(capability.available, false);
   });
+  await t.test('uncertain expired payments cannot starve later reservations', async () => {
+    await reset(); await sql('update public.products set inventory=21;');
+    for (let i = 0; i < 21; i++) await command('reserve', { ...request(), key: `rotation-checkout-${i.toString().padStart(3, '0')}` });
+    await sql("update public.commerce_checkout_sessions set expires_at=now()-interval '1 second',provider_started=true;");
+    const first = (await command('expired', {})).reservations;
+    const second = (await command('expired', {})).reservations;
+    assert.equal(new Set([...first, ...second].map(row => row.orderId)).size, 21);
+  });
 });
