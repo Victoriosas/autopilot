@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { cjSourcingReadConfigured } from '../services/cjSourcingProvider';
+import { mercadoLibreConnectionStatus } from '../integrations/mercadoLibre';
 import { marketProviderStatus } from './marketEvidence';
 
 export type ReleaseState='safe_shadow'|'blocked_for_commerce'|'ready_for_manual_release';
@@ -51,6 +52,8 @@ export async function computeReleaseReadiness():Promise<ReleaseReadiness>{
   const settings=(settingsResult.data?.value||{}) as Record<string,unknown>;
 
   const market=marketProviderStatus();
+  const mercadoLibreConnection=await mercadoLibreConnectionStatus().catch(()=>null);
+  const marketWithConnection={...market,mercadoLibre:market.mercadoLibre||Boolean(mercadoLibreConnection?.connected)};
   const cj=cjSourcingReadConfigured({mode:'shadow'} as any);
   const mercadoPago=Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN?.trim());
   const paypal=Boolean(process.env.PAYPAL_CLIENT_ID?.trim()&&process.env.PAYPAL_CLIENT_SECRET?.trim());
@@ -61,7 +64,7 @@ export async function computeReleaseReadiness():Promise<ReleaseReadiness>{
   const runtimeAutoPublishOff=!truthy(process.env.AUTOPILOT_AUTO_PUBLISH_ENABLED)&&!truthy(process.env.AUTOPILOT_V4_AUTO_PUBLISH_ENABLED);
   const v4CronOff=!truthy(process.env.AUTOPILOT_V4_SOURCING_ENABLED);
   const shadowMode=process.env.AUTOPILOT_SHADOW_MODE!=='false';
-  const hasMarketProvider=market.marketMemory||market.mercadoLibre||market.gemini||market.openRouter;
+  const hasMarketProvider=marketWithConnection.marketMemory||marketWithConnection.mercadoLibre||marketWithConnection.gemini||marketWithConnection.openRouter;
   const hasPaymentProvider=mercadoPago||paypal;
 
   const checks:ReleaseCheck[]=[
@@ -85,7 +88,7 @@ export async function computeReleaseReadiness():Promise<ReleaseReadiness>{
 
   return {
     state,commerceEnabled,blockers,checks,
-    providers:{cj,marketEvidence:market,payments:{mercadoPago,paypal}},
+    providers:{cj,marketEvidence:marketWithConnection,payments:{mercadoPago,paypal}},
     catalog:{published,productionEligible,shadowDrafts},
     generatedAt:new Date().toISOString(),
   };

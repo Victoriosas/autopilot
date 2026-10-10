@@ -56,6 +56,14 @@ function enrichSupplierReliability(candidate:OpportunityCandidate,evidence:Evide
   };
 }
 
+export function supplierMatchesPreference(product:{supplierName?:string;productNameEn?:string;productName?:string},preferred?:string):boolean {
+  const wanted=preferred?.trim().toLowerCase();
+  if(!wanted) return true;
+  const supplier=(product.supplierName||'').trim().toLowerCase();
+  const title=(product.productNameEn||product.productName||'').trim().toLowerCase();
+  return supplier===wanted || supplier.includes(wanted) || title.startsWith(wanted+' ') || title===wanted;
+}
+
 function commercialEvidenceReasons(candidate:OpportunityCandidate):string[] {
   const missing:string[]=[];
   for(const key of ['demand','supplierReliability','logistics','competition'] as const){
@@ -80,9 +88,12 @@ export const liveSourcing: SourcingDependencies={
     const cj=getCJSourcingReadProvider(config);
     if(!cj) throw new Error('CJ_NOT_CONFIGURED');
     const enrichmentLimit=Math.max(1,Math.min(config.maxCandidates,config.durationMs>=30000?6:4));
-    const result=await cj.searchProducts({keyword:config.keyword,pageSize:enrichmentLimit});
+    const preferred=config.preferredSupplierName?.trim();
+    const keyword=preferred && !config.keyword.toLowerCase().includes(preferred.toLowerCase()) ? `${preferred} ${config.keyword}`.trim() : config.keyword;
+    const result=await cj.searchProducts({keyword,pageSize:preferred?Math.min(20,enrichmentLimit*4):enrichmentLimit});
+    const products=preferred?result.products.filter((product)=>supplierMatchesPreference(product,preferred)):result.products;
     const evidence:Evidence[]=[];
-    for(const product of result.products.slice(0,enrichmentLimit)) {
+    for(const product of products.slice(0,enrichmentLimit)) {
       const searchObservation=normalizeCJ(product,config);
       try {
         const variants=await cj.getVariants(product.pid,product.productSku);

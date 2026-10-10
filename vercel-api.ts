@@ -1,5 +1,6 @@
 import express from 'express';
 import { mountAutopilotV4 } from './src/autopilot/mount';
+import { mercadoPagoAvailability } from './src/payments/mercadoPago';
 
 const app = express();
 app.disable('x-powered-by');
@@ -7,13 +8,16 @@ app.use('/api', (_req, res, next) => { res.setHeader('Cache-Control', 'no-store'
 app.use(express.json({ limit: '10mb' }));
 mountAutopilotV4(app);
 
-app.get('/api/health', (_req, res) => {
+app.get('/api/health', async (_req, res) => {
+  const checkout = await mercadoPagoAvailability();
   res.json({
     status: 'ok',
     service: 'Victoriosa Vercel API',
     runtime: 'vercel',
     commit: process.env.VERCEL_GIT_COMMIT_SHA || null,
-    checkoutEnabled: process.env.CHECKOUT_ENABLED === 'true',
+    checkoutEnabled: checkout.available,
+    checkoutRequested: checkout.requested,
+    checkoutUnavailableReason: checkout.reason,
     timestamp: new Date().toISOString(),
   });
 });

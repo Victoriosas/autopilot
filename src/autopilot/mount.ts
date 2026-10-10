@@ -2,6 +2,8 @@ import type { Express } from 'express';
 import { createConnectorDirectoryRouter } from '../connectors/router';
 import { createMercadoPagoRouter } from '../payments/mercadoPago';
 import { createPaymentV2Router } from '../payments/paypalV2';
+import { createMercadoLibreRouter } from '../integrations/mercadoLibreRouter';
+import { createCommerceMaintenanceRouter } from '../payments/commerceMaintenance';
 import { createLegacyAdminGuard } from '../security/adminAuth';
 import { createLegacySafetyGate } from '../security/legacySafety';
 import { createStorefrontWaitlistRouter } from '../storefront/waitlistRouter';
@@ -22,11 +24,13 @@ export function mountAutopilotV4(app: Express): void {
   // Public storefront route. It validates and writes server-side with the
   // service role; browsers never receive direct database write privileges.
   app.use('/api/storefront/waitlist', createStorefrontWaitlistRouter());
+  app.use('/api/commerce/maintenance', createCommerceMaintenanceRouter());
 
   // Browser/admin routes with their own Supabase auth must be mounted before
   // the generic V4 control-plane router, whose router-level middleware expects
   // AUTOPILOT_ADMIN_TOKEN / AUTOPILOT_CODEX_TOKEN.
   app.use('/api/autopilot/v4/cj-mcp', createCJMcpRouter());
+  app.use('/api/integrations/mercadolibre', createMercadoLibreRouter());
   app.use('/api/autopilot/v4/release-readiness', createReleaseReadinessRouter());
   app.use('/api/autopilot/v4/release-operations', createReleaseOperationsRouter());
 

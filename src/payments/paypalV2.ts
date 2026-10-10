@@ -1,6 +1,7 @@
 import { orderIdentity, validateCustomer, publicPaymentError, paypalAvailability, checkoutEnabled, paymentDatabaseConfigured, requireCheckoutEnabled, validateCheckoutItems, assertStock, assertPaymentAmount } from './safety';
 import { createClient } from '@supabase/supabase-js';
 import { Router } from 'express';
+import { mercadoPagoAvailability } from './mercadoPago';
 
 interface CheckoutItemInput {
   productId: string;
@@ -190,24 +191,32 @@ async function verifyWebhookSignature(req: any) {
 export function createPaymentV2Router(): Router {
   const router = Router();
 
-  router.get('/config', (_req, res) => {
+  router.get('/config', async (_req, res) => {
     const cfg = storeConfig();
     const availability = paypalAvailability();
+    const atomic = await mercadoPagoAvailability();
     res.json({
       storeCurrency: cfg.currency,
-      checkoutEnabled: checkoutEnabled(),
+      checkoutEnabled: atomic.available,
+      checkoutRequested: checkoutEnabled(),
+      unavailableReason: atomic.reason,
       paypalClientId: process.env.PAYPAL_CLIENT_ID || null,
-      paypalConfigured: availability.configured,
-      paypalUnavailableReason: availability.reason,
+      paypalConfigured: false,
+      paypalUnavailableReason: 'PayPal está pendiente de integrar reserva e idempotencia verificadas.',
       paypalEnvironment: process.env.PAYPAL_ENV === 'live' ? 'live' : 'sandbox',
       paypalConversionRate: availability.rate,
       shippingFlat: cfg.shippingFlat,
       freeShippingFrom: cfg.freeShippingFrom,
       paypalCurrency: 'USD',
       paypalConversionConfigured: availability.conversionConfigured,
-      transferConfigured: checkoutEnabled() && paymentDatabaseConfigured() && Boolean(process.env.BANK_TRANSFER_PUBLIC_INSTRUCTIONS || process.env.VITE_BANK_TRANSFER_INSTRUCTIONS),
+      transferConfigured: false,
     });
   });
+
+  // Legacy creation paths cannot bypass reservations. Historical captures and
+  // authenticated provider notifications remain mounted for existing orders.
+  router.post(['/transfer/order', '/paypal/order'], (_req, res) =>
+    res.status(503).json({ error: 'CHECKOUT_NOT_CONFIGURED', message: 'Este medio de pago todavía no está disponible.' }));
 
   router.post('/transfer/order', async (req, res) => {
     try {

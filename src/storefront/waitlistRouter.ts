@@ -22,10 +22,10 @@ export function createStorefrontWaitlistRouter(){
     const consent=req.body?.consent===true;
     if(!EMAIL.test(email)||email.length>254) return res.status(400).json({error:'WAITLIST_EMAIL_INVALID'});
     if(!consent) return res.status(400).json({error:'WAITLIST_CONSENT_REQUIRED'});
-    const db=client();
-    if(!db) return res.status(503).json({error:'WAITLIST_UNAVAILABLE'});
     const source=typeof req.body?.source==='string'?req.body.source.replace(/[^a-zA-Z0-9_./-]/g,'').slice(0,80)||'storefront':'storefront';
     try{
+      const db=client();
+      if(!db) return res.status(503).json({error:'WAITLIST_UNAVAILABLE'});
       const {error}=await db.from('storefront_waitlist').upsert({
         email,interest,source,consent_launch_updates:true,updated_at:new Date().toISOString(),
       },{onConflict:'email'});

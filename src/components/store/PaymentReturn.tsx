@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/api';
+import { forgetCheckoutKey } from '../../storefront/checkoutKey';
 
 export function PaymentReturn() {
   const [message, setMessage] = useState('Consultando el estado de tu pago…');
@@ -11,10 +12,11 @@ export function PaymentReturn() {
     try {
       const stored = sessionStorage.getItem('victoriosa-mp-order');
       if (!stored) { setMessage('No encontramos la referencia en este navegador. Conservá el comprobante de Mercado Pago y consultá con Victoriosa antes de volver a pagar.'); return; }
-      const { providerOrderId } = JSON.parse(stored);
+      const { providerOrderId, idempotencyKey } = JSON.parse(stored);
       const response = await apiFetch('/api/payments/mercadopago/reconcile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ providerOrderId }) });
       if (!response.ok) throw new Error();
       const result = await response.json();
+      if (idempotencyKey && ['paid', 'failed', 'cancelled', 'expired'].includes(result.paymentStatus)) forgetCheckoutKey(sessionStorage, idempotencyKey);
       const labels: Record<string, string> = { paid: 'Pago confirmado. Tu pedido quedó registrado.', pending: 'Tu pago sigue pendiente. No vuelvas a pagar mientras esperás la confirmación.', failed: 'El pago fue rechazado. Podés volver a intentar desde tu bolsa.', cancelled: 'El pago fue cancelado. Tu bolsa sigue disponible.', expired: 'El pago venció. Podés volver a intentar desde tu bolsa.', refunded: 'El pago figura como reembolsado.' };
       setMessage(labels[result.paymentStatus] || 'El pago todavía no está confirmado. Conservá tu comprobante y volvé a consultar.');
     } catch { setMessage('No pudimos consultar el pago. No vuelvas a pagar si ya recibiste un comprobante; intentá consultar nuevamente.'); }

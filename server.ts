@@ -7,6 +7,7 @@ import { getSourcingService } from "./src/services/productSourcingService";
 import { getSourcingScheduler } from "./src/services/sourcingScheduler";
 import { aiCompletion, aiStructuredCompletion, getProviderStatus } from "./src/services/aiClient";
 import { mountAutopilotV4 } from "./src/autopilot/mount";
+import { mercadoPagoAvailability } from "./src/payments/mercadoPago";
 
 dotenv.config({ path: '.env.local' });
 dotenv.config();
@@ -69,10 +70,14 @@ function calculateVictoriosaPricing(costEur: number, supplierShipping: number = 
 }
 
 // 1. Health check
-app.get("/api/health", (req, res) => {
+app.get("/api/health", async (req, res) => {
+  const checkout = await mercadoPagoAvailability();
   res.json({
     status: "ok",
     service: "Victoriosa Autopilot Core",
+    checkoutEnabled: checkout.available,
+    checkoutRequested: checkout.requested,
+    checkoutUnavailableReason: checkout.reason,
     aiProviders: getProviderStatus(),
     timestamp: new Date().toISOString()
   });

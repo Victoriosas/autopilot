@@ -9,6 +9,11 @@ export interface CommercialFacts {
   specs?: Record<string, string | number | boolean | null>;
   images?: string[];
   supplierName?: string;
+  supplierCode?: string;
+  supplierRecordId?: string;
+  supplierShopId?: string;
+  supplierExternalId?: string;
+  sourceSku?: string;
   shippingDaysMin?: number;
   shippingDaysMax?: number;
   warrantyText?: string;
@@ -34,6 +39,12 @@ export interface ProductDraft {
   provenance: {
     sourceUrl?: string;
     supplierCost: string;
+    supplierName?: string;
+    supplierCode?: string;
+    supplierRecordId?: string;
+    supplierShopId?: string;
+    supplierExternalId?: string;
+    sourceSku?: string;
     generatedFields: string[];
     preservedFacts: string[];
   };
@@ -121,6 +132,12 @@ function deterministicDraft(candidate: OpportunityCandidate, result: Opportunity
     provenance: {
       sourceUrl: compactText(facts.sourceUrl) || compactText(candidate.sourceUrl) || undefined,
       supplierCost: candidate.pricing.provenance?.supplierCost || 'unknown',
+      supplierName: compactText(facts.supplierName) || undefined,
+      supplierCode: compactText(facts.supplierCode) || undefined,
+      supplierRecordId: compactText(facts.supplierRecordId) || undefined,
+      supplierShopId: compactText(facts.supplierShopId) || undefined,
+      supplierExternalId: compactText(facts.supplierExternalId) || undefined,
+      sourceSku: compactText(facts.sourceSku) || undefined,
       generatedFields: ['title', 'subtitle', 'seoTitle', 'seoDescription', 'tags'],
       preservedFacts,
     },
