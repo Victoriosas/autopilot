@@ -5,7 +5,7 @@ import { createServer } from 'node:http';
 import { once } from 'node:events';
 import { createStorefrontWaitlistRouter } from './waitlistRouter';
 
-test('waitlist validates consent and email, and fails safely for unavailable configuration', async () => {
+test('waitlist validates consent and email, and fails safely for unavailable configuration', async (t) => {
   const previousUrl = process.env.SUPABASE_URL;
   const previousKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   delete process.env.SUPABASE_URL;
@@ -36,6 +36,35 @@ test('waitlist validates consent and email, and fails safely for unavailable con
     const response = await post({ email: 'buyer@example.test', consent: true });
     assert.equal(response.status, 503);
     assert.deepEqual(await response.json(), { error: 'WAITLIST_UNAVAILABLE' });
+
+    process.env.SUPABASE_URL = 'https://waitlist.example.test';
+    const nativeFetch = globalThis.fetch;
+    let mode: 'success' | 'database-error' | 'network-error' = 'success';
+    let saved: Record<string, unknown> | undefined;
+    t.mock.method(globalThis, 'fetch', async (input: Parameters<typeof fetch>[0], init?: RequestInit) => {
+      const url = new URL(input instanceof Request ? input.url : String(input));
+      if (url.hostname === '127.0.0.1') return nativeFetch(input, init);
+      assert.equal(url.hostname, 'waitlist.example.test', 'no real provider calls allowed');
+      assert.equal(url.pathname, '/rest/v1/storefront_waitlist');
+      assert.equal(init?.method, 'POST');
+      saved = JSON.parse(String(init?.body));
+      if (mode === 'network-error') throw new Error('simulated transport failure');
+      if (mode === 'database-error') return Response.json({ code: 'TEST_ERROR' }, { status: 500 });
+      return new Response(null, { status: 201 });
+    });
+    const success = await post({ email: ' BUYER@EXAMPLE.TEST ', consent: true, interest: 'unknown', source: '<launch>' });
+    assert.equal(success.status, 202);
+    assert.deepEqual(await success.json(), { ok: true });
+    assert.equal(saved?.email, 'buyer@example.test');
+    assert.equal(saved?.interest, 'general');
+    assert.equal(saved?.source, 'launch');
+    assert.equal(saved?.consent_launch_updates, true);
+    for (const failure of ['database-error', 'network-error'] as const) {
+      mode = failure;
+      const failed = await post({ email: 'buyer@example.test', consent: true, interest: 'facial_accessories' });
+      assert.equal(failed.status, 503);
+      assert.deepEqual(await failed.json(), { error: 'WAITLIST_UNAVAILABLE' });
+    }
   } finally {
     if (previousUrl === undefined) delete process.env.SUPABASE_URL;
     else process.env.SUPABASE_URL = previousUrl;
