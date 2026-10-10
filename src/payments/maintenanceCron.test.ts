@@ -61,4 +61,3 @@ test('maintenance cron returns sanitized failures without leaking provider or da
     assert.deepEqual(await response.json(), { error: 'COMMERCE_MAINTENANCE_UNAVAILABLE' });
   } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
 });
-
