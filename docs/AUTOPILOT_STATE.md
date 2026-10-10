@@ -2,6 +2,15 @@
 
 Actualizado 2026-10-10, America/Montevideo. Leer primero y verificar Git; no asumir ejecución fuera de la automatización configurada.
 
+## Objetivo de producto confirmado por el usuario
+Victoriosa debe ofrecer una experiencia comercial comparable o superior a Tiendamia, especializada inicialmente en skincare cosmético, autocuidado, herramientas faciales y spa en casa. La diferencia buscada es un motor autónomo de integración y mantenimiento de productos, no solo un importador manual ni un catálogo estático. Tiendamia es referencia de producto; no se ha auditado exhaustivamente ni se afirma conocer su implementación interna.
+
+Motor objetivo: descubrir productos mediante proveedores y canales autorizados → comprobar identidad, imágenes, variantes, stock, envío a Uruguay, costo total y riesgo → calcular margen/precio → generar ficha en español sin claims médicos → deduplicar y preparar incorporación bajo las barreras de publicación existentes → sincronizar precio/disponibilidad → vincular compra, reserva, pago y fulfillment recuperable. Extender mercados únicamente después de verificar moneda, logística y costos de cada destino.
+
+La autonomía debe reducir intervención humana en selección, análisis, contenido y mantenimiento. No revoca restricciones sobre compras a proveedores, cobros reales, gastos, datos sensibles o promoción a producción. No publicar automáticamente productos sin evidencia comercial y de seguridad suficiente. Implementar usando las integraciones comprobables existentes antes de ampliar proveedores.
+
+Medir la mejora con costo final transparente, coherencia de stock, fichas completas, tiempos reales de entrega, fallos recuperables e intervención manual necesaria; no afirmar que supera a Tiendamia sin comparación y resultados verificables. Después de resolver los bloqueos del flujo de pago, priorizar este motor especializado sobre un catálogo generalista.
+
 ## Estado real y límites
 - PR #65 integrado en main 722f2ce. Producción Vercel comprobada mediante GET /api/health: HTTP200, commit 722f2ce902a26b768b752be7aef4737b30262025, checkoutEnabled=false, checkoutRequested=true, ATOMIC_CHECKOUT_NOT_ENABLED.
 - Rama de trabajo codex/post-merge-review-20261010, PR #66 borrador. Base publicada previa b32fb03, CI validate/postgres y preview READY comprobados. Último código de este ciclo ab8a903; publicación/checks exactos pendientes al escribir.
