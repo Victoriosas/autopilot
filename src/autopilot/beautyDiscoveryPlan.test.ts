@@ -21,3 +21,9 @@ test('cosmetics and powered facial devices cannot bypass regulatory review by al
   assert.equal(assessVictoriosaFit({ title: 'Facial headband' } as any, {}).decision, 'eligible');
   assert.equal(assessVictoriosaFit({ title: 'Face serum cures eczema' } as any, {}).decision, 'reject');
 });
+
+test('medical claims and permanent wrinkle promises are rejected in Spanish and English', () => {
+  for (const title of ['Facial roller cura el acné', 'Hair brush cures alopecia', 'Facial roller guaranteed permanent wrinkle removal', 'Rodillo facial elimina definitivamente las arrugas']) {
+    assert.equal(assessVictoriosaFit({ title } as any, {}).decision, 'reject', title);
+  }
+});
