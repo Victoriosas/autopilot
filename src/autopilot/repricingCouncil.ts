@@ -1,5 +1,5 @@
 import { aiStructuredCompletion } from '../services/aiClient';
-import type { RepricingProposal } from './repricingProposal';
+import { validRepricingCosts, type RepricingProposal } from './repricingProposal';
 
 export type RepricingDecision = 'approve' | 'reject';
 export type RepricingAgentId = 'margin' | 'customer_value' | 'governor';
@@ -67,6 +67,18 @@ function resolve(votes: RepricingVote[]) {
 }
 
 export async function runRepricingCouncil(proposal: RepricingProposal): Promise<RepricingCouncilResult> {
+  if (!validRepricingCosts(proposal.costEvidence, proposal.currency) || !proposal.quote
+    || proposal.quote.currency !== proposal.currency
+    || proposal.proposedPrice !== proposal.quote.recommendedPrice) {
+    return {
+      decision: 'reject', quorum: '3_of_3',
+      votes: AGENTS.map(agent => ({ agent: agent.id, decision: 'reject', confidence: 100,
+        reason: 'Costos completos documentados ausentes o cotización incompatible; regenerar propuesta.' })),
+      debatePerformed: false,
+      summary: 'Repricing rechazado por costos incompletos o cotización incompatible antes de consultar IA.',
+      ownerEscalationRequired: false,
+    };
+  }
   if (proposal.policy.ownerApprovalRequired) {
     return {
       decision: 'reject',
