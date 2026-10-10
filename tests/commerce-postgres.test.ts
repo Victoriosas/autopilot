@@ -82,9 +82,12 @@ test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
     const job = claims.find(result => result.job)?.job;
     assert.equal(claims.filter(result => result.job).length, 1);
     await assert.rejects(command('finish_fulfillment', { id: job.id, owner: job.owner }), /FULFILLMENT_FENCE_REJECTED/);
+    const task = await command('prepare_fulfillment', { id: job.id, owner: job.owner, generation: job.generation });
     await sql("update public.commerce_fulfillment_jobs set lease_until=now()-interval '1 second';");
     const recovered = (await command('claim_fulfillment', { owner: 'worker-c' })).job;
     assert.equal(recovered.id, job.id); assert.ok(recovered.generation > job.generation);
+    assert.equal((await command('prepare_fulfillment', { id: recovered.id, owner: recovered.owner, generation: recovered.generation })).taskId, task.taskId);
+    assert.equal(await sql('select count(*) from public.commerce_manual_fulfillment_tasks;'), '1');
     await assert.rejects(command('finish_fulfillment', { id: job.id, owner: job.owner, generation: job.generation }), /FULFILLMENT_FENCE_REJECTED/);
     await command('finish_fulfillment', { id: recovered.id, owner: recovered.owner, generation: recovered.generation });
     assert.equal((await command('claim_fulfillment', { owner: 'worker-d' })).job, null);
@@ -109,6 +112,10 @@ test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
     await sql("update public.commerce_checkout_sessions set expires_at=now()-interval '1 second';");
     await command('expire', { orderId: unstarted.orderId });
     assert.equal(await sql('select inventory from public.products;'), '1');
+    const more = await command('reserve', request());
+    await sql("update public.commerce_checkout_sessions set expires_at=now()-interval '1 second' where state='held';");
+    const expired = await command('expired', {});
+    assert.equal(expired.reservations.length, 1); assert.equal(expired.reservations[0].orderId, more.orderId);
   });
   await t.test('anonymous roles cannot mutate reservations or attest readiness', async () => {
     for (const role of ['anon', 'authenticated']) {
