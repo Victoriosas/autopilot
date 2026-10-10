@@ -69,7 +69,7 @@ test('Mercado Pago availability rejects unsupported currency and invalid product
     return response.json();
   };
   try {
-    assert.equal((await config()).configured, true);
+    assert.equal((await config()).configured, false, 'credentials alone do not prove operational checkout');
     process.env.STORE_CURRENCY = 'USD';
     assert.equal((await config()).configured, false, 'unsupported currency must hide the payment option');
     process.env.STORE_CURRENCY = 'UYU';
