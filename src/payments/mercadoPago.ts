@@ -183,8 +183,14 @@ export function createMercadoPagoRouter(): Router {
   const router = Router();
 
   router.get('/config', (_req, res) => {
+    let configured = false;
+    try {
+      accessToken();
+      publicAppUrl();
+      configured = checkoutEnabled() && paymentDatabaseConfigured() && storeConfig().currency === 'UYU';
+    } catch { /* Invalid provider configuration must not advertise an available payment method. */ }
     res.json({
-      configured: checkoutEnabled() && paymentDatabaseConfigured() && Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN?.trim() && process.env.PUBLIC_APP_URL?.trim()),
+      configured,
       provider: 'mercadopago',
       checkout: 'pro-orders',
       storeCurrency: storeConfig().currency,
