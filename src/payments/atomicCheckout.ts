@@ -8,12 +8,15 @@ export function createAtomicCheckout(command: CommerceCommand, gateway: Checkout
   return {
     async start(request: Record<string, unknown>) {
       const snapshot = await command('reserve', request);
+      if (snapshot.expired) throw new Error('RESERVATION_EXPIRED');
       if (snapshot.state !== 'held') throw new Error('RESERVATION_NOT_ACTIVE');
       if (snapshot.checkoutUrl) return snapshot;
+      await command('begin_provider', { orderId: snapshot.orderId });
       // An uncertain HTTP outcome must retain stock and retry the same gateway key.
       // Gateway create MUST use snapshot.orderId as the provider idempotency key.
       const provider = await gateway.create(snapshot, request);
-      await command('bind', { orderId: snapshot.orderId, providerOrderId: provider.id, checkoutUrl: provider.checkoutUrl });
+      const bound = await command('bind', { orderId: snapshot.orderId, providerOrderId: provider.id, checkoutUrl: provider.checkoutUrl });
+      if (bound.expired) throw new Error('RESERVATION_EXPIRED');
       return { ...snapshot, providerOrderId: provider.id, checkoutUrl: provider.checkoutUrl };
     },
     async reconcile(providerOrderId: string) {

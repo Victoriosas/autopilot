@@ -7,7 +7,9 @@ create table public.commerce_checkout_sessions (
  state text not null default 'held' check (state in ('held','paid','released')),
  expires_at timestamptz not null default (now()+interval '15 minutes'),
  checkout_url text,
- provider_order_id text
+ provider_order_id text,
+ provider_started boolean not null default false,
+ provider_terminal boolean not null default false
 );
 create table public.commerce_fulfillment_jobs (
  id uuid primary key default gen_random_uuid(),
@@ -58,7 +60,7 @@ begin
   if found then
    if s.request<>request then raise exception 'IDEMPOTENCY_CONFLICT'; end if;
    select * into o from public.orders where id=s.order_id;
-   return jsonb_build_object('orderId',o.id,'total',o.total,'currency',o.currency,'items',o.items,'shipping',o.shipping_cost,'state',s.state,'checkoutUrl',s.checkout_url,'providerOrderId',s.provider_order_id);
+   return jsonb_build_object('orderId',o.id,'total',o.total,'currency',o.currency,'items',o.items,'shipping',o.shipping_cost,'state',s.state,'expired',s.expires_at<=now(),'checkoutUrl',s.checkout_url,'providerOrderId',s.provider_order_id);
   end if;
   if (select count(*) from jsonb_array_elements(args->'items'))<>(select count(distinct x->>'productId') from jsonb_array_elements(args->'items') x) then raise exception 'INVALID_CHECKOUT_ITEMS'; end if;
   -- Lock rows in stable ID order so multi-item baskets cannot deadlock each other.
@@ -102,16 +104,23 @@ begin
  end if;
  select * into strict s from public.commerce_checkout_sessions where commerce_checkout_sessions.order_id=(args->>'orderId')::uuid for update;
  select * into strict o from public.orders where id=s.order_id for update;
+ if command='begin_provider' then
+  if s.state<>'held' then raise exception 'RESERVATION_NOT_ACTIVE'; end if;
+  if s.expires_at<=now() then raise exception 'RESERVATION_EXPIRED'; end if;
+  update public.commerce_checkout_sessions set provider_started=true where commerce_checkout_sessions.order_id=s.order_id;
+  return jsonb_build_object('ok',true);
+ end if;
  if command='bind' then
   if coalesce(args->>'providerOrderId','')='' or coalesce(args->>'checkoutUrl','')!~ '^https://' then raise exception 'INVALID_PROVIDER_ORDER'; end if;
   if s.provider_order_id is not null and s.provider_order_id<>args->>'providerOrderId' then raise exception 'PAYMENT_PROVIDER_MISMATCH'; end if;
   if s.state<>'held' then raise exception 'RESERVATION_NOT_ACTIVE'; end if;
-  update public.commerce_checkout_sessions set provider_order_id=args->>'providerOrderId',checkout_url=args->>'checkoutUrl' where commerce_checkout_sessions.order_id=s.order_id;
+  update public.commerce_checkout_sessions set provider_order_id=args->>'providerOrderId',checkout_url=args->>'checkoutUrl',provider_started=true where commerce_checkout_sessions.order_id=s.order_id;
   update public.orders set provider_order_id=args->>'providerOrderId',provider_amount=o.total,provider_currency=o.currency where id=s.order_id;
-  return jsonb_build_object('ok',true);
+  return jsonb_build_object('ok',true,'expired',s.expires_at<=now());
  end if;
  if command in ('reject','expire') then
   if s.state='held' and (command='reject' or s.expires_at<=now()) then
+   if s.provider_started and not s.provider_terminal then raise exception 'PROVIDER_OUTCOME_UNKNOWN'; end if;
    for item in select x from jsonb_array_elements(o.items) x order by x->>'productId' loop
     update public.products set inventory=inventory+(item->>'quantity')::integer where id=(item->>'productId')::uuid;
    end loop;
@@ -127,11 +136,17 @@ begin
   if amount<>o.total then raise exception 'PAYMENT_AMOUNT_MISMATCH'; end if;
   if args->>'currency' is distinct from o.currency then raise exception 'PAYMENT_CURRENCY_MISMATCH'; end if;
   if s.state='released' then raise exception 'RESERVATION_NOT_ACTIVE'; end if;
+  if args->>'status' in ('failed','cancelled','expired') then
+   update public.commerce_checkout_sessions set provider_terminal=true where commerce_checkout_sessions.order_id=s.order_id;
+  end if;
   if args->>'status'='processed' then
-   if s.state='held' and s.expires_at<=now() then raise exception 'RESERVATION_EXPIRED'; end if;
-   update public.commerce_checkout_sessions set state='paid' where commerce_checkout_sessions.order_id=s.order_id;
-   update public.orders set payment_status='paid',payment_id=s.provider_order_id,payment_gateway=payment_method,status='confirmed' where id=s.order_id;
-   insert into public.commerce_fulfillment_jobs(order_id) values(s.order_id) on conflict do nothing;
+   -- A late provider payment is safe while stock is still held. Never release
+   -- an uncertain provider operation or regress a paid/shipped order on replay.
+   if s.state='held' then
+    update public.commerce_checkout_sessions set state='paid' where commerce_checkout_sessions.order_id=s.order_id;
+    update public.orders set payment_status='paid',payment_id=s.provider_order_id,payment_gateway=payment_method,status='confirmed' where id=s.order_id;
+    insert into public.commerce_fulfillment_jobs(order_id) values(s.order_id) on conflict do nothing;
+   end if;
    return jsonb_build_object('orderId',s.order_id,'paymentStatus','paid','total',o.total,'currency',o.currency);
   end if;
   return jsonb_build_object('orderId',s.order_id,'paymentStatus',o.payment_status,'total',o.total,'currency',o.currency);
