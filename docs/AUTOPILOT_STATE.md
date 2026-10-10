@@ -1,44 +1,38 @@
 # Victoriosa — continuidad
 
-Actualizado: 2026-10-10, America/Montevideo. Consultar primero este archivo y verificar Git antes de una nueva auditoría. Continuar tareas seguras durante la sesión; no asumir ejecución después de cerrarla.
+Actualizado: 2026-10-10, America/Montevideo. Leer este archivo y verificar Git antes de continuar. No asumir ejecución fuera de la sesión.
 
-## Rama y referencia
-- Rama: `codex/autopilot-v4-durable-orchestrator`; último commit de código/pruebas: `c8b4885`.
-- GitHub verificado con `git ls-remote`: main `c074795`, rama remota `9d47c10`. Sin push, merge ni deploy.
-- Trabajo ajeno preservado: `.audit/`, `.playwright-cli/` y scripts raíz sin seguimiento.
+## Referencia y restricciones
+- Continuado desde 42be14e, rama codex/autopilot-v4-durable-orchestrator. Último código: 494801a. Sin push, merge, despliegue, migraciones externas ni pagos reales.
+- Preservados .audit/, .playwright-cli/ y scripts raíz ajenos sin seguimiento.
+- ECC tdd-workflow y database-migrations aplicados. Mantener pruebas antes de implementación, migraciones aditivas y pagos bloqueados hasta evidencia real. Sin compras a proveedores ni cambios sensibles.
 
-## Estado comprobado
-- React/Vite + Express; `mountAutopilotV4` conecta OAuth Mercado Libre, waitlist, pagos, sourcing, gobernanza y control plane. Persistencia Supabase; no implica que todas las integraciones funcionen en producción.
-- Producción: GET `https://victoriosas.online/api/health` devolvió HTTP 200, commit `c07479554a329f28aa53fd5d3d919315f433de80`, `checkoutEnabled: true`. El README describe el valor por defecto, no el estado vivo. No se realizaron operaciones de compra/pago.
-- GET público `/api/payments/v2/config`: checkout true, PayPal false, transferencia false. `/api/payments/mercadopago/config`: configured true. Son flags de configuración, no validación bancaria ni de pagos.
-- ECC instalado en caché `ecc/ecc/2.2.3`; `skills/tdd-workflow/SKILL.md` leído y aplicado. Detector seleccionó npm; runner real Node test + tsx. [Repositorio oficial consultado](https://github.com/affaan-m/ECC). No se instalaron hooks ni se alteró configuración global. Compatibilidad verificada únicamente para el flujo TDD usado.
+## Cambios
+- Migración supabase/migrations/20261010010000_atomic_checkout.sql: reserva transaccional con bloqueo por clave/productos; precios, moneda y stock del servidor; una orden por clave; liberación única; confirmación ligada a referencia/importe del proveedor. RLS y RPC restringida a service_role.
+- Mercado Pago usa RPC y la misma clave del proveedor derivada de orderId. Reintentos y webhooks no duplican órdenes, reserva ni cola; duplicados no revierten estados enviados. No se afirma cobro real único validado en el proveedor.
+- Expiración sin intento de proveedor libera stock; resultado remoto desconocido conserva reserva. Pago tardío confirmado sigue siendo válido mientras el stock está retenido. Rotación persistente evita que veinte pagos inciertos bloqueen reservas posteriores.
+- Fulfillment tiene cola única, lease/generación/fencing y recuperación. Siguiente prioridad ejecutada: preparación de una tarea manual durable por pedido pagado, recuperable tras caída. No compra ni envío externo. POST /api/commerce/maintenance/run y GET /api/commerce/maintenance/tasks exigen administrador Supabase; sin scheduler conectado.
+- Navegador conserva clave opaca por intención, sin PII persistida; retorno terminal retira su clave y permite otra compra. Pendiente/incierto conserva clave.
+- Health/config distinguen checkout solicitado y disponible. Credenciales solas no habilitan: requieren flag atómico, RPC y evidencia vigente de proveedor/entorno/moneda/fulfillment. PayPal y transferencias nuevas deshabilitados.
 
-## Cambios y evidencia TDD
-| Cambio | RED | GREEN / garantía |
-|---|---|---|
-| Stock de carrito sin coerción | `e51f6c8`: 2 fallos | `4f4633a`: 6 pasan; strings/booleanos no crean stock; cobertura 100% |
-| Cookie OAuth malformada | `9e165f0`: URIError | `6078d05`: HTTP 400 controlado; test incorporado a npm test |
-| Configuración waitlist inválida | `1f14578`: error Supabase URL sin manejar | `b301a65`: HTTP 503 controlado |
-| Pruebas aisladas de integraciones | `9f40635` | Autorización admin, cookie HttpOnly/Secure/SameSite, tokens cifrados, error OAuth 502, consentimiento, persistencia y errores waitlist |
-| Readiness Mercado Pago | `14e4f04`: USD se anunciaba disponible | `4435d0e`: moneda UYU y URL válida/HTTPS en producción antes de anunciar disponibilidad |
-| Integridad conciliación Mercado Pago | `7b21053`: importe abonado `"Infinity"` confirmaba orden | `30d2deb`: importes finitos/no negativos y total positivo antes de actualizar pago |
-| Checkout y errores de proveedor | `c8b4885` | Precio servidor ignora monto cliente, stock insuficiente impide proveedor, órdenes pendientes; fallos lookup/insert/bind/proveedor y retry webhook controlados |
+## Evidencia ejecutada
+- npm run test:commerce:db: 8/8, cero omitidas. PostgreSQL 18 real, cluster temporal nuevo en loopback, base victoriosa_checkout_test y esquema sintético. Conexiones separadas para concurrencia. Cluster detenido al finalizar; evidencia sintética retenida en C:\Users\micahael\AppData\Local\Temp\victoriosa-checkout-test-732x1S.
+- PostgreSQL verificó última unidad reservada una vez, reintentos concurrentes una orden, rechazo/vencimiento seguro libera una vez, referencia/importes/moneda, webhook duplicado sin regresión, una cola, takeover y fencing, tarea manual única tras caída, permisos, readiness sin attestation falsa y rotación de vencimientos.
+- RED/GREEN: 31451c2 → 63c83b1 stock; 20e78ba/1128071/51590a6 → ffa69c3 disponibilidad/router; b967303 → 6647a7c fencing; 8f4be5d → 9fe1c54 vencimiento/duplicados; fae03cd → 80b2c9e mantenimiento/manual; cda105f/3f81c14 → 80b2c9e claves/terminalidad; 28fe4fb → 494801a rotación. RED incluyó API ausente y errores reales/aserciones. PostgreSQL también detectó referencia ambigua, corregida antes del GREEN.
+- npm test: 95/95, cero fallos/omitidas. npm run lint, npm run build, npm run build:vercel: exit 0. Advertencia existente: bundle principal 590.94 kB.
+- Cobertura Node para atomicCheckout/availability/mercadoPago/commerceMaintenance/checkoutKey: líneas 92.41%, ramas 93.33%, funciones 80.65%. AtomicCheckout y checkoutKey líneas/funciones 100%. Cobertura de módulos, no global ni SQL.
+- Revisión independiente: atendidos regresión de estados, vencimiento incierto y starvation. Sin browser E2E, sandbox Mercado Pago, PostgREST integrado ni validación del esquema Supabase completo. Mocks del proveedor no equivalen a validación bancaria.
 
-Comandos verificados:
-- `npm test`: 82 pasan, 0 fallos, 0 omitidas. `npm run lint`: exit 0 en la revisión final.
-- `node --import tsx --test --experimental-test-coverage --test-coverage-include=src/integrations/mercadoLibreRouter.ts src/integrations/mercadoLibreRouter.test.ts`: líneas/funciones 100%, ramas 84.62%.
-- Comando equivalente para `src/storefront/waitlistRouter.ts`: líneas/funciones 100%, ramas 94.12%. Cobertura de módulos, no del repositorio completo.
-- `node --import tsx --test --experimental-test-coverage --test-coverage-include=src/payments/mercadoPago.ts src/payments/mercadoPago.test.ts src/payments/safety.test.ts`: 8 pasan; líneas 97.75%, ramas 81.08%, funciones 90.91%.
-- `npm run build:vercel`: exit 0 con todas las correcciones de producción. Build Node pasó en el ciclo anterior del carrito. Advertencia existente: bundle principal 590.25 kB.
-- Revisión independiente: OAuth/waitlist sin hallazgos; 7 pruebas de pagos pasaron. Se atendió la sugerencia de probar totales no finitos/discrepancias; revisión final de los tests ampliados sin nuevos hallazgos. `git diff --check`: correcto.
-- Proveedores simulados con credenciales ficticias; ningún token real ni escritura de clientes. No se ejecutaron pruebas PostgreSQL ni browser E2E.
+## Producción observada, sin cambios
+- GET https://victoriosas.online/api/health: HTTP 200, commit c07479554a329f28aa53fd5d3d919315f433de80, checkoutEnabled true; configs públicas también anuncian Mercado Pago disponible.
+- Causa comprobada en código previo: health usa CHECKOUT_ENABLED bruto y config considera credenciales suficientes. Corrección únicamente local; producción conserva ese comportamiento hasta despliegue autorizado.
+- Contrato consultado: https://www.mercadopago.com.uy/developers/en/reference/online-payments/checkout-pro/create-order/post y https://www.mercadopago.com.uy/developers/es/docs/checkout-api-orders/resources/migrate-payments-to-orders . Compatibilidad cuenta/país/moneda/redirect pendiente de sandbox autorizado.
 
-## Bloqueos y decisiones
-- Comercio real no validado: el flag checkout activo no demuestra pagos sandbox, reserva de stock, fulfillment ni readiness del catálogo. En `mercadoPago.ts`, precio/stock se leen y la orden se inserta por separado; no se observó reserva atómica en ese flujo. Riesgo de sobreventa concurrente pendiente. No inventar ingresos ni métricas.
-- Mantener Shadow y barreras de publicación/compra; no migraciones destructivas, cambios de credenciales, DNS ni pagos sin autorización explícita.
-- La auditoría integral ECC/arquitectura del adjunto todavía no está completa. Usar evidencia existente y búsquedas específicas, no repetir auditoría general.
+## Bloqueos y siguiente acción
+1. Preparar recuperación administrativa segura de provider_started sin ID después de vencimiento: conservar stock y usar la misma clave; verificar proveedor antes de liberar o intentar pago nuevo. Hoy maintenance solo reporta incertidumbre.
+2. Resolver clave de checkout terminal/vencida cuando comprador no retorna: consultar estado al reintentar y retirar clave solo con terminalidad comprobada; nunca rotar por timeout desconocido.
+3. Antes de despliegue, verificar esquema Supabase completo y pedidos legacy sin sesión atómica; no hay backfill automático. Captura histórica legacy fuera de garantías de este flujo.
+4. Validar Mercado Pago en sandbox autorizado, reintentos/red incierta y operación de entrega manual. Solo después registrar attestation del entorno correspondiente; nunca habilitar live con mocks/PG sintético.
+5. Preparar scheduler autenticado y operación de tareas manuales cuando se autorice infraestructura. Cola done significa preparación manual durable, no envío ni compra externa.
 
-## Próxima prioridad
-Diseñar reserva atómica e idempotencia de checkout con criterios de aceptación y base PostgreSQL aislada, antes de modificar persistencia de órdenes. Confirmar contrato real Mercado Pago en sandbox autorizado; no confundir mocks con validación del proveedor. No habilitar ni modificar producción. Documentar solo cambios relevantes aquí.
-
-Criterios para el próximo RED de concurrencia: dos compradores compiten por una unidad y solo uno reserva; retry con la misma clave devuelve la misma orden sin una segunda reserva; cantidades/precio/currency se validan dentro de la transacción; fallo/expiración libera stock una sola vez; callback repetido confirma una vez y conserva trazabilidad. Primero inspeccionar constraints/RPC existentes en migraciones y crear pruebas con rollback en una base aislada, nunca contra clientes reales.
+No hay datos reales suficientes de ventas/conversión/ingresos. Continuar recuperación segura y compatibilidad legacy sin desplegar ni ejecutar pagos reales.
