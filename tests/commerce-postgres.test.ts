@@ -55,6 +55,11 @@ test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
     await reset(2);
     const [one, two] = await Promise.all([command('reserve', request()), command('reserve', request())]);
     await command('begin_provider', { orderId: one.orderId }); await command('begin_provider', { orderId: two.orderId });
+    await sql("update public.commerce_checkout_sessions set expires_at=now()-interval '1 second';");
+    const firstBatch = JSON.parse(await sql('set role service_role; select public.commerce_maintenance_expired();')).reservations;
+    const nextBatch = JSON.parse(await sql('set role service_role; select public.commerce_maintenance_expired();')).reservations;
+    assert.equal(firstBatch.length, 1); assert.equal(nextBatch.length, 1);
+    assert.notEqual(firstBatch[0].orderId, nextBatch[0].orderId);
     const results = await Promise.allSettled([one, two].map(row => recover({ ...proof, orderId: row.orderId, reference: row.orderId })));
     assert.equal(results.filter(row => row.status === 'fulfilled').length, 1);
     const winner = results[0].status === 'fulfilled' ? one : two;
