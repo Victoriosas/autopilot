@@ -77,6 +77,7 @@ test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
     const claims = await Promise.all([command('claim_fulfillment', { owner: 'worker-a' }), command('claim_fulfillment', { owner: 'worker-b' })]);
     const job = claims.find(result => result.job)?.job;
     assert.equal(claims.filter(result => result.job).length, 1);
+    await assert.rejects(command('finish_fulfillment', { id: job.id, owner: job.owner }), /FULFILLMENT_FENCE_REJECTED/);
     await sql("update public.commerce_fulfillment_jobs set lease_until=now()-interval '1 second';");
     const recovered = (await command('claim_fulfillment', { owner: 'worker-c' })).job;
     assert.equal(recovered.id, job.id); assert.ok(recovered.generation > job.generation);
