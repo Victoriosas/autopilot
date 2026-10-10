@@ -48,6 +48,33 @@ Sin gastos, compras a proveedores, cobros reales, cambios de credenciales/DNS/pa
 - Sin datos reales suficientes de ventas/conversión/ingresos; no hay evidencia que justifique presentar la tienda lista para cobrar.
 - Siguiente: preparar regresiones PostgREST/RLS/Auth para el scaffold sintético y tareas independientes de catálogo/mantenimiento; no repetir start mientras Docker/Podman siga ausente. Cuando haya runtime local, ejecutar npx --yes supabase@2.120.0 start --workdir '<workspace generado>' y comprobar migraciones/RLS/PostgREST/triggers, luego DB/proveedor sandbox y scheduler autorizado. Verificar sourcing shadow read-only y fichas/costos/envío reales cuando infraestructura permita. Diagnosticar .click sin tocar DNS/facturación. No repetir checks previos salvo código nuevo/fallo. Checkout false hasta evidencia de pago/entrega recuperable.
 
+## Piloto comercial decidido y ejecución 2026-10-10
+
+Nueva orden del propietario: tomar el control y hacer real el piloto propuesto. Prioridad comercial: accesorios de belleza de proveedor local, diez referencias y tres kits; después evaluar servicio gestionado para centros estéticos. No se lanzó SaaS ni se asumieron clientes/ventas. Gastos, contactos a terceros y cobros no autorizados por esta ejecución.
+
+- Implementado repricing con costEvidence explícita: flete, aduana, comisiones porcentuales/fijas, reserva de devoluciones, adquisición, impuestos, moneda coincidente y referencia documental. Valores ausentes/null/string/NaN/negativos no equivalen a cero. La hoja es declarada por un operador autenticado: no acredita verificación independiente, stock ni entrega.
+- Cotizaciones antiguas sin hoja completa no pasan Council; bloqueo previo a IA y escalación al dueño. No se modificaron precios/productos remotos.
+- ECC tdd-workflow: e6bda7e RED 4/6 fallidas; 168e163 GREEN6/6. 41b2a41 RED Council2/2 fallidas; 3870456 GREEN9/9 incluyendo HTTP autenticado/no autenticado y costos completos. Cobertura repricingProposal: líneas92.25%, ramas90.70%, funciones100%; no se atribuye esa cobertura a Council ni al proyecto entero. npm run verify exit0: TypeScript, Node129/129 y ambos builds. Secret scan y diff check pasan. No nueva validación Supabase/PG local.
+- Supabase read-only: proyecto local SUPABASE_URL/VITE_SUPABASE_URL corresponde a jfjzpwlrhzqbcrvqxhzf; public.products=0 y orders=0. Metadatos no muestran commerce_checkout_sessions. Segundo proyecto uunygxsjzavzmfqfijka tampoco tiene checkout/orders. Check Supabase Preview del PR sigue SKIPPED; CI previo b79752f validate/postgres SUCCESS. Falta confirmar configuración de producción por entorno antes de migraciones.
+- Proveedor candidato real: Casa Héctor, https://casahector.net/subcat.aspx?f=9&s=14, consultado 2026-10-10. Precio publicado Mayor(x6), observado y sujeto a confirmación; no costo final, factura, impuestos, disponibilidad ni autorización de imágenes/API verificados. Alternativa: https://www.belenaccesorios.com.uy/ (mayorista, sin cotización obtenida).
+
+| Referencia candidata | Identificador de catálogo | Precio mayorista observado UYU |
+|---|---|---:|
+| Esponja individual | 1566 | 20 |
+| Brocha doble para ojos/cejas | 1756 | 50 |
+| Brocha para base | 1767 | 130 |
+| Brocha para rubor/contorno | 1765 | 130 |
+| Frasco de doce esponjas | 873 | 120 |
+| Par de esponjas | 1533 | 65 |
+| Neceser con asa | 2102 | 200 |
+| Organizador pequeño | 2004 | 180 |
+| Conjunto de brochas para ojos | 1769 | 135 |
+| Vincha con esponja | 851 | 150 |
+
+No son productos publicados ni stock reservado. Tres kits a cotizar: preparación facial (851+1566); maquillaje básico (1767+1756+1533); organización (2004+2102). No precio final ni margen prometido; comparar también precio minorista del propio proveedor, logística y contenido real para evitar sobreprecio sin valor. No crear catálogo ficticio para cubrir faltantes.
+
+Siguiente ciclo concreto: integrar un flujo de cotización para proveedor local con evidencia de stock, costo final/impuestos, mínimo de compra, devolución, imágenes y entrega en Canelones; confirmar por entorno la identidad Supabase, validar migraciones y RPC/RLS/PostgREST en entorno aislado, luego sandbox Mercado Pago y un pedido íntegro sin cobro real. No instalar Docker ni reiniciar automáticamente el PC de 8GB; preparar alternativa aislada y solicitud concreta si requiere gasto/privilegios. Piloto termina solo con diez pedidos reales entregados y conciliados tras autorización comercial aplicable, no con tests sintéticos.
+
 ## Prompt para proseguir el desarrollo
 ```text
 Trabajá autónomamente en C:\autopilot para completar Victoriosa: comercio de skincare, autocuidado y spa en casa para Uruguay, con experiencia moderna inspirada en Tiendamia y descubrimiento/mantenimiento de productos autónomos.
