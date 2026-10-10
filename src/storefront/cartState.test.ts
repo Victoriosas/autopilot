@@ -31,3 +31,41 @@ test('restoreCart keeps only published products and clamps quantities to current
   assert.equal(restored.length, 1);
   assert.equal(restored[0].quantity, 3);
 });
+
+test('cart limit rejects malformed inventory without coercing it into stock', () => {
+  for (const inventory of ['3', true, null, undefined, NaN, Infinity, -1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.equal(cartLimit(product({ inventory: inventory as number })), 0, `inventory=${String(inventory)}`);
+  }
+});
+
+test('restoring persisted cart drops products with malformed live stock', () => {
+  const invalid = product({ inventory: '3' as unknown as number });
+  assert.deepEqual(restoreCart([{ productId: invalid.id, quantity: 1 }], [invalid]), []);
+});
+
+test('restoreCart merges identical variants and shares the stock limit across variants', () => {
+  const available = product({ inventory: 5 });
+  const restored = restoreCart([
+    { productId: available.id, quantity: 2, selectedVariant: ' rosa ' },
+    { product: { id: available.id }, quantity: 2, selectedVariant: 'rosa' },
+    { productId: available.id, quantity: 3, selectedVariant: 'blanco' },
+    { productId: available.id, quantity: 1 },
+  ], [available]);
+  assert.deepEqual(restored.map(({ quantity, selectedVariant }) => ({ quantity, selectedVariant })), [
+    { quantity: 4, selectedVariant: 'rosa' },
+    { quantity: 1, selectedVariant: 'blanco' },
+  ]);
+});
+
+test('restoreCart ignores malformed persisted entries and normalizes empty variants', () => {
+  const available = product();
+  assert.deepEqual(restoreCart(null, [available]), []);
+  const restored = restoreCart([
+    null, 'invalid', {},
+    { productId: available.id, quantity: '1' },
+    { productId: available.id, quantity: 0 },
+    { productId: available.id, quantity: 1.5 },
+    { productId: available.id, quantity: 1, selectedVariant: '  ' },
+  ], [available]);
+  assert.deepEqual(restored, [{ product: available, quantity: 1, selectedVariant: undefined }]);
+});
