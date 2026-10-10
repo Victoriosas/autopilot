@@ -5,6 +5,7 @@ import { cjSourcingReadConfigured } from '../services/cjSourcingProvider';
 import { requireControlPlaneAuth,getAutopilotPrincipal } from './auth';
 import { marketProviderStatus } from './marketEvidence';
 import { sourcingConfig, type SourcingConfig } from './sourcingEvidence';
+import { beautyDiscoveryPlan } from './beautyDiscoveryPlan';
 import { runSourcing } from './sourcingOrchestrator';
 import { createSourcingStore, type SourcingStore } from './sourcingStore';
 import { inspectShadowRun } from './shadowInspector';
@@ -150,9 +151,10 @@ export function createSourcingRouter(
  const router=Router();
  router.get('/cron/sourcing',async(req,res)=>{
   if(!validCronToken(req.header('authorization'))) return res.status(401).json({error:'CRON_AUTH_REQUIRED'});
-  const config=sourcingConfig();
+  const slot=Math.floor(Date.now()/21600000);
+  const config=beautyDiscoveryPlan(sourcingConfig(),slot,process.env.AUTOPILOT_V4_KEYWORD);
   if(!config.enabled) return res.json({status:'skipped_disabled',run_id:null,mode:config.mode});
-  try {return res.json(await runner(storeFactory(),config,`cron:${Math.floor(Date.now()/21600000)}`));}
+  try {return res.json(await runner(storeFactory(),config,`cron:${slot}`));}
   catch {return res.status(503).json({error:'SOURCING_RUN_INCOMPLETE'});}
  });
  router.get('/sourcing/status',requireControlPlaneAuth,async(_req,res)=>{

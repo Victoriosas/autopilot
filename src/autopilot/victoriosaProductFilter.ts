@@ -12,6 +12,9 @@ export interface VictoriosaFit {
 }
 
 const hardReject = [
+  /\b(?:cures?|heals?|treats?|cura(?:r)?|trata(?:r)?)\s+(?:\w+\s+){0,3}(?:eczema|psoriasis|rosacea|acne|cancer|alopecia)\b/i,
+  /\b(?:guaranteed|permanent|definitiv\w*|garantiz\w*)\b.{0,60}\b(?:wrinkles?|arrugas?|rejuven\w*)\b/i,
+  /\b(?:wrinkles?|arrugas?|rejuven\w*)\b.{0,60}\b(?:guaranteed|permanent|definitiv\w*|garantiz\w*)\b/i,
   /\bhalloween\b/i,/\bcostume\b/i,/\bcosplay\b/i,/\bdemon\b/i,/\bhorn(?:s)?\b/i,/\bbird[- ]?beak\b/i,
   /\bvape\b/i,/\bnicotine\b/i,/\bcigarette\b/i,/\bcbd\b/i,/\bthc\b/i,/\bsextoy\b/i,/\bdildo\b/i,
   /\bweapon\b/i,/\bknife\b/i,/\btaser\b/i,/\bfirearm\b/i,/\bammunition\b/i,
@@ -19,6 +22,7 @@ const hardReject = [
 ];
 
 const beautyScope = [
+  /\b(?:hydrogel|eye patches|essence|bruma|esencia)\b/i,
   /\bbeauty\b/i,/\bskincare\b/i,/\bskin care\b/i,/\bfacial\b/i,/\bface\b/i,/\bcosmetic\b/i,
   /\bhair\b/i,/\bheadband\b/i,/\bscrunchie\b/i,/\bcomb\b/i,/\bbrush\b/i,/\bmakeup\b/i,
   /\bmanicure\b/i,/\bnail\b/i,/\bspa\b/i,/\bgua sha\b/i,/\broller\b/i,/\bbody care\b/i,
@@ -27,12 +31,14 @@ const beautyScope = [
 ];
 
 const regulatedCosmetic = [
+  /\b(?:facial mist|face mist|hydrogel|eye patches|face essence|facial essence|bruma|esencia)\b/i,
   /\btoner\b/i,/\bserum\b/i,/\bcream\b/i,/\blotion\b/i,/\bcleanser\b/i,/\bsunscreen\b/i,
   /\bshampoo\b/i,/\bconditioner\b/i,/\bperfume\b/i,/\bdeodorant\b/i,/\bcosmetic\b/i,
   /\bt[oó]nico\b/i,/\bsuero\b/i,/\bcrema\b/i,/\bloci[oó]n\b/i,/\blimpiador\b/i,/\bprotector solar\b/i,
 ];
 
 const regulatedDevice = [
+  /\b(?:led\s+(?:face|facial)\s+mask|facial steamer|vaporizador facial)\b/i,
   /\blaser\b/i,/\bipl\b/i,/\bradiofrequency\b/i,/\bmicrocurrent\b/i,/\bled therapy\b/i,
   /\bmedical\s+(?:device|equipment|instrument|apparatus)\b/i,
   /\b(?:treatment|therapy|therapeutic|tratamiento|terap[eé]utic[oa]?)\s+(?:device|machine|equipment|instrument|apparatus)\b/i,
@@ -40,7 +46,8 @@ const regulatedDevice = [
 ];
 
 function haystack(candidate: OpportunityCandidate, facts: CommercialFacts) {
-  return [candidate.title, facts.category, facts.description].filter(Boolean).join(' ').slice(0, 5000);
+  return [candidate.title, facts.category, facts.description].filter(Boolean).join(' ').slice(0, 5000)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
 }
 
 export function assessVictoriosaFit(candidate: OpportunityCandidate, facts: CommercialFacts): VictoriosaFit {
