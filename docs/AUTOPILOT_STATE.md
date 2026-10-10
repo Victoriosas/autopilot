@@ -75,6 +75,17 @@ No son productos publicados ni stock reservado. Tres kits a cotizar: preparació
 
 Siguiente ciclo concreto: integrar un flujo de cotización para proveedor local con evidencia de stock, costo final/impuestos, mínimo de compra, devolución, imágenes y entrega en Canelones; confirmar por entorno la identidad Supabase, validar migraciones y RPC/RLS/PostgREST en entorno aislado, luego sandbox Mercado Pago y un pedido íntegro sin cobro real. No instalar Docker ni reiniciar automáticamente el PC de 8GB; preparar alternativa aislada y solicitud concreta si requiere gasto/privilegios. Piloto termina solo con diez pedidos reales entregados y conciliados tras autorización comercial aplicable, no con tests sintéticos.
 
+### Cierre verificado de este lote
+
+Código publicado en PR66, commit 4e6c06b402082999259327e917c391ba8a18a209. CI38096710091 y38096707632: validate/postgres SUCCESS. Log38096710091 confirma Node130/130; PostgreSQL sourcing14/14, auth1/1, comercio11/11. Supabase Preview SKIPPED no acredita integración. Preview READY dpl_AuaPBLEK4h8BpQHxVWfpBsQRDYFX, https://autopilot-5wyhxidqk-autopilot12.vercel.app. GET /api/health HTTP200 confirma commit exacto y checkoutEnabled=false; GET /api/payments/mercadopago/config HTTP200 configured=false/CHECKOUT_DISABLED. GET /api/storefront/config devolvió404 porque no existe esa ruta; no se atribuye a caída ni a configuración comercial.
+
+Estado del lanzamiento: BLOCKED_REQUIRES_REAL_PAYMENT_PROVIDER_ACTION. No se declara proyecto completo ni ingresos. Faltan además entorno Supabase integrado y oferta/stock del proveedor. Desarrollo técnico puede continuar; comercio real permanece bloqueado.
+
+Solicitud preparada para revisión, no enviada:
+"Hola, estoy preparando un piloto de accesorios de belleza para Victoriosa, en Canelones. Solicito cotización sin compromiso para seis unidades de cada referencia: 1566, 1756, 1767, 1765, 873, 1533, 2102, 2004, 1769 y 851. ¿Podrían confirmar precio final con impuestos, mínimo mayorista, stock actual, costo/plazo de entrega a Canelones, facturación y condiciones de cambios por defectos? También necesito saber si permiten usar sus fotos y recibir actualizaciones de catálogo y stock. No constituye una orden de compra."
+
+No enviar a terceros sin instrucción explícita aplicable. Confirmar localidad exacta antes de una cotización definitiva de envío. No comprar seis unidades ni comprometer presupuesto a partir del precio público.
+
 ## Prompt para proseguir el desarrollo
 ```text
 Trabajá autónomamente en C:\autopilot para completar Victoriosa: comercio de skincare, autocuidado y spa en casa para Uruguay, con experiencia moderna inspirada en Tiendamia y descubrimiento/mantenimiento de productos autónomos.
