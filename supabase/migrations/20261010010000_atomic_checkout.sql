@@ -25,12 +25,19 @@ create table public.commerce_payment_capabilities (
  fulfillment_verified boolean not null default false,
  primary key(provider,environment,currency)
 );
+create table public.commerce_manual_fulfillment_tasks (
+ order_id uuid primary key references public.orders(id) on delete cascade,
+ state text not null default 'awaiting_owner_approval', created_at timestamptz not null default now()
+);
 alter table public.commerce_checkout_sessions enable row level security;
 alter table public.commerce_fulfillment_jobs enable row level security;
 alter table public.commerce_payment_capabilities enable row level security;
+alter table public.commerce_manual_fulfillment_tasks enable row level security;
 revoke all on public.commerce_checkout_sessions,public.commerce_fulfillment_jobs,public.commerce_payment_capabilities from public,anon,authenticated;
 grant select,insert,update on public.commerce_checkout_sessions,public.commerce_fulfillment_jobs to service_role;
 grant select on public.commerce_payment_capabilities to service_role;
+revoke all on public.commerce_manual_fulfillment_tasks from public,anon,authenticated;
+grant select,insert on public.commerce_manual_fulfillment_tasks to service_role;
 
 create function public.commerce_checkout_command(command text,args jsonb default '{}'::jsonb)
 returns jsonb language plpgsql security invoker set search_path='' as $$
@@ -45,6 +52,14 @@ begin
    select 1 from public.commerce_payment_capabilities c where c.provider=args->>'provider'
     and c.environment=args->>'environment' and c.currency=args->>'currency'
     and c.verified_at<=now() and c.valid_until>now() and c.fulfillment_verified));
+ end if;
+ if command='expired' then
+  return jsonb_build_object('reservations',coalesce((select jsonb_agg(jsonb_build_object('orderId',x.order_id,'providerOrderId',x.provider_order_id,'providerStarted',x.provider_started)) from
+   (select cs.order_id,cs.provider_order_id,cs.provider_started from public.commerce_checkout_sessions cs where cs.state='held' and cs.expires_at<=now() order by cs.expires_at limit 20) x),'[]'::jsonb));
+ end if;
+ if command='manual_tasks' then
+  return jsonb_build_object('tasks',coalesce((select jsonb_agg(to_jsonb(t)) from
+   (select mt.order_id,mt.state,mt.created_at from public.commerce_manual_fulfillment_tasks mt order by mt.created_at limit 100) t),'[]'::jsonb));
  end if;
  if command='reserve' then
   key:=args->>'key';
@@ -95,9 +110,15 @@ begin
    where id=j.id returning * into j;
   return jsonb_build_object('job',to_jsonb(j));
  end if;
- if command in ('finish_fulfillment','retry_fulfillment') then
+ if command in ('finish_fulfillment','retry_fulfillment','prepare_fulfillment') then
   select * into strict j from public.commerce_fulfillment_jobs where id=(args->>'id')::uuid for update;
   if j.state<>'running' or j.owner is distinct from args->>'owner' or j.generation is distinct from (args->>'generation')::integer or j.lease_until is null or j.lease_until<clock_timestamp() then raise exception 'FULFILLMENT_FENCE_REJECTED'; end if;
+  if command='prepare_fulfillment' then
+   select * into strict o from public.orders where id=j.order_id;
+   if o.payment_status is distinct from 'paid' then raise exception 'PAID_ORDER_REQUIRED'; end if;
+   insert into public.commerce_manual_fulfillment_tasks(order_id) values(j.order_id) on conflict do nothing;
+   return jsonb_build_object('taskId',j.order_id,'requiresOwnerApproval',true);
+  end if;
   update public.commerce_fulfillment_jobs set state=case when command='finish_fulfillment' then 'done' else 'pending' end,
    last_error=case when command='retry_fulfillment' then 'FULFILLMENT_RETRY_REQUIRED' else null end,result=args->'result',lease_until=null where id=j.id;
   return jsonb_build_object('ok',true);

@@ -29,7 +29,10 @@ export function createAtomicCheckout(command: CommerceCommand, gateway: Checkout
       const args = { orderId, providerOrderId, amount: total, currency: truth.currency_id, status: truth.status };
       // RPC checks local reference/amount/currency before any state transition.
       const result = await command('payment', args);
-      if (['failed', 'cancelled', 'expired'].includes(truth.status)) await command('reject', { orderId });
+      if (['failed', 'cancelled', 'expired'].includes(truth.status)) {
+        await command('reject', { orderId });
+        if (result.paymentStatus !== 'paid') return { ...result, paymentStatus: truth.status };
+      }
       return result;
     },
   };

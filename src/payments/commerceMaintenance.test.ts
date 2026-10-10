@@ -1,6 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { runCommerceMaintenance } from './commerceMaintenance';
+import { createCommerceMaintenanceRouter, runCommerceMaintenance } from './commerceMaintenance';
+import express from 'express';
+import { createServer } from 'node:http';
+import { once } from 'node:events';
+
+test('maintenance and manual tasks reject anonymous access before database or provider calls', async () => {
+  const app = express(); app.use('/maintenance', createCommerceMaintenanceRouter());
+  const server = createServer(app).listen(0, '127.0.0.1'); await once(server, 'listening');
+  try {
+    const { port } = server.address() as { port: number };
+    for (const [path, method] of [['run', 'POST'], ['tasks', 'GET']]) {
+      const response = await fetch(`http://127.0.0.1:${port}/maintenance/${path}`, { method });
+      assert.equal(response.status, 401); assert.equal((await response.json()).error, 'ADMIN_AUTH_REQUIRED');
+    }
+  } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
+});
 
 test('maintenance releases safe expiry, holds unknown payment and creates a recoverable manual fulfillment task', async () => {
   const calls: any[] = []; let claimed = false;

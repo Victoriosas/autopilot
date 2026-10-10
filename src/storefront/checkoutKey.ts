@@ -7,5 +7,13 @@ export async function checkoutKey(storage: Pick<Storage, 'getItem' | 'setItem'>,
   if (existing && /^[a-zA-Z0-9_-]{16,128}$/.test(existing)) return existing;
   const key = crypto.randomUUID();
   storage.setItem(storageKey, key);
+  storage.setItem(`victoriosa.checkout.key.${key}`, storageKey);
   return key;
+}
+
+export function forgetCheckoutKey(storage: Pick<Storage, 'getItem' | 'removeItem'>, key: string) {
+  const reference = `victoriosa.checkout.key.${key}`;
+  const storageKey = storage.getItem(reference);
+  if (storageKey && storage.getItem(storageKey) === key) storage.removeItem(storageKey);
+  storage.removeItem(reference);
 }
