@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, Banknote, CheckCircle2, CreditCard, Loader2, Lock, MessageCircle, ShieldCheck, Truck, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { apiFetch } from '../../lib/api';
+import { checkoutKey } from '../../storefront/checkoutKey';
 import { useApp } from '../../context/AppContext';
 import type { Order, OrderCustomer } from '../../types';
 import {
@@ -170,8 +171,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
     if (!isFormValid) return showToast('Completá tus datos de envío primero.', 'error');
     try {
       setMercadoPagoBusy(true);
+      const idempotencyKey = await checkoutKey(sessionStorage, { customer: formData, items: checkoutItems });
       const response = await apiFetch('/api/payments/mercadopago/order', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customer: formData, items: checkoutItems }),
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey }, body: JSON.stringify({ customer: formData, items: checkoutItems }),
       });
       const data = await response.json();
       if (!response.ok || !data.checkoutUrl || !data.orderId) throw new Error(data.error || 'No se pudo iniciar Mercado Pago.');
