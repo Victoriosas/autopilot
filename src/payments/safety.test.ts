@@ -85,3 +85,23 @@ test('Mercado Pago availability rejects unsupported currency and invalid product
     await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
   }
 });
+
+test('legacy payment creation stays unavailable even when the raw checkout flag is enabled', async () => {
+  const env = { CHECKOUT_ENABLED: 'true', COMMERCE_ATOMIC_CHECKOUT_ENABLED: 'false', SUPABASE_URL: 'https://payments.example.test', SUPABASE_SERVICE_ROLE_KEY: 'test-key', BANK_TRANSFER_PUBLIC_INSTRUCTIONS: 'test-only', PAYPAL_CLIENT_ID: 'test-id', PAYPAL_CLIENT_SECRET: 'test-secret', PAYPAL_ENV: 'live', PAYPAL_WEBHOOK_ID: 'test-hook', PAYPAL_STORE_TO_USD_RATE: '1' };
+  const previous = Object.fromEntries(Object.keys(env).map(key => [key, process.env[key]])); Object.assign(process.env, env);
+  const app = express(); app.use(express.json()); app.use('/v2', createPaymentV2Router());
+  const server = createServer(app).listen(0, '127.0.0.1'); await once(server, 'listening');
+  const { port } = server.address() as { port: number };
+  try {
+    const config = await (await fetch(`http://127.0.0.1:${port}/v2/config`)).json();
+    assert.equal(config.checkoutEnabled, false); assert.equal(config.checkoutRequested, true);
+    assert.equal(config.paypalConfigured, false); assert.equal(config.transferConfigured, false);
+    for (const route of ['paypal/order', 'transfer/order']) {
+      const response = await fetch(`http://127.0.0.1:${port}/v2/${route}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      assert.equal(response.status, 503);
+    }
+  } finally {
+    for (const [key, value] of Object.entries(previous)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
+    server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve()));
+  }
+});
