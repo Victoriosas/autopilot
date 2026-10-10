@@ -5,7 +5,7 @@ import { once } from 'node:events';
 import { createCommerceMaintenanceRouter } from './commerceMaintenance';
 
 test('maintenance cron requires its own secret, defaults disabled and never initiates payments', async () => {
-  const env: NodeJS.ProcessEnv = { COMMERCE_MAINTENANCE_CRON_SECRET: 'fixture-maintenance-only' };
+  const env: NodeJS.ProcessEnv = { COMMERCE_MAINTENANCE_CRON_SECRET: 'fixture-maint-cron' };
   const actions: string[] = [], owners: string[] = [];
   const app = express();
   app.use('/maintenance', createCommerceMaintenanceRouter({
@@ -22,10 +22,10 @@ test('maintenance cron requires its own secret, defaults disabled and never init
   try {
     await once(server, 'listening');
     const url = `http://127.0.0.1:${(server.address() as any).port}/maintenance/cron`;
-    for (const token of [undefined, 'Bearer fixture-sourcing-only', 'Bearer fixture-maintenance-only-extra']) {
+    for (const token of [undefined, 'Bearer fixture-sourcing-only', 'Bearer fixture-maint-cron-extra']) {
       assert.equal((await fetch(url, { headers: token ? { authorization: token } : {} })).status, 401);
     }
-    const request = () => fetch(url, { headers: { authorization: 'Bearer fixture-maintenance-only' } });
+    const request = () => fetch(url, { headers: { authorization: 'Bearer fixture-maint-cron' } });
     const disabled = await request();
     assert.equal(disabled.status, 200);
     assert.deepEqual(await disabled.json(), { status: 'skipped_disabled' });
@@ -33,7 +33,7 @@ test('maintenance cron requires its own secret, defaults disabled and never init
     assert.deepEqual(await (await request()).json(), { status: 'skipped_disabled' });
     assert.deepEqual(actions, []);
     env.COMMERCE_MAINTENANCE_CRON_ENABLED = 'true';
-    const head = await fetch(url, { method: 'HEAD', headers: { authorization: 'Bearer fixture-maintenance-only' } });
+    const head = await fetch(url, { method: 'HEAD', headers: { authorization: 'Bearer fixture-maint-cron' } });
     assert.equal(head.status, 405);
     assert.deepEqual(actions, []);
     for (let retry = 0; retry < 2; retry++) {
@@ -50,14 +50,15 @@ test('maintenance cron requires its own secret, defaults disabled and never init
 test('maintenance cron returns sanitized failures without leaking provider or database details', async () => {
   const app = express();
   app.use(createCommerceMaintenanceRouter({
-    env: () => ({ COMMERCE_MAINTENANCE_CRON_ENABLED: 'true', COMMERCE_MAINTENANCE_CRON_SECRET: 'fixture-maintenance-only' }),
+    env: () => ({ COMMERCE_MAINTENANCE_CRON_ENABLED: 'true', COMMERCE_MAINTENANCE_CRON_SECRET: 'fixture-maint-cron' }),
     command: async () => { throw new Error('sensitive upstream details'); },
   }));
   const server = app.listen(0, '127.0.0.1');
   try {
     await once(server, 'listening');
-    const response = await fetch(`http://127.0.0.1:${(server.address() as any).port}/cron`, { headers: { authorization: 'Bearer fixture-maintenance-only' } });
+    const response = await fetch(`http://127.0.0.1:${(server.address() as any).port}/cron`, { headers: { authorization: 'Bearer fixture-maint-cron' } });
     assert.equal(response.status, 503);
     assert.deepEqual(await response.json(), { error: 'COMMERCE_MAINTENANCE_UNAVAILABLE' });
   } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
 });
+
