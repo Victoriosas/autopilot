@@ -322,11 +322,8 @@ test('real JWT admin access comes from server-managed profile, never user metada
     const unauthorized=await ordinary.actor.from('products').update({title:'Forged edit'}).eq('id',draft).select('id');
     assert.equal(unauthorized.error,null); assert.deepEqual(unauthorized.data,[]);
 
-    const previousEnv = {
-      SUPABASE_URL: process.env.SUPABASE_URL,
-      SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
-      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-    };
+    const envNames = ['SUPABASE_URL','SUPABASE_ANON_KEY','SUPABASE_SERVICE_ROLE_KEY'] as const;
+    const previousEnv=Object.fromEntries(envNames.map(name=>[name,process.env[name]]));
     process.env.SUPABASE_URL = url.origin;
     process.env.SUPABASE_ANON_KEY = anonKey;
     delete process.env.SUPABASE_SERVICE_ROLE_KEY;
