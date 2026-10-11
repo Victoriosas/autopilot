@@ -280,3 +280,48 @@ test('disposable Supabase Auth, PostgREST and atomic commerce', { timeout: 90000
     await customer.auth.signOut();
   }
 });
+
+test('real JWT admin access comes from server-managed profile, never user metadata', async () => {
+  const users: string[] = [];
+  const draft = randomUUID();
+  try {
+    const register = async (role: 'customer' | 'admin') => {
+      const email='role-'+randomUUID()+'@example.test', password='Fixture-'+randomUUID()+'-9a!';
+      const created=await admin.auth.admin.createUser({email,password,email_confirm:true});
+      assert.equal(created.error,null,created.error?.message);
+      const id=created.data.user!.id; users.push(id);
+      const profile=await admin.from('profiles').insert({id,role});
+      assert.equal(profile.error,null,profile.error?.message);
+      const actor=client(anonKey);
+      const signed=await actor.auth.signInWithPassword({email,password});
+      assert.equal(signed.error,null,signed.error?.message);
+      return {id,actor};
+    };
+    const ordinary=await register('customer'), manager=await register('admin');
+    const inserted=await admin.from('products').insert({id:draft,title:'Private draft',price:100,currency:'UYU',status:'discovered',inventory:1});
+    assert.equal(inserted.error,null,inserted.error?.message);
+    const readDraft=async(actor:SupabaseClient)=>actor.from('products').select('id').eq('id',draft);
+    const hidden=await readDraft(ordinary.actor);
+    assert.equal(hidden.error,null); assert.deepEqual(hidden.data,[]);
+    const allowed=await readDraft(manager.actor);
+    assert.equal(allowed.error,null); assert.equal(allowed.data!.length,1);
+    const edit=await manager.actor.from('products').update({title:'Admin edit'}).eq('id',draft).select('title');
+    assert.equal(edit.error,null); assert.equal(edit.data![0].title,'Admin edit');
+    const forged=await ordinary.actor.auth.updateUser({data:{role:'admin'}});
+    assert.equal(forged.error,null,forged.error?.message);
+    assert.equal((await ordinary.actor.auth.refreshSession()).error,null);
+    const stillHidden=await readDraft(ordinary.actor);
+    assert.equal(stillHidden.error,null); assert.deepEqual(stillHidden.data,[]);
+    const escalate=await ordinary.actor.from('profiles').update({role:'admin'}).eq('id',ordinary.id).select('role');
+    assert.ok(escalate.error); assert.equal(escalate.error.code,'42501');
+    const profile=await ordinary.actor.from('profiles').select('role').eq('id',ordinary.id).single();
+    assert.equal(profile.error,null); assert.equal(profile.data!.role,'customer');
+    const unauthorized=await ordinary.actor.from('products').update({title:'Forged edit'}).eq('id',draft).select('id');
+    assert.equal(unauthorized.error,null); assert.deepEqual(unauthorized.data,[]);
+    await rpcBlocked(manager.actor,'commerce_checkout_command',{command:'capabilities',args:{}});
+    await ordinary.actor.auth.signOut(); await manager.actor.auth.signOut();
+  } finally {
+    await admin.from('products').delete().eq('id',draft);
+    for (const id of users) assert.equal((await admin.auth.admin.deleteUser(id)).error,null);
+  }
+});
