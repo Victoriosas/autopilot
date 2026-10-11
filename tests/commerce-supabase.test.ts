@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { once } from 'node:events';
+import { createServer } from 'node:http';
+import express from 'express';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createCommerceMaintenanceRouter } from '../src/payments/commerceMaintenance';
 
 // This suite must never receive hosted project credentials or customer data.
 assert.equal(process.env.COMMERCE_SYNTHETIC_SUPABASE, 'true', 'Explicit disposable fixture opt-in required');
@@ -318,6 +321,48 @@ test('real JWT admin access comes from server-managed profile, never user metada
     assert.equal(profile.error,null); assert.equal(profile.data!.role,'customer');
     const unauthorized=await ordinary.actor.from('products').update({title:'Forged edit'}).eq('id',draft).select('id');
     assert.equal(unauthorized.error,null); assert.deepEqual(unauthorized.data,[]);
+
+    const previousEnv = {
+      SUPABASE_URL: process.env.SUPABASE_URL,
+      SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    };
+    process.env.SUPABASE_URL = url.origin;
+    process.env.SUPABASE_ANON_KEY = anonKey;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const app=express();
+    app.use(express.json());
+    app.use('/api/commerce/maintenance',createCommerceMaintenanceRouter({
+      command: async(action)=>{
+        assert.equal(action,'manual_tasks');
+        return {tasks:[]};
+      },
+    }));
+    const server=createServer(app).listen(0,'127.0.0.1');
+    await once(server,'listening');
+    const {port}=server.address() as {port:number};
+    try {
+      const requestTasks=(token?:string)=>fetch(`http://127.0.0.1:${port}/api/commerce/maintenance/tasks`,{
+        headers:token?{authorization:`Bearer ${token}`}:{},
+      });
+      assert.equal((await requestTasks()).status,401);
+      assert.equal((await requestTasks('invalid-token')).status,401);
+      const ordinaryToken=(await ordinary.actor.auth.getSession()).data.session?.access_token;
+      const managerToken=(await manager.actor.auth.getSession()).data.session?.access_token;
+      assert.ok(ordinaryToken); assert.ok(managerToken);
+      assert.equal((await requestTasks(ordinaryToken)).status,403,'forged user metadata must not unlock an admin route');
+      const allowedTasks=await requestTasks(managerToken);
+      assert.equal(allowedTasks.status,200,'profile admin must pass with only the public Supabase key configured');
+      assert.deepEqual(await allowedTasks.json(),{tasks:[]});
+    } finally {
+      server.closeAllConnections();
+      await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));
+      for (const [name,value] of Object.entries(previousEnv)) {
+        if (value===undefined) delete process.env[name];
+        else process.env[name]=value;
+      }
+    }
+
     await rpcBlocked(manager.actor,'commerce_checkout_command',{command:'capabilities',args:{}});
     await ordinary.actor.auth.signOut(); await manager.actor.auth.signOut();
   } finally {
