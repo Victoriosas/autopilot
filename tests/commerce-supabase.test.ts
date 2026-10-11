@@ -419,3 +419,71 @@ test('catalog archive RPC is unavailable to public JWTs and service role archive
     await admin.from('product_catalog_archive').delete().eq('operation_id', operationId);
   }
 });
+
+
+test('hosted supplier publication contract preserves linkage and blocks public JWTs', async () => {
+  const supplierId = randomUUID();
+  const draftId = randomUUID();
+  const sourceSku = 'fixture-sku-' + randomUUID();
+  const supplierCode = 'fixture-supplier-' + randomUUID();
+  const email = 'publication-' + randomUUID() + '@example.test';
+  const password = 'Publication-' + randomUUID() + '-9a!';
+  const authenticated = client(anonKey);
+  const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+  assert.equal(created.error, null, created.error?.message);
+  try {
+    assert.equal((await authenticated.auth.signInWithPassword({ email, password })).error, null);
+    assert.equal((await admin.from('suppliers').insert({
+      id: supplierId, name: 'Synthetic supplier', code: supplierCode,
+    })).error, null);
+    const draft = {
+      title: 'Supplier-linked fixture', description: 'Synthetic publication baseline',
+      category: 'accessories', price: 125, currency: 'UYU',
+      images: ['https://example.test/supplier-fixture.jpg'],
+      provenance: {
+        supplierCost: 'verified', supplierName: 'Synthetic supplier',
+        supplierCode, supplierShopId: 'shop-fixture',
+        supplierExternalId: 'external-fixture', sourceSku,
+        sourceUrl: 'https://example.test/supplier-fixture',
+      },
+      commercial: { marginEvidence: 'synthetic' },
+    };
+    assert.equal((await admin.from('autopilot_product_drafts').insert({
+      id: draftId, source_candidate_id: 'fixture-candidate',
+      status: 'ai_approved', reviewed_by: 'autopilot-council:fixture', draft,
+    })).error, null);
+
+    for (const actor of [publicClient, authenticated]) {
+      await rpcBlocked(actor, 'publish_autopilot_draft', { draft_id: draftId });
+    }
+
+    const published = await admin.rpc('publish_autopilot_draft', { draft_id: draftId });
+    assert.equal(published.error, null, published.error?.message);
+    const productId = published.data.published_product_id;
+    const product = await admin.from('products')
+      .select('supplier_id,sku,traceability').eq('id', productId).single();
+    assert.equal(product.error, null, product.error?.message);
+    assert.equal(product.data!.supplier_id, supplierId);
+    assert.equal(product.data!.sku, sourceSku);
+    assert.deepEqual(product.data!.traceability.supplier, {
+      name: 'Synthetic supplier', code: supplierCode,
+      shopId: 'shop-fixture', externalId: 'external-fixture',
+    });
+
+    const replay = await admin.rpc('publish_autopilot_draft', { draft_id: draftId });
+    assert.equal(replay.error, null, replay.error?.message);
+    assert.equal(replay.data.published_product_id, productId);
+    const rows = await admin.from('products').select('id').eq('id', productId);
+    assert.equal(rows.error, null); assert.equal(rows.data!.length, 1);
+  } finally {
+    await authenticated.auth.signOut();
+    assert.equal((await admin.auth.admin.deleteUser(created.data.user!.id)).error, null);
+    const draft = await admin.from('autopilot_product_drafts')
+      .select('published_product_id').eq('id', draftId).maybeSingle();
+    if (draft.data?.published_product_id) {
+      await admin.from('products').delete().eq('id', draft.data.published_product_id);
+    }
+    await admin.from('autopilot_product_drafts').delete().eq('id', draftId);
+    await admin.from('suppliers').delete().eq('id', supplierId);
+  }
+});

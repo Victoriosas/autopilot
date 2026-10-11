@@ -9,6 +9,7 @@ on:
       - 'tests/commerce-baseline.sql'
       - 'tests/commerce-supabase-access.sql'
       - 'tests/catalog-archive-supabase.sql'
+      - 'tests/supplier-publication-supabase.sql'
       - 'src/payments/**'
       - 'src/security/adminAuth.ts'
       - 'supabase/migrations/20261010010000_atomic_checkout.sql'
@@ -48,6 +49,7 @@ jobs:
           cp tests/commerce-baseline.sql "$fixture/supabase/migrations/20261010000000_synthetic_commerce_baseline.sql"
           cp tests/commerce-supabase-access.sql "$fixture/supabase/migrations/20261010000001_synthetic_commerce_access.sql"
           cp tests/catalog-archive-supabase.sql "$fixture/supabase/migrations/20261010000002_synthetic_catalog_archive.sql"
+          cp tests/supplier-publication-supabase.sql "$fixture/supabase/migrations/20261010000003_synthetic_supplier_publication.sql"
           cp supabase/migrations/20261011050519_explicit_data_api_grants.sql "$fixture/supabase/migrations/"
           cp supabase/migrations/20261011114131_revoke_catalog_archive_public_execute.sql "$fixture/supabase/migrations/"
           cp supabase/migrations/20261010010000_atomic_checkout.sql "$fixture/supabase/migrations/"
