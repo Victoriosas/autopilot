@@ -107,20 +107,40 @@ export function buildRepricingProposal(observation: CatalogObservation, costs?: 
     };
   }
 
-  const quote = calculatePricingQuote({
-    ...costs,
-    supplierCost: observation.observedSupplierCost,
-    targetNetMarginPct: 35,
-    strategy: 'balanced',
-    currency,
-    provenance: {
-      supplierCost: 'observed',
-    },
+  const declineUnsafeCalculation = (): RepricingProposal => ({
+    productId: observation.productId, status: 'no_change',
+    currentPrice: observation.currentPrice, currency, provenance,
+    reason: 'Costos incompatibles con el margen objetivo o cálculo fuera del rango numérico; no se propone repricing comercial.',
+    policy: policy(false),
   });
+
+  let quote: PricingQuote;
+  try {
+    quote = calculatePricingQuote({
+      ...costs,
+      supplierCost: observation.observedSupplierCost,
+      targetNetMarginPct: 35,
+      strategy: 'balanced',
+      currency,
+      provenance: { supplierCost: 'observed' },
+    });
+  } catch {
+    return declineUnsafeCalculation();
+  }
+  // Finite input amounts can still overflow during summation, division or rounding.
+  const calculatedAmounts = [
+    quote.landedCost, quote.floorPrice, quote.recommendedPrice, quote.premiumCeiling,
+    quote.estimatedProfit, quote.estimatedNetMarginPct, quote.revenueScore,
+    quote.confidence, ...Object.values(quote.breakdown),
+  ];
+  if (!calculatedAmounts.every(Number.isFinite) || quote.recommendedPrice <= 0) {
+    return declineUnsafeCalculation();
+  }
 
   const currentPrice = observation.currentPrice;
   const proposedPrice = quote.recommendedPrice;
-  const deltaPct = currentPrice > 0 ? round2(((proposedPrice - currentPrice) / currentPrice) * 100) : 100;
+  const deltaPct = round2(((proposedPrice - currentPrice) / currentPrice) * 100);
+  if (!Number.isFinite(deltaPct)) return declineUnsafeCalculation();
   const meaningful = Math.abs(deltaPct) >= 8;
   const ownerApprovalRequired = Math.abs(deltaPct) >= 25;
 

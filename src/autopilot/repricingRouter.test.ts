@@ -35,6 +35,20 @@ test('admin cost sheet reaches HTTP repricing while unknown costs and public acc
     assert.equal(ready.proposal.costEvidence.sourceReference, 'test-cost-sheet');
     assert.equal(ready.persisted, null);
     assert.equal(ready.proposal.policy.supplierPurchaseAllowed, false);
+    for (const unsafe of [
+      { observation, costEvidence: { ...costEvidence, taxRatePct: 37 } },
+      { observation: { ...observation, observedSupplierCost: Number.MAX_VALUE }, costEvidence },
+      { observation: { ...observation, currentPrice: Number.MIN_VALUE }, costEvidence },
+    ]) {
+      // persist=true must not reach the database for declined economics.
+      const response = await post({ ...unsafe, persist: true });
+      assert.equal(response.status, 200);
+      const result = await response.json();
+      assert.equal(result.proposal.status, 'no_change');
+      assert.equal(result.proposal.quote, undefined);
+      assert.equal(result.proposal.proposedPrice, undefined);
+      assert.equal(result.persisted, null);
+    }
   } finally {
     if (previous === undefined) delete process.env.AUTOPILOT_ADMIN_TOKEN;
     else process.env.AUTOPILOT_ADMIN_TOKEN = previous;
