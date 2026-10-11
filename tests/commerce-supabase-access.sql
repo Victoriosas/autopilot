@@ -1,6 +1,7 @@
 -- Supabase-only synthetic fixture matching observed customer/admin RLS contracts.
 -- Minimal profile schema; does not validate all hosted tables or API admin routes.
 alter table public.orders add constraint orders_user_id_fkey foreign key(user_id) references auth.users(id) on delete set null;
+revoke all on public.products,public.orders from anon,authenticated;
 -- Data API grants must come from a canonical migration, not this policy fixture.
 create policy "Fixture public read published products" on public.products
  for select to anon,authenticated using (status='published');
@@ -14,6 +15,7 @@ create table public.profiles (
  role varchar not null default 'customer' check(role in ('customer','admin','operator'))
 );
 alter table public.profiles enable row level security;
+revoke all on public.profiles from anon,authenticated;
 grant select,insert,update on public.profiles to service_role;
 grant usage on schema private to authenticated,service_role;
 -- Same existing production helper: private definer lookup avoids RLS recursion.
