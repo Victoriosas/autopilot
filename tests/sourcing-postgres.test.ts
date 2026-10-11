@@ -39,6 +39,7 @@ test('PostgreSQL durable sourcing integration', {skip:!database,timeout:240000},
  await sql(readFileSync('tests/sourcing-baseline.sql','utf8'));
  for(const file of ['20260912051000_autopilot_product_drafts.sql','20260912052500_ai_governor_draft_reviews.sql','20260912054500_governed_publication.sql','20260912200316_release_integrity.sql','20260914215143_durable_sourcing_orchestrator.sql','20260915071500_release_candidate_lane.sql','20261011005345_product_stock_after_publication.sql'])
   await sql(readFileSync(`supabase/migrations/${file}`,'utf8'));
+ await sql(readFileSync('tests/supplier-link-postgres.sql','utf8'));
  await sql('grant usage on schema public to service_role,anon,authenticated; grant select,insert,update on products,autopilot_product_drafts,suppliers to service_role;');
  const expire=async()=>sql("update autopilot_sourcing_runs set lease_expires_at=now()-interval '1 second' where status in ('running','resuming');");
  const clean=async()=>sql('truncate autopilot_sourcing_items,autopilot_sourcing_runs,autopilot_product_drafts,products cascade;');
