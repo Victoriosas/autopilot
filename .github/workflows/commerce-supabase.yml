@@ -7,6 +7,7 @@ on:
       - '.github/workflows/commerce-supabase.yml'
       - 'tests/commerce-supabase.test.ts'
       - 'tests/commerce-baseline.sql'
+      - 'tests/commerce-supabase-access.sql'
       - 'supabase/migrations/20261010010000_atomic_checkout.sql'
       - 'supabase/migrations/20261010020000_payment_reference_recovery.sql'
 
@@ -40,6 +41,7 @@ jobs:
           supabase init --workdir "$fixture"
           mkdir -p "$fixture/supabase/migrations"
           cp tests/commerce-baseline.sql "$fixture/supabase/migrations/20261010000000_synthetic_commerce_baseline.sql"
+          cp tests/commerce-supabase-access.sql "$fixture/supabase/migrations/20261010000001_synthetic_commerce_access.sql"
           cp supabase/migrations/20261010010000_atomic_checkout.sql "$fixture/supabase/migrations/"
           cp supabase/migrations/20261010020000_payment_reference_recovery.sql "$fixture/supabase/migrations/"
       - name: Start database, Auth and PostgREST with health checks

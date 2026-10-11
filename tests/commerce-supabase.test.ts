@@ -92,6 +92,20 @@ test('disposable Supabase Auth, PostgREST and atomic commerce', { timeout: 90000
       assert.equal(row.error, null);
       assert.equal(row.data!.inventory, 1);
     });
+    await t.test('public catalog exposes published rows while drafts remain hidden', async () => {
+      const draftId = randomUUID();
+      const inserted = await admin.from('products').insert({
+        id: draftId, title: 'Private draft', price: 50, currency: 'UYU',
+        status: 'draft_ready', inventory: 2,
+      });
+      assert.equal(inserted.error, null);
+      for (const actor of [publicClient, customer]) {
+        const catalog = await actor.from('products').select('id,title,price');
+        assert.equal(catalog.error, null, catalog.error?.message);
+        assert.ok(catalog.data!.some(row => row.id === productId));
+        assert.ok(!catalog.data!.some(row => row.id === draftId));
+      }
+    });
     let reserved: any;
     await t.test('concurrent HTTP reservations and retry use server price and exactly one unit', async () => {
       const inputs = [request(), request()];
@@ -117,6 +131,35 @@ test('disposable Supabase Auth, PostgREST and atomic commerce', { timeout: 90000
           'commerce_manual_fulfillment_tasks', 'commerce_payment_capabilities']) {
           await privateDataBlocked(actor, table);
         }
+      }
+    });
+    await t.test('authenticated owners read their order while another customer cannot', async () => {
+      const assigned = await admin.from('orders').update({ user_id: userId }).eq('id', reserved.orderId);
+      assert.equal(assigned.error, null);
+      const mine = await customer.from('orders').select('id,total');
+      assert.equal(mine.error, null);
+      assert.deepEqual(mine.data, [{ id: reserved.orderId, total: 100 }]);
+      await privateDataBlocked(publicClient, 'orders');
+      const email = 'other-' + randomUUID() + '@example.test';
+      const password = 'Other-' + randomUUID() + '-9a!';
+      const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+      assert.equal(created.error, null);
+      const other = client(anonKey);
+      try {
+        const session = await other.auth.signInWithPassword({ email, password });
+        assert.equal(session.error, null);
+        await privateDataBlocked(other, 'orders');
+        const attack = await other.from('orders').update({ user_id: session.data.user!.id })
+          .eq('id', reserved.orderId).select('id');
+        assert.equal(attack.error, null);
+        assert.deepEqual(attack.data, []);
+        const unchanged = await admin.from('orders').select('user_id').eq('id', reserved.orderId).single();
+        assert.equal(unchanged.error, null);
+        assert.equal(unchanged.data!.user_id, userId);
+      } finally {
+        await other.auth.signOut();
+        const deleted = await admin.auth.admin.deleteUser(created.data.user!.id);
+        assert.equal(deleted.error, null);
       }
     });
     await t.test('durable recovery and payment replay enqueue one manual fulfillment task', async () => {

@@ -3,6 +3,7 @@ $ErrorActionPreference = 'Stop'
 $repository = Split-Path -Parent $PSScriptRoot
 $sources = @(
     @{ Source = 'tests/commerce-baseline.sql'; Target = '20261010000000_synthetic_commerce_baseline.sql' },
+    @{ Source = 'tests/commerce-supabase-access.sql'; Target = '20261010000001_synthetic_commerce_access.sql' },
     @{ Source = 'supabase/migrations/20261010010000_atomic_checkout.sql'; Target = '20261010010000_atomic_checkout.sql' },
     @{ Source = 'supabase/migrations/20261010020000_payment_reference_recovery.sql'; Target = '20261010020000_payment_reference_recovery.sql' }
 )
