@@ -9,6 +9,7 @@ on:
       - 'tests/commerce-baseline.sql'
       - 'tests/commerce-supabase-access.sql'
       - 'src/payments/**'
+      - 'src/security/adminAuth.ts'
       - 'supabase/migrations/20261010010000_atomic_checkout.sql'
       - 'supabase/migrations/20261010020000_payment_reference_recovery.sql'
 
