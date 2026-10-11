@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
+import { once } from 'node:events';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 // This suite must never receive hosted project credentials or customer data.
@@ -140,6 +141,82 @@ test('disposable Supabase Auth, PostgREST and atomic commerce', { timeout: 90000
       assert.equal(tasks.tasks.length, 1);
       assert.equal(tasks.tasks[0].state, 'awaiting_owner_approval');
       // A simulated provider observation above is not a real Mercado Pago payment.
+    });
+    await t.test('application HTTP checkout and webhook use the real Supabase adapter', async () => {
+      const { default: express } = await import('express');
+      const { createMercadoPagoRouter } = await import('../src/payments/mercadoPago');
+      const { commerceCommand } = await import('../src/payments/availability');
+      const envNames = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'STORE_SHIPPING_FLAT',
+        'STORE_FREE_SHIPPING_FROM', 'PUBLIC_APP_URL'] as const;
+      const previous = Object.fromEntries(envNames.map(key => [key, process.env[key]]));
+      Object.assign(process.env, { SUPABASE_URL: url.origin, SUPABASE_SERVICE_ROLE_KEY: serviceKey,
+        STORE_SHIPPING_FLAT: '0', STORE_FREE_SHIPPING_FROM: '0', PUBLIC_APP_URL: 'https://example.test' });
+      const httpProduct = randomUUID();
+      const inserted = await admin.from('products').insert({
+        id: httpProduct, title: 'HTTP fixture', price: 150, currency: 'UYU', status: 'published', inventory: 2,
+      });
+      assert.equal(inserted.error, null);
+      const operations = new Map<string, { id: string; checkoutUrl: string; snapshot: any }>();
+      let creates = 0; let available = true;
+      const app = express(); app.use(express.json());
+      app.use('/mp', createMercadoPagoRouter({
+        command: commerceCommand,
+        available: async () => ({ requested: true, available, reason: available ? null : 'SYNTHETIC_DISABLED' }),
+        gateway: {
+          async create(snapshot) {
+            if (!operations.has(snapshot.orderId)) {
+              creates++;
+              operations.set(snapshot.orderId, { id: 'http-' + snapshot.orderId,
+                checkoutUrl: 'https://example.test/fixture-payment', snapshot });
+            }
+            return operations.get(snapshot.orderId)!;
+          },
+          async lookup(id) {
+            const operation = [...operations.values()].find(row => row.id === id);
+            assert.ok(operation, 'Unknown synthetic provider order');
+            return { external_reference: operation.snapshot.orderId, total_amount: operation.snapshot.total,
+              total_paid_amount: operation.snapshot.total, currency_id: 'UYU', status: 'processed' };
+          },
+        },
+      }));
+      const server = app.listen(0, '127.0.0.1'); await once(server, 'listening');
+      const origin = 'http://127.0.0.1:' + (server.address() as { port: number }).port;
+      const key = randomUUID();
+      const body = { customer: { name: 'Test', email: 'buyer@example.test', phone: '099123456',
+        address: 'Fixture 1', city: 'Canelones', postalCode: '15000', country: 'UY' },
+        items: [{ productId: httpProduct, quantity: 1 }], total: 1, shipping: 999 };
+      const post = (path: string, value: object, requestKey = key) => fetch(origin + path, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': requestKey },
+        body: JSON.stringify(value), signal: AbortSignal.timeout(10000),
+      });
+      try {
+        const attempts = await Promise.all([post('/mp/order', body), post('/mp/order', body)]);
+        const orders = await Promise.all(attempts.map(async response => {
+          assert.equal(response.status, 201); return response.json();
+        }));
+        assert.equal(orders[0].orderId, orders[1].orderId);
+        assert.equal(orders[0].total, 150);
+        assert.equal(creates, 1);
+        const stock = await admin.from('products').select('inventory').eq('id', httpProduct).single();
+        assert.equal(stock.error, null); assert.equal(stock.data!.inventory, 1);
+        available = false;
+        assert.equal((await post('/mp/order', body, randomUUID())).status, 503);
+        for (let replay = 0; replay < 2; replay++) {
+          const response = await post('/mp/webhook', { data: { id: orders[0].providerOrderId } });
+          assert.equal(response.status, 200);
+          assert.equal((await response.json()).paymentStatus, 'paid');
+        }
+        const jobs = await admin.from('commerce_fulfillment_jobs').select('id').eq('order_id', orders[0].orderId);
+        assert.equal(jobs.error, null); assert.equal(jobs.data!.length, 1);
+        assert.equal(creates, 1);
+      } finally {
+        server.closeAllConnections();
+        await new Promise<void>(resolve => server.close(() => resolve()));
+        for (const name of envNames) {
+          if (previous[name] === undefined) delete process.env[name];
+          else process.env[name] = previous[name];
+        }
+      }
     });
   } finally {
     if (userId) {
