@@ -14,6 +14,7 @@ on:
       - 'supabase/migrations/20261010010000_atomic_checkout.sql'
       - 'supabase/migrations/20261010020000_payment_reference_recovery.sql'
       - 'supabase/migrations/20261011050519_explicit_data_api_grants.sql'
+      - 'supabase/migrations/20261011114131_revoke_catalog_archive_public_execute.sql'
 
 permissions:
   contents: read
@@ -48,6 +49,7 @@ jobs:
           cp tests/commerce-supabase-access.sql "$fixture/supabase/migrations/20261010000001_synthetic_commerce_access.sql"
           cp tests/catalog-archive-supabase.sql "$fixture/supabase/migrations/20261010000002_synthetic_catalog_archive.sql"
           cp supabase/migrations/20261011050519_explicit_data_api_grants.sql "$fixture/supabase/migrations/"
+          cp supabase/migrations/20261011114131_revoke_catalog_archive_public_execute.sql "$fixture/supabase/migrations/"
           cp supabase/migrations/20261010010000_atomic_checkout.sql "$fixture/supabase/migrations/"
           cp supabase/migrations/20261010020000_payment_reference_recovery.sql "$fixture/supabase/migrations/"
       - name: Start database, Auth and PostgREST with health checks
