@@ -54,3 +54,30 @@ test('unknown supplier provenance and invalid current price cannot be repriced',
 test('zero stock still blocks sale even without cost evidence', () => {
   assert.equal(propose({ ...observed, observedStock: 0 }).status, 'block_sale');
 });
+
+test('incompatible combined fees return no proposal instead of throwing', () => {
+  for (const taxRatePct of [32, 37, 49]) {
+    const p = propose(observed, { ...costs, taxRatePct });
+    assert.equal(p.status, 'no_change');
+    assert.equal(p.proposedPrice, undefined);
+    assert.equal(p.quote, undefined);
+    assert.equal(p.policy.ownerApprovalRequired, false);
+  }
+});
+test('finite inputs that overflow quote arithmetic never produce a proposal', () => {
+  for (const item of [
+    { observation: { ...observed, observedSupplierCost: Number.MAX_VALUE }, costs },
+    { observation: observed, costs: { ...costs, supplierShipping: Number.MAX_VALUE } },
+    { observation: { ...observed, currentPrice: Number.MIN_VALUE }, costs },
+  ]) {
+    const p = propose(item.observation, item.costs);
+    assert.equal(p.status, 'no_change');
+    assert.equal(p.proposedPrice, undefined);
+    assert.equal(p.quote, undefined);
+  }
+});
+test('positive supplier costs below engine minimum are safely declined', () => {
+  const p = propose({ ...observed, observedSupplierCost: 0.001 }, costs);
+  assert.equal(p.status, 'no_change');
+  assert.equal(p.quote, undefined);
+});
