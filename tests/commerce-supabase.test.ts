@@ -367,3 +367,55 @@ test('real JWT admin access comes from server-managed profile, never user metada
     for (const id of users) assert.equal((await admin.auth.admin.deleteUser(id)).error,null);
   }
 });
+
+
+test('catalog archive RPC is unavailable to public JWTs and service role archives once', async () => {
+  const product = randomUUID();
+  const operationId = 'fixture-' + randomUUID();
+  const email = 'archive-' + randomUUID() + '@example.test';
+  const password = 'Archive-' + randomUUID() + '-9a!';
+  const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+  assert.equal(created.error, null, created.error?.message);
+  const authenticated = client(anonKey);
+  try {
+    assert.equal((await authenticated.auth.signInWithPassword({ email, password })).error, null);
+    const inserted = await admin.from('products').insert({
+      id: product, title: 'Archive fixture', price: 80, currency: 'UYU',
+      status: 'published', inventory: 1,
+    });
+    assert.equal(inserted.error, null, inserted.error?.message);
+
+    for (const actor of [publicClient, authenticated]) {
+      const blocked = await actor.rpc('archive_and_clear_products', {
+        p_operation_id: 'blocked-' + randomUUID(),
+      });
+      assert.ok(blocked.error, 'Public JWT must not execute catalog-wide destructive RPC');
+      assert.ok(['42501', 'PGRST202'].includes(blocked.error.code), blocked.error.message);
+      assert.match(blocked.error.message, /permission denied for function|could not find the function/i);
+      const preserved = await admin.from('products').select('id').eq('id', product).single();
+      assert.equal(preserved.error, null, preserved.error?.message);
+      const archive = await admin.from('product_catalog_archive').select('archive_id').eq('product_id', product);
+      assert.equal(archive.error, null, archive.error?.message);
+      assert.deepEqual(archive.data, []);
+    }
+
+    const cleared = await admin.rpc('archive_and_clear_products', { p_operation_id: operationId });
+    assert.equal(cleared.error, null, cleared.error?.message);
+    assert.ok(Number(cleared.data) >= 1);
+    const missing = await admin.from('products').select('id').eq('id', product);
+    assert.equal(missing.error, null, missing.error?.message);
+    assert.deepEqual(missing.data, []);
+    const archived = await admin.from('product_catalog_archive').select('operation_id,product_id')
+      .eq('operation_id', operationId).eq('product_id', product);
+    assert.equal(archived.error, null, archived.error?.message);
+    assert.deepEqual(archived.data, [{ operation_id: operationId, product_id: product }]);
+    const replay = await admin.rpc('archive_and_clear_products', { p_operation_id: operationId });
+    assert.equal(replay.error, null, replay.error?.message);
+    assert.equal(replay.data, 0);
+  } finally {
+    await authenticated.auth.signOut();
+    assert.equal((await admin.auth.admin.deleteUser(created.data.user!.id)).error, null);
+    await admin.from('products').delete().eq('id', product);
+    await admin.from('product_catalog_archive').delete().eq('operation_id', operationId);
+  }
+});
