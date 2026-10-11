@@ -1,7 +1,7 @@
 import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { Router } from 'express';
 import { requireSupabaseAdminAuth } from '../security/adminAuth';
-import { createAtomicCheckout, runFulfillmentJob, type CheckoutGateway, type CommerceCommand } from './atomicCheckout';
+import { createAtomicCheckout, providerCurrency, runFulfillmentJob, type CheckoutGateway, type CommerceCommand } from './atomicCheckout';
 import { commerceCommand } from './availability';
 import { mercadoPagoGateway } from './mercadoPago';
 
@@ -10,11 +10,12 @@ export async function recoverPaymentReference(command: CommerceCommand, gateway:
   const truth = await gateway.lookup(providerOrderId);
   if (truth.id !== providerOrderId || truth.external_reference !== orderId) throw new Error('PAYMENT_REFERENCE_MISMATCH');
   const money = (value: unknown) => typeof value === 'number' ? value : typeof value === 'string' && /^\d+(?:\.\d+)?$/.test(value) ? Number(value) : NaN;
+  const currency = providerCurrency(truth);
   const amount = money(truth.total_amount), paid = money(truth.total_paid_amount);
-  if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(paid) || paid < 0 || truth.currency_id !== 'UYU') throw new Error('INVALID_PROVIDER_PAYMENT');
+  if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(paid) || paid < 0) throw new Error('INVALID_PROVIDER_PAYMENT');
   if (truth.status === 'processed' && paid !== amount) throw new Error('PAYMENT_AMOUNT_MISMATCH');
   if (['failed', 'cancelled', 'expired'].includes(truth.status) && paid !== 0) throw new Error('PROVIDER_PAYMENT_RECOVERY_REQUIRED');
-  await command('recover_provider', { orderId, providerOrderId, reference: truth.external_reference, amount, currency: truth.currency_id });
+  await command('recover_provider', { orderId, providerOrderId, reference: truth.external_reference, amount, currency });
   // Reuse this authenticated provider response; never create/replay a payment.
   return createAtomicCheckout(command, { ...gateway, lookup: async () => truth }).reconcile(providerOrderId);
 }

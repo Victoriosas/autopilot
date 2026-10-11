@@ -218,7 +218,7 @@ test('disposable Supabase Auth, PostgREST and atomic commerce', { timeout: 90000
             const operation = [...operations.values()].find(row => row.id === id);
             assert.ok(operation, 'Unknown synthetic provider order');
             return { external_reference: operation.snapshot.orderId, total_amount: operation.snapshot.total,
-              total_paid_amount: operation.snapshot.total, currency_id: 'UYU', status: 'processed' };
+              total_paid_amount: operation.snapshot.total, currency: 'UYU', status: 'processed' };
           },
         },
       }));
