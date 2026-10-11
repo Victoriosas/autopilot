@@ -124,3 +124,22 @@ test('missing or coercible provider monetary values never release stock or confi
   await assert.rejects(checkout.reconcile('provider'), /INVALID_PROVIDER_PAYMENT/);
   assert.equal(calls, 0);
 });
+
+test('Orders API canonical currency is accepted and conflicting or malformed currencies never mutate orders', async () => {
+  const orderId = 'local-order';
+  const calls: Array<{ action: string; args: any }> = [];
+  let truth: any = { id: 'remote-one', external_reference: orderId, total_amount: '100', total_paid_amount: '100', currency: 'UYU', status: 'processed' };
+  const command = async (action: string, args: any) => { calls.push({ action, args }); return { paymentStatus: 'paid' }; };
+  const gateway = { async create() { throw new Error('must not charge'); }, async lookup() { return truth; } };
+  for (const fields of [{ currency: 'UYU' }, { currency: 'UYU', currency_id: 'UYU' }, { currency_id: 'UYU' }]) {
+    truth = { id: 'remote-one', external_reference: orderId, total_amount: '100', total_paid_amount: '100', status: 'processed', ...fields };
+    assert.equal((await createAtomicCheckout(command, gateway).reconcile('remote-one')).paymentStatus, 'paid');
+    assert.ok(calls.every(call => call.args.currency === 'UYU'));
+    calls.length = 0;
+  }
+  for (const fields of [{}, { currency: 'USD' }, { currency: 'uyu' }, { currency: null, currency_id: 'UYU' }, { currency: '', currency_id: 'UYU' }, { currency: 'UYU', currency_id: 'USD' }, { currency: 'USD', currency_id: 'UYU' }, { currency: 'UYU', currency_id: null }, { currency: ['UYU'] }]) {
+    truth = { id: 'remote-one', external_reference: orderId, total_amount: '100', total_paid_amount: '100', status: 'processed', ...fields };
+    await assert.rejects(createAtomicCheckout(command, gateway).reconcile('remote-one'), /INVALID_PROVIDER_PAYMENT/);
+    assert.deepEqual(calls, []);
+  }
+});

@@ -88,3 +88,22 @@ test('maintenance discovers an uncertain payment without human ID or a new charg
   assert.ok(calls.includes('recover_provider')); assert.ok(calls.includes('payment'));
   assert.equal(result.uncertainReservations, 0); assert.equal(result.expiryChecks, 1);
 });
+
+test('Orders API canonical currency is accepted and conflicting or malformed currencies never mutate orders', async () => {
+  const orderId = '11111111-1111-4111-8111-111111111111';
+  const calls: Array<{ action: string; args: any }> = [];
+  let truth: any = { id: 'remote-one', external_reference: orderId, total_amount: '100', total_paid_amount: '100', currency: 'UYU', status: 'processed' };
+  const command = async (action: string, args: any) => { calls.push({ action, args }); return { paymentStatus: 'paid' }; };
+  const gateway = { async create() { throw new Error('must not charge'); }, async lookup() { return truth; } };
+  for (const fields of [{ currency: 'UYU' }, { currency: 'UYU', currency_id: 'UYU' }, { currency_id: 'UYU' }]) {
+    truth = { id: 'remote-one', external_reference: orderId, total_amount: '100', total_paid_amount: '100', status: 'processed', ...fields };
+    assert.equal((await recoverPaymentReference(command, gateway, orderId, 'remote-one')).paymentStatus, 'paid');
+    assert.ok(calls.every(call => call.args.currency === 'UYU'));
+    calls.length = 0;
+  }
+  for (const fields of [{}, { currency: 'USD' }, { currency: 'uyu' }, { currency: null, currency_id: 'UYU' }, { currency: '', currency_id: 'UYU' }, { currency: 'UYU', currency_id: 'USD' }, { currency: 'USD', currency_id: 'UYU' }, { currency: 'UYU', currency_id: null }, { currency: ['UYU'] }]) {
+    truth = { id: 'remote-one', external_reference: orderId, total_amount: '100', total_paid_amount: '100', status: 'processed', ...fields };
+    await assert.rejects(recoverPaymentReference(command, gateway, orderId, 'remote-one'), /INVALID_PROVIDER_PAYMENT/);
+    assert.deepEqual(calls, []);
+  }
+});
