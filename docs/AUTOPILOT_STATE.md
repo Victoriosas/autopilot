@@ -244,6 +244,7 @@ Próximo prompt encadenado: comprobar primero si el runner aislado de CI o un ru
 Próximo prompt encadenado: desde `34444ed`, verificá exclusión y construí en el runner aislado el siguiente tramo del baseline alojado, priorizando `20260917040051_link_manual_release_to_supplier` y su interacción con `publish_autopilot_draft`, barreras de origen e inventario. Primero compará definición/ACL/políticas por metadatos, luego añadí sólo fixture sintético mínimo y una regresión RED/GREEN que demuestre que `supplier_id` y traceability se preservan sin abrir publicación a roles públicos. No copies datos, no ejecutes la función de borrado alojada, no repares historia ni apliques migraciones remotas. Reutilizá la evidencia 142 + 17/1/12 + 12 y repetí sólo checks afectados. Al terminar, verificá, actualizá únicamente este archivo, generá el siguiente prompt con la acción pendiente de mayor impacto e incluí esta misma regla; ejecutalo inmediatamente mientras exista trabajo seguro y recursos, y ante límite conservá checkpoint sin duplicar automatizaciones ni solapar ediciones.
 
 
+
 ## Checkpoint 2026-10-11 13:53 America/Montevideo — publicación enlazada a proveedor y compatibilidad legacy
 
 - Exclusión y estado inicial verificados en `C:\autopilot`: rama `codex/post-merge-review-20261010`, PR #66 abierta, borrador, mergeable y no fusionada; no había otro proceso editando estos archivos. Se preservaron `.audit/`, `.playwright-cli/` y `test-*.ts` ajenos.
