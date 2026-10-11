@@ -101,6 +101,7 @@ test('PostgreSQL durable sourcing integration', {skip:!database,timeout:240000},
  };
  await t.test('published Autopilot stock can be reserved and restored after sourcing evidence expires',async()=>{
   await publishForStock('stock-after-publication');
+  try {
   await sql("update autopilot_sourcing_runs set completed_at=now()-interval '25 hours',lease_expires_at=now()-interval '1 second' where mode='production';");
   await sql('set role service_role; update products set inventory=2;');
   await sql('set role service_role; update products set inventory=inventory-1;');
@@ -108,15 +109,16 @@ test('PostgreSQL durable sourcing integration', {skip:!database,timeout:240000},
   await sql('set role service_role; update products set inventory=inventory+1;');
   assert.equal(await sql('select inventory from products;'),'2');
   assert.equal(await sql('select publication_eligible from products;'),'t');
-  await clean();
+  } finally { await clean(); }
  });
  await t.test('inventory updates cannot smuggle commercial changes or remove Autopilot origin',async()=>{
   await publishForStock('stock-no-publication-bypass');
+  try {
   for (const change of ["price=price+1","title='Changed'","status='discovered'","publication_eligible=false","traceability='{}'::jsonb"]) {
    await assert.rejects(sql(`set role service_role; update products set inventory=1,${change};`),/FENCE_REJECTED|PRODUCT_ORIGIN_IMMUTABLE/);
    assert.equal(await sql('select inventory from products;'),'0');
   }
-  await clean();
+  } finally { await clean(); }
  });
  await t.test('manual release rejects stale production evidence',async()=>{
   const evidence=fixture();const prod={...config,mode:'production' as const};
