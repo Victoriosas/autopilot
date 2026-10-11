@@ -105,9 +105,9 @@ begin
   subtotal:=round(subtotal,2);
   if coalesce((args->>'freeShippingFrom')::numeric,0)>0 and subtotal>=(args->>'freeShippingFrom')::numeric then shipping:=0; end if;
   total:=round(subtotal+shipping,2); order_id:=gen_random_uuid();
-  insert into public.orders(id,order_number,customer_email,customer_name,customer_phone,customer_address,customer_city,customer_postal_code,customer_country,
+  insert into public.orders(id,order_number,user_id,customer_email,customer_name,customer_phone,customer_address,customer_city,customer_postal_code,customer_country,
    items,subtotal,shipping_cost,discount,total,currency,payment_method,payment_status,status,tracking_number,estimated_delivery)
-  values(order_id,'VIC-MP-'||upper(order_id::text),args#>>'{customer,email}',coalesce(args#>>'{customer,fullName}',args#>>'{customer,name}'),args#>>'{customer,phone}',args#>>'{customer,address}',args#>>'{customer,city}',args#>>'{customer,postalCode}',args#>>'{customer,country}',
+  values(order_id,'VIC-MP-'||upper(order_id::text),nullif(args->>'userId','')::uuid,args#>>'{customer,email}',coalesce(args#>>'{customer,fullName}',args#>>'{customer,name}'),args#>>'{customer,phone}',args#>>'{customer,address}',args#>>'{customer,city}',args#>>'{customer,postalCode}',args#>>'{customer,country}',
    items,subtotal,shipping,0,total,args->>'currency',args->>'provider','pending','pending_payment','','');
   insert into public.commerce_checkout_sessions(order_id,idempotency_key,request) values(order_id,key,request);
   return jsonb_build_object('orderId',order_id,'total',total,'currency',args->>'currency','items',items,'shipping',shipping,'state','held','checkoutUrl',null);

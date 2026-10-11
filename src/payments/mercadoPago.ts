@@ -3,6 +3,7 @@ import { validateCustomer, validateCheckoutItems, publicPaymentError } from './s
 import { CheckoutTerminalError, createAtomicCheckout, type CheckoutGateway, type CommerceCommand } from './atomicCheckout';
 import { commerceCommand, mercadoPagoCredentialsReady, paymentAvailability } from './availability';
 import { checkoutShippingConfig } from './shipping';
+import { CheckoutIdentityError, resolveCheckoutUser } from './checkoutIdentity';
 
 const MP_API = 'https://api.mercadopago.com';
 export const mercadoPagoAvailability = () => paymentAvailability('mercadopago', mercadoPagoCredentialsReady());
@@ -55,6 +56,7 @@ export const mercadoPagoGateway: CheckoutGateway = {
 // Dependencies are server-only test seams; request flags never replace capability checks.
 export function createMercadoPagoRouter(dependencies: {
   command?: CommerceCommand; gateway?: CheckoutGateway;
+  customerIdentity?: (authorization: string | undefined) => Promise<string | null>;
   available?: () => Promise<{ requested: boolean; available: boolean; reason: string | null }>;
 } = {}): Router {
   const router = Router();
@@ -69,13 +71,16 @@ export function createMercadoPagoRouter(dependencies: {
       if (!(await availability()).available) return res.status(503).json({ error: 'CHECKOUT_NOT_CONFIGURED', message: 'Los pagos online todavía no están disponibles.' });
       const key = req.header('Idempotency-Key') || '';
       if (!/^[a-zA-Z0-9_-]{16,128}$/.test(key)) return res.status(400).json({ error: 'IDEMPOTENCY_KEY_REQUIRED' });
-      const snapshot = await checkout.start({ key, provider: 'mercadopago', currency: 'UYU',
+      const userId = await (dependencies.customerIdentity || resolveCheckoutUser)(req.header('authorization'));
+      const snapshot = await checkout.start({ key, userId, provider: 'mercadopago', currency: 'UYU',
         customer: validateCustomer(req.body?.customer), items: validateCheckoutItems(req.body?.items),
         ...checkoutShippingConfig(),
         returnUrl: (process.env.PUBLIC_APP_URL || '').replace(/\/$/, ''),
       });
       return res.status(201).json({ orderId: snapshot.orderId, providerOrderId: snapshot.providerOrderId, checkoutUrl: snapshot.checkoutUrl, total: snapshot.total, currency: snapshot.currency });
     } catch (error) {
+      if (error instanceof CheckoutIdentityError) return res.status(error.status).json({ error: error.message,
+        message: error.status === 401 ? 'Tu sesión no es válida. Iniciá sesión nuevamente para continuar.' : 'No pudimos verificar tu sesión. Intentá nuevamente más tarde.' });
       if (error instanceof CheckoutTerminalError) return res.status(409).json({ error: error.message, message: 'La reserva anterior fue cancelada. Podés iniciar una nueva compra.', retryAllowed: true });
       const code = error instanceof Error ? error.message : '';
       return res.status(code.includes('IDEMPOTENCY_CONFLICT') ? 409 : code.includes('DATABASE') || code.includes('MERCADOPAGO') || code === 'SHIPPING_NOT_CONFIGURED' ? 503 : 400).json(publicPaymentError(error));

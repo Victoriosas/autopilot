@@ -4,6 +4,7 @@ import express from 'express';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
 import { createMercadoPagoRouter } from './mercadoPago';
+import { CheckoutIdentityError } from './checkoutIdentity';
 
 test('atomic HTTP checkout forwards only server-approved intent and reuses the provider operation', async () => {
   const old = process.env.CHECKOUT_ENABLED; process.env.CHECKOUT_ENABLED = 'false';
@@ -128,7 +129,7 @@ test('HTTP checkout binds verified identity and rejects invalid sessions before 
     customerIdentity: async (header: string | undefined) => {
       if (header === undefined) return null;
       if (header === 'Bearer valid-fixture') return owner;
-      throw Object.assign(new Error('CHECKOUT_AUTHENTICATION_REQUIRED'), { status: 401 });
+      throw new CheckoutIdentityError(401);
     },
     command: async (action: string, args: any) => {
       if (action === 'reserve') {

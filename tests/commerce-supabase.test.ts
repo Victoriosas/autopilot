@@ -225,11 +225,14 @@ test('disposable Supabase Auth, PostgREST and atomic commerce', { timeout: 90000
       const server = app.listen(0, '127.0.0.1'); await once(server, 'listening');
       const origin = 'http://127.0.0.1:' + (server.address() as { port: number }).port;
       const key = randomUUID();
-      const body = { customer: { name: 'Test', email: 'buyer@example.test', phone: '099123456',
+      const body = { userId: randomUUID(), customer: { name: 'Test', email: 'buyer@example.test', phone: '099123456',
         address: 'Fixture 1', city: 'Canelones', postalCode: '15000', country: 'UY' },
         items: [{ productId: httpProduct, quantity: 1 }], total: 1, shipping: 999 };
-      const post = (path: string, value: object, requestKey = key) => fetch(origin + path, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': requestKey },
+      const session = await customer.auth.getSession();
+      assert.ok(session.data.session?.access_token);
+      const post = (path: string, value: object, requestKey = key, token = session.data.session!.access_token) => fetch(origin + path, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': requestKey,
+          Authorization: 'Bearer ' + token },
         body: JSON.stringify(value), signal: AbortSignal.timeout(10000),
       });
       try {
@@ -240,6 +243,14 @@ test('disposable Supabase Auth, PostgREST and atomic commerce', { timeout: 90000
         assert.equal(orders[0].orderId, orders[1].orderId);
         assert.equal(orders[0].total, 150);
         assert.equal(creates, 1);
+        const owned = await customer.from('orders').select('id').eq('id', orders[0].orderId);
+        assert.equal(owned.error, null);
+        assert.deepEqual(owned.data, [{ id: orders[0].orderId }]);
+        const assigned = await admin.from('orders').select('user_id').eq('id', orders[0].orderId).single();
+        assert.equal(assigned.error, null); assert.equal(assigned.data!.user_id, userId);
+        assert.notEqual(assigned.data!.user_id, body.userId);
+        const invalidSession = await post('/mp/order', body, randomUUID(), 'invalid-fixture-token');
+        assert.equal(invalidSession.status, 401);
         const stock = await admin.from('products').select('inventory').eq('id', httpProduct).single();
         assert.equal(stock.error, null); assert.equal(stock.data!.inventory, 1);
         available = false;

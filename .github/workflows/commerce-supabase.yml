@@ -8,6 +8,7 @@ on:
       - 'tests/commerce-supabase.test.ts'
       - 'tests/commerce-baseline.sql'
       - 'tests/commerce-supabase-access.sql'
+      - 'src/payments/**'
       - 'supabase/migrations/20261010010000_atomic_checkout.sql'
       - 'supabase/migrations/20261010020000_payment_reference_recovery.sql'
 
