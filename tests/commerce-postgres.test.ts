@@ -68,6 +68,16 @@ test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
     await assert.rejects(recover({ ...proof, orderId: winner.orderId, reference: winner.orderId }), /RESERVATION_NOT_ACTIVE/);
     assert.equal(await sql('select inventory from public.products;'), '1');
   });
+  await t.test('server-derived checkout owner is persisted while guests stay unassigned', async () => {
+    await reset(2);
+    const ownerId = randomUUID();
+    const ownedIntent = { ...request(), userId: ownerId };
+    const owned = await command('reserve', ownedIntent);
+    assert.equal(await sql(`select user_id from public.orders where id='${owned.orderId}';`), ownerId);
+    const guest = await command('reserve', request());
+    assert.equal(await sql(`select user_id is null from public.orders where id='${guest.orderId}';`), 't');
+    await assert.rejects(command('reserve', { ...ownedIntent, userId: randomUUID() }), /IDEMPOTENCY_CONFLICT/);
+  });
   await t.test('two concurrent shoppers cannot reserve the last unit twice', async () => {
     await reset();
     const results = await Promise.allSettled([command('reserve', request()), command('reserve', request())]);

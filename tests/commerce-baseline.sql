@@ -11,7 +11,7 @@ create table public.products (
  updated_at timestamptz default now()
 );
 create table public.orders (
- id uuid primary key, order_number varchar(50) unique not null,
+ id uuid primary key, order_number varchar(50) unique not null, user_id uuid,
  customer_email varchar(255), customer_name varchar(255), customer_phone varchar(50),
  customer_address text, customer_city varchar(100), customer_postal_code varchar(20), customer_country varchar(100),
  items jsonb not null default '[]'::jsonb,

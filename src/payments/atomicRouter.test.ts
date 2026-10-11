@@ -118,3 +118,48 @@ test('invalid configured shipping cannot reserve stock or call the payment gatew
     server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve()));
   }
 });
+
+test('HTTP checkout binds verified identity and rejects invalid sessions before reservation', async () => {
+  const owner = '22222222-2222-4222-8222-222222222222';
+  let reservations = 0; let expectedOwner: string | null = owner;
+  const app = express(); app.use(express.json());
+  app.use('/mp', createMercadoPagoRouter({
+    available: async () => ({ requested: true, available: true, reason: null }),
+    customerIdentity: async (header: string | undefined) => {
+      if (header === undefined) return null;
+      if (header === 'Bearer valid-fixture') return owner;
+      throw Object.assign(new Error('CHECKOUT_AUTHENTICATION_REQUIRED'), { status: 401 });
+    },
+    command: async (action: string, args: any) => {
+      if (action === 'reserve') {
+        reservations++;
+        assert.equal(args.userId, expectedOwner);
+        assert.equal(args.customer.userId, undefined);
+        return { orderId: 'fixture-order', state: 'held', total: 100, currency: 'UYU',
+          items: [], shipping: 0, checkoutUrl: 'https://example.test/pay' };
+      }
+      throw new Error('Unexpected command');
+    },
+    gateway: { async create() { throw new Error('Unexpected payment'); }, async lookup() { throw new Error('unused'); } },
+  } as any));
+  const server = app.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const url = 'http://127.0.0.1:' + (server.address() as {port:number}).port + '/mp/order';
+  const body = { userId: 'forged-owner', customer: { userId: 'forged-owner', name: 'Test',
+    email: 'buyer@example.test', phone: '099123456', address: 'Fixture 1', city: 'Canelones',
+    postalCode: '15000', country: 'UY' },
+    items: [{ productId: '11111111-1111-4111-8111-111111111111', quantity: 1 }] };
+  const post = (authorization?: string) => fetch(url, { method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Idempotency-Key': 'identity-fixture-key',
+      ...(authorization ? { Authorization: authorization } : {}) }, body: JSON.stringify(body) });
+  try {
+    assert.equal((await post('Bearer valid-fixture')).status, 201);
+    expectedOwner = null;
+    assert.equal((await post()).status, 201);
+    const before = reservations;
+    assert.equal((await post('Bearer invalid-fixture')).status, 401);
+    assert.equal(reservations, before);
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>(resolve => server.close(() => resolve()));
+  }
+});
