@@ -487,3 +487,40 @@ test('hosted supplier publication contract preserves linkage and blocks public J
     await admin.from('suppliers').delete().eq('id', supplierId);
   }
 });
+
+test('supplier publication keeps legacy drafts without supplier code compatible', async () => {
+  const draftId = randomUUID();
+  let productId: string | undefined;
+  try {
+    const draft = {
+      title: 'Legacy supplier fixture', description: 'Synthetic legacy baseline',
+      category: 'accessories', price: 95, currency: 'UYU',
+      provenance: {
+        supplierCost: 'observed', supplierName: 'Legacy supplier',
+        sourceUrl: 'https://example.test/legacy-supplier-fixture',
+      },
+      commercial: { marginEvidence: 'synthetic' },
+    };
+    const inserted = await admin.from('autopilot_product_drafts').insert({
+      id: draftId, source_candidate_id: 'legacy-fixture-candidate',
+      status: 'ai_approved', reviewed_by: 'autopilot-council:fixture', draft,
+    });
+    assert.equal(inserted.error, null, inserted.error?.message);
+
+    const published = await admin.rpc('publish_autopilot_draft', { draft_id: draftId });
+    assert.equal(published.error, null, published.error?.message);
+    productId = published.data.published_product_id;
+    const product = await admin.from('products')
+      .select('supplier_id,sku,traceability').eq('id', productId).single();
+    assert.equal(product.error, null, product.error?.message);
+    assert.equal(product.data!.supplier_id, null);
+    assert.match(product.data!.sku, /^VIC-[0-9a-f-]{36}$/i);
+    assert.deepEqual(product.data!.traceability.supplier, {
+      name: 'Legacy supplier', code: null, shopId: null, externalId: null,
+    });
+    assert.equal(product.data!.traceability.draftId, draftId);
+  } finally {
+    if (productId) await admin.from('products').delete().eq('id', productId);
+    await admin.from('autopilot_product_drafts').delete().eq('id', draftId);
+  }
+});
