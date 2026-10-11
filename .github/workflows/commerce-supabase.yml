@@ -1,0 +1,58 @@
+name: Isolated Supabase commerce
+
+on:
+  push:
+    branches: [main, 'codex/**', 'agent/**']
+    paths:
+      - '.github/workflows/commerce-supabase.yml'
+      - 'tests/commerce-supabase.test.ts'
+      - 'tests/commerce-baseline.sql'
+      - 'supabase/migrations/20261010010000_atomic_checkout.sql'
+      - 'supabase/migrations/20261010020000_payment_reference_recovery.sql'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: commerce-supabase-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  local-stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.120.0
+      - name: Prepare disposable synthetic migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          fixture="$RUNNER_TEMP/victoriosa-commerce-ci"
+          mkdir -p "$fixture"
+          supabase init --workdir "$fixture"
+          mkdir -p "$fixture/supabase/migrations"
+          cp tests/commerce-baseline.sql "$fixture/supabase/migrations/20261010000000_synthetic_commerce_baseline.sql"
+          cp supabase/migrations/20261010010000_atomic_checkout.sql "$fixture/supabase/migrations/"
+          cp supabase/migrations/20261010020000_payment_reference_recovery.sql "$fixture/supabase/migrations/"
+      - name: Start database, Auth and PostgREST with health checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase start --workdir "$RUNNER_TEMP/victoriosa-commerce-ci" -x studio,imgproxy,realtime,storage-api,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit > "$RUNNER_TEMP/supabase-start.log" 2>&1
+          supabase status --workdir "$RUNNER_TEMP/victoriosa-commerce-ci" -o json > "$RUNNER_TEMP/supabase-status.json"
+      - name: Test actual local Supabase API and Auth
+        run: node --import tsx --test tests/commerce-supabase.test.ts
+        env:
+          COMMERCE_SYNTHETIC_SUPABASE: 'true'
+          SUPABASE_LOCAL_STATUS_FILE: ${{ runner.temp }}/supabase-status.json
+      - name: Stop only this disposable stack
+        if: always()
+        run: supabase stop --workdir "$RUNNER_TEMP/victoriosa-commerce-ci" --no-backup
