@@ -94,6 +94,30 @@ test('PostgreSQL durable sourcing integration', {skip:!database,timeout:240000},
   assert.equal(await sql('select count(*) from products;'),'1');
   await clean();
  });
+ const publishForStock = async (key: string) => {
+  await runSourcing(store,{...config,mode:'production' as const},key,{discover:async()=>[fixture()],marketEvidence:market,council:approve});
+  const draftId=await sql('select id from autopilot_product_drafts limit 1;');
+  await sql(`set role service_role; select publish_autopilot_draft_manual('${draftId}'::uuid);`);
+ };
+ await t.test('published Autopilot stock can be reserved and restored after sourcing evidence expires',async()=>{
+  await publishForStock('stock-after-publication');
+  await sql("update autopilot_sourcing_runs set completed_at=now()-interval '25 hours',lease_expires_at=now()-interval '1 second' where mode='production';");
+  await sql('set role service_role; update products set inventory=2;');
+  await sql('set role service_role; update products set inventory=inventory-1;');
+  assert.equal(await sql('select inventory from products;'),'1');
+  await sql('set role service_role; update products set inventory=inventory+1;');
+  assert.equal(await sql('select inventory from products;'),'2');
+  assert.equal(await sql('select publication_eligible from products;'),'t');
+  await clean();
+ });
+ await t.test('inventory updates cannot smuggle commercial changes or remove Autopilot origin',async()=>{
+  await publishForStock('stock-no-publication-bypass');
+  for (const change of ["price=price+1","title='Changed'","status='discovered'","publication_eligible=false","traceability='{}'::jsonb"]) {
+   await assert.rejects(sql(`set role service_role; update products set inventory=1,${change};`),/FENCE_REJECTED|PRODUCT_ORIGIN_IMMUTABLE/);
+   assert.equal(await sql('select inventory from products;'),'0');
+  }
+  await clean();
+ });
  await t.test('manual release rejects stale production evidence',async()=>{
   const evidence=fixture();const prod={...config,mode:'production' as const};
   await runSourcing(store,prod,'stale-prod',{discover:async()=>[evidence],marketEvidence:market,council:approve});
