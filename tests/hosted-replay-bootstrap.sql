@@ -1,7 +1,12 @@
 -- Minimal Supabase-managed objects for replaying Victoriosa migrations in disposable PostgreSQL only.
-create role anon nologin;
-create role authenticated nologin;
-create role service_role nologin bypassrls;
+do $roles$
+begin
+  if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
+  if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated nologin; end if;
+  if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role nologin; end if;
+end
+$roles$;
+alter role service_role bypassrls;
 
 create function public.rls_auto_enable() returns event_trigger
 language plpgsql security definer set search_path = 'pg_catalog'

@@ -34,6 +34,9 @@ try {
   startAttempted = true;
   await run('pg_ctl', ['-D', join(directory, 'data'), '-l', join(directory, 'postgres.log'), '-o', `-h 127.0.0.1 -p ${port}`, '-w', 'start']);
   started = true;
+  // CI reuses cluster-level Supabase roles across disposable databases.
+  await run('psql', ['-h', '127.0.0.1', '-p', String(port), '-U', 'postgres', '-d', 'postgres', '-c',
+    'create role anon nologin; create role authenticated nologin; create role service_role nologin;']);
   await run('createdb', ['-h', '127.0.0.1', '-p', String(port), '-U', 'postgres', 'victoriosa_hosted_replay_test']);
   const child = execFile(process.execPath, ['--import', 'tsx', '--test', 'tests/hosted-migration-replay.test.ts'], {
     windowsHide: true,
