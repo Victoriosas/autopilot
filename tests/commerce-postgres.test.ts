@@ -28,6 +28,42 @@ test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
   if (existsSync(migration)) await sql(readFileSync(migration, 'utf8'));
   const recoveryMigration = 'supabase/migrations/20261010020000_payment_reference_recovery.sql';
   if (existsSync(recoveryMigration)) await sql(readFileSync(recoveryMigration, 'utf8'));
+  const oauthCompatibilityMigration = 'supabase/migrations/20261012010000_provider_oauth_token_ciphertext_compat.sql';
+  await t.test('hosted OAuth token schema upgrades to encrypted columns without silent plaintext conversion', async () => {
+    const hostedLegacySchema = `
+      drop table if exists public.provider_oauth_tokens;
+      create table public.provider_oauth_tokens (
+        provider text primary key,
+        access_token text not null,
+        refresh_token text,
+        token_type text,
+        expires_at timestamptz,
+        scope text,
+        external_user_id text,
+        metadata jsonb not null default '{}'::jsonb,
+        created_at timestamptz not null default now(),
+        updated_at timestamptz not null default now()
+      );`;
+    await sql(hostedLegacySchema);
+    if (existsSync(oauthCompatibilityMigration)) await sql(readFileSync(oauthCompatibilityMigration, 'utf8'));
+    const columns = await sql(`select string_agg(column_name, ',' order by ordinal_position)
+      from information_schema.columns where table_schema='public' and table_name='provider_oauth_tokens';`);
+    assert.match(columns, /access_token_ciphertext/);
+    assert.match(columns, /refresh_token_ciphertext/);
+    assert.doesNotMatch(columns, /(^|,)access_token(,|$)/);
+    assert.doesNotMatch(columns, /(^|,)refresh_token(,|$)/);
+    await sql(`insert into public.provider_oauth_tokens(provider,access_token_ciphertext)
+      values('mercadolibre','v1:synthetic-ciphertext');`);
+
+    await sql(hostedLegacySchema);
+    await sql(`insert into public.provider_oauth_tokens(provider,access_token,refresh_token)
+      values('mercadolibre','synthetic-plaintext','synthetic-refresh');`);
+    await assert.rejects(sql(readFileSync(oauthCompatibilityMigration, 'utf8')), /OAUTH_PLAINTEXT_ROTATION_REQUIRED/);
+    assert.equal(await sql(`select access_token from public.provider_oauth_tokens where provider='mercadolibre';`), 'synthetic-plaintext');
+    assert.equal(await sql(`select count(*) from information_schema.columns where table_schema='public'
+      and table_name='provider_oauth_tokens' and column_name='access_token_ciphertext';`), '0');
+    await sql('drop table public.provider_oauth_tokens;');
+  });
   const reset = async (stock = 1) => {
     await sql(`truncate public.products,public.orders cascade;
       insert into public.products(id,title,price,currency,status,inventory) values('${productId}','Vincha',100,'UYU','published',${stock});`);
