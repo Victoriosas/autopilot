@@ -84,6 +84,9 @@ jobs:
         env:
           PGPASSWORD: isolated-test-password
 
+      - name: Verify hosted and local migration version inventory
+        run: node --import tsx --test tests/migration-history.test.ts
+
       - name: Canonical hosted migration replay
         run: node --import tsx --test tests/hosted-migration-replay.test.ts
         env:
@@ -99,3 +102,4 @@ jobs:
             exit 1
           fi
           echo "Guardrails passed."
+
