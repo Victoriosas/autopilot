@@ -13,13 +13,12 @@ const getOpeningTag = (html: string, tag: string, marker: string) => {
 test('waitlist fields expose their visible labels as accessible names', () => {
   const html = renderToStaticMarkup(React.createElement(WaitlistSection));
 
-  const emailLabel = getOpeningTag(html, 'label', 'for="waitlist-email"');
   const emailInput = getOpeningTag(html, 'input', 'id="waitlist-email"');
-  const interestLabel = getOpeningTag(html, 'label', 'for="waitlist-interest"');
   const interestSelect = getOpeningTag(html, 'select', 'id="waitlist-interest"');
 
-  assert.match(emailLabel, />Email<\/label>$/);
+  assert.match(html, /<label[^>]*for="waitlist-email"[^>]*>Email<\/label>/);
+  assert.match(emailInput, /name="email"/);
   assert.match(emailInput, /type="email"/);
-  assert.match(interestLabel, />¿Qué querés ver primero\?<\/label>$/);
+  assert.match(html, /<label[^>]*for="waitlist-interest"[^>]*>¿Qué querés ver primero\?<\/label>/);
   assert.match(interestSelect, /name="interest"/);
 });
