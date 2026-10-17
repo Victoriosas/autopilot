@@ -1,3 +1,4 @@
+import {AffiliateResearchPanel} from './AffiliateResearchPanel';
 import React,{useState} from 'react';
 import {apiFetch} from '../../lib/api';
 
@@ -26,6 +27,7 @@ export function ManualCatalogPanel() {
  return <details className="rounded-2xl border border-white/15 bg-white/5 p-5 text-slate-200">
   <summary className="min-h-11 cursor-pointer font-semibold">Catálogo por consulta y recomendaciones</summary>
   <p className="my-3 text-sm text-slate-400">Cargá una ficha real sin conectar al proveedor. Se guarda como borrador, sin precio ni stock propios. El enlace de afiliado requiere una cuenta aprobada por ese comercio.</p>
+  <AffiliateResearchPanel />
   <form onSubmit={save} className="grid gap-3 sm:grid-cols-2">
    {[
     ['title','Título',160],['category','Categoría',100],['merchant','Comercio o responsable',100],
