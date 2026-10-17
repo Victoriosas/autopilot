@@ -1,0 +1,46 @@
+name: Isolated Beauty Supabase
+on:
+  push:
+    branches: [main, 'codex/**']
+    paths: ['src/storefront/beauty*', 'src/security/adminAuth.ts', 'tests/beauty*', 'supabase/migrations/20261017220000_beauty_requests.sql', '.github/workflows/beauty-supabase.yml']
+permissions:
+  contents: read
+concurrency:
+  group: beauty-supabase-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  beauty-stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.120.0
+      - name: Prepare only disposable Beauty stack
+        run: |
+          set -euo pipefail
+          fixture="$RUNNER_TEMP/victoriosa-beauty-ci"
+          mkdir -p "$fixture"
+          supabase init --workdir "$fixture"
+          mkdir -p "$fixture/supabase/migrations"
+          cp tests/commerce-baseline.sql "$fixture/supabase/migrations/20261010000000_baseline.sql"
+          cp tests/commerce-supabase-access.sql "$fixture/supabase/migrations/20261010000001_access.sql"
+          cp supabase/migrations/20261017220000_beauty_requests.sql "$fixture/supabase/migrations/"
+      - name: Start real local Auth and PostgREST
+        run: |
+          supabase start --workdir "$RUNNER_TEMP/victoriosa-beauty-ci" -x studio,imgproxy,realtime,storage-api,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit > "$RUNNER_TEMP/beauty-start.log" 2>&1
+          supabase status --workdir "$RUNNER_TEMP/victoriosa-beauty-ci" -o json > "$RUNNER_TEMP/beauty-status.json"
+      - name: Test actual Beauty integration
+        run: node --import tsx --test tests/beauty-supabase.test.ts
+        env:
+          BEAUTY_SYNTHETIC_SUPABASE: 'true'
+          SUPABASE_LOCAL_STATUS_FILE: ${{ runner.temp }}/beauty-status.json
+      - name: Stop only disposable stack
+        if: always()
+        run: supabase stop --workdir "$RUNNER_TEMP/victoriosa-beauty-ci" --no-backup

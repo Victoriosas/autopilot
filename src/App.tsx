@@ -27,6 +27,7 @@ const AutopilotHistoryModal = lazy(() => import('./components/admin/AutopilotHis
 const ConnectorsDirectoryModal = lazy(() => import('./components/admin/ConnectorsDirectoryModal').then((module) => ({ default: module.ConnectorsDirectoryModal })));
 const GlobalAdminSearchModal = lazy(() => import('./components/admin/GlobalAdminSearchModal').then((module) => ({ default: module.GlobalAdminSearchModal })));
 const ReleaseReadinessCard = lazy(() => import('./components/admin/ReleaseReadinessCard').then((module) => ({ default: module.ReleaseReadinessCard })));
+const BeautyRequestsPanel = lazy(() => import('./components/admin/BeautyRequestsPanel').then((module) => ({ default: module.BeautyRequestsPanel })));
 import { AuthModal } from './components/auth/AuthModal';
 
 import type { Product, Order } from './types';
@@ -198,6 +199,7 @@ export function App() {
           />
 
           <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <BeautyRequestsPanel />
             <ReleaseReadinessCard />
             {adminTab === 'pipeline' ? (
               <AutopilotDashboard
