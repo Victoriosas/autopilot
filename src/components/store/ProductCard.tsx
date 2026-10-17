@@ -1,3 +1,5 @@
+import { hasExternalChannel } from '../../storefront/salesChannel';
+import { SalesChannelAction } from './SalesChannelAction';
 import React from 'react';
 import { Heart, ShoppingBag, ArrowUpRight } from 'lucide-react';
 import { STORE_CURRENCY } from '../../services/revenue';
@@ -8,6 +10,7 @@ interface ProductCardProps { product: Product; onSelect: (p: Product) => void; }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect }) => {
   const { addToCart, wishlist, toggleWishlist } = useApp();
+  const external = hasExternalChannel(product);
   const isWishlisted = wishlist.includes(product.id);
   const focus = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7b594c]';
   return (
@@ -26,11 +29,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect }) =
         {product.subtitle && <p className="mt-1 text-xs leading-5 text-[#76635c]">{product.subtitle}</p>}
         <div className="mt-auto flex items-end justify-between gap-3 border-t border-[#7b594c]/15 pt-4">
           <div className="pt-4">
-            <span className="block text-lg font-semibold tabular-nums">{STORE_CURRENCY} {product.price.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span className="mt-1 block text-xs text-[#76635c]">Disponibilidad por confirmar</span>
+            <span className="block text-lg font-semibold tabular-nums">{external ? 'Precio y condiciones en destino' : STORE_CURRENCY+' '+product.price.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className="mt-1 block text-xs text-[#76635c]">{external ? 'Consulta la ficha para continuar' : 'Disponibilidad por confirmar'}</span>
           </div>
-          <button type="button" onClick={() => addToCart(product, 1, product.variants?.[0]?.options?.[0])} aria-label={`Añadir a la bolsa: ${product.title}`} className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#3b2b28] text-white transition hover:bg-[#7b594c] ${focus}`}><ShoppingBag aria-hidden="true" className="h-4 w-4" /></button>
+          {!external && <button type="button" onClick={() => addToCart(product, 1, product.variants?.[0]?.options?.[0])} aria-label={`Añadir a la bolsa: ${product.title}`} className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#3b2b28] text-white transition hover:bg-[#7b594c] ${focus}`}><ShoppingBag aria-hidden="true" className="h-4 w-4" /></button>}
         </div>
+        {external && <SalesChannelAction product={product} />}
         <button type="button" onClick={() => onSelect(product)} className={`mt-3 inline-flex min-h-11 items-center gap-1 self-start text-xs font-semibold text-[#7b594c] ${focus}`}>Ver detalles <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5" /></button>
       </div>
     </article>

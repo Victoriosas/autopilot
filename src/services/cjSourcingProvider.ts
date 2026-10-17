@@ -1,4 +1,5 @@
 import CJDropshippingClient, {
+  CJRequestError,
   getCJClient,
   type CJFreightOption,
   type CJProduct,
@@ -175,7 +176,7 @@ function searchRows(value: any): any[] {
 }
 
 function errorCode(error: unknown): string {
-  if (error instanceof CJMcpError || error instanceof CJReadChainError) return error.code.replace(/[^A-Z0-9_:-]/gi, '_').slice(0, 120);
+  if (error instanceof CJMcpError || error instanceof CJReadChainError || error instanceof CJRequestError) return error.code.replace(/[^A-Z0-9_:-]/gi, '_').slice(0, 120);
   const status = Number((error as any)?.status);
   if (Number.isFinite(status) && status > 0) return `CJ_REST_HTTP_${status}`;
   return 'UNKNOWN';

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "id": "firecrawl-uy-brush-cleaner-2026-10-17",
+  "observedDate": "2026-10-17",
+  "name": "Limpiador electrico USB de brochas",
+  "status": "REJECT_FOR_URUGUAY_DIRECT_SHIP",
+  "publicationAllowed": false,
+  "provider": "CJdropshipping",
+  "productId": "1707021717920550912",
+  "productSku": "CJMJ1857781",
+  "sourceUrl": "https://cjdropshipping.com/product/electric-makeup-brush-cleaner-machine-portable-automatic-usb-cosmetic-brush-cleaner-tools-for-all-size-beauty-makeup-brushes-set-p-1707021717920550912.html",
+  "marketReferences": [
+    {
+      "url": "https://www.mercadolibre.com.uy/limpiador-electrico-para-brochas-de-maquillaje-pro/up/MLUU3505359033",
+      "priceUYU": 1199,
+      "confidence": "search_snippet_not_live_verified"
+    },
+    {
+      "url": "https://listado.mercadolibre.com.uy/limpiador-de-brochas",
+      "priceUYU": 649,
+      "confidence": "search_snippet_not_live_verified"
+    }
+  ],
+  "cjObservation": {
+    "variantId": "1707021717996048384",
+    "variantSku": "CJMJ185778101AZ",
+    "variant": "White Powder",
+    "currency": "USD",
+    "unitCost": 1.93,
+    "inventory": {
+      "factoryCN": 11738,
+      "cjWarehouseCN": 0,
+      "source": "vicmc query_cj_inventory"
+    },
+    "freightOptions": [
+      {
+        "method": "CJPacket Liquid Line",
+        "priceUSD": 11.01,
+        "estimatedDaysMin": 20,
+        "estimatedDaysMax": 60,
+        "customsIncluded": false
+      },
+      {
+        "method": "DHL Official",
+        "priceUSD": 85.41,
+        "estimatedDaysMin": 3,
+        "estimatedDaysMax": 7,
+        "customsIncluded": false
+      }
+    ],
+    "unitPlusCheapestQuotedFreightUSD": 12.94,
+    "quantity": 1,
+    "freightDestination": "UY",
+    "postalCodeVerified": false,
+    "source": "authenticated vicmc get_product_detail/query_cj_inventory/calculate_freight/get_logistics_timeliness"
+  },
+  "allInCost": null,
+  "netMargin": null,
+  "imageRightsVerified": false,
+  "decisionReasons": [
+    "No ready stock in CJ China warehouse, only factory inventory reported",
+    "Lowest shipping estimate 20-60 days and not address/zipcode verified",
+    "Taxes, customs, return reserve, platform fees, payment costs and FX not proven",
+    "Supplier image rights unverified",
+    "Market prices are search snippets, not verified live offers or sales volumes"
+  ],
+  "nextSteps": [
+    "Keep this lead outside publishable catalog for Uruguay",
+    "Compare suppliers with local stock or shorter shipping",
+    "Verify all-in delivered costs, delivery, rights, market price and net profitability before draft approval"
+  ]
+}

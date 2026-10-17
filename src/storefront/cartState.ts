@@ -1,4 +1,5 @@
 import type { CartItem, Product } from '../types';
+import { hasExternalChannel } from './salesChannel';
 
 type StoredCartItem = {
   productId?: unknown;
@@ -7,8 +8,8 @@ type StoredCartItem = {
   selectedVariant?: unknown;
 };
 
-export function cartLimit(product: Pick<Product, 'inventory' | 'status'>): number {
-  if (product.status !== 'published') return 0;
+export function cartLimit(product: Pick<Product, 'inventory' | 'status'> & Partial<Pick<Product, 'traceability'>>): number {
+  if (product.status !== 'published' || hasExternalChannel(product)) return 0;
   const inventory = product.inventory;
   if (!Number.isSafeInteger(inventory) || inventory <= 0) return 0;
   return Math.min(20, inventory);

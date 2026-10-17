@@ -1,3 +1,5 @@
+import { hasExternalChannel } from '../../storefront/salesChannel';
+import { SalesChannelAction } from './SalesChannelAction';
 import React, { useEffect, useState } from 'react';
 import { Check, Heart, Info, ShoppingBag, Star, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -21,8 +23,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
   const [activeTab, setActiveTab] = useState<'details' | 'specs'>('details');
   const availableQuantity = remainingCartQuantity(product, cart);
   const requestedQuantity = Math.min(quantity, availableQuantity);
+  const external = hasExternalChannel(product);
   const isWishlisted = wishlist.includes(product.id);
-  const discountPct = product.compareAtPrice && product.compareAtPrice > product.price
+  const discountPct = !hasExternalChannel(product) && product.compareAtPrice && product.compareAtPrice > product.price
     ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
     : 0;
   const hasReviews = Number(product.reviewCount || 0) > 0 && Number(product.rating || 0) > 0;
@@ -37,7 +40,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
   }, [product.id]);
 
   const handleAddToCart = () => {
-    if (requestedQuantity < 1) return;
+    if (external || requestedQuantity < 1) return;
     addToCart(product, requestedQuantity, selectedVariant);
     void trackRevenueEvent('add_to_cart', {
       productId: product.id,
@@ -87,7 +90,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-xs text-slate-400 flex gap-2">
               <Info className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
-              <span>Disponibilidad, entrega y condiciones finales se confirman durante el checkout. No mostramos garantías o certificaciones que no estén documentadas en la ficha del producto.</span>
+              <span>{external ? 'La ficha indica dónde consultar o comprar. Confirmá las condiciones con el vendedor.' : 'Disponibilidad, entrega y condiciones finales se confirman durante el checkout.'} No mostramos garantías o certificaciones que no estén documentadas en la ficha del producto.</span>
             </div>
           </div>
 
@@ -105,10 +108,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
               <div className="mt-4 p-4 rounded-2xl bg-white/5 border border-white/10">
                 <div className="flex items-baseline gap-3">
-                  <span className="text-3xl font-bold text-white font-mono">{STORE_CURRENCY} {Number(product.price).toFixed(2)}</span>
-                  {product.compareAtPrice && product.compareAtPrice > product.price && <span className="text-sm text-slate-500 line-through font-mono">{STORE_CURRENCY} {Number(product.compareAtPrice).toFixed(2)}</span>}
+                  <span className="text-3xl font-bold text-white font-mono">{external ? "Precio por confirmar en destino" : STORE_CURRENCY+" "+Number(product.price).toFixed(2)}</span>
+                  {!external && product.compareAtPrice && product.compareAtPrice > product.price && <span className="text-sm text-slate-500 line-through font-mono">{STORE_CURRENCY} {Number(product.compareAtPrice).toFixed(2)}</span>}
                 </div>
-                <span className="text-xs text-slate-400 mt-1 block">El total definitivo y el envío se calculan en checkout.</span>
+                <span className="text-xs text-slate-400 mt-1 block">{external ? "Esta ficha no se cobra en Victoriosa." : "El total definitivo y el envío se calculan en checkout."}</span>
               </div>
 
               {product.variants && product.variants.length > 0 && (
@@ -122,7 +125,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 </div>
               )}
 
-              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              {external ? <SalesChannelAction product={product} /> : <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center border border-white/10 rounded-xl bg-black/40 p-1">
                   <button aria-label="Reducir cantidad" onClick={() => setQuantity(Math.max(1, requestedQuantity - 1))} className="w-8 h-8 text-slate-400 hover:text-white">-</button>
                   <span className="w-10 text-center text-sm font-semibold text-white font-mono">{requestedQuantity}</span>
@@ -134,6 +137,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 <button onClick={() => toggleWishlist(product.id)} className={`p-3.5 rounded-xl border ${isWishlisted ? 'bg-indigo-600/20 border-indigo-500 text-indigo-400' : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'}`} title="Favoritos"><Heart className="w-5 h-5 fill-current" /></button>
               </div>
 
+              }
               <div className="mt-8 border-t border-white/10 pt-4">
                 <div className="flex gap-4 border-b border-white/10 pb-2 text-xs font-semibold">
                   <button onClick={() => setActiveTab('details')} className={`pb-2 ${activeTab === 'details' ? 'border-b-2 border-indigo-500 text-indigo-400' : 'text-slate-400'}`}>Descripción</button>

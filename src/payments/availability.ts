@@ -1,3 +1,4 @@
+import { assertCheckoutChannels } from './catalogChannelGuard';
 import { createClient } from '@supabase/supabase-js';
 import { checkoutEnabled, paymentDatabaseConfigured } from './safety';
 import type { CommerceCommand } from './atomicCheckout';
@@ -6,6 +7,13 @@ import { checkoutShippingConfig } from './shipping';
 export const commerceCommand: CommerceCommand = async (command, args) => {
   const db = createClient(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     { auth: { persistSession: false, autoRefreshToken: false } });
+  if (command === 'reserve') {
+    await assertCheckoutChannels(args.items, async ids => {
+      const result = await db.from('products').select('id,traceability').in('id', ids);
+      if (result.error) throw Error('CATALOG_CHANNEL_UNAVAILABLE');
+      return result.data || [];
+    });
+  }
   const { data, error } = command === 'expired'
     ? await db.rpc('commerce_maintenance_expired')
     : command === 'recovery_context'

@@ -13,6 +13,7 @@ import { CustomerAccountModal } from './components/store/CustomerAccountModal';
 import { StoreFooter } from './components/store/StoreFooter';
 import { WaitlistSection } from './components/store/WaitlistSection';
 import { PaymentReturn } from './components/store/PaymentReturn';
+import { readCatalogLocation, writeCatalogLocation } from './storefront/catalogLocation';
 
 // Admin Components
 const AdminHeader = lazy(() => import('./components/admin/AdminHeader').then((module) => ({ default: module.AdminHeader })));
@@ -49,8 +50,21 @@ export function App() {
   const effectiveViewMode: 'store' | 'admin' = viewMode === 'admin' && userRole !== 'admin' ? 'store' : viewMode;
 
   // Public Store State
-  const [activeCategory, setActiveCategory] = useState('Todos');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState(() => readCatalogLocation(window.location.search).category);
+  const [searchQuery, setSearchQuery] = useState(() => readCatalogLocation(window.location.search).query);
+  React.useEffect(() => {
+    const href = writeCatalogLocation(window.location.href, { query: searchQuery, category: activeCategory });
+    if (href !== window.location.href) window.history.replaceState(null, '', href);
+  }, [activeCategory, searchQuery]);
+  React.useEffect(() => {
+    const restore = () => {
+      const state = readCatalogLocation(window.location.search);
+      setSearchQuery(state.query);
+      setActiveCategory(state.category);
+    };
+    window.addEventListener('popstate', restore);
+    return () => window.removeEventListener('popstate', restore);
+  }, []);
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
@@ -121,11 +135,9 @@ export function App() {
 
           <main className="flex-1">
             <HeroBanner
-              onExploreClick={() => scrollToSection('descubrir')}
+              onExploreClick={() => scrollToSection('catalogo')}
               onEvaluationClick={() => scrollToSection('rituales')}
             />
-
-            <StoreDiscoverySections onSelectCategory={setActiveCategory} />
 
             <ProductGrid
               activeCategory={activeCategory}
@@ -135,6 +147,7 @@ export function App() {
               onClearFilters={() => { setSearchQuery(''); setActiveCategory('Todos'); }}
             />
 
+            <StoreDiscoverySections onSelectCategory={setActiveCategory} />
             <StoreTrustSections onSelectCategory={setActiveCategory} />
             <WaitlistSection />
           </main>

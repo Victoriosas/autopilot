@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { cjSourcingReadConfigured } from '../services/cjSourcingProvider';
 import { mercadoLibreConnectionStatus } from '../integrations/mercadoLibre';
 import { marketProviderStatus } from './marketEvidence';
+import { releaseCheckoutCheck } from './releaseCheckout';
 
 export type ReleaseState='safe_shadow'|'blocked_for_commerce'|'ready_for_manual_release';
 
@@ -67,7 +68,9 @@ export async function computeReleaseReadiness():Promise<ReleaseReadiness>{
   const hasMarketProvider=marketWithConnection.marketMemory||marketWithConnection.mercadoLibre||marketWithConnection.gemini||marketWithConnection.openRouter;
   const hasPaymentProvider=mercadoPago||paypal;
 
+  const verifiedCheckout = await releaseCheckoutCheck();
   const checks:ReleaseCheck[]=[
+    verifiedCheckout,
     {id:'cj_read_provider',ok:cj,requiredForCommerce:true,detail:cj?'CJ read provider configured':'CJ sourcing provider is not configured'},
     {id:'market_evidence_provider',ok:hasMarketProvider,requiredForCommerce:true,detail:hasMarketProvider?'At least one Market Evidence provider configured':'No Market Evidence provider configured'},
     {id:'production_catalog',ok:productionEligible>0,requiredForCommerce:true,detail:`${productionEligible} production-eligible published products`},

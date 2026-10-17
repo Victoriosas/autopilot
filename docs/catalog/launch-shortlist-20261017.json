@@ -1,0 +1,234 @@
+{
+  "schemaVersion": 1,
+  "reviewedOn": "2026-10-17",
+  "policy": "Internal research drafts; no import, publication, purchase, or net-margin claim.",
+  "catalogReadOnlyObservation": {
+    "count": 0,
+    "limit": 1000,
+    "date": "2026-10-17"
+  },
+  "supplierAccessObservation": {
+    "configured": true,
+    "clientError": "CJ_HTTP_401",
+    "note": "Client maps authentication business failures to 401; exact HTTP/business cause not determined. Do not claim token expired."
+  },
+  "candidates": [
+    {
+      "status": "DRAFT_RESEARCH_ONLY",
+      "supplier": "CJ Dropshipping",
+      "destination": "UY",
+      "evidenceLevel": "public_listing_not_authenticated_quote",
+      "reviewedOn": "2026-10-17",
+      "variantId": null,
+      "stock": null,
+      "shippingCostUsd": null,
+      "shippingDaysMax": null,
+      "landedCostUyu": null,
+      "salePriceUyu": null,
+      "netMarginPct": null,
+      "publicationAllowed": false,
+      "blockers": [
+        "AUTHENTICATED_SUPPLIER_ACCESS_REQUIRED",
+        "VARIANT_STOCK_REQUIRED",
+        "UY_SHIPPING_QUOTE_REQUIRED",
+        "LANDED_COST_AND_FX_REQUIRED",
+        "COMMERCIAL_FEES_AND_TAXES_REQUIRED",
+        "PRODUCT_AND_IMAGE_REVIEW_REQUIRED"
+      ],
+      "productId": "E4E9B804-6EC0-483F-BA9A-FE4FC7D88331",
+      "titleEs": "Cepillo manual para lavado capilar",
+      "category": "Accesorios capilares",
+      "sourceUrl": "https://cjdropshipping.com/product/silicone-shampoo-brush-massage-scalp-hair-brush-p-E4E9B804-6EC0-483F-BA9A-FE4FC7D88331.html",
+      "listedSku": "CJJJJTYS00320-Black Pink",
+      "publicListingPriceUsd": {
+        "min": 1.1,
+        "max": 3.3
+      },
+      "descriptionEs": "Accesorio manual para acompañar el lavado del cabello. Su formato compacto permite incorporarlo a la rutina de ducha. Incluye un cepillo; color y composición final sujetos a confirmación de la variante.",
+      "reviewNotes": [
+        "No reproducir claims sobre crecimiento capilar, circulación o ausencia de efectos adversos.",
+        "La ficha mezcla plástico/PVC y silicona; verificar composición antes de publicar."
+      ],
+      "priority": 1
+    },
+    {
+      "status": "DRAFT_RESEARCH_ONLY",
+      "supplier": "CJ Dropshipping",
+      "destination": "UY",
+      "evidenceLevel": "public_listing_not_authenticated_quote",
+      "reviewedOn": "2026-10-17",
+      "variantId": null,
+      "stock": null,
+      "shippingCostUsd": null,
+      "shippingDaysMax": null,
+      "landedCostUyu": null,
+      "salePriceUyu": null,
+      "netMarginPct": null,
+      "publicationAllowed": false,
+      "blockers": [
+        "AUTHENTICATED_SUPPLIER_ACCESS_REQUIRED",
+        "VARIANT_STOCK_REQUIRED",
+        "UY_SHIPPING_QUOTE_REQUIRED",
+        "LANDED_COST_AND_FX_REQUIRED",
+        "COMMERCIAL_FEES_AND_TAXES_REQUIRED",
+        "PRODUCT_AND_IMAGE_REVIEW_REQUIRED"
+      ],
+      "productId": "2407240524011608500",
+      "titleEs": "Vincha ondulada para la rutina facial",
+      "category": "Accesorios faciales",
+      "sourceUrl": "https://cjdropshipping.com/product/headdress-wave-face-wash-toothed-non-slip-headband-unisex-hairpin-barrettes-p-2407240524011608500.html",
+      "listedSku": "CJYD209179101AZ",
+      "publicListingPriceUsd": {
+        "min": 0.43,
+        "max": 1.12
+      },
+      "descriptionEs": "Vincha en forma de U para sujetar el cabello mientras realizás tu rutina facial o te maquillás. Incluye una unidad. Elegí el color cuando se confirme la disponibilidad.",
+      "reviewNotes": [
+        "Verificar terminación, comodidad y sujeción con muestra.",
+        "Evaluar como complemento de pedido: su bajo costo de producto no demuestra rentabilidad con envío individual."
+      ],
+      "priority": 2
+    },
+    {
+      "status": "DRAFT_RESEARCH_ONLY",
+      "supplier": "CJ Dropshipping",
+      "destination": "UY",
+      "evidenceLevel": "public_listing_not_authenticated_quote",
+      "reviewedOn": "2026-10-17",
+      "variantId": null,
+      "stock": null,
+      "shippingCostUsd": null,
+      "shippingDaysMax": null,
+      "landedCostUyu": null,
+      "salePriceUyu": null,
+      "netMarginPct": null,
+      "publicationAllowed": false,
+      "blockers": [
+        "AUTHENTICATED_SUPPLIER_ACCESS_REQUIRED",
+        "VARIANT_STOCK_REQUIRED",
+        "UY_SHIPPING_QUOTE_REQUIRED",
+        "LANDED_COST_AND_FX_REQUIRED",
+        "COMMERCIAL_FEES_AND_TAXES_REQUIRED",
+        "PRODUCT_AND_IMAGE_REVIEW_REQUIRED"
+      ],
+      "productId": "1484810775192276992",
+      "titleEs": "Neceser plegable para artículos de cuidado",
+      "category": "Organización y viaje",
+      "sourceUrl": "https://cjdropshipping.com/product/toiletry-bag-organizer-storage-bag-folding-bag-cosmetic-bag-p-1484810775192276992.html",
+      "listedSku": "CJNS140418401AZ",
+      "publicListingPriceUsd": {
+        "min": 1.92,
+        "max": 1.92
+      },
+      "descriptionEs": "Neceser de tela para organizar artículos de cuidado personal en casa o de viaje. La ficha indica un tamaño de 24 × 11 × 22 cm. Incluye una unidad, sin accesorios.",
+      "reviewNotes": [
+        "Medidas declaradas por proveedor, pendientes de control de muestra.",
+        "Cotizar peso y dimensiones embaladas, no solo tamaño del producto."
+      ],
+      "priority": 3
+    },
+    {
+      "status": "DRAFT_RESEARCH_ONLY",
+      "supplier": "CJ Dropshipping",
+      "destination": "UY",
+      "evidenceLevel": "public_listing_not_authenticated_quote",
+      "reviewedOn": "2026-10-17",
+      "variantId": null,
+      "stock": null,
+      "shippingCostUsd": null,
+      "shippingDaysMax": null,
+      "landedCostUyu": null,
+      "salePriceUyu": null,
+      "netMarginPct": null,
+      "publicationAllowed": false,
+      "blockers": [
+        "AUTHENTICATED_SUPPLIER_ACCESS_REQUIRED",
+        "VARIANT_STOCK_REQUIRED",
+        "UY_SHIPPING_QUOTE_REQUIRED",
+        "LANDED_COST_AND_FX_REQUIRED",
+        "COMMERCIAL_FEES_AND_TAXES_REQUIRED",
+        "PRODUCT_AND_IMAGE_REVIEW_REQUIRED"
+      ],
+      "productId": "1845665393068101632",
+      "titleEs": "Neceser transparente de uso diario",
+      "category": "Organización y viaje",
+      "sourceUrl": "https://cjdropshipping.com/product/new-transparent-cosmetic-bag-womens-handbag-travel-fashion-portable-make-up-storage-bags-p-1845665393068101632.html",
+      "listedSku": "CJNS215897901AZ",
+      "publicListingPriceUsd": {
+        "min": 4.71,
+        "max": 4.71
+      },
+      "descriptionEs": "Bolso transparente para mantener a la vista tus artículos de cuidado personal. La ficha indica 21 × 6 × 16 cm. Incluye un bolso; productos de las imágenes no incluidos.",
+      "reviewNotes": [
+        "Ficha menciona PVC y nylon; verificar composición exacta.",
+        "Comparar su costo total con el neceser plegable antes de elegir ambos."
+      ],
+      "priority": 4
+    },
+    {
+      "status": "DRAFT_RESEARCH_ONLY",
+      "supplier": "CJ Dropshipping",
+      "destination": "UY",
+      "evidenceLevel": "public_listing_not_authenticated_quote",
+      "reviewedOn": "2026-10-17",
+      "variantId": null,
+      "stock": null,
+      "shippingCostUsd": null,
+      "shippingDaysMax": null,
+      "landedCostUyu": null,
+      "salePriceUyu": null,
+      "netMarginPct": null,
+      "publicationAllowed": false,
+      "blockers": [
+        "AUTHENTICATED_SUPPLIER_ACCESS_REQUIRED",
+        "VARIANT_STOCK_REQUIRED",
+        "UY_SHIPPING_QUOTE_REQUIRED",
+        "LANDED_COST_AND_FX_REQUIRED",
+        "COMMERCIAL_FEES_AND_TAXES_REQUIRED",
+        "PRODUCT_AND_IMAGE_REVIEW_REQUIRED"
+      ],
+      "productId": "1546430072087916544",
+      "titleEs": "Neceser de viaje con apertura amplia",
+      "category": "Organización y viaje",
+      "sourceUrl": "https://cjdropshipping.com/product/travel-cosmetic-bag-large-capacity-multifunction-travel-cosmetic-bag-women-toiletries-organizer-female-storage-make-up-case-tool-p-1546430072087916544.html",
+      "listedSku": "CJNS152304201AZ",
+      "publicListingPriceUsd": null,
+      "descriptionEs": "Neceser con asa y apertura amplia para ordenar tus esenciales de cuidado. El proveedor describe un exterior de PU y tamaño de 23,5 × 11 × 10,5 cm. Incluye una unidad.",
+      "reviewNotes": [
+        "Página muestra dos rangos de precio superpuestos: no elegir uno como costo válido.",
+        "No describirlo como cuero genuino ni prometer impermeabilidad sin verificar.",
+        "Alternativa al neceser plegable; evitar catálogo inicial redundante."
+      ],
+      "priority": 5
+    }
+  ],
+  "rejected": [
+    {
+      "productId": "1482977666729644032",
+      "sourceUrl": "https://cjdropshipping.com/product/large-capacity-portable-korean-version-simple-portable-cosmetic-case-p-1482977666729644032.html",
+      "reason": "Oversize attribute, listed weight 550–2714 g, inconsistent volume description and unquoted shipping; unsuitable for initial light-accessory shortlist."
+    }
+  ],
+  "bundles": [
+    {
+      "titleEs": "Rutina facial organizada",
+      "candidateIds": [
+        "2407240524011608500",
+        "1845665393068101632"
+      ],
+      "status": "CONCEPT_ONLY",
+      "price": null,
+      "note": "Requiere cotización conjunta y compatibilidad logística; no suma automática de fletes."
+    },
+    {
+      "titleEs": "Cuidado capilar de viaje",
+      "candidateIds": [
+        "E4E9B804-6EC0-483F-BA9A-FE4FC7D88331",
+        "1484810775192276992"
+      ],
+      "status": "CONCEPT_ONLY",
+      "price": null,
+      "note": "No publicado; verificar proveedor, variantes y envío conjunto."
+    }
+  ]
+}

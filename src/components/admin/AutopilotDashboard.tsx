@@ -1,3 +1,4 @@
+import { ManualCatalogPanel } from './ManualCatalogPanel';
 import React, { useState, useMemo } from 'react';
 import { 
   Bot, 
@@ -186,6 +187,7 @@ export const AutopilotDashboard: React.FC<AutopilotDashboardProps> = ({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Real-time Operational Alerts */}
       <SystemAlertsBanner />
+      <ManualCatalogPanel />
       
       {/* 1. KPI Top Cards Deck */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
