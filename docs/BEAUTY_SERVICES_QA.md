@@ -42,3 +42,10 @@ Siguiente instrucción: revisar PR #73 y sus evidencias, completar el catálogo 
 - Página pública sintética: catálogo DTO → consulta → revisión → recibo y enlace WhatsApp con UUID, sin datos de la ficha. No se abrió ni envió WhatsApp. Tests VM cubren catálogo vacío/error/malformado y fallback legado únicamente con deshabilitación explícita.
 - `npm run verify` local aprobado antes de ajustes finales menores de UI; TypeScript y checks finales se registran por SHA en CI. Tests Supabase reales ampliados preparados para CI, sin Docker/Podman local. No afirmar éxito de esa ampliación hasta comprobar el run.
 - Siguiente bloque seguro ejecutado: generación offline de cuatro fichas pendientes en `.audit/beauty-commercial-review/services-pending.json`, duración de ejemplo marcada, tarifas nulas, sin aprobación ni publicación. Paquete SQL offline ahora incluye tres migraciones con hashes; no es respaldo ni autorización.
+
+### Evidencia integrada del código fd67115
+
+- [Core push 39070276526](https://github.com/Victoriosas/autopilot/actions/runs/39070276526) y [Core PR 39070280042](https://github.com/Victoriosas/autopilot/actions/runs/39070280042): success. 180/181 pruebas Node aprobadas, una exclusiva de Windows omitida en Linux; builds, secreto, inventario y replay verificados. `npm run verify` local también terminó con exit 0.
+- [Supabase aislado 39070276676](https://github.com/Victoriosas/autopilot/actions/runs/39070276676): success. Suite previa 5/5 + gestión 6/6 (incluyen contenedores de suite). Auth y PostgREST reales; usuarios separados; gate directo, catálogo, solicitudes, snapshot histórico, consentimiento, RLS, PATCH y finalización. Stack desechable detenido con éxito.
+- Coordinador: contratos 15/15 y catálogo PostgreSQL 9/9; evidencia propia del segundo en `C:/Users/micahael/AppData/Local/Temp/victoriosa-beauty-test-2kgsg4`, cluster detenido. No agenda nueva ni bucle continuo.
+- No probado ni autorizado: datos reales alojados, provisión de Sofía, recepción de WhatsApp, consentimiento real firmado, calendario, pagos o producción. Las cifras anteriores son pruebas, no ventas ni conversión comercial.

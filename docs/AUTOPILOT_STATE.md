@@ -512,3 +512,18 @@ Siguiente instruccion: publicar rama revisable sin promover, comprobar CI aislad
 ## Verificación Beauty 2026-10-17 - CI integrada y paquete offline
 
 PR #73 en borrador: https://github.com/Victoriosas/autopilot/pull/73. Core f58ba9c success (39068578819/39068582833); Beauty Supabase fc6115a success (39068457508), Auth/PostgREST reales 5/5 en stack desechable. PostgreSQL Beauty local 8/8. Paquete de dos SQL preparado offline con hashes y requisitos, sin backup creado ni aprobación. Producción sigue a85a59b y checkout false. Ver docs/BEAUTY_SERVICES_QA.md. Catálogo administrable, operación de retención y aprobación específica de migración/despliegue siguen pendientes. Siguiente: preparar catálogo y revisión comercial sin publicar, preservar cambios ajenos y no duplicar scheduler.
+
+
+## 2026-10-17 — Beauty: catálogo administrable y evaluación privada
+
+- Rama `codex/beauty-requests-20261017`; PR #73 draft sobre la rama de #72. #72 continúa OPEN/draft en a38ff01. No se fusionó ni rebasó ninguna.
+- Código fd67115: catálogo con precios pendientes, duración/condiciones/disponibilidad y estados; consulta existente integrada por identificador y snapshot histórico generado en base; CRM conserva los términos elegidos.
+- Módulo `/beauty-professional` separado del CRM, membresía explícita, RLS por profesional, consentimiento escrito referenciado, borrador y finalización de solo lectura. Cambio de sesión limpia los paneles. No diagnósticos ni envío de información sensible.
+- Publicación owner-only en base, cerrada por defecto, más gate del servidor. Cuatro fichas seed en borrador sin precio. Tres migraciones Beauty preparadas, no aplicadas alojadas.
+- Revisión independiente corrigió bypass de publicación directa, disponibilidad pública, permisos PATCH, inicio/finalización de borradores, sesión privada y contexto histórico en CRM.
+- Core push 39070276526 y PR 39070280042 success: 180/181 Node; una prueba de Windows omitida en Linux; builds, secretos e inventario/replay aprobados. `npm run verify` local exit 0.
+- Supabase desechable real 39070276676 success: suites 5/5 + 6/6 con Auth, PostgREST, perfiles separados, snapshot, consentimiento y RLS; stack apagado. PostgreSQL local catálogo 9/9 y solicitudes 8/8; ambos clusters detenidos.
+- Navegador: recorrido público y evaluación completa con datos sintéticos, móvil 390px sin overflow. Fixture visual simula permisos; la evidencia de autorización real procede de CI. Capturas `.audit/beauty-evaluation-mobile.png` y `.audit/beauty-request-mobile.png`.
+- Coordinador completó tres tareas acotadas con evidencias, sin scheduler nuevo ni bucle. Siguiente instrucción generada y ejecutada: paquete comercial offline de cuatro fichas con precios nulos y paquete SQL de tres migraciones con hashes. Ver docs/BEAUTY_SERVICES_NEXT_PROMPT.md.
+- Pendiente antes de lanzamiento: tarifas/alcance y consentimiento aprobados por Sofía, identidad profesional, privacidad/retención, respaldo/restauración, autorización específica de SQL y despliegue. Sin producción, pagos, mensajes, datos reales ni permisos alojados. Sin métricas reales de ventas para este módulo.
+- Cambios concurrentes ajenos conservados: estado previo de este documento, archivos .audit/.playwright-cli y scripts exploratorios no incorporados a la entrega.
