@@ -5,6 +5,8 @@ on:
     branches: [main, 'codex/**', 'agent/**']
     paths:
       - '.github/workflows/commerce-supabase.yml'
+      - 'scripts/prepare-commerce-supabase.ps1'
+      - 'src/integrations/commerceFixture.test.ts'
       - 'tests/commerce-supabase.test.ts'
       - 'tests/commerce-baseline.sql'
       - 'tests/commerce-supabase-access.sql'
