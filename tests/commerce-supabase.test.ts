@@ -551,7 +551,7 @@ test('manual catalog Auth, draft persistence, publication and checkout separatio
   const hidden=await publicClient.from('products').select('id').eq('id',id);assert.equal(hidden.error,null);assert.deepEqual(hidden.data,[]);
   const row=await admin.from('products').select('*').eq('id',id).single();assert.equal(row.error,null);assert.equal(row.data!.price,0);assert.equal(row.data!.traceability.offer.approved,false);
   assert.equal((await post('/manual/'+id+'/publish',{},token)).status,400);
-  const published=await post('/manual/'+id+'/publish',{reviewed:true},token);assert.equal(published.status,200,await published.clone().text());
+  const published=await post('/manual/'+id+'/publish',{reviewed:true,version:row.data!.updated_at},token);assert.equal(published.status,200,await published.clone().text());
   const visible=await publicClient.from('products').select('id,price,inventory,traceability').eq('id',id).single();assert.equal(visible.error,null);
   assert.equal(visible.data!.price,0);assert.equal(visible.data!.inventory,0);assert.equal(visible.data!.traceability.offer.approved,true);
   await assert.rejects(commerceCommand('reserve',{...request(),items:[{productId:id,quantity:1}]}),/PRODUCT_REQUIRES_EXTERNAL_ACTION/);

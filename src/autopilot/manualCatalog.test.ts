@@ -27,7 +27,9 @@ test('HTTP intake requires admin and publication requires explicit review; no ch
   assert.equal((await post('/guarded',input)).status,401);assert.equal(rows.length,0);
   const created=await post('/catalog',input);assert.equal(created.status,201);const {product}=await created.json();
   assert.equal((await post('/catalog/'+product.id+'/publish',{})).status,400);assert.equal(saves,0);
-  const published=await post('/catalog/'+product.id+'/publish',{reviewed:true});
+  assert.equal((await post('/catalog/'+product.id+'/publish',{reviewed:true,version:'stale'})).status,409);
+  assert.equal(saves,0);
+  const published=await post('/catalog/'+product.id+'/publish',{reviewed:true,version:product.updated_at});
   assert.equal(published.status,200);assert.equal(rows[0].status,'published');assert.equal(rows[0].price,0);assert.equal(rows[0].inventory,0);
   assert.equal(rows[0].traceability.offer.approved,true);
  }finally{server.closeAllConnections();await new Promise<void>(r=>server.close(()=>r()));}

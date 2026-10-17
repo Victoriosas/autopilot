@@ -58,9 +58,12 @@ export function createManualCatalogRouter(deps:{store?:Store;auth?:RequestHandle
   try{
    const previous=await db.find(req.params.id);
    if(previous?.status!=='draft_ready' || !previous.traceability?.offer) return res.status(409).json({error:'CATALOG_DRAFT_REQUIRED'});
+   if(typeof req.body.version!=='string' || req.body.version!==previous.updated_at) return res.status(409).json({error:'CATALOG_REVIEW_OUTDATED'});
    if(previous.images?.length && previous.traceability.image_permission!==true) return res.status(409).json({error:'IMAGE_PERMISSION_REQUIRED'});
    const next={...previous,price:0,inventory:0,status:'published',updated_at:new Date().toISOString(),
-    traceability:{...previous.traceability,offer:{...previous.traceability.offer,approved:true}}};
+    traceability:{...previous.traceability,offer:{...previous.traceability.offer,approved:true},
+      reviewed_by:res.locals.adminUserId,reviewed_at:new Date().toISOString(),
+      history:[...(previous.traceability.history||[]),{timestamp:new Date().toISOString(),action:'Ficha externa revisada y publicada sin checkout',actor:res.locals.adminUserId||'Administrador'}]}};
    if(salesAction(next).kind==='blocked') return res.status(409).json({error:'CATALOG_DESTINATION_INVALID'});
    return res.json({product:await db.publish(next,previous)});
   }catch{return res.status(503).json({error:'CATALOG_SAVE_FAILED'});}
