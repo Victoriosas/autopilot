@@ -31,6 +31,7 @@ jobs:
           mkdir -p "$fixture/supabase/migrations"
           cp tests/commerce-baseline.sql "$fixture/supabase/migrations/20261010000000_baseline.sql"
           cp tests/commerce-supabase-access.sql "$fixture/supabase/migrations/20261010000001_access.sql"
+          cp supabase/migrations/20261011050519_explicit_data_api_grants.sql "$fixture/supabase/migrations/"
           cp supabase/migrations/20261017220000_beauty_requests.sql "$fixture/supabase/migrations/"
       - name: Start real local Auth and PostgREST
         run: |

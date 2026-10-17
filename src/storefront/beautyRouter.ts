@@ -50,7 +50,10 @@ export function createBeautyRouter(deps:{store?:BeautyStore;auth?:RequestHandler
     if(!enabled()) return res.status(503).json({error:'BEAUTY_REQUESTS_DISABLED'});
     const expected=process.env.PUBLIC_APP_URL;
     const origin=req.get('origin');
-    if(origin && (!expected || origin!==new URL(expected).origin)) return res.status(403).json({error:'BEAUTY_ORIGIN_INVALID'});
+    if(origin){
+      let allowed='';try{allowed=expected?new URL(expected).origin:'';}catch{return res.status(503).json({error:'BEAUTY_UNAVAILABLE'});}
+      if(origin!==allowed) return res.status(403).json({error:'BEAUTY_ORIGIN_INVALID'});
+    }
     if(req.get('sec-fetch-site')==='cross-site') return res.status(403).json({error:'BEAUTY_ORIGIN_INVALID'});
     if(Buffer.byteLength(JSON.stringify(req.body||{}))>4096) return res.status(413).json({error:'BEAUTY_INPUT_TOO_LARGE'});
     let input:BeautyInput;
