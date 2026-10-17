@@ -114,7 +114,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
                 <a className="rounded-lg px-3 py-2 hover:bg-[#f6ede2]" href="/servicios-sofia.html#consulta">Cómo coordinar</a>
               </div>
             </details>
-            <a href="/servicios-sofia.html#sobre-sofia" className="text-[#76635c] hover:text-[#3b2b28]">Sobre Sofía</a>
+            <a href="/servicios-sofia.html#sobre-sofia" className="text-[#76635c] hover:text-[#3b2b28]">Conocé a Victoria</a>
             <a href="/#catalogo" className="text-[#76635c] hover:text-[#3b2b28]">Tienda</a>
             <a href="/servicios-sofia.html#ficha" className="rounded-full bg-[#3b2b28] px-4 py-2.5 font-semibold text-white hover:bg-[#7b594c]">Consultar</a>
           </div>
