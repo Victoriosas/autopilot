@@ -1,3 +1,5 @@
+import {createManualCatalogRouter} from '../src/autopilot/manualCatalog';
+import {commerceCommand} from '../src/payments/availability';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -523,4 +525,40 @@ test('supplier publication keeps legacy drafts without supplier code compatible'
     if (productId) await admin.from('products').delete().eq('id', productId);
     await admin.from('autopilot_product_drafts').delete().eq('id', draftId);
   }
+});
+
+test('manual catalog Auth, draft persistence, publication and checkout separation through real PostgREST',async()=>{
+ const email='manual-'+randomUUID()+'@example.test',password='Fixture-'+randomUUID()+'-9a!';
+ const created=await admin.auth.admin.createUser({email,password,email_confirm:true});
+ assert.equal(created.error,null);const user=created.data.user!.id;
+ const actor=client(anonKey),keys=['SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'] as const;
+ const previous=Object.fromEntries(keys.map(k=>[k,process.env[k]]));
+ Object.assign(process.env,{SUPABASE_URL:url.origin,SUPABASE_SERVICE_ROLE_KEY:serviceKey});
+ const app=express();app.use(express.json());app.use('/manual',createManualCatalogRouter());
+ const server=createServer(app).listen(0,'127.0.0.1');await once(server,'listening');
+ const {port}=server.address() as {port:number};let id:string|undefined;
+ const input={title:'Synthetic manual accessory',description:'Synthetic fixture only',category:'Accesorios',merchant:'Fixture',mode:'inquiry',url:'https://wa.me/59899123456',source:'https://example.test/fixture'};
+ const post=(path:string,body:object,token?:string)=>fetch('http://127.0.0.1:'+port+path,{method:'POST',headers:{'Content-Type':'application/json',...(token?{authorization:'Bearer '+token}:{})},body:JSON.stringify(body)});
+ try{
+  assert.equal((await post('/manual',input)).status,401);
+  assert.equal((await admin.from('profiles').insert({id:user,role:'customer'})).error,null);
+  const signed=await actor.auth.signInWithPassword({email,password});assert.equal(signed.error,null);
+  const token=signed.data.session!.access_token;
+  assert.equal((await post('/manual',input,token)).status,403);
+  assert.equal((await admin.from('profiles').update({role:'admin'}).eq('id',user)).error,null);
+  const draft=await post('/manual',input,token);assert.equal(draft.status,201,await draft.clone().text());
+  id=(await draft.json()).product.id;
+  const hidden=await publicClient.from('products').select('id').eq('id',id);assert.equal(hidden.error,null);assert.deepEqual(hidden.data,[]);
+  const row=await admin.from('products').select('*').eq('id',id).single();assert.equal(row.error,null);assert.equal(row.data!.price,0);assert.equal(row.data!.traceability.offer.approved,false);
+  assert.equal((await post('/manual/'+id+'/publish',{},token)).status,400);
+  const published=await post('/manual/'+id+'/publish',{reviewed:true},token);assert.equal(published.status,200,await published.clone().text());
+  const visible=await publicClient.from('products').select('id,price,inventory,traceability').eq('id',id).single();assert.equal(visible.error,null);
+  assert.equal(visible.data!.price,0);assert.equal(visible.data!.inventory,0);assert.equal(visible.data!.traceability.offer.approved,true);
+  await assert.rejects(commerceCommand('reserve',{...request(),items:[{productId:id,quantity:1}]}),/PRODUCT_REQUIRES_EXTERNAL_ACTION/);
+ }finally{
+  server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));
+  if(id)assert.equal((await admin.from('products').delete().eq('id',id)).error,null);
+  await actor.auth.signOut();assert.equal((await admin.auth.admin.deleteUser(user)).error,null);
+  for(const k of keys){if(previous[k]===undefined)delete process.env[k];else process.env[k]=previous[k];}
+ }
 });
