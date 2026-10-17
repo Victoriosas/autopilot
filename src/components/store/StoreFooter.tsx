@@ -25,7 +25,7 @@ export const StoreFooter: React.FC = () => {
           <nav className="mt-4 flex flex-col gap-3">
             <a href="#descubrir" className="transition hover:text-[#3b2b28]">Descubrir</a>
             <a href="#catalogo" className="transition hover:text-[#3b2b28]">Catálogo</a>
-            <a href="/servicios-sofia.html" className="font-semibold text-[#3b2b28] transition hover:text-[#7b594c]">Servicios y evaluación con Sofía</a>
+            <a href="/servicios-sofia.html#servicios" className="font-semibold text-[#3b2b28] transition hover:text-[#7b594c]">Tratamientos de Sofía</a>\n            <a href="/servicios-sofia.html#ficha" className="transition hover:text-[#3b2b28]">Evaluación personalizada</a>
             <a href="#rituales" className="transition hover:text-[#3b2b28]">Guía de rutina</a>
             <a href="#proximamente" className="transition hover:text-[#3b2b28]">Próximamente</a>
           </nav>
