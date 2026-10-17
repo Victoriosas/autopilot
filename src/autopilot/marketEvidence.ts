@@ -373,6 +373,10 @@ export async function findGroundedMarketEvidence(candidate: OpportunityCandidate
 
 export function applyMarketEvidence(candidate: OpportunityCandidate, market: MarketEvidence): OpportunityCandidate {
   if(market.status!=='ok' || !market.marketPriceUyu) return candidate;
+  // Uruguay comparables are UYU amounts; mixing currencies requires verified FX.
+  if(candidate.pricing.currency?.toUpperCase()!=='UYU') {
+    throw Object.assign(new Error('MARKET_CURRENCY_MISMATCH'),{code:'MARKET_CURRENCY_MISMATCH'});
+  }
   return {
     ...candidate,
     pricing:{...candidate.pricing,marketPrice:market.marketPriceUyu,provenance:{...candidate.pricing.provenance,marketPrice:'inferred'}},

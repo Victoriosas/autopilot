@@ -48,12 +48,12 @@ export const WaitlistSection:React.FC=()=>{
           <button onClick={()=>setState('idle')} className="mt-6 text-xs underline underline-offset-4">Agregar otro email</button>
         </div>:<form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="text-xs font-semibold block mb-2">Email</label>
-            <div className="relative"><Mail className="absolute left-3 top-3.5 w-4 h-4 text-[#9b847a]"/><input required type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} maxLength={254} placeholder="vos@ejemplo.com" className="w-full rounded-xl border border-[#ddcec5] bg-white px-10 py-3 text-sm outline-none focus:border-[#7b594c]"/></div>
+            <label htmlFor="waitlist-email" className="text-xs font-semibold block mb-2">Email</label>
+            <div className="relative"><Mail className="absolute left-3 top-3.5 w-4 h-4 text-[#9b847a]"/><input id="waitlist-email" name="email" required type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} maxLength={254} placeholder="vos@ejemplo.com" className="w-full rounded-xl border border-[#ddcec5] bg-white px-10 py-3 text-sm outline-none focus:border-[#7b594c]"/></div>
           </div>
           <div>
-            <label className="text-xs font-semibold block mb-2">¿Qué querés ver primero?</label>
-            <select value={interest} onChange={e=>setInterest(e.target.value)} className="w-full rounded-xl border border-[#ddcec5] bg-white px-3 py-3 text-sm outline-none focus:border-[#7b594c]">
+            <label htmlFor="waitlist-interest" className="text-xs font-semibold block mb-2">¿Qué querés ver primero?</label>
+            <select id="waitlist-interest" name="interest" value={interest} onChange={e=>setInterest(e.target.value)} className="w-full rounded-xl border border-[#ddcec5] bg-white px-3 py-3 text-sm outline-none focus:border-[#7b594c]">
               <option value="general">Quiero descubrir la colección</option>
               <option value="facial_accessories">Accesorios de skincare</option>
               <option value="makeup_organization">Organización de maquillaje</option>

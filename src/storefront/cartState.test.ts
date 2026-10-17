@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { Product } from '../types';
-import { cartLimit, restoreCart } from './cartState';
+import { cartLimit, restoreCart, remainingCartQuantity } from './cartState';
 
 const product = (overrides: Partial<Product> = {}): Product => ({
   id: '11111111-1111-4111-8111-111111111111',
@@ -68,4 +68,16 @@ test('restoreCart ignores malformed persisted entries and normalizes empty varia
     { productId: available.id, quantity: 1, selectedVariant: '  ' },
   ], [available]);
   assert.deepEqual(restored, [{ product: available, quantity: 1, selectedVariant: undefined }]);
+});
+
+test('additional quantities account for all variants already in the bag', () => {
+  const available = product({ inventory: 3 });
+  const cart = [
+    { product: available, quantity: 1, selectedVariant: 'Azul' },
+    { product: available, quantity: 1, selectedVariant: 'Rojo' },
+    { product: product({ id: 'other' }), quantity: 8 },
+  ];
+  assert.equal(remainingCartQuantity(available, cart), 1);
+  assert.equal(remainingCartQuantity(product({ inventory: 1 }), cart), 0);
+  assert.equal(remainingCartQuantity(product({ status: 'draft' as Product['status'] }), []), 0);
 });

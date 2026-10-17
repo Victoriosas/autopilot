@@ -26,10 +26,94 @@ test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
   await sql(readFileSync('tests/commerce-baseline.sql', 'utf8'));
   // During RED, absence of the proposed RPC is the intended missing implementation.
   if (existsSync(migration)) await sql(readFileSync(migration, 'utf8'));
+  const recoveryMigration = 'supabase/migrations/20261010020000_payment_reference_recovery.sql';
+  if (existsSync(recoveryMigration)) await sql(readFileSync(recoveryMigration, 'utf8'));
+  const oauthCompatibilityMigration = 'supabase/migrations/20261012010000_provider_oauth_token_ciphertext_compat.sql';
+  await t.test('hosted OAuth token schema upgrades to encrypted columns without silent plaintext conversion', async () => {
+    const hostedLegacySchema = `
+      drop table if exists public.provider_oauth_tokens;
+      create table public.provider_oauth_tokens (
+        provider text primary key,
+        access_token text not null,
+        refresh_token text,
+        token_type text,
+        expires_at timestamptz,
+        scope text,
+        external_user_id text,
+        metadata jsonb not null default '{}'::jsonb,
+        created_at timestamptz not null default now(),
+        updated_at timestamptz not null default now()
+      );`;
+    await sql(hostedLegacySchema);
+    if (existsSync(oauthCompatibilityMigration)) await sql(readFileSync(oauthCompatibilityMigration, 'utf8'));
+    const columns = await sql(`select string_agg(column_name, ',' order by ordinal_position)
+      from information_schema.columns where table_schema='public' and table_name='provider_oauth_tokens';`);
+    assert.match(columns, /access_token_ciphertext/);
+    assert.match(columns, /refresh_token_ciphertext/);
+    assert.doesNotMatch(columns, /(^|,)access_token(,|$)/);
+    assert.doesNotMatch(columns, /(^|,)refresh_token(,|$)/);
+    await sql(`insert into public.provider_oauth_tokens(provider,access_token_ciphertext)
+      values('mercadolibre','v1:synthetic-ciphertext');`);
+
+    await sql(hostedLegacySchema);
+    await sql(`insert into public.provider_oauth_tokens(provider,access_token,refresh_token)
+      values('mercadolibre','synthetic-plaintext','synthetic-refresh');`);
+    await assert.rejects(sql(readFileSync(oauthCompatibilityMigration, 'utf8')), /OAUTH_PLAINTEXT_ROTATION_REQUIRED/);
+    assert.equal(await sql(`select access_token from public.provider_oauth_tokens where provider='mercadolibre';`), 'synthetic-plaintext');
+    assert.equal(await sql(`select count(*) from information_schema.columns where table_schema='public'
+      and table_name='provider_oauth_tokens' and column_name='access_token_ciphertext';`), '0');
+    await sql('drop table public.provider_oauth_tokens;');
+  });
   const reset = async (stock = 1) => {
     await sql(`truncate public.products,public.orders cascade;
       insert into public.products(id,title,price,currency,status,inventory) values('${productId}','Vincha',100,'UYU','published',${stock});`);
   };
+  await t.test('verified provider reference recovery is durable, conflict-safe and never releases uncertain stock', async () => {
+    await reset();
+    const reserved = await command('reserve', request());
+    const proof = { orderId: reserved.orderId, reference: reserved.orderId, providerOrderId: 'verified-remote', amount: 100, currency: 'UYU' };
+    const recover = (args: any) => sql(`set role service_role; select public.commerce_recover_provider_order(${quote(args)});`).then(JSON.parse);
+    await assert.rejects(recover(proof), /PROVIDER_OPERATION_NOT_STARTED/);
+    await command('begin_provider', { orderId: reserved.orderId });
+    const context = JSON.parse(await sql(`set role service_role; select public.commerce_recovery_context(${quote({ orderId: reserved.orderId })});`));
+    assert.ok(Number.isFinite(Date.parse(context.createdAt)));
+    await sql("update public.commerce_checkout_sessions set expires_at=now()-interval '1 second';");
+    for (const change of [{ reference: randomUUID() }, { amount: 99 }, { currency: 'USD' }]) await assert.rejects(recover({ ...proof, ...change }));
+    const recovered = await Promise.all([recover(proof), recover(proof)]);
+    assert.ok(recovered.every(row => row.providerOrderId === proof.providerOrderId));
+    assert.equal(await sql('select inventory from public.products;'), '0');
+    await assert.rejects(recover({ ...proof, providerOrderId: 'different' }), /PAYMENT_PROVIDER_MISMATCH/);
+    await assert.rejects(command('expire', { orderId: reserved.orderId }), /PROVIDER_OUTCOME_UNKNOWN/);
+    await command('payment', { ...proof, status: 'processed' });
+    await recover(proof);
+    assert.equal(await sql('select count(*) from public.commerce_fulfillment_jobs;'), '1');
+    await assert.rejects(sql(`set role authenticated; select public.commerce_recover_provider_order(${quote(proof)});`), /permission denied/);
+    await reset(2);
+    const [one, two] = await Promise.all([command('reserve', request()), command('reserve', request())]);
+    await command('begin_provider', { orderId: one.orderId }); await command('begin_provider', { orderId: two.orderId });
+    await sql("update public.commerce_checkout_sessions set expires_at=now()-interval '1 second';");
+    const firstBatch = JSON.parse(await sql('set role service_role; select public.commerce_maintenance_expired();')).reservations;
+    const nextBatch = JSON.parse(await sql('set role service_role; select public.commerce_maintenance_expired();')).reservations;
+    assert.equal(firstBatch.length, 1); assert.equal(nextBatch.length, 1);
+    assert.notEqual(firstBatch[0].orderId, nextBatch[0].orderId);
+    const results = await Promise.allSettled([one, two].map(row => recover({ ...proof, orderId: row.orderId, reference: row.orderId })));
+    assert.equal(results.filter(row => row.status === 'fulfilled').length, 1);
+    const winner = results[0].status === 'fulfilled' ? one : two;
+    await command('payment', { orderId: winner.orderId, providerOrderId: proof.providerOrderId, amount: 100, currency: 'UYU', status: 'failed' });
+    await command('reject', { orderId: winner.orderId });
+    await assert.rejects(recover({ ...proof, orderId: winner.orderId, reference: winner.orderId }), /RESERVATION_NOT_ACTIVE/);
+    assert.equal(await sql('select inventory from public.products;'), '1');
+  });
+  await t.test('server-derived checkout owner is persisted while guests stay unassigned', async () => {
+    await reset(2);
+    const ownerId = randomUUID();
+    const ownedIntent = { ...request(), userId: ownerId };
+    const owned = await command('reserve', ownedIntent);
+    assert.equal(await sql(`select user_id from public.orders where id='${owned.orderId}';`), ownerId);
+    const guest = await command('reserve', request());
+    assert.equal(await sql(`select user_id is null from public.orders where id='${guest.orderId}';`), 't');
+    await assert.rejects(command('reserve', { ...ownedIntent, userId: randomUUID() }), /IDEMPOTENCY_CONFLICT/);
+  });
   await t.test('two concurrent shoppers cannot reserve the last unit twice', async () => {
     await reset();
     const results = await Promise.allSettled([command('reserve', request()), command('reserve', request())]);
@@ -46,6 +130,26 @@ test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
     assert.equal(await sql('select inventory from public.products;'), '2');
     assert.equal(await sql('select count(*) from public.orders;'), '1');
     await assert.rejects(command('reserve', { ...input, items: [{ productId, quantity: 2 }] }), /IDEMPOTENCY_CONFLICT/);
+  });
+  await t.test('multi-product reservation failure rolls back all preceding stock changes', async () => {
+    await reset(2);
+    const secondId = '22222222-2222-4222-8222-222222222222';
+    await sql(`insert into public.products(id,title,price,currency,status,inventory) values('${secondId}','Sin stock',100,'UYU','published',0);`);
+    await assert.rejects(command('reserve', { ...request(), items: [{ productId, quantity: 1 }, { productId: secondId, quantity: 1 }] }), /PRODUCT_OUT_OF_STOCK/);
+    assert.equal(await sql(`select inventory from public.products where id='${productId}';`), '2');
+    assert.equal(await sql('select count(*) from public.orders;'), '0');
+    assert.equal(await sql('select count(*) from public.commerce_checkout_sessions;'), '0');
+  });
+  await t.test('invalid quantities and unsupported variants reject without reservation effects', async () => {
+    await reset(20);
+    for (const quantity of [0, -1, 21, 1.5, '1', null]) {
+      await assert.rejects(command('reserve', { ...request(), items: [{ productId, quantity }] }), /INVALID_CHECKOUT_ITEM/);
+    }
+    await assert.rejects(command('reserve', { ...request(), items: [{ productId, quantity: 1, selectedVariant: 'Large' }] }), /INVALID_CHECKOUT_ITEM/);
+    await assert.rejects(command('reserve', { ...request(), items: [{ productId, quantity: 1 }, { productId, quantity: 1 }] }), /INVALID_CHECKOUT_ITEMS/);
+    assert.equal(await sql('select inventory from public.products;'), '20');
+    assert.equal(await sql('select count(*) from public.orders;'), '0');
+    assert.equal(await sql('select count(*) from public.commerce_checkout_sessions;'), '0');
   });
   await t.test('failure and expiry release a reservation once; released orders cannot confirm', async () => {
     for (const action of ['reject', 'expire']) {

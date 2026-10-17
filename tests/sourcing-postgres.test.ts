@@ -25,7 +25,8 @@ function fixture(id=randomUUID()):Evidence {
  evidence:{demand:'verified',supplierReliability:'verified',logistics:'verified',competition:'verified'},pricing:{supplierCost:10,supplierShipping:2,
  customsRatePct:0,paymentFeePct:4,paymentFeeFixed:0,returnReservePct:4,acquisitionCost:0,taxRatePct:0,currency:'UYU',targetNetMarginPct:35,
  marketPrice:40,provenance:{supplierCost:'verified',supplierShipping:'verified',marketPrice:'verified'}}},
- facts:{description:'Vincha de tela para sujetar el cabello durante la rutina.',images:['https://example.test/headband.jpg']}};
+ facts:{description:'Vincha de tela para sujetar el cabello durante la rutina.',images:['https://example.test/headband.jpg'],
+ supplierName:'CJ Synthetic',supplierCode:'cj-synthetic',supplierShopId:'shop-uy',supplierExternalId:'cj-product-1',sourceSku:'CJ-SYNTH-001'}};
 }
 const market:SourcingDependencies['marketEvidence']=async()=>({status:'ok',provider:'mercadolibre_uy',marketPriceUyu:40,minPriceUyu:35,maxPriceUyu:45,demandScore:95,competitionScore:5,confidence:95,comparableCount:3,sources:[{title:'A',url:'https://example.com.uy/a'},{title:'B',url:'https://example.com.uy/b'}],notes:[],observedAt:new Date().toISOString()});
 const approve:SourcingDependencies['council']=async()=>({decision:'approve',quorum:'3_of_3',votes:[],debatePerformed:false,summary:'Synthetic test approval',ownerEscalationRequired:false,escalationReasons:[]});
@@ -36,9 +37,10 @@ test('PostgreSQL durable sourcing integration', {skip:!database,timeout:240000},
  assert.equal(target.pathname,'/autopilot_orchestrator_test','Dedicated disposable database required');
  await sql('drop schema public cascade; create schema public;');
  await sql(readFileSync('tests/sourcing-baseline.sql','utf8'));
- for(const file of ['20260912051000_autopilot_product_drafts.sql','20260912052500_ai_governor_draft_reviews.sql','20260912054500_governed_publication.sql','20260912200316_release_integrity.sql','20260914215143_durable_sourcing_orchestrator.sql','20260915071500_release_candidate_lane.sql'])
+ for(const file of ['20260912051000_autopilot_product_drafts.sql','20260912052500_ai_governor_draft_reviews.sql','20260912054500_governed_publication.sql','20260912200316_release_integrity.sql','20260914215143_durable_sourcing_orchestrator.sql','20260915071500_release_candidate_lane.sql','20261011005345_product_stock_after_publication.sql'])
   await sql(readFileSync(`supabase/migrations/${file}`,'utf8'));
- await sql('grant usage on schema public to service_role,anon,authenticated; grant select,insert,update on products,autopilot_product_drafts to service_role;');
+ await sql(readFileSync('tests/supplier-link-postgres.sql','utf8'));
+ await sql('grant usage on schema public to service_role,anon,authenticated; grant select,insert,update on products,autopilot_product_drafts,suppliers to service_role;');
  const expire=async()=>sql("update autopilot_sourcing_runs set lease_expires_at=now()-interval '1 second' where status in ('running','resuming');");
  const clean=async()=>sql('truncate autopilot_sourcing_items,autopilot_sourcing_runs,autopilot_product_drafts,products cascade;');
 
@@ -94,6 +96,41 @@ test('PostgreSQL durable sourcing integration', {skip:!database,timeout:240000},
   assert.equal(await sql('select count(*) from products;'),'1');
   await clean();
  });
+ const publishForStock = async (key: string) => {
+  await sql("insert into suppliers(name,code) values ('CJ Synthetic','cj-synthetic') on conflict (code) do nothing;");
+  await runSourcing(store,{...config,mode:'production' as const},key,{discover:async()=>[fixture()],marketEvidence:market,council:approve});
+  const draftId=await sql('select id from autopilot_product_drafts limit 1;');
+  await sql(`set role service_role; select publish_autopilot_draft_manual('${draftId}'::uuid);`);
+ };
+ await t.test('published Autopilot stock preserves linked supplier and origin through reserve and restore',async()=>{
+  await publishForStock('stock-after-publication');
+  try {
+  const supplierId=await sql("select id from suppliers where code='cj-synthetic';");
+  const originBefore=await sql("select traceability::text from products;");
+  assert.equal(await sql('select supplier_id from products;'),supplierId);
+  assert.equal(await sql('select sku from products;'),'CJ-SYNTH-001');
+  assert.equal(await sql("select traceability #>> '{supplier,code}' from products;"),'cj-synthetic');
+  assert.equal(await sql("select traceability #>> '{supplier,externalId}' from products;"),'cj-product-1');
+  await sql("update autopilot_sourcing_runs set completed_at=now()-interval '25 hours',lease_expires_at=now()-interval '1 second' where mode='production';");
+  await sql('set role service_role; update products set inventory=2;');
+  await sql('set role service_role; update products set inventory=inventory-1;');
+  assert.equal(await sql('select inventory from products;'),'1');
+  await sql('set role service_role; update products set inventory=inventory+1;');
+  assert.equal(await sql('select inventory from products;'),'2');
+  assert.equal(await sql('select publication_eligible from products;'),'t');
+  assert.equal(await sql('select supplier_id from products;'),supplierId);
+  assert.equal(await sql('select traceability::text from products;'),originBefore);
+  } finally { await clean(); }
+ });
+ await t.test('inventory updates cannot smuggle commercial changes or remove Autopilot origin',async()=>{
+  await publishForStock('stock-no-publication-bypass');
+  try {
+  for (const change of ["price=price+1","title='Changed'","status='discovered'","publication_eligible=false","supplier_id=null","traceability='{}'::jsonb"]) {
+   await assert.rejects(sql(`set role service_role; update products set inventory=1,${change};`),/FENCE_REJECTED|PRODUCT_ORIGIN_IMMUTABLE/);
+   assert.equal(await sql('select inventory from products;'),'0');
+  }
+  } finally { await clean(); }
+ });
  await t.test('manual release rejects stale production evidence',async()=>{
   const evidence=fixture();const prod={...config,mode:'production' as const};
   await runSourcing(store,prod,'stale-prod',{discover:async()=>[evidence],marketEvidence:market,council:approve});
@@ -102,6 +139,41 @@ test('PostgreSQL durable sourcing integration', {skip:!database,timeout:240000},
   await assert.rejects(sql(`set role service_role; select publish_autopilot_draft_manual('${draftId}'::uuid);`),/MANUAL_RELEASE_EVIDENCE_STALE_OR_INVALID/);
   assert.equal(await sql('select count(*) from products;'),'0');
   await clean();
+ });
+ await t.test('actual commerce RPC reserves and restores a published Autopilot product after sourcing finishes',async()=>{
+  await publishForStock('sourced-commerce');
+  try {
+   // Reuse the commerce order fixture; this is a dedicated synthetic database.
+   const orders = readFileSync('tests/commerce-baseline.sql','utf8').match(/create table public.orders \([\s\S]*?\n\);/)?.[0];
+   assert.ok(orders);
+   await sql('drop table public.orders;');
+   await sql(orders);
+   await sql('grant select,insert,update on public.orders to service_role;');
+   await sql(readFileSync('supabase/migrations/20261010010000_atomic_checkout.sql','utf8'));
+   await sql("update autopilot_sourcing_runs set completed_at=now()-interval '25 hours',lease_expires_at=now()-interval '1 second' where mode='production';");
+   await sql('set role service_role; update products set inventory=2;');
+   const productId=await sql('select id from products;');
+   const price=Number(await sql('select price from products;'));
+   const commerce=async(action:string,args:Record<string,unknown>)=>JSON.parse(await sql(`set role service_role; select public.commerce_checkout_command('${action}',${quoted(args)});`));
+   const request={key:randomUUID(),provider:'mercadopago',currency:'UYU',items:[{productId,quantity:1}],shipping:0,total:1};
+   const first=await commerce('reserve',request);
+   assert.equal(first.total,price); assert.equal(first.currency,'UYU');
+   assert.equal((await commerce('reserve',request)).orderId,first.orderId);
+   assert.equal(await sql('select inventory from products;'),'1');
+   const competition=await Promise.allSettled([commerce('reserve',{...request,key:randomUUID()}),commerce('reserve',{...request,key:randomUUID()})]);
+   assert.equal(competition.filter(result=>result.status==='fulfilled').length,1);
+   const rejected=competition.find(result=>result.status==='rejected') as PromiseRejectedResult;
+   assert.match(rejected.reason.message,/PRODUCT_OUT_OF_STOCK/);
+   assert.equal(await sql('select inventory from products;'),'0');
+   assert.equal(await sql('select count(*) from orders;'),'2');
+   await sql("update commerce_checkout_sessions set expires_at=now()-interval '1 second';");
+   const winner=competition.find(result=>result.status==='fulfilled') as PromiseFulfilledResult<any>;
+   for (const orderId of [first.orderId,winner.value.orderId]) {
+    await commerce('expire',{orderId}); await commerce('expire',{orderId});
+   }
+   assert.equal(await sql('select inventory from products;'),'2');
+   assert.equal(await sql("select count(*) from orders where status='cancelled';"),'2');
+  } finally { await sql('truncate orders cascade;'); await clean(); }
  });
  await t.test('anonymous roles cannot access internal state or commands',async()=>{
   await assert.rejects(sql('set role anon; select * from autopilot_sourcing_runs;'),/permission denied/);

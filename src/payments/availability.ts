@@ -1,11 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 import { checkoutEnabled, paymentDatabaseConfigured } from './safety';
 import type { CommerceCommand } from './atomicCheckout';
+import { checkoutShippingConfig } from './shipping';
 
 export const commerceCommand: CommerceCommand = async (command, args) => {
   const db = createClient(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data, error } = await db.rpc('commerce_checkout_command', { command, args });
+  const { data, error } = command === 'expired'
+    ? await db.rpc('commerce_maintenance_expired')
+    : command === 'recovery_context'
+    ? await db.rpc('commerce_recovery_context', { args })
+    : command === 'recover_provider'
+    ? await db.rpc('commerce_recover_provider_order', { args })
+    : await db.rpc('commerce_checkout_command', { command, args });
   if (error) throw new Error(/^[A-Z][A-Z0-9_]+$/.test(error.message) ? error.message : 'COMMERCE_DATABASE_UNAVAILABLE');
   return data;
 };
@@ -26,6 +33,7 @@ export async function paymentAvailability(provider: string, credentials: boolean
 
 export function mercadoPagoCredentialsReady() {
   try {
+    checkoutShippingConfig();
     const url = new URL(process.env.PUBLIC_APP_URL || '');
     return paymentDatabaseConfigured() && Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN?.trim()) &&
       (process.env.STORE_CURRENCY || process.env.VITE_STORE_CURRENCY || 'UYU').toUpperCase() === 'UYU' &&

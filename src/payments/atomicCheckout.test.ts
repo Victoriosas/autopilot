@@ -36,6 +36,20 @@ test('expired checkout cannot offer a payment URL or initiate a gateway operatio
   await assert.rejects(checkout.start({}), /RESERVATION_EXPIRED/); assert.equal(calls, 0);
 });
 
+test('only a verified released reservation permits replacing the stale checkout key', async () => {
+  let snapshot: any = { state: 'released', expired: true };
+  let providerCalls = 0;
+  const checkout = createAtomicCheckout(async () => snapshot, {
+    async create() { providerCalls++; throw new Error('must not call provider'); }, async lookup() { throw new Error('unused'); },
+  });
+  await assert.rejects(checkout.start({}), (error: any) => error.message === 'CHECKOUT_RESERVATION_RELEASED' && error.retryAllowed === true);
+  for (const state of ['held', 'paid']) {
+    snapshot = { state, expired: true };
+    await assert.rejects(checkout.start({}), (error: any) => error.retryAllowed !== true);
+  }
+  assert.equal(providerCalls, 0);
+});
+
 test('provider truth must match local order, currency, amount and terminal status before confirmation', async () => {
   const calls: Array<{ command: string; args: any }> = [];
   let truth: any = { external_reference: 'local-order', total_amount: '100', total_paid_amount: '100', currency_id: 'UYU', status: 'processed' };
@@ -79,4 +93,53 @@ test('rejected provider truth returns terminal state only after stock release su
     async lookup() { return { external_reference: 'order', total_amount: 100, total_paid_amount: 0, currency_id: 'UYU', status: 'failed' }; },
   });
   assert.equal((await checkout.reconcile('provider')).paymentStatus, 'failed');
+});
+
+test('terminal provider outcomes with collected money retain stock pending financial recovery', async () => {
+  const calls: string[] = [];
+  let truth: any;
+  const checkout = createAtomicCheckout(async command => { calls.push(command); return { paymentStatus: 'pending' }; }, {
+    async create() { throw new Error('unused'); }, async lookup() { return truth; },
+  });
+  for (const status of ['failed', 'cancelled', 'expired']) {
+    for (const paid of ['0.01', '50.00', '100.00']) {
+      truth = { external_reference: 'order', total_amount: '100', total_paid_amount: paid, currency_id: 'UYU', status };
+      await assert.rejects(checkout.reconcile('provider'), /PROVIDER_PAYMENT_RECOVERY_REQUIRED/);
+      assert.deepEqual(calls, [], 'uncertain collected money must not mark terminal or release stock');
+    }
+  }
+});
+
+test('missing or coercible provider monetary values never release stock or confirm payment', async () => {
+  let calls = 0;
+  let truth: any;
+  const checkout = createAtomicCheckout(async () => { calls++; return {}; }, {
+    async create() { throw new Error('unused'); }, async lookup() { return truth; },
+  });
+  for (const paid of [null, '', ' ', false, [], [0], '0x0']) {
+    truth = { external_reference: 'order', total_amount: '100', total_paid_amount: paid, currency_id: 'UYU', status: 'failed' };
+    await assert.rejects(checkout.reconcile('provider'), /INVALID_PROVIDER_PAYMENT/);
+  }
+  truth = { external_reference: 'order', total_amount: true, total_paid_amount: true, currency_id: 'UYU', status: 'processed' };
+  await assert.rejects(checkout.reconcile('provider'), /INVALID_PROVIDER_PAYMENT/);
+  assert.equal(calls, 0);
+});
+
+test('Orders API canonical currency is accepted and conflicting or malformed currencies never mutate orders', async () => {
+  const orderId = 'local-order';
+  const calls: Array<{ action: string; args: any }> = [];
+  let truth: any = { id: 'remote-one', external_reference: orderId, total_amount: '100', total_paid_amount: '100', currency: 'UYU', status: 'processed' };
+  const command = async (action: string, args: any) => { calls.push({ action, args }); return { paymentStatus: 'paid' }; };
+  const gateway = { async create() { throw new Error('must not charge'); }, async lookup() { return truth; } };
+  for (const fields of [{ currency: 'UYU' }, { currency: 'UYU', currency_id: 'UYU' }, { currency_id: 'UYU' }]) {
+    truth = { id: 'remote-one', external_reference: orderId, total_amount: '100', total_paid_amount: '100', status: 'processed', ...fields };
+    assert.equal((await createAtomicCheckout(command, gateway).reconcile('remote-one')).paymentStatus, 'paid');
+    assert.ok(calls.every(call => call.args.currency === 'UYU'));
+    calls.length = 0;
+  }
+  for (const fields of [{}, { currency: 'USD' }, { currency: 'uyu' }, { currency: null, currency_id: 'UYU' }, { currency: '', currency_id: 'UYU' }, { currency: 'UYU', currency_id: 'USD' }, { currency: 'USD', currency_id: 'UYU' }, { currency: 'UYU', currency_id: null }, { currency: ['UYU'] }]) {
+    truth = { id: 'remote-one', external_reference: orderId, total_amount: '100', total_paid_amount: '100', status: 'processed', ...fields };
+    await assert.rejects(createAtomicCheckout(command, gateway).reconcile('remote-one'), /INVALID_PROVIDER_PAYMENT/);
+    assert.deepEqual(calls, []);
+  }
 });

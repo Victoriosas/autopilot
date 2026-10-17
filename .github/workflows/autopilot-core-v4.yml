@@ -69,6 +69,29 @@ jobs:
         env:
           AUTOPILOT_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/autopilot_orchestrator_test
 
+      - name: Create disposable commerce database
+        run: createdb -h 127.0.0.1 -p 5432 -U postgres victoriosa_checkout_test
+        env:
+          PGPASSWORD: isolated-test-password
+
+      - name: Atomic commerce PostgreSQL regression tests
+        run: node --import tsx --test tests/commerce-postgres.test.ts
+        env:
+          COMMERCE_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/victoriosa_checkout_test
+
+      - name: Create disposable hosted replay database
+        run: createdb -h 127.0.0.1 -p 5432 -U postgres victoriosa_hosted_replay_test
+        env:
+          PGPASSWORD: isolated-test-password
+
+      - name: Verify hosted and local migration version inventory
+        run: node --import tsx --test tests/migration-history.test.ts
+
+      - name: Canonical hosted migration replay
+        run: node --import tsx --test tests/hosted-migration-replay.test.ts
+        env:
+          HOSTED_REPLAY_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/victoriosa_hosted_replay_test
+
       - name: Governance guardrails
         shell: bash
         run: |
@@ -79,3 +102,4 @@ jobs:
             exit 1
           fi
           echo "Guardrails passed."
+

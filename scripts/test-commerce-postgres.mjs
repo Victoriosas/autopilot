@@ -1,6 +1,7 @@
 // Disposable PostgreSQL cluster: no existing URL, data directory or credentials are used.
 import { execFile, spawn } from 'node:child_process';
 import { mkdtemp } from 'node:fs/promises';
+import { openSync, closeSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer } from 'node:net';
@@ -14,13 +15,25 @@ await new Promise(resolve => socket.close(resolve));
 // PostgreSQL on Windows can inherit pipes. Ignore stdio and await the launcher exit,
 // so the test runner never waits for server-owned pipe handles to close.
 const run = (name, args) => new Promise((resolve, reject) => {
-  const child = spawn(executable(name), args, { windowsHide: true, stdio: 'ignore' });
-  child.on('error', reject);
-  child.on('exit', code => code === 0 ? resolve() : reject(new Error(`${name} exited ${code}; inspect ${directory}`)));
+  const log = join(directory, 'launcher.log');
+  const descriptor = openSync(log, 'a');
+  // File handles retain useful startup errors without inherited pipe handles.
+  const child = spawn(executable(name), args, { windowsHide: true, stdio: ['ignore', descriptor, descriptor] });
+  let settled = false;
+  const finish = (error) => {
+    if (settled) return;
+    settled = true;
+    closeSync(descriptor);
+    if (error) reject(error); else resolve();
+  };
+  child.on('error', error => finish(new Error(`${name}: ${error.message}; inspect ${log}`)));
+  child.on('exit', code => finish(code === 0 ? null : new Error(`${name} exited ${code}; inspect ${log}`)));
 });
 let started = false;
+let startAttempted = false;
 try {
   await run('initdb', ['-D', join(directory, 'data'), '-U', 'postgres', '-A', 'trust', '--encoding=UTF8', '--no-locale']);
+  startAttempted = true;
   await run('pg_ctl', ['-D', join(directory, 'data'), '-l', join(directory, 'postgres.log'), '-o', `-h 127.0.0.1 -p ${port}`, '-w', 'start']);
   started = true;
   await run('createdb', ['-h', '127.0.0.1', '-p', String(port), '-U', 'postgres', 'victoriosa_checkout_test']);
@@ -31,6 +44,14 @@ try {
   child.stdout.pipe(process.stdout); child.stderr.pipe(process.stderr);
   process.exitCode = await new Promise(resolve => child.on('exit', code => resolve(code ?? 1)));
 } finally {
-  if (started) await run('pg_ctl', ['-D', join(directory, 'data'), '-m', 'fast', '-w', 'stop']);
-  console.log(`Disposable cluster stopped; synthetic evidence retained at ${directory}`);
+  if (started) {
+    await run('pg_ctl', ['-D', join(directory, 'data'), '-m', 'fast', '-w', 'stop']);
+    console.log(`Disposable cluster stopped; synthetic evidence retained at ${directory}`);
+  } else if (startAttempted) {
+    // pg_ctl can start the server and then fail while waiting for readiness.
+    try { await run('pg_ctl', ['-D', join(directory, 'data'), '-m', 'fast', '-w', 'stop']); }
+    catch { console.error(`Startup/cleanup failed; inspect ${directory}`); }
+  } else {
+    console.log(`Disposable cluster was not started; startup diagnostics retained at ${directory}`);
+  }
 }

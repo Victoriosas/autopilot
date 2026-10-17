@@ -3,6 +3,8 @@ import { Check, Heart, Info, ShoppingBag, Star, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { STORE_CURRENCY, trackRevenueEvent } from '../../services/revenue';
 import type { Product } from '../../types';
+import { useStoreDialog } from './useStoreDialog';
+import { remainingCartQuantity } from '../../storefront/cartState';
 
 interface ProductDetailModalProps {
   product: Product;
@@ -11,11 +13,14 @@ interface ProductDetailModalProps {
 }
 
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClose, onOpenAutopilotTraceability }) => {
-  const { addToCart, wishlist, toggleWishlist, userRole, setViewMode, setSelectedCandidateForReview } = useApp();
+  const { cart, addToCart, wishlist, toggleWishlist, userRole, setViewMode, setSelectedCandidateForReview } = useApp();
+  const dialogRef = useStoreDialog(onClose);
   const [selectedImage, setSelectedImage] = useState(product.images?.[0] || '');
   const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0]?.options?.[0] || '');
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'details' | 'specs'>('details');
+  const availableQuantity = remainingCartQuantity(product, cart);
+  const requestedQuantity = Math.min(quantity, availableQuantity);
   const isWishlisted = wishlist.includes(product.id);
   const discountPct = product.compareAtPrice && product.compareAtPrice > product.price
     ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
@@ -32,12 +37,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
   }, [product.id]);
 
   const handleAddToCart = () => {
-    addToCart(product, quantity, selectedVariant);
+    if (requestedQuantity < 1) return;
+    addToCart(product, requestedQuantity, selectedVariant);
     void trackRevenueEvent('add_to_cart', {
       productId: product.id,
-      value: product.price * quantity,
+      value: product.price * requestedQuantity,
       currency: STORE_CURRENCY,
-      itemCount: quantity,
+      itemCount: requestedQuantity,
       channel: 'store',
     });
     onClose();
@@ -53,8 +59,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-xl overflow-y-auto animate-fadeIn">
-      <div className="relative w-full max-w-5xl bg-[#0d111d]/95 border border-white/10 rounded-3xl shadow-2xl overflow-hidden my-8">
-        <button onClick={onClose} className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-black/60 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10" title="Cerrar">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="product-dialog-title" tabIndex={-1} className="relative w-full max-w-5xl bg-[#0d111d]/95 border border-white/10 rounded-3xl shadow-2xl overflow-y-auto max-h-[calc(100dvh-3rem)]">
+        <button aria-label="Cerrar detalle del producto" onClick={onClose} className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-black/60 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10" title="Cerrar">
           <X className="w-5 h-5" />
         </button>
 
@@ -94,7 +100,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 )}
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white mt-3 leading-tight">{product.title}</h1>
+              <h1 id="product-dialog-title" className="text-2xl sm:text-3xl font-serif font-bold text-white mt-3 leading-tight">{product.title}</h1>
               {product.subtitle && <p className="text-sm text-slate-300 mt-2">{product.subtitle}</p>}
 
               <div className="mt-4 p-4 rounded-2xl bg-white/5 border border-white/10">
@@ -118,12 +124,12 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center border border-white/10 rounded-xl bg-black/40 p-1">
-                  <button onClick={() => setQuantity((value) => Math.max(1, value - 1))} className="w-8 h-8 text-slate-400 hover:text-white">-</button>
-                  <span className="w-10 text-center text-sm font-semibold text-white font-mono">{quantity}</span>
-                  <button onClick={() => setQuantity((value) => Math.min(20, value + 1))} className="w-8 h-8 text-slate-400 hover:text-white">+</button>
+                  <button aria-label="Reducir cantidad" onClick={() => setQuantity(Math.max(1, requestedQuantity - 1))} className="w-8 h-8 text-slate-400 hover:text-white">-</button>
+                  <span className="w-10 text-center text-sm font-semibold text-white font-mono">{requestedQuantity}</span>
+                  <button aria-label="Aumentar cantidad" disabled={requestedQuantity >= availableQuantity} onClick={() => setQuantity(Math.min(availableQuantity, requestedQuantity + 1))} className="w-8 h-8 text-slate-400 hover:text-white">+</button>
                 </div>
-                <button onClick={handleAddToCart} className="flex-1 py-3.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 border border-white/10">
-                  <ShoppingBag className="w-4 h-4" /> Añadir a la bolsa · {STORE_CURRENCY} {(product.price * quantity).toFixed(2)}
+                <button disabled={requestedQuantity < 1} onClick={handleAddToCart} className="flex-1 py-3.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 border border-white/10">
+                  <ShoppingBag className="w-4 h-4" /> {requestedQuantity > 0 ? `Añadir a la bolsa · ${STORE_CURRENCY} ${(product.price * requestedQuantity).toFixed(2)}` : 'Sin unidades disponibles para añadir'}
                 </button>
                 <button onClick={() => toggleWishlist(product.id)} className={`p-3.5 rounded-xl border ${isWishlisted ? 'bg-indigo-600/20 border-indigo-500 text-indigo-400' : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'}`} title="Favoritos"><Heart className="w-5 h-5 fill-current" /></button>
               </div>

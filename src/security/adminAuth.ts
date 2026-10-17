@@ -9,7 +9,8 @@ const ADMIN_PREFIXES = [
 ] as const;
 
 function isProtectedAdminPath(pathname: string): boolean {
-  if (pathname.startsWith('/api/autopilot/v4')) return false;
+  pathname = pathname.toLowerCase().replace(/\/+$/, '') || '/';
+  if (pathname === '/api/autopilot/v4' || pathname.startsWith('/api/autopilot/v4/')) return false;
   return ADMIN_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
@@ -28,13 +29,20 @@ export async function requireSupabaseAdminAuth(req: Request, res: Response, next
   if (!url || !key) return res.status(503).json({ error: 'ADMIN_AUTH_NOT_CONFIGURED' });
 
   try {
-    const db = createClient(url, key, {
+    const verifier = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data: userData, error: userError } = await db.auth.getUser(token);
+    const { data: userData, error: userError } = await verifier.auth.getUser(token);
     if (userError || !userData.user) return res.status(401).json({ error: 'ADMIN_AUTH_INVALID' });
 
-    const { data: profile, error: profileError } = await db
+    // Bind PostgREST to the verified caller. With only the public key configured,
+    // an unscoped client is anonymous and rejects legitimate profile admins.
+    // The caller JWT also keeps RLS authoritative when a server key is present.
+    const scopedDb = createClient(url, key, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data: profile, error: profileError } = await scopedDb
       .from('profiles')
       .select('role')
       .eq('id', userData.user.id)

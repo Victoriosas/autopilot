@@ -132,6 +132,7 @@ export function App() {
               searchQuery={searchQuery}
               onSelectProduct={(product) => setSelectedProductForModal(product)}
               onClearSearch={() => setSearchQuery('')}
+              onClearFilters={() => { setSearchQuery(''); setActiveCategory('Todos'); }}
             />
 
             <StoreTrustSections onSelectCategory={setActiveCategory} />

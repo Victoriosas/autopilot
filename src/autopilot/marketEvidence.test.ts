@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { applyMarketEvidence, buildOpenRouterMarketRequest, deriveAnnotationMarketEvidence, mercadoLibreEvidenceFromSearch } from './marketEvidence';
+import { errorClass } from './sourcingOrchestrator';
 import { assessVictoriosaFit } from './victoriosaProductFilter';
 import type { OpportunityCandidate } from './opportunityEngine';
 
@@ -116,4 +117,22 @@ test('grounded market evidence enriches price and market signals without overwri
   assert.equal(enriched.demandScore,72);
   assert.equal(enriched.competitionScore,48);
   assert.equal(enriched.evidence?.demand,'inferred');
+});
+
+
+test('UYU market evidence rejects candidates with a different or unknown pricing currency',()=>{
+  const market={status:'ok' as const,marketPriceUyu:1290,demandScore:72,competitionScore:48,
+    comparableCount:2,sources:[],notes:[],observedAt:new Date().toISOString()};
+  for(const currency of ['USD','EUR',undefined,'']) {
+    const base=candidate('Pearl headband');
+    base.pricing.currency=currency;
+    assert.throws(()=>applyMarketEvidence(base,market),(error:unknown)=>{
+      const classified=errorClass(error);
+      assert.equal(classified.code,'MARKET_CURRENCY_MISMATCH');
+      assert.equal(classified.retryable,false);
+      return true;
+    });
+    assert.equal(base.pricing.marketPrice,undefined);
+    assert.equal(base.demandScore,undefined);
+  }
 });

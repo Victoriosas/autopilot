@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, Banknote, CheckCircle2, CreditCard, Loader2, Lock, MessageCircle, ShieldCheck, Truck, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { apiFetch } from '../../lib/api';
-import { checkoutKey } from '../../storefront/checkoutKey';
+import { useStoreDialog } from './useStoreDialog';
+import { checkoutKey, retireReleasedCheckoutKey } from '../../storefront/checkoutKey';
 import { useApp } from '../../context/AppContext';
 import type { Order, OrderCustomer } from '../../types';
 import {
@@ -36,6 +37,7 @@ type Completion = {
 };
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSuccess }) => {
+  const dialogRef = useStoreDialog(onClose);
   const { cart, clearCart, showToast } = useApp();
   const [completion, setCompletion] = useState<Completion | null>(null);
   const [paypalLoaded, setPaypalLoaded] = useState(false);
@@ -176,6 +178,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
         method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey }, body: JSON.stringify({ customer: formData, items: checkoutItems }),
       });
       const data = await response.json();
+      if (retireReleasedCheckoutKey(sessionStorage, idempotencyKey, response.status, data)) {
+        throw new Error('La reserva anterior terminó y fue liberada. Revisá tu bolsa y volvé a intentar para crear un nuevo pedido.');
+      }
       if (!response.ok || !data.checkoutUrl || !data.orderId) throw new Error(data.error || 'No se pudo iniciar Mercado Pago.');
       await trackRevenueEvent('mercadopago_order_started', { orderId: data.orderId, value: Number(data.total), currency: data.currency, itemCount, channel: 'mercadopago' });
       sessionStorage.setItem('victoriosa-mp-order', JSON.stringify({ orderId: data.orderId, providerOrderId: data.providerOrderId, idempotencyKey, createdAt: Date.now() }));
@@ -207,13 +212,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-xl overflow-y-auto animate-fadeIn">
-      <div className="relative w-full max-w-4xl bg-[#0d111d]/95 border border-white/10 rounded-3xl shadow-2xl overflow-hidden my-8">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Finalizar pedido" tabIndex={-1} className="relative w-full max-w-4xl bg-[#0d111d]/95 border border-white/10 rounded-3xl shadow-2xl overflow-y-auto max-h-[calc(100dvh-3rem)]">
         <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400"><Lock className="w-5 h-5" /></div>
             <div><h2 className="font-serif font-bold text-lg text-white">{completion ? 'Pedido Victoriosa' : 'Checkout Victoriosa'}</h2><p className="text-xs text-slate-400">Revisá tus datos y el importe antes de pagar.</p></div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10"><X className="w-5 h-5" /></button>
+          <button aria-label="Cerrar checkout" onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10"><X className="w-5 h-5" /></button>
         </div>
 
         {completion ? (
