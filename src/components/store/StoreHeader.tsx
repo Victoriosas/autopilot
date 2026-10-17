@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bot, Heart, Search, ShoppingBag, User as UserIcon } from 'lucide-react';
+import { STORE_CATEGORIES } from '../../storefront/catalogLocation';
 import { useApp } from '../../context/AppContext';
 
 interface StoreHeaderProps {
@@ -22,7 +23,11 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
   const { cart, wishlist, setIsCartOpen, setViewMode, candidateProducts, user, userRole, isAuthLoading, setIsAuthModalOpen } = useApp();
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
   const pendingReviewCount = candidateProducts.filter((product) => product.status === 'ready_for_review' || product.status === 'discovered').length;
-  const categories = ['Todos', 'Rostro', 'Cuerpo', 'Kits'];
+  const categories = STORE_CATEGORIES;
+  const submitSearch = (event: React.FormEvent) => {
+    event.preventDefault();
+    selectAndScroll(activeCategory);
+  };
 
   const selectAndScroll = (category: string) => {
     onSelectCategory(category);
@@ -58,20 +63,20 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
             <span className="ml-10 mt-0.5 text-[8px] font-medium uppercase tracking-[0.2em] text-[#76635c] sm:ml-11 sm:text-[10px] sm:tracking-[0.25em]">Belleza en calma</span>
           </button>
 
-          <div className="hidden max-w-lg flex-1 md:block">
+          <form role="search" aria-label="Buscar en el catálogo" onSubmit={submitSearch} className="hidden max-w-lg flex-1 md:block">
             <div className="relative">
               <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#76635c]" />
               <input
                 type="search"
                 value={searchQuery}
                 onChange={(event) => onSearchChange(event.target.value)}
-                placeholder="Buscar en la selección..."
+                placeholder="¿Qué estás buscando?"
                 aria-label="Buscar productos"
-                className="w-full rounded-full border border-[#7b594c]/15 bg-[#f6ede2]/70 py-2.5 pl-10 pr-14 text-sm text-[#3b2b28] placeholder-[#9b8478] focus:border-[#7b594c]/60 focus:outline-none focus:ring-1 focus:ring-[#7b594c]/20"
+                className="w-full rounded-full border border-[#7b594c]/15 bg-[#f6ede2]/70 py-2.5 pl-10 pr-20 text-sm text-[#3b2b28] placeholder-[#9b8478] focus:border-[#7b594c]/60 focus:outline-none focus:ring-1 focus:ring-[#7b594c]/20"
               />
-              {searchQuery && <button onClick={() => onSearchChange('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#9b8478] transition hover:text-[#3b2b28]">Limpiar</button>}
+              <button type="submit" aria-label="Ver resultados" className="absolute right-1 top-1/2 min-h-10 -translate-y-1/2 rounded-full bg-[#3b2b28] px-3 text-xs font-semibold text-white">Buscar</button>
             </div>
-          </div>
+          </form>
 
           <div className="flex shrink-0 items-center gap-1 sm:gap-3">
             {onOpenWishlist && (
@@ -88,20 +93,20 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
 
             <button onClick={onOpenAccount} className="hidden rounded-full p-2.5 text-[#76635c] transition hover:bg-[#f6ede2] hover:text-[#3b2b28] sm:block" title="Mis pedidos"><UserIcon className="h-5 w-5" /></button>
 
-            <button onClick={() => setIsCartOpen(true)} className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#3b2b28] px-2.5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#7b594c]/20 transition hover:bg-[#7b594c] sm:px-4">
-              <ShoppingBag className="h-4 w-4" /><span className="hidden sm:inline">Bolsa</span><span className="rounded-full bg-white/15 px-2 py-0.5 text-xs font-bold text-white">{cartItemCount}</span>
+            <button aria-label={`Abrir bolsa, ${cartItemCount} productos`} onClick={() => setIsCartOpen(true)} className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#3b2b28] px-2.5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#7b594c]/20 transition hover:bg-[#7b594c] sm:px-4">
+              <ShoppingBag aria-hidden="true" className="h-4 w-4" /><span className="hidden sm:inline">Bolsa</span><span className="rounded-full bg-white/15 px-2 py-0.5 text-xs font-bold text-white">{cartItemCount}</span>
             </button>
           </div>
         </div>
 
-        <div className="pb-3 md:hidden">
-          <div className="relative"><Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#76635c]" /><input type="search" value={searchQuery} onChange={(event) => onSearchChange(event.target.value)} placeholder="Buscar en la selección..." aria-label="Buscar productos" className="w-full rounded-full border border-[#7b594c]/15 bg-[#f6ede2]/70 py-2 pl-10 pr-4 text-sm text-[#3b2b28] placeholder-[#9b8478] focus:border-[#7b594c]/60 focus:outline-none" /></div>
-        </div>
+        <form role="search" aria-label="Buscar en el catálogo móvil" onSubmit={submitSearch} className="pb-3 md:hidden">
+          <div className="relative"><Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#76635c]" /><input type="search" value={searchQuery} onChange={(event) => onSearchChange(event.target.value)} placeholder="¿Qué estás buscando?" aria-label="Buscar productos" className="w-full rounded-full border border-[#7b594c]/15 bg-[#f6ede2]/70 py-2 pl-10 pr-20 text-sm text-[#3b2b28] placeholder-[#9b8478] focus:border-[#7b594c]/60 focus:outline-none" /><button type="submit" className="absolute right-1 top-1/2 min-h-10 -translate-y-1/2 rounded-full bg-[#3b2b28] px-3 text-xs font-semibold text-white">Buscar</button></div>
+        </form>
 
         <nav className="flex items-center justify-between gap-4 overflow-x-auto border-t border-[#7b594c]/10 py-3 text-sm no-scrollbar" aria-label="Navegación principal">
           <div className="flex items-center gap-2">
             {categories.map((category) => (
-              <button key={category} onClick={() => selectAndScroll(category)} className={`whitespace-nowrap rounded-xl px-3.5 py-1.5 font-medium transition-all ${activeCategory === category ? 'border border-[#3b2b28] bg-[#3b2b28] text-white' : 'text-[#76635c] hover:bg-[#7b594c]/10 hover:text-[#3b2b28]'}`}>{category}</button>
+              <button key={category} aria-pressed={activeCategory === category} onClick={() => selectAndScroll(category)} className={`whitespace-nowrap min-h-11 rounded-xl px-3.5 py-1.5 font-medium transition-all ${activeCategory === category ? 'border border-[#3b2b28] bg-[#3b2b28] text-white' : 'text-[#76635c] hover:bg-[#7b594c]/10 hover:text-[#3b2b28]'}`}>{category}</button>
             ))}
           </div>
           <div className="hidden shrink-0 items-center gap-5 text-xs text-[#76635c] lg:flex">

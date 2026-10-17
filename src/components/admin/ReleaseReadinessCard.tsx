@@ -37,6 +37,7 @@ const labels:Record<Readiness['state'],string>={
 };
 
 const blockerLabels:Record<string,string>={
+  verified_checkout:'Checkout pendiente de habilitacion y verificacion atomica',
   cj_read_provider:'CJ no está disponible',
   market_evidence_provider:'Falta un proveedor de Market Evidence',
   production_catalog:'Todavía no hay productos publicados elegibles',
