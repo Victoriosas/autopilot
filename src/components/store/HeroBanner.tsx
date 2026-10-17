@@ -18,6 +18,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onExploreClick, onEvalua
           <p className="mt-3 max-w-md text-sm leading-6 text-white/85">Encontrá tu selección de belleza por rutina y presupuesto.</p>
           <div className="mt-5 flex flex-wrap items-center gap-4">
             <button onClick={onExploreClick} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#fffaf4] px-5 py-3 text-sm font-semibold text-[#3b2b28] hover:bg-white">Explorar catálogo <ArrowRight className="h-4 w-4" /></button>
+            <a href="/servicios-sofia.html#servicios" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/70 px-5 py-3 text-sm font-semibold text-[#fffaf4] transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Tratamientos con Sofía <ArrowRight className="h-4 w-4" /></a>
             <button onClick={onEvaluationClick} className="min-h-11 text-sm underline underline-offset-4">Guía de rutinas</button>
           </div>
         </div>
