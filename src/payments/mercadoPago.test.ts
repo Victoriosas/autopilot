@@ -12,7 +12,7 @@ test('Mercado Pago adapter retries the identical server-priced payload and provi
     assert.equal(String(input), 'https://api.mercadopago.com/v1/orders');
     requests.push({ key: new Headers(init.headers).get('X-Idempotency-Key')!, body: String(init.body) });
     if (failure) return Response.json({ code: 'TEST_PROVIDER_ERROR' }, { status: 400 });
-    return Response.json({ id: 'provider-order', checkout_url: 'https://example.test/pay' });
+    return Response.json({ id: 'provider-order', type: 'online', processing_mode: 'manual', status: 'created', external_reference: 'server-order', total_amount: '250.00', currency: 'UYU', checkout_url: 'https://www.mercadopago.com.uy/checkout/v1/redirect?order_id=provider-order' });
   });
   try {
     const snapshot = { orderId: 'server-order', total: 250, shipping: 50, items: [{ title: 'Vincha', price: 100, quantity: 2 }] };

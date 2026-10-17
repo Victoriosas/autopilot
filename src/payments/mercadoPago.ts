@@ -1,12 +1,30 @@
 import { Router } from 'express';
 import { validateCustomer, validateCheckoutItems, publicPaymentError } from './safety';
-import { CheckoutTerminalError, createAtomicCheckout, type CheckoutGateway, type CommerceCommand } from './atomicCheckout';
+import { CheckoutTerminalError, createAtomicCheckout, providerCurrency, type CheckoutGateway, type CommerceCommand } from './atomicCheckout';
 import { commerceCommand, mercadoPagoCredentialsReady, paymentAvailability } from './availability';
 import { checkoutShippingConfig } from './shipping';
 import { CheckoutIdentityError, resolveCheckoutUser } from './checkoutIdentity';
 
 const MP_API = 'https://api.mercadopago.com';
 export const mercadoPagoAvailability = () => paymentAvailability('mercadopago', mercadoPagoCredentialsReady());
+
+// UYU checkout handoffs must belong to this reserved order and the provider's
+// documented Uruguay redirect. Invalid/uncertain responses retain the reservation.
+function validHandoff(data: any, snapshot: any): boolean {
+  try {
+    if (!data || typeof data !== 'object' || Array.isArray(data) ||
+        typeof data.id !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(data.id) ||
+        data.type !== 'online' || data.processing_mode !== 'manual' || data.status !== 'created' ||
+        data.external_reference !== snapshot.orderId || providerCurrency(data) !== 'UYU' ||
+        typeof data.total_amount !== 'string' || !/^\d+(?:\.\d{1,2})?$/.test(data.total_amount) ||
+        !Number.isFinite(Number(data.total_amount)) || Number(data.total_amount) <= 0 ||
+        Number(data.total_amount) !== Number(snapshot.total) || typeof data.checkout_url !== 'string') return false;
+    const url = new URL(data.checkout_url);
+    return url.protocol === 'https:' && ['www.mercadopago.com.uy', 'mercadopago.com.uy'].includes(url.hostname) &&
+      !url.username && !url.password && !url.port && !url.hash && url.pathname === '/checkout/v1/redirect' &&
+      url.searchParams.getAll('order_id').length === 1 && url.searchParams.get('order_id') === data.id;
+  } catch { return false; }
+}
 
 export const mercadoPagoGateway: CheckoutGateway = {
   async find(orderId, createdAt) {
@@ -42,7 +60,7 @@ export const mercadoPagoGateway: CheckoutGateway = {
       }),
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok || typeof data.id !== 'string' || typeof data.checkout_url !== 'string') throw new Error('MERCADOPAGO_ORDER_CREATE_FAILED');
+    if (!response.ok || !validHandoff(data, snapshot)) throw new Error('MERCADOPAGO_ORDER_CREATE_FAILED');
     return { id: data.id, checkoutUrl: data.checkout_url };
   },
   async lookup(id) {
