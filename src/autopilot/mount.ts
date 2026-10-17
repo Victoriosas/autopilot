@@ -9,6 +9,7 @@ import { createCommerceMaintenanceRouter } from '../payments/commerceMaintenance
 import { createLegacyAdminGuard } from '../security/adminAuth';
 import { createLegacySafetyGate } from '../security/legacySafety';
 import { createStorefrontWaitlistRouter } from '../storefront/waitlistRouter';
+import { createBeautyRouter } from '../storefront/beautyRouter';
 import { createAutopilotV4Router } from './api';
 import { createCatalogGovernanceRouter } from './catalogGovernanceRouter';
 import { createDraftRouter } from './draftRouter';
@@ -21,6 +22,7 @@ import { createReleaseReadinessRouter } from './releaseReadinessRouter';
 import { createSourcingRouter } from './sourcingRouter';
 
 export function mountAutopilotV4(app: Express): void {
+  app.use('/api/beauty', createBeautyRouter());
   app.use('/api/autopilot/v4', createSourcingRouter());
 
   // Public storefront route. It validates and writes server-side with the
