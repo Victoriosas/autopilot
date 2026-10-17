@@ -1,7 +1,7 @@
 const CJ_BASE_URL = 'https://developers.cjdropshipping.com/api2.0/v1';
 
 export class CJRequestError extends Error {
-  constructor(public status: number, public retryAfterMs = 0) { super(`CJ_HTTP_${status}`); }
+  constructor(public status: number, public retryAfterMs = 0, public code = `CJ_HTTP_${status}`) { super(code); }
 }
 
 function finiteNumber(value: unknown): number | undefined {
@@ -200,7 +200,10 @@ class CJDropshippingClient {
       signal: AbortSignal.timeout(8000),
     });
     const data = await response.json();
-    if (data.code !== 200 || !data.data) throw new CJRequestError(response.ok ? 401 : response.status);
+    if (data.code !== 200 || !data.data) {
+      const code = Number.isSafeInteger(data.code) ? 'CJ_API_' + data.code : 'CJ_AUTH_INVALID_RESPONSE';
+      throw new CJRequestError(response.ok ? 401 : response.status, 0, code);
+    }
     this.accessToken = data.data.accessToken;
     this.refreshToken = data.data.refreshToken || null;
     this.tokenExpiry = new Date(data.data.accessTokenExpiryDate).getTime() - 60000;
