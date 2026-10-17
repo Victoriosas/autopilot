@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "observedDate": "2026-10-17",
+  "source": "https://casahector.net/subcat.aspx?f=9&s=14",
+  "sourceMethod": "Firecrawl live scrape",
+  "market": "UY",
+  "supplier": "Casa Hector",
+  "status": "LOCAL_SUPPLIER_QUOTE_REQUIRED",
+  "publicationAllowed": false,
+  "currency": "UYU",
+  "products": [
+    {
+      "code": "1767",
+      "name": "Brocha aplicadora base 4D",
+      "wholesaleDisplayed": 130,
+      "retailDisplayed": 160,
+      "offerWholesaleDisplayed": 111.4
+    },
+    {
+      "code": "1756",
+      "name": "Brocha duo sombra y cejas",
+      "wholesaleDisplayed": 50,
+      "retailDisplayed": 80
+    },
+    {
+      "code": "1533",
+      "name": "Esponjas pera x2",
+      "wholesaleDisplayed": 65,
+      "retailDisplayed": 87
+    },
+    {
+      "code": "1769",
+      "name": "Set brochas ojos x6",
+      "wholesaleDisplayed": 135,
+      "retailDisplayed": 180,
+      "offerWholesaleDisplayed": 116
+    },
+    {
+      "code": "2004",
+      "name": "Organizador acrilico chico",
+      "wholesaleDisplayed": 180,
+      "retailDisplayed": 220
+    }
+  ],
+  "potentialKit": {
+    "name": "Kit maquillaje basico",
+    "components": [
+      "1767",
+      "1756",
+      "1533"
+    ],
+    "listedWholesaleSumBeforeFees": 245,
+    "listedRetailComponentSum": 327,
+    "note": "Not a sale price, margin or supplier quote. Wholesale advertised as Mayor(x6); conditions are unconfirmed."
+  },
+  "missing": [
+    "Stock confirmed by SKU",
+    "Wholesale minimum applied to basket or per SKU",
+    "Applicable discounted-price conditions",
+    "VAT and invoicing",
+    "Local delivery to Canelones",
+    "Returns and photo-use rights",
+    "Commission, payment fees, fulfillment, acquisition and net margin"
+  ],
+  "policy": {
+    "automaticPublish": false,
+    "autoPurchase": false,
+    "realCheckout": false
+  },
+  "decision": "HOLD_FOR_VERIFIED_QUOTE"
+}
