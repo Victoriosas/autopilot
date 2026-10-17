@@ -1,6 +1,10 @@
 -- Synthetic hosted publication baseline for isolated Supabase tests.
 -- Reproduces migration 20260917040051 without applying it to a remote project.
 alter table public.products
+  add column if not exists original_title text,
+  add column if not exists cost_price numeric,
+  add column if not exists original_images text[] default '{}',
+  add column if not exists badges jsonb default '[]'::jsonb,
   add column if not exists slug text,
   add column if not exists description text,
   add column if not exists subtitle text,

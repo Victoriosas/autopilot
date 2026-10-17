@@ -81,6 +81,7 @@ export interface TraceabilityHistoryEntry {
 }
 
 export interface Traceability {
+  offer?: import("./storefront/salesChannel").CatalogOffer;
   createdBy: string;
   createdAt: string;
   updatedAt: string;

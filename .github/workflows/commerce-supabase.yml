@@ -12,6 +12,8 @@ on:
       - 'tests/commerce-supabase-access.sql'
       - 'tests/catalog-archive-supabase.sql'
       - 'tests/supplier-publication-supabase.sql'
+      - 'src/autopilot/manualCatalog*'
+      - 'src/storefront/salesChannel*'
       - 'src/payments/**'
       - 'src/security/adminAuth.ts'
       - 'supabase/migrations/20261010010000_atomic_checkout.sql'
