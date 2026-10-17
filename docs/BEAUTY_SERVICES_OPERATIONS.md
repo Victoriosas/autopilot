@@ -29,3 +29,5 @@ Inventario 17/10/2026, específico de este runtime Codex. No copiar tokens de Ch
 El correo sigue pendiente por preferencia del propietario. Google Calendar y correos no se activan para reservas automáticamente. Ningún perfil conectado implica autorización para mensajes comerciales.
 
 Actualizaciones ECC: release remoto consultado por GitHub = v2.2.3, coincide con paquete local. Auto Update dry-run sin install-state: no hubo pull ni reinstalación.
+
+No disponibles como integración API ejecutable comprobada: WhatsApp Business/Meta para automatizar mensajes, nuevo buzón de marca y coordinador Epic del repositorio. El navegador permite edición manual de redes, lo cual no equivale a esas APIs. No se instalaron herramientas para suplirlas.
