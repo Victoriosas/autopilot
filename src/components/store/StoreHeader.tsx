@@ -109,6 +109,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
               <button key={category} aria-pressed={activeCategory === category} onClick={() => selectAndScroll(category)} className={`whitespace-nowrap min-h-11 rounded-xl px-3.5 py-1.5 font-medium transition-all ${activeCategory === category ? 'border border-[#3b2b28] bg-[#3b2b28] text-white' : 'text-[#76635c] hover:bg-[#7b594c]/10 hover:text-[#3b2b28]'}`}>{category}</button>
             ))}
           </div>
+          <a href="/servicios-sofia.html" className="shrink-0 whitespace-nowrap rounded-xl border border-[#7b594c]/25 bg-[#f6ede2] px-3.5 py-2.5 text-xs font-semibold text-[#3b2b28] hover:bg-[#e8dac9]">Servicios de Sofía · Evaluación</a>
           <div className="hidden shrink-0 items-center gap-5 text-xs text-[#76635c] lg:flex">
             <a href="#rituales" className="transition hover:text-[#3b2b28]">Guía</a>
             <a href="#como-elegimos" className="transition hover:text-[#3b2b28]">Cómo elegimos</a>
