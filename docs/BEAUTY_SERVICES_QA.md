@@ -23,3 +23,13 @@ No se probó solicitud real contra Supabase alojado, envío real de WhatsApp, re
 - Retención preparada: función admin-only sin parámetros de fecha, solo DELETE de vencidas; PostgreSQL aislado ampliado a 8/8, sin ejecución real alojada. Su instalación tampoco programa borrados.
 - Preview del SHA 1845ca1 READY: https://autopilot-mduzqni6m-autopilot12.vercel.app/servicios-sofia.html . Conector autorizado confirmó HTML y JavaScript HTTP200; /api/beauty/config 200 devuelve requestsEnabled=false. No confundir preview con publicación productiva ni comprobar solo el HTML como prueba de UI completa.
 - Producción consultada nuevamente: health y configuración Mercado Pago HTTP200; commit a85a59b, checkoutEnabled=false, checkoutRequested=false, configured=false. Sin promoción.
+
+## Evidencia final del bloque 17/10/2026
+
+- Código funcional f58ba9c: Core v4 push 39068578819 y PR 39068582833 success. Node CI: 174 aprobadas de 175, una omitida exclusiva de Windows; local 175/175 sin omitidas. Builds, PostgreSQL comercio 13/13, inventario y replay aprobados.
+- Integración Beauty Supabase real, SHA fc6115a: run 39068457508 success, 5/5 incluyendo suite; Auth real, HTTP, PostgREST, RLS, idempotencia, admin y RPC de retención sin filas vencidas. Stack desechable apagado. Los cambios posteriores f58ba9c son coordinación, aviso y documentación; no modifican router, migraciones ni prueba Supabase.
+- PostgreSQL Beauty local 8/8, incluida eliminación de solo registros sintéticos vencidos; HTTP de esa suite usa auth fixture, diferenciada de la prueba Supabase de CI.
+- Paquete offline `.audit/beauty-release-review/manifest.json`: dos migraciones con hashes, requisitos y reversión de aplicación. No es respaldo de datos ni aprobación. `scripts/prepare-beauty-release.mjs` no tiene clientes ni comandos de despliegue.
+- Antes de datos reales: aprobación específica del alcance de migración/despliegue, respaldo/restauración, privacidad/retención operativa y revisión comercial de Sofía. Catálogo administrable y evaluación profesional separada siguen en roadmap, no se afirman terminados.
+
+Siguiente instrucción: revisar PR #73 y sus evidencias, completar el catálogo administrable con estados y un paquete de aprobación comercial sin publicar servicios pendientes. No ejecutar SQL alojado, activar registros públicos, pagos ni producción hasta autorización específica. El último paso seguro de este bloque (paquete offline revisable) ya se ejecutó. No duplicar scheduler ni repetir mensajes sin cambios.
