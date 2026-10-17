@@ -7,10 +7,11 @@ const root=process.cwd();
 const directory=path.join(root,'.audit','beauty-coordinator');await mkdir(directory,{recursive:true});
 const lock=path.join(directory,'active.lock');
 const tasks=[
- {id:'beauty-contracts',objective:'Validate commercial intake and privacy contracts',agent:'Codex tests',args:['--import','tsx','--test','src/storefront/beautyRequests.test.ts','src/storefront/beautyRouter.test.ts','src/storefront/beautyFrontend.test.ts']},
+ {id:'beauty-contracts',objective:'Validate commercial intake and privacy contracts',agent:'Codex tests',args:['--import','tsx','--test','src/storefront/beautyRequests.test.ts','src/storefront/beautyRouter.test.ts','src/storefront/beautyFrontend.test.ts','src/storefront/beautyCatalogFrontend.test.ts','src/storefront/beautyManagement.test.ts','src/storefront/beautyManagementRouter.test.ts']},
+ {id:'beauty-catalog-postgres',objective:'Validate private evaluation and managed catalog in disposable PostgreSQL',agent:'Codex database',args:['scripts/test-beauty-catalog-postgres.mjs']},
  {id:'beauty-postgres',objective:'Validate disposable PostgreSQL and HTTP persistence',agent:'Codex database',args:['scripts/test-beauty-postgres.mjs']},
 ];
-const inputs=['src/storefront/beautyRequests.ts','src/storefront/beautyRouter.ts','src/storefront/beautyRequests.test.ts','src/storefront/beautyRouter.test.ts','src/storefront/beautyFrontend.test.ts','src/security/adminAuth.ts','public/beauty-services.js','tests/beauty-postgres.test.ts','scripts/test-beauty-postgres.mjs','supabase/migrations/20261017220000_beauty_requests.sql','supabase/migrations/20261017221000_beauty_retention.sql'];
+const inputs=['src/storefront/beautyManagement.ts','src/storefront/beautyManagementRouter.ts','src/storefront/beautyDatabase.ts','supabase/migrations/20261017230000_beauty_catalog_evaluations.sql','src/storefront/beautyRequests.ts','src/storefront/beautyRouter.ts','src/storefront/beautyRequests.test.ts','src/storefront/beautyRouter.test.ts','src/storefront/beautyFrontend.test.ts','src/security/adminAuth.ts','public/beauty-services.js','tests/beauty-postgres.test.ts','scripts/test-beauty-postgres.mjs','supabase/migrations/20261017220000_beauty_requests.sql','supabase/migrations/20261017221000_beauty_retention.sql'];
 const digest=createHash('sha256');for(const file of inputs){digest.update(file);digest.update(await readFile(path.join(root,file)));}const revision=digest.digest('hex');
 const args=process.argv.slice(2);
 if(args.some(a=>!['--run-next','--status'].includes(a))){console.error('Use --status or --run-next (one task per invocation)');process.exit(2);}

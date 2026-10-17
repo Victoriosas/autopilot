@@ -24,3 +24,7 @@ La guía de salud explica el tratamiento especial de datos sensibles: https://ww
 Para rectificación/actualización/supresión, la URCDP señala un máximo de cinco días hábiles para procesar o informar motivos de improcedencia: https://www.gub.uy/unidad-reguladora-control-datos-personales/tramites-y-servicios/formularios/formulario-para-ejercer-derechos-rectificacion-actualizacion . El plazo técnico de 90 días no sustituye esos derechos ni es un plazo legal impuesto por este estudio.
 
 Datos todavía necesarios: identificación y contacto definitivo del responsable, revisión del aviso y determinación de trámites aplicables. Ninguna base de clientes se inscribió ni se comunicó a terceros desde esta tarea.
+
+## Evaluación profesional separada (ciclo catálogo)
+
+El módulo privado implementado y todavía deshabilitado se describe en [Catálogo y evaluación](BEAUTY_SERVICES_CATALOG.md). No cambia la finalidad ni el consentimiento `beauty-v1` del formulario comercial. Usa consentimiento específico `beauty-evaluation-v1`, constancia escrita referenciada, membresía profesional independiente y RLS por profesional. Service role carece de acceso a su contenido. No recolectar datos sensibles reales hasta aprobar el procedimiento, responsable y obligaciones correspondientes.

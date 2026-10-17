@@ -28,6 +28,8 @@ const ConnectorsDirectoryModal = lazy(() => import('./components/admin/Connector
 const GlobalAdminSearchModal = lazy(() => import('./components/admin/GlobalAdminSearchModal').then((module) => ({ default: module.GlobalAdminSearchModal })));
 const ReleaseReadinessCard = lazy(() => import('./components/admin/ReleaseReadinessCard').then((module) => ({ default: module.ReleaseReadinessCard })));
 const BeautyRequestsPanel = lazy(() => import('./components/admin/BeautyRequestsPanel').then((module) => ({ default: module.BeautyRequestsPanel })));
+const BeautyCatalogPanel = lazy(() => import('./components/admin/BeautyCatalogPanel').then((module) => ({ default: module.BeautyCatalogPanel })));
+const BeautyEvaluationPanel = lazy(() => import('./components/admin/BeautyEvaluationPanel').then((module) => ({ default: module.BeautyEvaluationPanel })));
 import { AuthModal } from './components/auth/AuthModal';
 
 import type { Product, Order } from './types';
@@ -37,6 +39,8 @@ export function App() {
   const {
     viewMode,
     userRole,
+    user,
+    signOutUser,
     products,
     selectedCandidateForReview,
     setSelectedCandidateForReview,
@@ -95,6 +99,22 @@ export function App() {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  if (window.location.pathname === '/beauty-professional') return (
+    <div className="min-h-screen bg-neutral-950 p-4 text-white">
+      <header className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl">Victoriosas · Espacio profesional</h1>
+        <button className="rounded border p-3" onClick={() => setIsAuthModalOpen(true)}>{user ? 'Cambiar sesión' : 'Iniciar sesión'}</button>
+        {user && <button className="rounded border p-3" onClick={() => void signOutUser()}>Cerrar sesión</button>}
+      </header>
+      <main className="mx-auto max-w-5xl">
+        <Suspense fallback={<p role="status">Cargando espacio privado…</p>}>
+          <BeautyEvaluationPanel key={user?.id || 'signed-out'} />
+        </Suspense>
+        <p className="text-sm">Este acceso requiere autorización profesional asignada por el responsable. No se habilita automáticamente por administrar el catálogo.</p>
+      </main>
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+    </div>
+  );
   return (
     <div className={`${effectiveViewMode === 'store' ? 'storefront-editorial min-h-screen bg-[#f8f1e8] text-[#3b2b28] selection:bg-[#7b594c] selection:text-white' : 'min-h-screen bg-[#0a0c14] text-slate-200 selection:bg-indigo-500 selection:text-white'} font-sans flex flex-col relative overflow-x-hidden`}>
       {effectiveViewMode !== 'store' && <>
@@ -199,7 +219,8 @@ export function App() {
           />
 
           <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <BeautyRequestsPanel />
+            <BeautyRequestsPanel key={user?.id||"signed-out"} />
+            <BeautyCatalogPanel key={user?.id||"signed-out"} />
             <ReleaseReadinessCard />
             {adminTab === 'pipeline' ? (
               <AutopilotDashboard

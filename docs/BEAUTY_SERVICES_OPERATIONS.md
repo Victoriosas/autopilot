@@ -31,3 +31,7 @@ El correo sigue pendiente por preferencia del propietario. Google Calendar y cor
 Actualizaciones ECC: release remoto consultado por GitHub = v2.2.3, coincide con paquete local. Auto Update dry-run sin install-state: no hubo pull ni reinstalación.
 
 No disponibles como integración API ejecutable comprobada: WhatsApp Business/Meta para automatizar mensajes, nuevo buzón de marca y coordinador Epic del repositorio. El navegador permite edición manual de redes, lo cual no equivale a esas APIs. No se instalaron herramientas para suplirlas.
+
+## Catálogo y evaluación — ciclo actual
+
+Ver [contrato y habilitaciones](BEAUTY_SERVICES_CATALOG.md). Nuevos controles de catálogo y espacio profesional desactivados por defecto. El paquete offline ahora incluye tres migraciones Beauty; no ejecuta ninguna. `beauty_publication_control` requiere operación owner autorizada y queda false. Membresías profesionales no se administran por CRM ni se concedieron alojadas. El coordinador local incorpora una tercera comprobación aislada de catálogo/evaluación; no se modificó ni duplicó el scheduler de seis horas. Los inventarios anteriores son evidencia fechada, no saldo ni estado actual garantizados.

@@ -25,3 +25,9 @@ Epic Decompose/Claim/Review disponibles como skills migradas, pero requieren iss
 ## Siguiente instrucción
 
 Comprobar CI del SHA de esta rama y corregir únicamente fallos reproducibles de Beauty. Validar el recorrido con Auth/PostgREST desechables; después completar retención física y pruebas administrativas sin usar clientes reales. Preparar catálogo con estados borrador/pendiente/aprobado/publicado sin publicar servicios avanzados. Mantener `BEAUTY_REQUESTS_ENABLED` ausente/false en producción. Conservar los cambios locales ajenos y solicitar autorización solo para un paquete de migración/despliegue concreto ya revisable. No crear automatizaciones nuevas.
+
+## Ciclo catálogo administrable y evaluación profesional
+
+Implementación: catálogo con versiones, precios pendientes y publicación cerrada; DTO público integrado al formulario existente; evaluación privada por profesional y consentimiento separado; CRM con referencia de ficha y condiciones históricas. Revisiones independientes detectaron y corrigieron permisos PATCH, bypass de publicación directa, fichas no disponibles visibles por PostgREST, sesión privada sin refrescar y falta de identificación de ficha en CRM.
+
+La siguiente instrucción y los requisitos operativos están en [BEAUTY_SERVICES_CATALOG.md](BEAUTY_SERVICES_CATALOG.md). La siguiente tarea segura será preparar el paquete comercial offline de aprobación, sin publicar tarifas ni obtener consentimiento por inferencia.

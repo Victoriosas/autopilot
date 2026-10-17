@@ -5,12 +5,13 @@ import vm from 'node:vm';
 
 test('browser logic preserves receipt on retry, blocks edits while pending and shares no form data',async()=>{
  const nodes:Record<string,any>={};
- for(const id of ['consulta-form','envio','resumen','estado-ficha','estado-registro','registrar','recibo','estado-copia','servicio','consentimiento','enviar-whatsapp','copiar-ficha']) nodes[id]={textContent:'',value:'',checked:true,disabled:false,hidden:true,events:{} as any,addEventListener(event:string,fn:any){this.events[event]=fn;},setAttribute(k:string,v:string){this[k]=v;},removeAttribute(k:string){delete this[k];},focus(){},reportValidity(){return true;}};
+ for(const id of ['consulta-form','envio','resumen','estado-ficha','estado-registro','registrar','recibo','estado-copia','servicio','consentimiento','enviar-whatsapp','copiar-ficha','servicios','propuesta-precios','catalogo-publico','estado-catalogo','catalogo-servicios']) nodes[id]={textContent:'',value:'',checked:true,disabled:false,hidden:true,events:{} as any,addEventListener(event:string,fn:any){this.events[event]=fn;},setAttribute(k:string,v:string){this[k]=v;},removeAttribute(k:string){delete this[k];},focus(){},reportValidity(){return true;}};
  nodes['consulta-form'].elements=[];
  const link={...nodes['servicio'],events:{} as any,dataset:{service:'Ritual rostro y cuerpo'}};
  const values:Record<string,string>={nombre:'Synthetic',apellido:'Client',contacto:'fixture@example.test',barrio:'Solymar',servicio:'Limpieza de cutis y facial cosmético',horario:'Lunes'};
  let uuidCalls=0,resolvePost:any,copied='',request:any;
  const context={document:{getElementById:(id:string)=>nodes[id],querySelectorAll:()=>[link]},location:{search:'?origen=instagram'},URLSearchParams,AbortSignal,encodeURIComponent,crypto:{randomUUID:()=>{uuidCalls++;return '8f7c7698-cdbe-4a77-8a86-5a1d090284b5';}},FormData:class{get(k:string){return values[k];}},navigator:{clipboard:{writeText:async(text:string)=>{copied=text;}}},fetch:async(path:string,options:any)=>{
+  if(path.endsWith('catalog'))return{ok:true,json:async()=>({catalogEnabled:false,services:[]})};
   if(path.endsWith('config'))return{ok:true,json:async()=>({requestsEnabled:true})};
   request=JSON.parse(options.body);return new Promise(resolve=>{resolvePost=resolve;});
  }};
