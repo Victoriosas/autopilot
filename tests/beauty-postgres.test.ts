@@ -14,6 +14,7 @@ const actor=(uid:string)=>`set role authenticated;set request.jwt.claim.sub='${u
 test('Beauty real PostgreSQL privileges, RLS and transitions',{timeout:120000},async t=>{
  await sql(`create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to authenticated;grant execute on function auth.uid() to authenticated;create table public.profiles(id uuid primary key,role text);insert into profiles values('${admin}','admin'),('${customer}','customer');grant select on profiles to authenticated;`);
  const migration='supabase/migrations/20261017220000_beauty_requests.sql';if(existsSync(migration)) await sql(readFileSync(migration,'utf8'));
+ const retentionMigration='supabase/migrations/20261017221000_beauty_retention.sql';if(existsSync(retentionMigration)) await sql(readFileSync(retentionMigration,'utf8'));
  const insert=`insert into public.beauty_requests(id,fingerprint,first_name,last_name,contact,zone,service,availability,source,consent_version) values('${id}',repeat('a',64),'Synthetic','Test','test@example.test','Carrasco','facial','Monday','web','beauty-v1')`;
  await t.test('service creates pending record and cannot read via anon',async()=>{await sql(`set role service_role;${insert};`);assert.equal(await sql('set role service_role;select status from beauty_requests;'),'pending');await assert.rejects(sql('set role anon;select * from beauty_requests'),/permission denied/);});
  await t.test('customer cannot read, insert, delete or change contact',async()=>{assert.equal(await sql(`${actor(customer)}select count(*) from beauty_requests;`),'0');for(const query of [insert,'delete from beauty_requests',"update beauty_requests set contact='other'"]) await assert.rejects(sql(actor(customer)+query),/permission denied/);assert.equal(await sql(`${actor(customer)}update beauty_requests set status='reviewing',reviewed_by='${customer}';select count(*) from beauty_requests;`),'0');});
@@ -55,5 +56,15 @@ test('Beauty real PostgreSQL privileges, RLS and transitions',{timeout:120000},a
    const change=()=>fetch(base+'/admin/requests/'+id,{method:'PATCH',headers,body:JSON.stringify({from:'pending',status:'reviewing'})});
    assert.equal((await change()).status,200);assert.equal((await change()).status,409);assert.equal(await sql(`${actor(admin)}select status from beauty_requests where id='${id}'`),'reviewing');
   }finally{server.closeAllConnections();await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));}
+ });
+ await t.test('retention RPC denies public/customer and deletes only expired rows for admin',async()=>{
+  await sql(`insert into beauty_requests(id,fingerprint,first_name,last_name,contact,zone,service,availability,source,consent_version,created_at,expires_at) select '44444444-4444-4444-8444-444444444444',fingerprint,first_name,last_name,contact,zone,service,availability,source,consent_version,now()-interval '91 days',now()-interval '1 day' from beauty_requests where id='${id}';`);
+  await assert.rejects(sql('set role anon;select public.beauty_purge_expired_requests();'),/permission denied/);
+  await assert.rejects(sql(`${actor(customer)}select public.beauty_purge_expired_requests();`),/BEAUTY_ADMIN_REQUIRED/);
+  await assert.rejects(sql("set role authenticated;select public.beauty_purge_expired_requests();"),/BEAUTY_ADMIN_REQUIRED/);
+  assert.equal(await sql('select count(*) from beauty_requests'),'2');
+  assert.equal(await sql(`${actor(admin)}select public.beauty_purge_expired_requests();`),'1');
+  assert.equal(await sql(`${actor(admin)}select public.beauty_purge_expired_requests();`),'0');
+  assert.equal(await sql(`select id from beauty_requests`),id);
  });
 });

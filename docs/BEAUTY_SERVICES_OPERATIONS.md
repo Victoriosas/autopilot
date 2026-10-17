@@ -27,3 +27,5 @@ Inventario 17/10/2026, específico de este runtime Codex. No copiar tokens de Ch
 5. Desplegar versión revisada tras aprobación específica; comprobar móvil, servidor, administración y acceso RLS. Mantener pagos apagados.
 
 El correo sigue pendiente por preferencia del propietario. Google Calendar y correos no se activan para reservas automáticamente. Ningún perfil conectado implica autorización para mensajes comerciales.
+
+Actualizaciones ECC: release remoto consultado por GitHub = v2.2.3, coincide con paquete local. Auto Update dry-run sin install-state: no hubo pull ni reinstalación.

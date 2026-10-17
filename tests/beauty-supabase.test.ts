@@ -47,6 +47,7 @@ test('Beauty real disposable Supabase Auth + HTTP + PostgREST + RLS', {timeout:9
    assert.ok((await anon.from('beauty_requests').select('*')).error);
    const hidden=await customer.from('beauty_requests').select('*');assert.equal(hidden.error,null);assert.deepEqual(hidden.data,[]);
    assert.ok((await customer.from('beauty_requests').insert({id:randomUUID()})).error);
+   assert.ok((await customer.rpc('beauty_purge_expired_requests')).error);
    const escalation=await customer.from('profiles').update({role:'admin'}).eq('id',users[0]);assert.ok(escalation.error);
   });
   await t.test('real admin guard lists and reviews, stale transition conflicts',async()=>{
@@ -54,6 +55,7 @@ test('Beauty real disposable Supabase Auth + HTTP + PostgREST + RLS', {timeout:9
    const r=await fetch(base+'/admin/requests',{headers});assert.equal(r.status,200,await r.clone().text());assert.equal((await r.json()).requests[0].id,input.id);
    const patch=()=>fetch(base+'/admin/requests/'+input.id,{method:'PATCH',headers,body:JSON.stringify({from:'pending',status:'reviewing'})});
    const changed=await patch();assert.equal(changed.status,200,await changed.clone().text());assert.equal((await patch()).status,409);
+   const purge=await admin.rpc('beauty_purge_expired_requests');assert.equal(purge.error,null,purge.error?.message);assert.equal(Number(purge.data),0);
   });
  }finally{
   server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));
