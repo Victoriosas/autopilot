@@ -1,4 +1,5 @@
 import type { Product } from '../types';
+import { isCatalogVisible, hasExternalChannel } from './salesChannel';
 
 export type Routine = 'all' | 'skincare' | 'spa' | 'tools' | 'accessories';
 export type CatalogSort = 'featured' | 'price_asc' | 'price_desc';
@@ -27,11 +28,11 @@ export function discoverProducts(products: readonly Product[], options: {
 }): Product[] {
   const words = normalize(options.query).split(/\s+/).filter(Boolean);
   return products.filter(product => {
-    if (product.status !== 'published' || !Number.isFinite(product.price) || product.price <= 0) return false;
+    if (!isCatalogVisible(product)) return false;
     if (options.category !== 'Todos' && product.category !== options.category) return false;
-    if (product.price > options.maximumPrice || !routineMatches(product, options.routine)) return false;
-    if (options.inStockOnly && (!Number.isInteger(product.inventory) || product.inventory <= 0)) return false;
+    if ((!hasExternalChannel(product) && product.price > options.maximumPrice) || !routineMatches(product, options.routine)) return false;
+    if (options.inStockOnly && (hasExternalChannel(product) || !Number.isInteger(product.inventory) || product.inventory <= 0)) return false;
     const searchable = normalize([product.title, product.description, product.category, product.sku, ...(product.tags || [])].filter(Boolean).join(' '));
     return words.every(word => searchable.includes(word));
-  }).sort((a, b) => options.sort === 'price_asc' ? a.price - b.price : options.sort === 'price_desc' ? b.price - a.price : 0);
+  }).sort((a, b) => hasExternalChannel(a) !== hasExternalChannel(b) && options.sort !== 'featured' ? (hasExternalChannel(a) ? 1 : -1) : options.sort === 'price_asc' ? a.price - b.price : options.sort === 'price_desc' ? b.price - a.price : 0);
 }

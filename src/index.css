@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+/* Keep catalog results visible below the sticky search/navigation header. */
+.storefront-editorial section[id] { scroll-margin-top: 17rem; }
+@media (min-width: 768px) {
+  .storefront-editorial section[id] { scroll-margin-top: 13rem; }
+}
