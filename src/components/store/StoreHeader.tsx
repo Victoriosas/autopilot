@@ -103,18 +103,26 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
           <div className="relative"><Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#76635c]" /><input type="search" value={searchQuery} onChange={(event) => onSearchChange(event.target.value)} placeholder="¿Qué estás buscando?" aria-label="Buscar productos" className="w-full rounded-full border border-[#7b594c]/15 bg-[#f6ede2]/70 py-2 pl-10 pr-20 text-sm text-[#3b2b28] placeholder-[#9b8478] focus:border-[#7b594c]/60 focus:outline-none" /><button type="submit" className="absolute right-1 top-1/2 min-h-10 -translate-y-1/2 rounded-full bg-[#3b2b28] px-3 text-xs font-semibold text-white">Buscar</button></div>
         </form>
 
-        <nav className="flex items-center justify-between gap-4 overflow-x-auto border-t border-[#7b594c]/10 py-3 text-sm no-scrollbar" aria-label="Navegación principal">
-          <div className="flex items-center gap-2">
-            {categories.map((category) => (
-              <button key={category} aria-pressed={activeCategory === category} onClick={() => selectAndScroll(category)} className={`whitespace-nowrap min-h-11 rounded-xl px-3.5 py-1.5 font-medium transition-all ${activeCategory === category ? 'border border-[#3b2b28] bg-[#3b2b28] text-white' : 'text-[#76635c] hover:bg-[#7b594c]/10 hover:text-[#3b2b28]'}`}>{category}</button>
-            ))}
+        <nav className="border-t border-[#7b594c]/10 py-3 text-sm" aria-label="Navegación principal">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            <a href="/" aria-current="page" className="font-semibold text-[#3b2b28]">Inicio</a>
+            <details className="group relative">
+              <summary className="cursor-pointer list-none font-semibold text-[#3b2b28] hover:text-[#7b594c]">Tratamientos <span aria-hidden="true">⌄</span></summary>
+              <div className="absolute left-0 top-full z-50 mt-2 grid w-64 gap-1 rounded-2xl border border-[#7b594c]/20 bg-[#fffaf4] p-3 shadow-xl">
+                <a className="rounded-lg px-3 py-2 hover:bg-[#f6ede2]" href="/servicios-sofia.html#servicios">Faciales y masajes</a>
+                <a className="rounded-lg px-3 py-2 hover:bg-[#f6ede2]" href="/servicios-sofia.html#ficha">Evaluación personalizada</a>
+                <a className="rounded-lg px-3 py-2 hover:bg-[#f6ede2]" href="/servicios-sofia.html#consulta">Cómo coordinar</a>
+              </div>
+            </details>
+            <a href="/servicios-sofia.html#sobre-sofia" className="text-[#76635c] hover:text-[#3b2b28]">Sobre Sofía</a>
+            <a href="/#catalogo" className="text-[#76635c] hover:text-[#3b2b28]">Tienda</a>
+            <a href="/servicios-sofia.html#ficha" className="rounded-full bg-[#3b2b28] px-4 py-2.5 font-semibold text-white hover:bg-[#7b594c]">Consultar</a>
           </div>
-          <a href="/servicios-sofia.html" className="shrink-0 whitespace-nowrap rounded-xl border border-[#7b594c]/25 bg-[#f6ede2] px-3.5 py-2.5 text-xs font-semibold text-[#3b2b28] hover:bg-[#e8dac9]">Servicios de Sofía · Evaluación</a>
-          <div className="hidden shrink-0 items-center gap-5 text-xs text-[#76635c] lg:flex">
-            <a href="#rituales" className="transition hover:text-[#3b2b28]">Guía</a>
-            <a href="#como-elegimos" className="transition hover:text-[#3b2b28]">Cómo elegimos</a>
-            <a href="#proximamente" className="transition hover:text-[#3b2b28]">Próximamente</a>
-            <a href="#faq" className="transition hover:text-[#3b2b28]">FAQ</a>
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[#7b594c]/10 pt-3" aria-label="Categorías de productos">
+            <span className="mr-1 text-xs text-[#76635c]">Productos:</span>
+            {categories.map((category) => (
+              <button key={category} aria-pressed={activeCategory === category} onClick={() => selectAndScroll(category)} className={`min-h-9 rounded-full px-3 py-1 text-xs transition ${activeCategory === category ? 'bg-[#3b2b28] text-white' : 'bg-[#f6ede2] text-[#76635c] hover:text-[#3b2b28]'}`}>{category}</button>
+            ))}
           </div>
         </nav>
       </div>
