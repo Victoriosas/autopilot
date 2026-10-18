@@ -5,7 +5,7 @@ import { ContactLink } from './ContactLink';
 const review = __EDITORIAL_REVIEW__;
 const visible = review ? articles : getPublishedArticles();
 const base = '/de-mi-para-ti';
-const description = 'Bienestar, belleza, pequeños rituales y secretos para compartir con vos.';
+const description = 'Un espacio pensado como una pausa. Bienestar, belleza y pequeños rituales para el cuidado cotidiano.';
 function Card({article}: {article: EditorialArticle}) {
   return <article className="editorial-card"><a href={`${base}/${article.slug}`}><img src={article.image} alt={article.imageAlt} width="800" height="500" loading="lazy" /><p className="beauty-eyebrow">{article.category}</p><h2>{article.title}</h2></a><p className="beauty-small">{article.status === 'draft' ? 'Borrador para revisión · Sin publicar' : <time dateTime={article.date!}>{article.date}</time>}</p><p>{article.paragraphs[0]}</p><a href={`${base}/${article.slug}`}>Leer artículo →</a></article>;
 }
