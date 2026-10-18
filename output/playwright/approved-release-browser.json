@@ -1,0 +1,60 @@
+{
+  "results": [
+    {
+      "width": 1440,
+      "overflow": false,
+      "forms": 0,
+      "h1": 1,
+      "badLinks": 0,
+      "brokenAnchors": 0,
+      "faq": true
+    },
+    {
+      "width": 768,
+      "overflow": false,
+      "forms": 0,
+      "h1": 1,
+      "badLinks": 0,
+      "brokenAnchors": 0,
+      "faq": true
+    },
+    {
+      "width": 390,
+      "overflow": false,
+      "forms": 0,
+      "h1": 1,
+      "badLinks": 0,
+      "brokenAnchors": 0,
+      "faq": true
+    },
+    {
+      "width": 320,
+      "overflow": false,
+      "forms": 0,
+      "h1": 1,
+      "badLinks": 0,
+      "brokenAnchors": 0,
+      "faq": true
+    },
+    {
+      "path": "/api/beauty/admin/requests",
+      "status": 401
+    },
+    {
+      "path": "/api/beauty/catalog/admin/services",
+      "status": 401
+    },
+    {
+      "path": "/api/beauty/professional/evaluations",
+      "status": 503
+    }
+  ],
+  "commit": "a16cc9a8e7c8a166f6cbcfcf67a9509076a0014d",
+  "waitlist": 503,
+  "beautyIntake": 503,
+  "unexpectedWrites": 0,
+  "previewInfrastructureRequests": 22,
+  "storagePreserved": true,
+  "whatsappLinkValidated": true,
+  "messageSent": false
+}

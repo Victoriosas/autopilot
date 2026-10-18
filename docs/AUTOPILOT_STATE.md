@@ -527,3 +527,15 @@ PR #73 en borrador: https://github.com/Victoriosas/autopilot/pull/73. Core f58ba
 - Coordinador completó tres tareas acotadas con evidencias, sin scheduler nuevo ni bucle. Siguiente instrucción generada y ejecutada: paquete comercial offline de cuatro fichas con precios nulos y paquete SQL de tres migraciones con hashes. Ver docs/BEAUTY_SERVICES_NEXT_PROMPT.md.
 - Pendiente antes de lanzamiento: tarifas/alcance y consentimiento aprobados por Sofía, identidad profesional, privacidad/retención, respaldo/restauración, autorización específica de SQL y despliegue. Sin producción, pagos, mensajes, datos reales ni permisos alojados. Sin métricas reales de ventas para este módulo.
 - Cambios concurrentes ajenos conservados: estado previo de este documento, archivos .audit/.playwright-cli y scripts exploratorios no incorporados a la entrega.
+
+## 2026-10-17 - Auditoria funcional Victoriosas
+
+Worktree diseno, rama codex/victoriosas-functional-audit-20261017 sobre main 1d647a2. Nueva entrada publica sin comercio ni formularios, contacto neutral WhatsApp; identidad Victoria/Sofia pendiente. Rutas privadas conservan Auth/RLS. Supabase remoto confirma Beauty aplicado con versiones distintas a locales, RLS en cinco tablas y cuatro servicios draft; requests/catalog/publication apagados. Sin SQL remoto de escritura. Eliminado fallback de tarifas y cerrada waitlist por defecto. Lockfile parcheado compatible, audit prod cero avisos. Evidencia, limites y siguiente prompt en docs/VICTORIOSAS_FUNCTIONAL_AUDIT.md. Verificar CI y preview del SHA final antes de promover.
+
+## 2026-10-17 - Revision visual/editorial PR79, sin produccion
+
+Portada con fotografias aprobadas existentes, descriptor Estetica profesional y evaluacion inicial remota. De mi para ti implementado con dos borradores y cuatro categorias; revision solo en dev/preview, build productivo sin borradores. verify185/185, Playwright cuatro anchos y recorrido editorial, sin escrituras al navegar. Informe docs/VICTORIOSAS_VISUAL_EDITORIAL_REVIEW.md y calendario docs/DE_MI_PARA_TI_EDITORIAL.md. Prohibido merge/promocion hasta revision y aprobacion del propietario. Registrar CI/preview exactos en PR79.
+
+## 2026-10-18 - Validacion a16cc9a / copy aprobado PR80
+
+CI original push/PR SUCCESS. Arbol Git identico a PR80; textos conservados. Ver docs/VICTORIOSAS_PR79_FINAL_VALIDATION.md. Nuevas pruebas fijan copy aprobado, FAQ actual, separacion de validacion Vercel toolbar y guard de ambos borradores. verify local186/186; axe seis vistas sin infracciones; LCP movil laboratorio mediano1028ms con cache off/red1.6Mbps/CPU4x. Sin INP de campo ni login administrativo real. Produccion sigue1d647a2, sin merge/promocion. Antes de publicar: aprobacion, CI/preview head definitivo y rebuild production; nunca promover artefacto Preview. Siguiente etapa interna preparada en docs/EDITORIAL_LAUNCH_READINESS.md sin programacion/envios.

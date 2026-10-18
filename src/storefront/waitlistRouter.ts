@@ -11,9 +11,11 @@ function client(){
   return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
 }
 
-export function createStorefrontWaitlistRouter(){
+export function createStorefrontWaitlistRouter(dependencies:{enabled?:()=>boolean}={}){
+  const enabled=dependencies.enabled||(()=>process.env.WAITLIST_ENABLED==='true');
   const router=Router();
   router.post('/',async(req,res)=>{
+    if(!enabled()) return res.status(503).json({error:'WAITLIST_DISABLED'});
     const website=typeof req.body?.website==='string'?req.body.website.trim():'';
     if(website) return res.status(202).json({ok:true});
     const email=typeof req.body?.email==='string'?req.body.email.trim().toLowerCase():'';

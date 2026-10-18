@@ -99,7 +99,7 @@ export function App() {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  if (window.location.pathname === '/beauty-professional') return (
+  if (window.location.pathname.replace(/\/$/, '') === '/beauty-professional') return (
     <div className="min-h-screen bg-neutral-950 p-4 text-white">
       <header className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl">Victoriosas · Espacio profesional</h1>

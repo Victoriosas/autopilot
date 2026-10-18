@@ -12,7 +12,7 @@ test('waitlist validates consent and email, and fails safely for unavailable con
   delete process.env.SUPABASE_SERVICE_ROLE_KEY;
   const app = express();
   app.use(express.json());
-  app.use('/waitlist', createStorefrontWaitlistRouter());
+  app.use('/waitlist', createStorefrontWaitlistRouter({enabled:()=>true}));
   const server = createServer(app).listen(0, '127.0.0.1');
   await once(server, 'listening');
   const { port } = server.address() as { port: number };
@@ -72,5 +72,31 @@ test('waitlist validates consent and email, and fails safely for unavailable con
     else process.env.SUPABASE_SERVICE_ROLE_KEY = previousKey;
     server.closeAllConnections();
     await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+  }
+});
+
+
+test('waitlist defaults closed before reading personal data or contacting Supabase', async (t) => {
+  const previousEnabled=process.env.WAITLIST_ENABLED;
+  delete process.env.WAITLIST_ENABLED;
+  let bodyReads=0,providerCalls=0;
+  const nativeFetch=globalThis.fetch;
+  t.mock.method(globalThis,'fetch',async(input:Parameters<typeof fetch>[0],init?:RequestInit)=>{
+    const url=new URL(input instanceof Request?input.url:String(input));
+    if(url.hostname==='127.0.0.1')return nativeFetch(input,init);
+    providerCalls++;throw new Error('disabled waitlist must not contact provider');
+  });
+  const app=express();
+  app.use((req,_res,next)=>{Object.defineProperty(req,'body',{get(){bodyReads++;throw new Error('disabled waitlist must not inspect data');}});next();});
+  app.use('/waitlist',createStorefrontWaitlistRouter());
+  const server=createServer(app).listen(0,'127.0.0.1');await once(server,'listening');
+  try{
+    const {port}=server.address() as {port:number};
+    const response=await fetch(`http://127.0.0.1:${port}/waitlist`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:'synthetic@example.test',consent:true}),signal:AbortSignal.timeout(1500)});
+    assert.equal(response.status,503);assert.deepEqual(await response.json(),{error:'WAITLIST_DISABLED'});
+    assert.equal(bodyReads,0);assert.equal(providerCalls,0);
+  }finally{
+    if(previousEnabled===undefined)delete process.env.WAITLIST_ENABLED;else process.env.WAITLIST_ENABLED=previousEnabled;
+    server.closeAllConnections();await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));
   }
 });

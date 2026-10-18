@@ -3,8 +3,9 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
 
-export default defineConfig(() => {
+export default defineConfig(({command}) => {
   return {
+    define: { __EDITORIAL_REVIEW__: JSON.stringify(command === 'serve' || process.env.VERCEL_ENV === 'preview') },
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
