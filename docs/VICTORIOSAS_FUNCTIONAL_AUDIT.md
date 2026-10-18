@@ -56,7 +56,7 @@ No se eliminaron dependencias presuntamente sin uso: @google/genai, motion y aut
 
 ## Verificación y recuperación
 
-- `npm run verify`: TypeScript, pruebas Node, build servidor y build Vercel. Primera pasada 182/182; repetir tras lockfile y gate waitlist y registrar SHA/CI.
+- `npm run verify`: TypeScript, pruebas Node, build servidor y build Vercel. Primera pasada 182/182; validación final tras npm ci, lockfile y gate waitlist: **183/183**, tipos y ambos builds exit 0. CI y SHA final se registran al publicarse.
 - Windows: la prueba offline Get-FileHash necesita PSModulePath de WindowsPowerShell al invocar Windows PowerShell desde pwsh. Se añadió al entorno del comando de prueba, sin modificar política ni scripts del usuario.
 - Playwright real local: 1440, 768, 390 y 320 px; sin overflow, un H1, cero forms, cero enlaces a admin/checkout/proveedores; FAQ y teclado. Rutas /servicios, /contacto, /victoria, /carrito, /checkout y HTML antiguo ya no montan comercio. Script reproducible `scripts/verify-victoriosas-public.cjs` mediante playwright-cli run-code --filename, tomando el origen de la pestaña actual.
 - Capturas antes/después en output/playwright. Inspección visual desktop y móvil realizada. No certifica WCAG completa ni métricas de campo LCP/INP/CLS.
@@ -69,3 +69,5 @@ No se eliminaron dependencias presuntamente sin uso: @google/genai, motion y aut
 “Sobre el SHA revisado de esta rama, comprobar CI y preview Vercel. Repetir el recorrido público en la preview sin registrar solicitudes ni enviar WhatsApp. Comparar migraciones Beauty por DDL normalizado sin escrituras remotas y documentar diferencias. Mantener recepción y publicación cerradas. Obtener confirmación de identidad Victoria/Sofía, contacto, servicios y privacidad/retención antes de habilitar catálogo o formularios. No tocar pagos ni datos reales.”
 
 Continuidad ejecutada en este ciclo: cierre de API waitlist residual y parcheo compatible de dependencias. Sin duplicar scheduler existente.
+
+Prueba adicional: intento PostgREST directo desde Node sin datos (limit=0) terminó en ConnectTimeout antes de obtener respuesta; no se usa como evidencia de RLS ejecutada. La comprobación alojada de esta sesión es por metadatos SQL y HTTP negativo de la aplicación.

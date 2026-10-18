@@ -33,4 +33,3 @@ async (page) => {
  if(!href.startsWith('https://wa.me/59897045305?'))throw Error('Contact link mismatch');
  console.log(JSON.stringify({results,whatsappLinkValidated:true,messageSent:false}));
 }
-
