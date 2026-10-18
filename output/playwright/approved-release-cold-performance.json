@@ -1,0 +1,29 @@
+{
+  "profile": "390x844 viewport; client cache disabled; 150ms latency, 1.6 Mbps down/0.75 Mbps up, CPU4x; synthetic lab",
+  "records": [
+    {
+      "sample": 1,
+      "visibility": "visible",
+      "lcpMs": 1044,
+      "cls": 0,
+      "fcpMs": 1044,
+      "transferBytes": 337501
+    },
+    {
+      "sample": 2,
+      "visibility": "visible",
+      "lcpMs": 1020,
+      "cls": 0,
+      "fcpMs": 1020,
+      "transferBytes": 337501
+    },
+    {
+      "sample": 3,
+      "visibility": "visible",
+      "lcpMs": 1028,
+      "cls": 0,
+      "fcpMs": 1028,
+      "transferBytes": 337501
+    }
+  ]
+}

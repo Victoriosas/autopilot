@@ -4,7 +4,11 @@ async (page) => {
  await page.getByRole('heading',{name:'De mí para ti',exact:true}).waitFor();
  if(await page.locator('.editorial-card').count())throw Error('Production build exposes draft cards');
  if(await page.locator('.editorial-review').count())throw Error('Production review flag enabled');
- await page.goto(origin+'/de-mi-para-ti/una-pausa-tranquila-para-vos');
- await page.getByRole('heading',{name:'Esta lectura no está disponible.',exact:true}).waitFor();
- return {productionBuildDraftsHidden:true,knownDraftUrlUnavailable:true};
+ for(const slug of ['una-pausa-tranquila-para-vos','ordenar-tu-rutina-cosmetica']){
+  await page.goto(origin+'/de-mi-para-ti/'+slug);
+  await page.getByRole('heading',{name:'Esta lectura no está disponible.',exact:true}).waitFor();
+  if(await page.locator('.editorial-reading').count())throw Error('Draft content available '+slug);
+ }
+
+ return {productionBuildDraftsHidden:true,knownDraftUrlsUnavailable:2};
 }

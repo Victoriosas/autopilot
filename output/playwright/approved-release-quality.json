@@ -1,0 +1,106 @@
+{
+  "environment": "Chromium desktop viewport emulation, no artificial network/CPU throttling; lab not field CWV",
+  "records": [
+    {
+      "width": 1440,
+      "path": "/",
+      "metrics": {
+        "visibility": "visible",
+        "ttfbMs": 44,
+        "fcpMs": 228,
+        "lcpMs": 244,
+        "cls": 0,
+        "transferBytes": 1800
+      },
+      "axeVersion": "4.14.0",
+      "passes": 35,
+      "incomplete": [],
+      "violations": []
+    },
+    {
+      "width": 768,
+      "path": "/",
+      "metrics": {
+        "visibility": "visible",
+        "ttfbMs": 44,
+        "fcpMs": 268,
+        "lcpMs": 284,
+        "cls": 0,
+        "transferBytes": 1800
+      },
+      "axeVersion": "4.14.0",
+      "passes": 35,
+      "incomplete": [],
+      "violations": []
+    },
+    {
+      "width": 390,
+      "path": "/",
+      "metrics": {
+        "visibility": "visible",
+        "ttfbMs": 44,
+        "fcpMs": 276,
+        "lcpMs": 276,
+        "cls": 0,
+        "transferBytes": 2100
+      },
+      "axeVersion": "4.14.0",
+      "passes": 35,
+      "incomplete": [],
+      "violations": []
+    },
+    {
+      "width": 320,
+      "path": "/",
+      "metrics": {
+        "visibility": "visible",
+        "ttfbMs": 45,
+        "fcpMs": 212,
+        "lcpMs": 212,
+        "cls": 0,
+        "transferBytes": 2100
+      },
+      "axeVersion": "4.14.0",
+      "passes": 35,
+      "incomplete": [],
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "path": "/de-mi-para-ti",
+      "metrics": {
+        "visibility": "visible",
+        "ttfbMs": 44,
+        "fcpMs": 216,
+        "lcpMs": 216,
+        "cls": 0,
+        "transferBytes": 1800
+      },
+      "axeVersion": "4.14.0",
+      "passes": 35,
+      "incomplete": [],
+      "violations": []
+    },
+    {
+      "width": 390,
+      "path": "/de-mi-para-ti/una-pausa-tranquila-para-vos",
+      "metrics": {
+        "visibility": "visible",
+        "ttfbMs": 49,
+        "fcpMs": 192,
+        "lcpMs": 240,
+        "cls": 0,
+        "transferBytes": 1800
+      },
+      "axeVersion": "4.14.0",
+      "passes": 32,
+      "incomplete": [],
+      "violations": []
+    }
+  ],
+  "keyboard": {
+    "firstLink": "#contenido",
+    "label": "Saltar al contenido"
+  },
+  "realUserINP": "not measured"
+}

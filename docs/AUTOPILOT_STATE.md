@@ -535,3 +535,7 @@ Worktree diseno, rama codex/victoriosas-functional-audit-20261017 sobre main 1d6
 ## 2026-10-17 - Revision visual/editorial PR79, sin produccion
 
 Portada con fotografias aprobadas existentes, descriptor Estetica profesional y evaluacion inicial remota. De mi para ti implementado con dos borradores y cuatro categorias; revision solo en dev/preview, build productivo sin borradores. verify185/185, Playwright cuatro anchos y recorrido editorial, sin escrituras al navegar. Informe docs/VICTORIOSAS_VISUAL_EDITORIAL_REVIEW.md y calendario docs/DE_MI_PARA_TI_EDITORIAL.md. Prohibido merge/promocion hasta revision y aprobacion del propietario. Registrar CI/preview exactos en PR79.
+
+## 2026-10-18 - Validacion a16cc9a / copy aprobado PR80
+
+CI original push/PR SUCCESS. Arbol Git identico a PR80; textos conservados. Ver docs/VICTORIOSAS_PR79_FINAL_VALIDATION.md. Nuevas pruebas fijan copy aprobado, FAQ actual, separacion de validacion Vercel toolbar y guard de ambos borradores. verify local186/186; axe seis vistas sin infracciones; LCP movil laboratorio mediano1028ms con cache off/red1.6Mbps/CPU4x. Sin INP de campo ni login administrativo real. Produccion sigue1d647a2, sin merge/promocion. Antes de publicar: aprobacion, CI/preview head definitivo y rebuild production; nunca promover artefacto Preview. Siguiente etapa interna preparada en docs/EDITORIAL_LAUNCH_READINESS.md sin programacion/envios.
