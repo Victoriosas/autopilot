@@ -8,13 +8,13 @@ export function ContactLink({children = 'Consultar por WhatsApp'}: {children?: R
 }
 export function ProfessionalSite() {
   const known = ['/', '/servicios', '/contacto', '/victoria'].includes(window.location.pathname.replace(/\/$/, '') || '/');
+  if (!known) return <div className="professional-site"><main className="beauty-section"><h1>Esta página ya no está disponible.</h1><p><a href="/">Volver al inicio de Victoriosas</a></p><ContactLink /></main></div>;
   return <div className="professional-site">
     <a className="beauty-skip" href="#contenido">Saltar al contenido</a>
     <header className="beauty-header"><a href="/" className="beauty-brand">Victoriosas<span>Estética · Cuidado · Bienestar</span></a>
       <nav aria-label="Principal"><a href="/#servicios">Servicios</a><a href="/#nosotras">Conocenos</a><a href="/#contacto">Contacto</a></nav>
     </header>
     <main id="contenido">
-      {!known && <section className="beauty-section"><h1>Esta página ya no está disponible.</h1><a href="/">Volver al inicio</a></section>}
       <section className="beauty-hero">
         <div><p className="beauty-eyebrow">Ciudad de la Costa · Carrasco</p><h1>Un momento de calma.<br/><em>Un cuidado para vos.</em></h1>
           <p>Conversemos sobre el cuidado y el bienestar que estás buscando. Cada atención comienza con una consulta personal.</p>
