@@ -340,7 +340,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AppProvider: React.FC<{ children: ReactNode; internalOnly?: boolean }> = ({ children, internalOnly = false }) => {
   const [viewMode, setViewModeState] = useState<'store' | 'admin'>('store');
   const [userRole, setUserRole] = useState<'admin' | 'customer'>('customer');
   const [user, setUser] = useState<User | null>(null);
@@ -500,6 +500,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setUserRole('customer');
       setViewModeState('store');
       showToast('Has cerrado sesiÃ³n.', 'info');
+      if (internalOnly) return;
       try {
         const { data, error } = await supabase.auth.signInAnonymously();
         if (!error && data.user) {
@@ -521,6 +522,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   useEffect(() => {
+    if (internalOnly && userRole !== 'admin') return;
     const fetchConnectors = async () => {
       try {
         const res = await apiFetch('/api/connectors');
@@ -533,7 +535,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     };
     fetchConnectors();
-  }, []);
+  }, [internalOnly, userRole]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -556,6 +558,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           console.warn('Sync user profile error:', e);
         }
       } else {
+        setUser(null);
+        setUserProfile(null);
+        setUserRole('customer');
+        if (internalOnly) {
+          setIsAuthLoading(false);
+          return;
+        }
         try {
           const { data, error } = await supabase.auth.signInAnonymously();
           if (!error && data.user) {
@@ -572,9 +581,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setIsAuthLoading(false);
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [internalOnly]);
 
   useEffect(() => {
+    if (internalOnly && userRole !== 'admin') {
+      setIsLoading(false);
+      return;
+    }
     const channels: any[] = [];
 
     const setupSupabase = async () => {
@@ -854,7 +867,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return () => {
       channels.forEach(ch => supabase.removeChannel(ch));
     };
-  }, [userRole, user?.id]);
+  }, [userRole, user?.id, internalOnly]);
 
   const publishedProducts = products.filter((p) => p.status === 'published');
   const candidateProducts = products.filter((p) => p.status !== 'published');

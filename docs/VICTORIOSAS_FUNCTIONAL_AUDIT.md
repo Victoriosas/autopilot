@@ -34,7 +34,7 @@ La entrada pública pasa a una experiencia de estética orientada a consultas, s
 
 Proyecto conectado inspeccionado: `jfjzpwlrhzqbcrvqxhzf`, ACTIVE_HEALTHY. El bundle público de producción `index-WYDOaZRl.js` contiene exactamente ese host Supabase. Health productivo indica SHA `1d647a2ad3cac9b091b4aa3a6decca49313d1a2e`, checkoutRequested=false y checkoutEnabled=false. GET /api/beauty/config devuelve requestsEnabled=false; /catalog devuelve catalogEnabled=false, services=[].
 
-Consulta de metadatos remotos, sin leer filas personales: cinco tablas Beauty tienen RLS. `beauty_services` tiene cuatro borradores, disponibles=false y price_approved=false; private.beauty_publication_enabled() devuelve false. Solicitudes y evaluaciones no tienen grants anon; servicios tienen SELECT anon sujeto a publicación; profesionales se restringen por usuario. Políticas de evaluaciones combinan profesional asignado, vigencia y membresía activa. La función de purge verifica UID y rol admin antes de borrar; no se ejecutó.
+Consulta de metadatos remotos, sin leer filas personales: las 33 tablas públicas tienen RLS, incluidas las cinco tablas Beauty. `beauty_services` tiene cuatro borradores, disponibles=false y price_approved=false; private.beauty_publication_enabled() devuelve false. Solicitudes y evaluaciones no tienen grants anon; servicios tienen SELECT anon sujeto a publicación; profesionales se restringen por usuario. Políticas de evaluaciones combinan profesional asignado, vigencia y membresía activa. La función de purge verifica UID y rol admin antes de borrar; no se ejecutó.
 
 | Nombre | Versión local | Versión alojada |
 |---|---|---|
@@ -42,7 +42,7 @@ Consulta de metadatos remotos, sin leer filas personales: cinco tablas Beauty ti
 | beauty_retention | 20261017221000 | 20261017223016 |
 | beauty_catalog_evaluations | 20261017230000 | 20261017223019 |
 
-Las tres migraciones **ya existen alojadas**, a diferencia de checkpoints antiguos. Los nombres coinciden, las versiones no. No se establece equivalencia byte a byte ni reconciliación completa de todo el historial comercial. No ejecutar db push. Próximo paso DB: exportación de DDL/funciones/grants y comparación normalizada offline; respaldo/restauración verificables y aprobación específica antes de cambios remotos.
+Las tres migraciones **ya existen alojadas**, a diferencia de checkpoints antiguos. Los nombres coinciden, las versiones no. La comparación de los tres SQL normalizados (sin comentarios --, espacios colapsados) coincide con los statements alojados: requests `98bc663524a244e7128cfc78e6252ef7`, retention `40c40d88d491d2703de168d73864240c`, catalog/evaluations `56d9d9fc8f32f9df3139bedc96b80009`. Esto demuestra equivalencia de esos textos normalizados, no que el DDL efectivo no haya recibido cambios posteriores ni reconciliación de todo el historial comercial. No ejecutar db push. Próximo paso DB: exportación de DDL/funciones/grants y comparación normalizada offline; respaldo/restauración verificables y aprobación específica antes de cambios remotos.
 
 No hay esquema cron en la base consultada; esto no descarta un scheduler externo, cuya operación no fue demostrada. Expiración por RLS no demuestra eliminación física. Sigue pendiente responsable de retención y privacidad aprobado. Formulario no se habilita por la mera existencia de tablas.
 
@@ -71,3 +71,12 @@ No se eliminaron dependencias presuntamente sin uso: @google/genai, motion y aut
 Continuidad ejecutada en este ciclo: cierre de API waitlist residual y parcheo compatible de dependencias. Sin duplicar scheduler existente.
 
 Prueba adicional: intento PostgREST directo desde Node sin datos (limit=0) terminó en ConnectTimeout antes de obtener respuesta; no se usa como evidencia de RLS ejecutada. La comprobación alojada de esta sesión es por metadatos SQL y HTTP negativo de la aplicación.
+
+## Cierre del ciclo y revisión independiente
+
+- PR #79 draft: https://github.com/Victoriosas/autopilot/pull/79. Código inicial badfe9c; corrección de rutas retiradas 51caa6f. Preview READY de 51caa6f: https://autopilot-jzo7qby4h-autopilot12.vercel.app (protegida). Playwright recorrió esa preview sin errores de aserción en los cuatro anchos y accesos negativos. No se promovió producción.
+- Core CI 39089079271 y 39089082441 success en 51caa6f. Beauty Supabase aislado 39088998832 success en badfe9c, con Auth/PostgREST/RLS reales desechables; no equivale a persistencia alojada. Cambios posteriores de acceso privado requieren nueva CI y preview.
+- La revisión independiente detectó doble H1 en rutas retiradas: corregido con vista exclusiva de página retirada. Admin y professional no presentan storefront transitorio según inspección.
+- La comprobación de red de preview detectó intento heredado automático de signup anónimo (422 rechazado) al montar AppProvider privado y llamadas a conectores sin sesión. Se corrigió con modo internalOnly: sin alta anónima al entrar/salir, sin sincronización comercial antes de rol admin y limpieza de rol al perder sesión. Se preserva el modo comercial histórico para recuperación.
+- Repetición local tras esa corrección: cuatro tamaños, diez recorridos/rutas y cero intentos POST/PUT/PATCH/DELETE durante navegación; la prueba bloquea preventivamente toda escritura y falla si se intenta alguna. El único POST deliberado posterior lleva cuerpo vacío a waitlist y exige 503. No se envían datos personales ni mensajes.
+- Pendientes de negocio: identidad profesional y contacto aprobados, servicios/tarifas, responsable de privacidad/retención. Pendientes de validación: login admin/profesional real autorizado y persistencia end-to-end cuando se habilite; no se sustituyen con mocks.

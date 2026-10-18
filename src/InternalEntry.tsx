@@ -21,5 +21,5 @@ function Access() {
   </main>;
 }
 export default function InternalEntry() {
-  return <AppProvider><Access /></AppProvider>;
+  return <AppProvider internalOnly><Access /></AppProvider>;
 }

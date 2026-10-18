@@ -1,6 +1,9 @@
 async (page) => {
  const origin = new URL(page.url()).origin;
  const results=[];
+ const writes=[];
+ const blockWrites=async route=>{const req=route.request();if(['POST','PUT','PATCH','DELETE'].includes(req.method())){writes.push(req.method()+' '+new URL(req.url()).pathname);await route.abort();}else await route.continue();};
+ await page.route('**/*',blockWrites);
  for(const width of [1440,768,390,320]) {
   await page.setViewportSize({width,height:900});
   await page.goto(origin);
@@ -17,6 +20,7 @@ async (page) => {
   await page.goto(origin+path);
   await page.getByRole('link',{name:'Consultar por WhatsApp',exact:true}).first().waitFor();
   if(await page.locator('form').count())throw Error('Unexpected form '+path);
+  if(await page.locator('h1').count()!==1)throw Error('Heading count '+path);
  }
  await page.goto(origin+'/admin');
  await page.getByRole('heading',{name:'Acceso administrativo'}).waitFor();
@@ -31,5 +35,11 @@ async (page) => {
  await page.goto(origin);
  const href=await page.getByRole('link',{name:'Consultar por WhatsApp',exact:true}).first().getAttribute('href');
  if(!href.startsWith('https://wa.me/59897045305?'))throw Error('Contact link mismatch');
- console.log(JSON.stringify({results,whatsappLinkValidated:true,messageSent:false}));
+ if(writes.length)throw Error('Unexpected writes during navigation: '+JSON.stringify(writes));
+ await page.unroute('**/*',blockWrites);
+ const health=await (await page.request.get(origin+'/api/health')).json();
+ if(health.checkoutEnabled!==false)throw Error('Checkout must stay closed');
+ const waitlist=await page.request.post(origin+'/api/storefront/waitlist',{data:{}});
+ if(waitlist.status()!==503)throw Error('Waitlist must stay closed: '+waitlist.status());
+ return {results,commit:health.commit,waitlist:waitlist.status(),unexpectedWrites:writes.length,whatsappLinkValidated:true,messageSent:false};
 }
