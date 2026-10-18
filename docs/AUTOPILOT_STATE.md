@@ -531,3 +531,7 @@ PR #73 en borrador: https://github.com/Victoriosas/autopilot/pull/73. Core f58ba
 ## 2026-10-17 - Auditoria funcional Victoriosas
 
 Worktree diseno, rama codex/victoriosas-functional-audit-20261017 sobre main 1d647a2. Nueva entrada publica sin comercio ni formularios, contacto neutral WhatsApp; identidad Victoria/Sofia pendiente. Rutas privadas conservan Auth/RLS. Supabase remoto confirma Beauty aplicado con versiones distintas a locales, RLS en cinco tablas y cuatro servicios draft; requests/catalog/publication apagados. Sin SQL remoto de escritura. Eliminado fallback de tarifas y cerrada waitlist por defecto. Lockfile parcheado compatible, audit prod cero avisos. Evidencia, limites y siguiente prompt en docs/VICTORIOSAS_FUNCTIONAL_AUDIT.md. Verificar CI y preview del SHA final antes de promover.
+
+## 2026-10-17 - Revision visual/editorial PR79, sin produccion
+
+Portada con fotografias aprobadas existentes, descriptor Estetica profesional y evaluacion inicial remota. De mi para ti implementado con dos borradores y cuatro categorias; revision solo en dev/preview, build productivo sin borradores. verify185/185, Playwright cuatro anchos y recorrido editorial, sin escrituras al navegar. Informe docs/VICTORIOSAS_VISUAL_EDITORIAL_REVIEW.md y calendario docs/DE_MI_PARA_TI_EDITORIAL.md. Prohibido merge/promocion hasta revision y aprobacion del propietario. Registrar CI/preview exactos en PR79.

@@ -10,7 +10,8 @@ test('public SEO describes professional services without commercial offers or in
   assert.equal(schemas[0].name, 'Victoriosas');
   assert.equal(schemas[0].url, 'https://victoriosas.online/');
   assert.ok(!schemas[0].address && !schemas[0].offers);
-  assert.match(html, /Ciudad de la Costa y Carrasco/);
+  assert.match(html, /evaluación inicial remota/);
+  assert.doesNotMatch(html, /domicilio|traslado/i);
   assert.doesNotMatch(html, /OnlineStore|Product|AggregateRating|Ya se puede comprar/);
 });
 

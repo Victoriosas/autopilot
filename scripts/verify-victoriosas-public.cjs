@@ -7,13 +7,16 @@ async (page) => {
  for(const width of [1440,768,390,320]) {
   await page.setViewportSize({width,height:900});
   await page.goto(origin);
-  await page.getByRole('heading',{name:'Un momento de calma. Un cuidado para vos.'}).waitFor();
+  await page.getByRole('heading',{name:'Para sentirte segura y victoriosa.'}).waitFor();
   const check=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth,forms:document.forms.length,h1:document.querySelectorAll('h1').length,badLinks:[...document.querySelectorAll('a')].filter(a=>/carrito|checkout|dropshipping|proveedor|admin|beauty-professional/i.test(a.textContent+' '+a.getAttribute('href'))).length,brokenAnchors:[...document.querySelectorAll('a[href^="#"]')].filter(a=>!document.getElementById(a.hash.slice(1))).length}));
   if(check.overflow||check.forms||check.h1!==1||check.badLinks||check.brokenAnchors)throw Error(JSON.stringify({width,...check}));
-  await page.getByText('¿Dónde puedo consultar por atención?',{exact:true}).click();
+  await page.getByText('¿Cómo comienza la atención?',{exact:true}).click();
   if(!await page.locator('details[open]').count())throw Error('FAQ did not open');
   await page.keyboard.press('Tab');
-  await page.screenshot({path:`output/playwright/verified-${width}.png`,fullPage:true});
+  const photo=await page.locator('.beauty-portrait img').evaluate(img=>({complete:img.complete,width:img.naturalWidth,source:img.currentSrc}));
+  if(!photo.complete||!photo.width||!photo.source.includes(width<=700?'hero-mobile.jpg':'hero.jpg'))throw Error('Responsive photograph '+JSON.stringify(photo));
+  if(/domicilio|traslado/i.test(await page.locator('main').innerText()))throw Error('Outdated service copy');
+  await page.screenshot({path:`output/playwright/visual-editorial-${width}.png`,fullPage:true});
   results.push({width,...check,faq:true});
  }
  for(const path of ['/servicios','/contacto','/victoria','/carrito','/checkout','/servicios-sofia.html']) {
@@ -23,6 +26,22 @@ async (page) => {
   if(await page.locator('h1').count()!==1)throw Error('Heading count '+path);
  }
  await page.evaluate(()=>{localStorage.setItem('victoriosa.cart.v1','[{"productId":"synthetic-preserve","quantity":1}]');localStorage.setItem('victoriosa.wishlist.v1','["synthetic-preserve"]');});
+ await page.goto(origin+'/de-mi-para-ti');
+ await page.getByRole('heading',{name:'De mí para ti',exact:true}).waitFor();
+ if(!await page.getByText('Un espacio en confianza.',{exact:true}).count())throw Error('Editorial subtitle');
+ await page.getByRole('link',{name:'Bienestar',exact:true}).click();
+ await page.locator('.editorial-card').first().waitFor();
+ if(await page.locator('.editorial-card').count()!==1)throw Error('Category filter');
+ await page.getByRole('link',{name:'Leer artículo →',exact:true}).click();
+ await page.getByRole('heading',{name:'Una pausa tranquila para vos',exact:true}).waitFor();
+ if(!await page.getByText('Borrador para revisión · Fecha pendiente de aprobación',{exact:true}).count())throw Error('Draft label');
+ await page.getByRole('link',{name:'Ordenar tu rutina cosmética sin complicarte →',exact:true}).click();
+ await page.getByRole('heading',{name:'Ordenar tu rutina cosmética sin complicarte',exact:true}).waitFor();
+ await page.screenshot({path:'output/playwright/editorial-article.png',fullPage:true});
+ await page.goto(origin+'/de-mi-para-ti?categoria='+encodeURIComponent('Secretos y cuidados'));
+ await page.getByRole('heading',{name:'Más lecturas, pronto',exact:true}).waitFor();
+ await page.goto(origin+'/de-mi-para-ti/no-existe');
+ await page.getByRole('heading',{name:'Esta lectura no está disponible.',exact:true}).waitFor();
  await page.goto(origin+'/admin');
  await page.getByRole('heading',{name:'Acceso administrativo'}).waitFor();
  if(await page.getByText('Productos destacados',{exact:true}).count())throw Error('Store leaked into private access');
