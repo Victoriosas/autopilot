@@ -1,7 +1,7 @@
 import React from 'react';
 import './professional.css';
 
-// Existing contact is preserved until the owner resolves the Victoria/Sofía identity discrepancy.
+// Preserve the established brand contact without attributing the phone to a different person.
 const whatsapp = 'https://wa.me/59897045305?text=Hola%2C%20quisiera%20consultar%20por%20los%20servicios%20de%20Victoriosas.';
 export function ContactLink({children = 'Consultar por WhatsApp'}: {children?: React.ReactNode}) {
   return <a className="beauty-button" href={whatsapp} target="_blank" rel="noopener noreferrer">{children}<span aria-hidden="true"> ↗</span></a>;
@@ -26,7 +26,7 @@ export function ProfessionalSite() {
         <p>Consultá cuáles son los servicios disponibles y cuál se adapta a lo que buscás. Antes de coordinar, recibirás información sobre la propuesta, su duración, las condiciones y el precio total.</p>
         <p>No hay tarifas ni disponibilidad publicadas por el momento.</p><ContactLink>Consultar servicios y orientación</ContactLink>
       </section>
-      <section id="nosotras" className="beauty-section beauty-about"><p className="beauty-eyebrow">La persona detrás de Victoriosas</p><h2>El cuidado empieza escuchándote.</h2><p>Nos importa conocer tus preferencias, responder tus preguntas y acordar cada detalle antes de la atención.</p><p>Podés pedir una presentación personal por WhatsApp antes de coordinar tu visita.</p></section>
+      <section id="nosotras" className="beauty-section beauty-about"><p className="beauty-eyebrow">La persona detrás de Victoriosas</p><h2>Conocé a Victoria.</h2><p>El cuidado empieza escuchándote. Para conocer su enfoque de atención y conversar sobre lo que buscás, escribinos.</p><p>Podés pedir una presentación personal por WhatsApp antes de coordinar tu visita.</p></section>
       <section className="beauty-section"><p className="beauty-eyebrow">Cómo funciona</p><h2>De la consulta a tu momento.</h2><ol className="beauty-steps"><li><h3>Contanos</h3><p>Compartí tu zona y el tipo de atención que te interesa.</p></li><li><h3>Conversamos</h3><p>Confirmamos la propuesta, cobertura, presupuesto y condiciones.</p></li><li><h3>Coordinamos</h3><p>La reserva requiere confirmación personal.</p></li></ol></section>
       <section className="beauty-section"><h2>Antes de escribirnos.</h2><details><summary>¿Dónde puedo consultar por atención?</summary><p>Consultá por Ciudad de la Costa y Carrasco. Otras zonas y condiciones de traslado se confirman en la conversación.</p></details><details><summary>¿Cómo conozco el precio y los horarios?</summary><p>Pedí el presupuesto total, duración y disponibilidad antes de confirmar. La web no confirma turnos automáticamente.</p></details><details><summary>¿Qué datos necesito enviar?</summary><p>Para empezar alcanza con tu zona y el motivo general de consulta. Evitá enviar datos de salud, fotografías íntimas o tu dirección exacta en el primer mensaje.</p></details></section>
       <section id="contacto" className="beauty-section beauty-contact"><p className="beauty-eyebrow">Hablemos</p><h2>Tu próxima pausa empieza acá.</h2><p>La consulta se realiza directamente por WhatsApp. Esta página no recibe ni guarda formularios.</p><ContactLink /></section>
