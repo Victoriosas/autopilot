@@ -379,6 +379,7 @@ export const AppProvider: React.FC<{ children: ReactNode; internalOnly?: boolean
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const cartRestored = useRef(false);
   useEffect(() => {
+    if (internalOnly) return;
     if (isLoading || catalogError) return;
     if (!cartRestored.current) {
       try {
@@ -391,14 +392,15 @@ export const AppProvider: React.FC<{ children: ReactNode; internalOnly?: boolean
       setCart(previous => restoreCart(previous.map(item => ({productId:item.product.id, quantity:item.quantity, selectedVariant:item.selectedVariant})), products));
       setWishlist(previous => previous.filter(id => products.some(p => p.id === id && p.status === 'published')));
     }
-  }, [products, isLoading, catalogError]);
+  }, [products, isLoading, catalogError, internalOnly]);
   useEffect(() => {
+    if (internalOnly) return;
     if (!cartRestored.current) return;
     try {
       localStorage.setItem('victoriosa.cart.v1', JSON.stringify(cart.map(item => ({productId:item.product.id, quantity:item.quantity, selectedVariant:item.selectedVariant}))));
       localStorage.setItem('victoriosa.wishlist.v1', JSON.stringify(wishlist));
     } catch { /* Shopping remains available without local storage. */ }
-  }, [cart, wishlist]);
+  }, [cart, wishlist, internalOnly]);
   const [isAutopilotRunning, setIsAutopilotRunning] = useState(false);
   const [autopilotLiveLogs, setAutopilotLiveLogs] = useState<AutopilotLog[]>([]);
 
@@ -538,13 +540,20 @@ export const AppProvider: React.FC<{ children: ReactNode; internalOnly?: boolean
   }, [internalOnly, userRole]);
 
   useEffect(() => {
+    let authRevision = 0;
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const revision = ++authRevision;
       setIsAuthLoading(true);
       const currentUser = session?.user || null;
       if (currentUser) {
         setUser(currentUser);
+        if (internalOnly) {
+          setUserRole('customer');
+          setUserProfile(null);
+        }
         try {
           const { data: profileRow } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single() as { data: any };
+          if (revision !== authRevision) return;
           let role: 'admin' | 'customer' = 'customer';
           let displayName = currentUser.user_metadata?.full_name || currentUser.email || 'Usuario';
           if (profileRow) {
@@ -578,9 +587,9 @@ export const AppProvider: React.FC<{ children: ReactNode; internalOnly?: boolean
           console.warn('Anonymous auth fallback:', e);
         }
       }
-      setIsAuthLoading(false);
+      if (revision === authRevision) setIsAuthLoading(false);
     });
-    return () => subscription.unsubscribe();
+    return () => { authRevision++; subscription.unsubscribe(); };
   }, [internalOnly]);
 
   useEffect(() => {

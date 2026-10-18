@@ -22,11 +22,15 @@ async (page) => {
   if(await page.locator('form').count())throw Error('Unexpected form '+path);
   if(await page.locator('h1').count()!==1)throw Error('Heading count '+path);
  }
+ await page.evaluate(()=>{localStorage.setItem('victoriosa.cart.v1','[{"productId":"synthetic-preserve","quantity":1}]');localStorage.setItem('victoriosa.wishlist.v1','["synthetic-preserve"]');});
  await page.goto(origin+'/admin');
  await page.getByRole('heading',{name:'Acceso administrativo'}).waitFor();
  if(await page.getByText('Productos destacados',{exact:true}).count())throw Error('Store leaked into private access');
  await page.goto(origin+'/beauty-professional');
  await page.getByRole('heading',{name:'Victoriosas · Espacio profesional'}).waitFor();
+ const storagePreserved=await page.evaluate(()=>localStorage.getItem('victoriosa.cart.v1').includes('synthetic-preserve')&&localStorage.getItem('victoriosa.wishlist.v1').includes('synthetic-preserve'));
+ if(!storagePreserved)throw Error('Private access modified commerce storage');
+ await page.evaluate(()=>{localStorage.removeItem('victoriosa.cart.v1');localStorage.removeItem('victoriosa.wishlist.v1');});
  for(const path of ['/api/beauty/admin/requests','/api/beauty/catalog/admin/services','/api/beauty/professional/evaluations']) {
   const response=await page.request.get(origin+path);
   if(![401,403,503].includes(response.status()))throw Error(path+' '+response.status());
@@ -41,5 +45,5 @@ async (page) => {
  if(health.checkoutEnabled!==false)throw Error('Checkout must stay closed');
  const waitlist=await page.request.post(origin+'/api/storefront/waitlist',{data:{}});
  if(waitlist.status()!==503)throw Error('Waitlist must stay closed: '+waitlist.status());
- return {results,commit:health.commit,waitlist:waitlist.status(),unexpectedWrites:writes.length,whatsappLinkValidated:true,messageSent:false};
+ return {results,commit:health.commit,waitlist:waitlist.status(),unexpectedWrites:writes.length,storagePreserved,whatsappLinkValidated:true,messageSent:false};
 }
