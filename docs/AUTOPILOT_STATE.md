@@ -527,3 +527,7 @@ PR #73 en borrador: https://github.com/Victoriosas/autopilot/pull/73. Core f58ba
 - Coordinador completó tres tareas acotadas con evidencias, sin scheduler nuevo ni bucle. Siguiente instrucción generada y ejecutada: paquete comercial offline de cuatro fichas con precios nulos y paquete SQL de tres migraciones con hashes. Ver docs/BEAUTY_SERVICES_NEXT_PROMPT.md.
 - Pendiente antes de lanzamiento: tarifas/alcance y consentimiento aprobados por Sofía, identidad profesional, privacidad/retención, respaldo/restauración, autorización específica de SQL y despliegue. Sin producción, pagos, mensajes, datos reales ni permisos alojados. Sin métricas reales de ventas para este módulo.
 - Cambios concurrentes ajenos conservados: estado previo de este documento, archivos .audit/.playwright-cli y scripts exploratorios no incorporados a la entrega.
+
+## 2026-10-17 - Auditoria funcional Victoriosas
+
+Worktree diseno, rama codex/victoriosas-functional-audit-20261017 sobre main 1d647a2. Nueva entrada publica sin comercio ni formularios, contacto neutral WhatsApp; identidad Victoria/Sofia pendiente. Rutas privadas conservan Auth/RLS. Supabase remoto confirma Beauty aplicado con versiones distintas a locales, RLS en cinco tablas y cuatro servicios draft; requests/catalog/publication apagados. Sin SQL remoto de escritura. Eliminado fallback de tarifas y cerrada waitlist por defecto. Lockfile parcheado compatible, audit prod cero avisos. Evidencia, limites y siguiente prompt en docs/VICTORIOSAS_FUNCTIONAL_AUDIT.md. Verificar CI y preview del SHA final antes de promover.
