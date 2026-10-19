@@ -1,4 +1,4 @@
-import { articles, getPublishedArticle } from './editorial';
+import { articles, getPublishedArticle } from './editorial.js';
 
 const active = new Set(['/', '/index.html', '/servicios', '/contacto', '/victoria', '/privacidad', '/de-mi-para-ti', '/admin', '/beauty-professional', '/servicios-sofia.html', '/robots.txt', '/sitemap.xml', '/favicon.svg']);
 const retired = new Set(['/tienda', '/checkout', '/tratamientos']);
