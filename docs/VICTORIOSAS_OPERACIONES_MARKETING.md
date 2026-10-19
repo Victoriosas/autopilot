@@ -4,7 +4,7 @@ Estado: preparación técnica, sin anuncios pagados, automatización de mensajes
 
 ## Desarrollo y protección
 - GitHub Actions `autopilot-core-v4.yml` es la suite principal; no duplicar validaciones.
-- `Victoriosas Public Health` verifica cada día las rutas públicas y la configuración booleana de consultas, sin claves ni acceso a datos privados.
+- `Victoriosas Public Health` verifica cada seis horas las rutas públicas, los 410 retirados, los 404 de borradores y el cierre explícito de consultas, catálogo y pagos, sin claves ni acceso a datos privados. Ejecutar manualmente: `node scripts/public-health.mjs`.
 - Revisar failures en Actions. Un HTTP 200 no sustituye revisión visual ni pruebas de permisos.
 - Despliegues solo después de CI y validación del commit exacto.
 - Worktrees: `diseno`, `beauty`, `comercio`; evitar ediciones simultáneas a los mismos archivos.
@@ -26,5 +26,5 @@ Medir clics y consultas, no confundir clic con turno reservado.
 
 ## Revisión operativa
 Cada lunes: propuesta editorial y mejoras SEO.
-Diariamente: salud pública y señal de regresiones.
+Cada seis horas: salud pública y señal de regresiones. GitHub usa UTC (00:25, 06:25, 12:25 y 18:25); la ejecución puede demorarse por la cola del servicio.
 Antes de deploy: revisar PR, CI, contrastes, navegación móvil, enlaces y seguridad.

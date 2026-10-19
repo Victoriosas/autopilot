@@ -578,3 +578,10 @@ El propietario concedio autorizacion expresa de publicacion. PR86 fusionado en r
 Verificacion HTTP del dominio: home/editorial/privacidad200 indexables, retiradas410 GET+HEAD, inexistentes y ambos borradores404. Health confirma SHA ec17f62 y checkoutfalse; Beautyrequests/catalogfalse, MPconfiguredfalse. Edge real1440/768/390/320 sin overflow, imagenes rotas, erroresJS ni recursos fallidos; axe cuatro vistas sin infracciones; FAQteclado/privacidadOK; cero formularios y borradores invisibles. Issue82 completado y PR83 cerrado por sustituido, ramas conservadas. Reporte: docs/INFORME_PUBLICACION_20261019.md. Deploymentanterior8fanqrM2uy1DzHPXzUSDmj6Xfq4V queda como referencia reversible; no rollback.
 
 Sin DNS, credenciales, pagos, SQLhosted, datos reales, compras, mensajes o campanas. Notas documentales posteriores no cambian funcionalidad; verificar siempreSHA actual enhealth. No reabrir bloqueo historico de autorizacion web ya ejecutada. Articulos, campañas, captacion y pagos siguen sin activacion; siguiente prioridad es vigilancia publica y operacion humana, sin inventar ventas o disponibilidad.
+
+
+## 2026-10-19 - Auditoria y refuerzo de tareas programadas
+
+Usuario solicita revisar todas las tareas y continuar; menciona AWS pendiente de aclaracion. Automatizacion victoriosa-autopilot-6h actualizada ACTIVE sin duplicar cadencia/hilo, con estado publicado y prioridades81/84. Metricool confirma dos borradores2nov10h/5nov15h draft=true autoPublish=false; sin envios. No CLI/config/credentials/conector AWS identificado; no inventar cuenta o migracion.
+
+Monitor publico pasa de diario a6h; GET unicamente, HTTP200/410/404, SHA valido y cierre estricto checkout/Beauty/catalog/MP. RED5e408d7 modulo ausente, GREEN8/8 y smoke real2a2c118 correctos; verify202/202, tipos y ambos buildsOK. Informe docs/REPORTE_AUTOMATIZACIONES_20261019.md. Sin cambios visuales, pagos, SQL, secretos o DNS. Siguiente: comprobar CI del PR e integrar monitor autorizado, ejecutar workflow real; luego continuar81/84 con activos revisables sin publicar ni duplicar borradores. AWS solo tras identificar alcance/conexion; si no hay respuesta seguir tarea web independiente.

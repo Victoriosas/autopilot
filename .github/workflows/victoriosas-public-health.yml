@@ -2,7 +2,7 @@ name: Victoriosas Public Health
 on:
   workflow_dispatch:
   schedule:
-    - cron: '25 12 * * *'
+    - cron: '25 */6 * * *'
 permissions:
   contents: read
 jobs:
@@ -10,18 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Public routes respond without private content
-        shell: bash
-        run: |
-          set -euo pipefail
-          for path in / /servicios-sofia.html /api/health; do
-            status=$(curl --silent --show-error --location --max-time 20 --output /tmp/victoriosas-response --write-out '%{http_code}' "https://victoriosas.online${path}")
-            echo "${path}: HTTP ${status}"
-            test "${status}" = 200
-          done
-      - name: Beauty commercial forms remain closed until authorized
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl --fail --silent --show-error --max-time 20 https://victoriosas.online/api/beauty/config > /tmp/victoriosas-beauty-config.json
-          node -e "const fs=require('fs'); const x=JSON.parse(fs.readFileSync('/tmp/victoriosas-beauty-config.json','utf8')); if(typeof x.requestsEnabled!=='boolean') process.exit(1); console.log('Beauty request state returned explicitly:',x.requestsEnabled);"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Public routes and closed commercial gates
+        run: node scripts/public-health.mjs
