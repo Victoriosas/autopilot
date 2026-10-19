@@ -9,3 +9,5 @@ interface ImportMeta {
 }
 
 declare const __EDITORIAL_REVIEW__: boolean;
+
+declare const __SERVICE_REVIEW__: boolean;

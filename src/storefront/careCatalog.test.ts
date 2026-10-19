@@ -30,7 +30,7 @@ test('initial public markup retains service summaries and excludes draft offer a
   const html = renderToStaticMarkup(React.createElement(ServiceCatalog, { review: false }));
   for (const name of ['Estética facial', 'Estética corporal', 'Masajes']) assert.ok(html.includes(name));
   assert.doesNotMatch(html, /Asesoría de cuidado facial online|>Online<|Gratis|550|30 minutos|por confirmar|<form/i);
-  assert.equal((html.match(/Ver detalles de/g) ?? []).length, 3);
+  assert.equal((html.match(/aria-haspopup="dialog"/g) ?? []).length, 3);
   assert.match(html, /aria-pressed="true"/);
   const preview = renderToStaticMarkup(React.createElement(ServiceCatalog, { review: true }));
   assert.match(preview, /Asesoría de cuidado facial online/);

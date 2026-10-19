@@ -4,11 +4,14 @@ const interests = {
   corporal: 'me interesa el cuidado corporal',
   relajacion: 'me interesan los masajes de relajación',
   orientacion: 'todavía no sé qué cuidado elegir',
+  online: 'me interesa la asesoría de cuidado facial online',
 };
 export type ConsultationInterest = keyof typeof interests;
 export const contactEmail = 'victoriosas.online@gmail.com';
 export function ContactLink({children, className = 'beauty-button', icon, interest, channel = 'whatsapp'}: {children?: React.ReactNode; className?: string; icon?: string; interest?: ConsultationInterest; channel?: 'whatsapp' | 'email'}) {
-  const message = interest
+  const message = interest === 'online'
+    ? 'Hola, Victoria. Me interesa conocer la asesoría de cuidado facial online. ¿Podés contarme cómo funciona, qué incluye y su valor? Desde la web de Victoriosas.'
+    : interest
     ? `Hola, ${interests[interest]}. Quisiera consultar por una evaluación inicial remota. Desde la web de Victoriosas.`
     : 'Hola, quisiera consultar por una evaluación inicial remota con Victoria.';
   const whatsapp = 'https://wa.me/59897045305?text=' + encodeURIComponent(message);
