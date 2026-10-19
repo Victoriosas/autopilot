@@ -2,17 +2,20 @@
 
 Fecha/hora: 19 de octubre de 2026, 13:06, America/Montevideo.
 
+Actualizacion de verificacion remota: 19 de octubre de 2026, 14:02, America/Montevideo.
+
 Ciclo: cierre manual de la web solicitado por el propietario; no se asigna un numero historico sin registro verificable.
 
 Modo ejecutado: implementacion, pruebas locales, revision visual y despliegue Preview. Sin publicacion en produccion.
 
-**Resultado:** terminada la implementacion de la web publica de Victoriosas · Estetica profesional basada en el Figma elegido, con paleta marfil/dorado. La entrega esta preparada para revision y publicacion controlada; GitHub Core sigue en cola y no se declara aprobado.
+**Resultado:** terminada la implementacion de la web publica de Victoriosas · Estetica profesional basada en el Figma elegido, con paleta marfil/dorado. La entrega esta preparada para revision y publicacion controlada. GitHub Core validate/postgres ya esta aprobado para 0e67bc02482b7053977011290b2c53a4b03b8374; se completo tambien la revision en navegador del Preview de ese mismo commit.
 
 - [Abrir web terminada en Preview](https://autopilot-mxljpitvn-autopilot12.vercel.app/)
 - [PR86: entrega revisable](https://github.com/Victoriosas/autopilot/pull/86)
 - Referencia Figma: archivo E301bDHlKE5a9luebq6nCn, frame 2011:1869. El original no se modifico.
 - Commit funcional verificado: 50ab3e0ceb977cb2b759f3a31907e086addda6c8.
 - Preview: dpl_RHhb89pPPXM1dTezyAY3xWBUFUig, READY; health confirma ese mismo commit.
+- Preview de la revision remota mas reciente: https://autopilot-qn52bdvuo-autopilot12.vercel.app/ (0e67bc02482b7053977011290b2c53a4b03b8374, mismo codigo funcional mas el informe).
 
 ## 1. Estado general
 
@@ -62,6 +65,8 @@ Impacto comercial esperado: menos incertidumbre al consultar y mejor presentacio
 - npm run verify: **194/194**, cero fallos u omisiones; TypeScript y ambos builds aprobados.
 - Secret scan, diff check y check-route-html aprobados.
 - Cobertura focalizada de publicRouting.ts y routeMetadata.ts: 100% de lineas, ramas y funciones en siete pruebas; no se atribuye esa cobertura al proyecto entero.
+- GitHub Core [39283180459](https://github.com/Victoriosas/autopilot/actions/runs/39283180459) y [39283173812](https://github.com/Victoriosas/autopilot/actions/runs/39283173812): ambos SUCCESS para 0e67bc0. En Linux: 194 pruebas, 193 aprobadas y una prueba exclusiva de Windows omitida; cero fallos. La prueba omitida si se ejecuto en la suite local Windows de 194/194.
+- PostgreSQL desechable CI: sourcing17/17, auth1/1, comercio13/13, inventario de versiones1/1 y replay1/1; cero fallos u omisiones. No es ejecucion en Supabase alojado ni un pago real.
 - Playwright/Edge real: cuatro anchos, fotografias cargadas, un H1 y ninguna ancla interna sin destino.
 - Axe-core 4.10.3, WCAG2A/AA/2.1AA: **15 vistas revisadas sin infracciones automatizadas**, cinco paginas por tres anchos. No equivale a una auditoria WCAG completa.
 - Teclado: salto al contenido accesible y FAQ abre/cierra con Enter.
@@ -104,23 +109,25 @@ Las siguientes respuestas se comprobaron en el Preview del commit funcional:
 
 Todos los documentos Preview permanecen noindex. El chequeo de artefactos productivos conserva indexacion solo donde corresponde.
 
+Revision real en Edge del Preview 0e67bc0, ademas de las comprobaciones locales: home a 1440/768/390/320px, cuatro respuestas200, un H1, cero overflow, cero imagenes rotas, cero errores JavaScript y cero recursos HTTP fallidos durante home/contacto-privacidad. Axe sobre el contenido de la aplicacion sin infracciones en esos cuatro anchos; se excluye la interfaz externa del toolbar de Vercel del alcance de la web. FAQ abierta con Enter y enlace de footer a privacidad recorrido. Pagina de privacidad con titulo/canonical correctos, sin overflow ni infracciones automatizadas. Imagen social remota HTTP200, image/png, 1200x630. Health vuelve a confirmar el SHA0e67bc0 y checkoutfalse; /checkout410 y lectura inexistente404. Capturas locales de esta comprobacion: .audit/web-remote-1440.png, web-remote-768.png, web-remote-390.png y web-remote-320.png.
+
 Se detecto y corrigio un fallo propio del primer Preview: Node ESM no resolvia imports sin extension del middleware. La regresion 5883baa reproduce el fallo sin tsx/bundler; 50ab3e0 corrige las extensiones. El nuevo Preview fue probado despues: no se acepto un build READY como prueba suficiente de funcionamiento.
 
 Referencia tecnica de la integracion: [API oficial de Routing Middleware de Vercel](https://vercel.com/docs/routing-middleware/api).
 
 ## 6. Bloqueos, riesgo y publicacion
 
-- GitHub Core validate/postgres permanece en cola. Vercel esta aprobado y funcionando, pero no se declara CI completa ni validacion de Supabase alojado. Supabase Preview SKIPPED no es una prueba integrada.
+- GitHub Core validate/postgres y Vercel aprobados para el commit revisado0e67bc0. Supabase Preview sigue SKIPPED: no acredita validacion de Supabase alojado. El PR85 base tambien tiene validate/postgres/Vercel aprobados.
 - El PR86 depende del PR85. Para integrar, revisar primero SEO/base y despues la entrega visual; no fusionar PR83 como si agregara otra correccion funcional independiente.
 - Falta aprobacion especifica de produccion. Antes de publicar, comprobar derechos de las fotos evocadoras y vigencia de la oferta y contacto del propietario.
 - La web informativa esta implementada; la recepcion humana por WhatsApp, disponibilidad real y tiempos de respuesta no se probaron enviando mensajes.
 - No se cambiaron DNS, dominio, credenciales, pagos, SQL alojado, datos de clientes, configuracion de mercados ni automatizaciones.
 - Produccion sigue en **7d8519844a6691ee2c39adbf28f65662e8854d87**, comprobada por health: checkout deshabilitado. No hubo merge ni promocion.
-- Riesgo tecnico residual: CI remota pendiente y revision de publicacion. Riesgo comercial residual: derechos del material y operacion humana por confirmar.
+- Riesgo tecnico residual: revision y ejecucion controlada de la publicacion. Riesgo comercial residual: derechos del material y operacion humana por confirmar.
 
 ## 7. Proximo plan y entrega
 
-1. Resolver/esperar la cola de GitHub, revisar los PR y autorizar la publicacion concreta.
+1. Conservar la evidencia CI aprobada, revisar los PR y autorizar la publicacion concreta; comprobar nuevos checks si el codigo cambia.
 2. Con aprobacion, ejecutar un build nuevo en contexto production, validar artefactos sin borradores y comprobar dominio y SHA despues de publicar; no promover el artefacto Preview.
 3. Medir consultas reales y calidad de respuesta durante la operacion; elegir analitica apropiada antes de atribuir resultados. Editorial y campanas siguen como borradores hasta su aprobacion.
 
