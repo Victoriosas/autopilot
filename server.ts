@@ -8,12 +8,21 @@ import { getSourcingScheduler } from "./src/services/sourcingScheduler";
 import { aiCompletion, aiStructuredCompletion, getProviderStatus } from "./src/services/aiClient";
 import { mountAutopilotV4 } from "./src/autopilot/mount";
 import { mercadoPagoAvailability } from "./src/payments/mercadoPago";
+import { publicRouteResponse } from "./src/storefront/publicRouting";
 
 dotenv.config({ path: '.env.local' });
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
+
+app.use(async (req, res, next) => {
+  const response = publicRouteResponse(new Request('http://localhost' + req.originalUrl, { method: req.method }), process.env.NODE_ENV !== 'production');
+  if (!response) return next();
+  res.status(response.status);
+  response.headers.forEach((value, key) => res.setHeader(key, value));
+  res.end(await response.text());
+});
 
 app.use(express.json({ limit: "10mb" }));
 mountAutopilotV4(app);
