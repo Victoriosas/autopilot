@@ -539,3 +539,33 @@ Portada con fotografias aprobadas existentes, descriptor Estetica profesional y 
 ## 2026-10-18 - Validacion a16cc9a / copy aprobado PR80
 
 CI original push/PR SUCCESS. Arbol Git identico a PR80; textos conservados. Ver docs/VICTORIOSAS_PR79_FINAL_VALIDATION.md. Nuevas pruebas fijan copy aprobado, FAQ actual, separacion de validacion Vercel toolbar y guard de ambos borradores. verify local186/186; axe seis vistas sin infracciones; LCP movil laboratorio mediano1028ms con cache off/red1.6Mbps/CPU4x. Sin INP de campo ni login administrativo real. Produccion sigue1d647a2, sin merge/promocion. Antes de publicar: aprobacion, CI/preview head definitivo y rebuild production; nunca promover artefacto Preview. Siguiente etapa interna preparada en docs/EDITORIAL_LAUNCH_READINESS.md sin programacion/envios.
+
+## 2026-10-19 - Alineacion GitHub y SEO por ruta (#84 / PR85)
+
+- C:\autopilot actualizado a codex/seo-route-metadata-oct19 desde origin; main remoto 7d85198 incluye PR79/80 fusionados. Las notas anteriores son historicas, no estado productivo actual.
+- Documento local pendiente conservado en stash e4576a84eaacae49ecb9d175ca92c3a617bffd61 (backup local continuity before alignment 2026-10-19). No aplicar todo el stash sobre esta rama: revisar diferencias antes de recuperar notas. Archivos sin seguimiento preservados.
+- RED eca30de: tres pruebas ejecutadas fallan por canonical/editorial compartidos e indexacion de fallback. GREEN: Vite genera HTML inicial editorial con title/description/canonical/OG propios y fallback noindex sin canonical de home. Rewrites Vercel separan editorial, aliases de home y fallback; API preservada. Sitemap incorpora solo indice editorial; no publica articulos.
+- npm run verify: 189/189, tipos y ambos builds OK. Primera corrida fallo en prueba Windows existente: Get-FileHash ausente del PSModulePath heredado. Segunda corrida completa pasa agregando ruta de modulos Windows al entorno del proceso; ninguna configuracion del sistema modificada.
+- scripts/check-route-html.mjs comprueba HTML emitido, assets existentes, sitemap y destinos Vercel. Builds production y preview verificados; los tres documentos preview contienen noindex,nofollow. Playwright/Edge local: home 1440/768/390 sin overflow, CTA de evaluacion remota con WhatsApp correcto; indice editorial con titulo/H1/canonical propios. No mensajes enviados. Vite preview no emula rewrites de Vercel: HTML inicial comprobado en artefactos; falta smoke HTTP del hosting exacto.
+- No merge ni promocion, SQL, pagos o publicaciones. PR83 (#82) sigue separado: esta entrega no corrige aun HTTP410/301 de rutas retiradas.
+- Siguiente: comprobar CI/preview exactos del PR85 y respuestas HTTP iniciales; despues implementar #82 en su rama, conservando estas reglas y sin duplicar trabajo. Mantener campana y articulos como borradores.
+
+## 2026-10-19 - Home Figma dorado por seleccion del propietario
+
+Nueva prioridad explicita: todos los textos del frame Figma 2011:1869, composicion equivalente y dorados. Rama codex/figma-gold-home-20261019 sobre PR85; archivo Figma intacto. Copy PR80 de home reemplazado por la nueva seleccion; fixture historico conservado. Siete fotos y ocho SVG locales originales, fuentes locales con OFL, responsive sin overflow a 1440/768/390/320px. Cotejo DOM105/105; axe tres anchos sin infracciones. verify189/189, tipos y builds OK; final build/check-route-html/secret-scan/diff-check OK. Evidencia y limites en docs/FIGMA_GOLD_REVIEW_20261019.md. Sin produccion, merge, pagos, formularios ni envios. PR85 tiene preview Vercel validado en e7dfd18; Core GitHub sigue queued al revisar, no aprobado. Siguiente: comprobar preview/CI del nuevo PR exacto, presentar capturas para revision; despues retomar #82 sin duplicacion.
+
+
+## 2026-10-19 - Cierre completo de web publica, PR86
+
+Implementacion terminada bajo el alcance Figma dorado y contacto remoto. Agregados /privacidad, pieza OG/Twitter1200x630, favicon dorado, anclas/tactil y fuentes WOFF2 locales (453344 bytes frente a1523892). Rutas retiradas /tienda,/checkout,/tratamientos410; desconocidas404; APIs y acceso privado conservados. Preview de borradores permitido, produccion404. Regresion de empaquetado nativo detecto error ESM real de Vercel; corregido con imports.js y probado sin tsx/bundler. GREEN funcional50ab3e0ceb977cb2b759f3a31907e086addda6c8; npm run verify194/194, tipos/builds/secret-scan/diff/check-route-html OK. Cobertura focalizada publicRouting/routeMetadata100%, no global.
+
+Preview READY dpl_RHhb89pPPXM1dTezyAY3xWBUFUig https://autopilot-mxljpitvn-autopilot12.vercel.app: HTTP200 home/editorial/privacidad,410 retiradas,404 desconocidas; health confirma SHA exacto y checkoutfalse, beautyrequestsfalse, MPconfiguredfalse. Produccion comprobada en7d85198, sin cambio. Playwright cuatro anchos sin overflow/imagenes rotas; axe15vistas sin infracciones, tecladoFAQ/skiplink OK. Laboratorio local coldcache1.6Mbps/150ms/CPU4x: LCP1060/1032/896ms, mediana1032; CLS0.0062, sin metricas de conversion ni INPcampo.
+
+Informe final: docs/INFORME_WEB_COMPLETA_20261019.md. Capturas .audit/web-final-*.png. PR86 depende de PR85; #82 implementado aqui, PR83 es plan historico y no debe duplicarse. GitHub Core50ab3e0 validate/postgres QUEUED, Supabase Preview SKIPPED; no asumir aprobacion remota/hosted. Sin merge, promocion, mensajes, SQL, cobros o campanas. Siguiente: comprobar cola/CI, revision de derechos de imagen/operacion humana y aprobacion productiva; despues nuevo build production sin borradores, dominio/SHA/smoke. No cambiar automatizaciones ni repetir pruebas de codigo sin cambios.
+
+
+## 2026-10-19 14:02 - CI aprobada y navegador remoto validado
+
+Core39283180459 y39283173812 SUCCESS para0e67bc02482b7053977011290b2c53a4b03b8374: validate193/194 en Linux (solo omite prueba Windows, local194/194), PG desechable17+1+13+1+1 sin fallos/omitidas. PR85 tambien green. Sustituye el bloqueo historico de cola; Supabase Preview sigue SKIPPED y no acredita hosted.
+
+Preview0e67bc0 READY https://autopilot-qn52bdvuo-autopilot12.vercel.app revisado en Edge real a1440/768/390/320: sin overflow, imagenes rotas, errores JS, recursos HTTP fallidos ni infracciones axe del contenido app. FAQ teclado y navegacion real a privacidad correctas. Pieza socialHTTP200 PNG1200x630. Health SHA exacto checkoutfalse, retiradas410/desconocidas404. Evidencia .audit/web-remote-review-results.json y web-remote-*.png. Informe final actualizado; sin cambios funcionales, produccion, merges, mensajes o permisos permanentes. Siguiente: revision humana y publicacion autorizada con rebuildproduction, derechos del material y operacion WhatsApp; no ampliar alcance ni repetir suites aprobadas sin cambios.

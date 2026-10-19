@@ -41,6 +41,9 @@ jobs:
       - name: Vercel build
         run: npm run build:vercel
 
+      - name: Check initial public HTML and static assets
+        run: node scripts/check-route-html.mjs
+
       - name: Secret value scan
         run: node scripts/secret-scan.mjs
 

@@ -11,8 +11,32 @@
       "destination": "/api/server?path=:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/de-mi-para-ti",
+      "destination": "/seo/editorial.html"
+    },
+    {
+      "source": "/de-mi-para-ti/",
+      "destination": "/seo/editorial.html"
+    },
+    {
+      "source": "/privacidad",
+      "destination": "/seo/privacy.html"
+    },
+    {
+      "source": "/privacidad/",
+      "destination": "/seo/privacy.html"
+    },
+    {
+      "source": "/:page(servicios|contacto|victoria)",
       "destination": "/index.html"
+    },
+    {
+      "source": "/:page(servicios|contacto|victoria)/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/seo/fallback.html"
     }
   ],
   "headers": [
