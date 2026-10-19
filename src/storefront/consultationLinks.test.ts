@@ -35,7 +35,7 @@ for (const interest of [undefined, 'facial', 'corporal', 'relajacion', 'orientac
     assert.ok(href);
     const url = new URL(href.replace(/&amp;/g, '&'));
     assert.equal(url.protocol, 'mailto:');
-    assert.equal(url.pathname, 'Victoriosas@proton.me');
+    assert.equal(url.pathname, 'victoriosas.online@gmail.com');
     assert.equal(url.searchParams.get('subject'), 'Consulta · Victoriosas');
     assert.ok(url.searchParams.get('body')?.includes('evaluación inicial remota'));
     assert.deepEqual([...url.searchParams.keys()].sort(), ['body', 'subject']);
