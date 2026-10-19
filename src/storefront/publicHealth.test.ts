@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { checkPublicHealth } from '../../scripts/public-health.mjs';
 
 function responses(change: Record<string, unknown> = {}) {
-  const bodies = {
+  const bodies: Record<string, unknown> = {
     '/api/health': { status: 'ok', commit: 'a'.repeat(40), checkoutEnabled: false, checkoutRequested: false },
     '/api/beauty/config': { requestsEnabled: false },
     '/api/beauty/catalog': { catalogEnabled: false, services: [] },
