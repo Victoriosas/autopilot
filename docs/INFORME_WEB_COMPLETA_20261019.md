@@ -1,5 +1,7 @@
 # VICTORIOSA AUTOPILOT — REPORTE DE CIERRE WEB
 
+> Actualizacion: la web fue publicada con autorizacion del propietario el 19/10/2026 a las14:19. Ver [informe de publicacion y verificaciones productivas](INFORME_PUBLICACION_20261019.md). Los estados de Preview y aprobacion pendientes que aparecen abajo corresponden al informe tecnico previo al lanzamiento.
+
 Fecha/hora: 19 de octubre de 2026, 13:06, America/Montevideo.
 
 Actualizacion de verificacion remota: 19 de octubre de 2026, 14:02, America/Montevideo.
