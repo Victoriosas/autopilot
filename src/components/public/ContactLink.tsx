@@ -6,7 +6,7 @@ const interests = {
   orientacion: 'todavía no sé qué cuidado elegir',
 };
 export type ConsultationInterest = keyof typeof interests;
-export const contactEmail = 'Victoriosas@proton.me';
+export const contactEmail = 'victoriosas.online@gmail.com';
 export function ContactLink({children, className = 'beauty-button', icon, interest, channel = 'whatsapp'}: {children?: React.ReactNode; className?: string; icon?: string; interest?: ConsultationInterest; channel?: 'whatsapp' | 'email'}) {
   const message = interest
     ? `Hola, ${interests[interest]}. Quisiera consultar por una evaluación inicial remota. Desde la web de Victoriosas.`

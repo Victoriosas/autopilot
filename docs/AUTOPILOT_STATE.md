@@ -603,3 +603,12 @@ Propietario crea y muestra bandeja Victoriosas@proton.me, rechaza todo pago y pi
 RED293b562 cinco pruebas email fallan; GREEN10/10 y verify212/212 localWindows tipos/buildsOK. Edge1440/768/390/320 sin overflow/imagenes rotas/erroresJS/axe; mailto por teclado interceptado. Direccion confirmada por captura y autorizacion del propietario, no recepcion humana probada. Docs CONSULTAS_Y_LANZAMIENTO actualizados y plantilla privada vacia incorpora canal.
 
 Siguiente: CI y preview exactos, integrar cambio web autorizado y comprobar dominio/SHA/email+WhatsApp; conservar pagos/forms/borradores cerrados. Correo operativo elegido Victoriosas@proton.me, no volver a pedir plan ni registrar dominio de correo. No enviar mensajes de prueba sin solicitud expresa. Roles y modalidad/zona siguen pendientes; no inferirlos. Preservar PR90 documental de perfiles y cambios ajenos.
+
+
+## 2026-10-19 - Gmail oficial reemplaza Proton
+
+Instruccion vigente del propietario: victoriosas.online@gmail.com es el correo oficial; retirar Proton del contacto web. ContactLink central, cinco pruebas email y privacidad actualizados; referencias de Proton ausentes en src. Guia operativa distingue registro historico y contacto vigente. Automatizacion6h actualizada, sin duplicar ni cambiar cadencia. No se borraron cuentas/mensajes, no envio real ni cambios DNS/SMTP/secretos.
+
+verify212/212 Windows, tipos/builds/check-route-html/diffOK. Edge1440/768/390/320: siete mailtoGmail por home, cuatro intereses, WhatsApp conservado, privacidad correcta; sin overflow, imagenes rotas, erroresJS o axe. Teclado interceptado sin enviar. Evidencia output/playwright/official-gmail-*.png y official-gmail-local-results.log.
+
+Siguiente: comprobar CI/preview exactos e integrar contacto autorizado; comprobar dominio/SHA y Gmail sin reintroducir Proton. Conservar WhatsApp y gates comerciales cerrados; no enviar pruebas ni vincular una cuenta Google ajena por inferencia del correo publicado. PR90 documental y cambios ajenos preservados.

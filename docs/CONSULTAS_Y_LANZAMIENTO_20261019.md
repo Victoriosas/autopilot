@@ -1,5 +1,7 @@
 # Consultas y lanzamiento: siguiente paso comercial
 
+**Correo oficial vigente: victoriosas.online@gmail.com**, elegido por el propietario el 19/10/2026. Reemplaza el contacto anterior de Proton en la web y las instrucciones operativas. WhatsApp permanece disponible. No se eliminó la cuenta anterior ni sus mensajes.
+
 ## Oferta que puede presentarse hoy
 
 Tres áreas informativas existentes: estética facial, estética corporal y masajes. Son puntos de partida para conversar, no un catálogo con técnicas, turnos o precios aprobados. La evaluación inicial es remota y orientativa. Modalidad posterior, profesional que realiza cada atención, zona, tarifa y disponibilidad se confirman personalmente antes de reservar.
@@ -10,7 +12,7 @@ La home aprobada presenta a Victoria como responsable de contacto; no convertir 
 
 1. Entrar en `https://victoriosas.online/#servicios`.
 2. Elegir facial, corporal o masajes; si no se sabe, «Quiero orientación».
-3. Se puede abrir WhatsApp al número existente +598 97 045 305 o el correo a Victoriosas@proton.me, con interés y origen web, sin datos personales solicitados. El visitante puede editar el mensaje y decidir si enviarlo. Para email necesita su aplicación configurada; también puede copiar la dirección y usar su correo habitual.
+3. Se puede abrir WhatsApp al número existente +598 97 045 305 o el correo a victoriosas.online@gmail.com, con interés y origen web, sin datos personales solicitados. El visitante puede editar el mensaje y decidir si enviarlo. Para email necesita su aplicación configurada; también puede copiar la dirección y usar su correo habitual.
 4. La persona responsable responde y acuerda la evaluación inicial remota. No se promete respuesta inmediata, gratuidad, cita ni resultado.
 5. Antes de confirmar una atención: informar quién la realiza, modalidad, zona/lugar, duración, precio total y condiciones reales. Si falta un dato, decir que está pendiente.
 
@@ -62,10 +64,12 @@ Playwright/Edge local a1440/768/390/320: cuatro enlaces distintos, sin overflow,
 
 ## 19/10/2026 — correo gratuito incorporado
 
+Registro histórico: la elección de Proton descrita a continuación quedó sustituida por Gmail por instrucción posterior del propietario. No reutilizarla como contacto actual.
+
 El propietario creó la cuenta **Victoriosas@proton.me**, mostró su bandeja y autorizó usarla en la web sin pagar. Es el contacto de correo elegido; **consultas@victoriosas.online no fue creado** y no se anuncia. No se contrataron planes ni se modificaron DNS, SMTP, credenciales, recuperación, configuración de seguridad o Supabase.
 
 ContactLink admite email además de WhatsApp. Las tres tarjetas y orientación preparan mensajes con el interés; contacto, footer y privacidad muestran la dirección. Los enlaces mailto abren el cliente del visitante, sin envío automático ni formulario. La dirección visible sirve de alternativa si no hay cliente configurado. La respuesta humana y la recepción real de un mensaje no se acreditan mediante un enlace; no se envió un correo de prueba ni se leyó la bandeja por automatización.
 
 RED293b562: cinco casos email fallan y cinco WhatsApp pasan. GREEN10/10 y verify212/212 local Windows, tipos y ambos builds correctos. Playwright/Edge a1440/768/390/320 verifica siete enlaces email en home, cuatro intereses distintos, cuatro enlaces WhatsApp conservados, cero overflow, imágenes rotas, erroresJS e infracciones axe. Activación de email por teclado interceptada para evitar abrir aplicaciones o enviar mensajes. Privacidad con tres enlaces mailto y descripción actualizada. Evidencia output/playwright/free-email-*.png y free-email-local-results.log; comprobación del dominio y CI en el PR de la entrega.
 
-Firma propuesta para pegar en Proton (no guardada en la cuenta): «Victoriosas · Estética profesional | Consultas por email y WhatsApp | https://victoriosas.online/ | +598 97 045 305». No activar respuestas automáticas ni prometer tiempos sin capacidad confirmada.
+Firma propuesta para Gmail (no guardada en la cuenta): «Victoriosas · Estética profesional | victoriosas.online@gmail.com | https://victoriosas.online/ | WhatsApp +598 97 045 305». No activar respuestas automáticas ni prometer tiempos sin capacidad confirmada.
