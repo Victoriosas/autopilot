@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
 import { routeHtml } from './src/storefront/routeMetadata';
+import { publicRouteResponse } from './src/storefront/publicRouting';
 
 export default defineConfig(({command}) => {
   return {
@@ -10,6 +11,24 @@ export default defineConfig(({command}) => {
     plugins: [react(), tailwindcss(), {
       name: 'public-route-html',
       enforce: 'post',
+      configureServer(server) {
+        server.middlewares.use(async (req, res, next) => {
+          const response = publicRouteResponse(new Request('http://localhost' + req.url, { method: req.method === 'HEAD' ? 'HEAD' : 'GET' }), true);
+          if (!response) return next();
+          res.statusCode = response.status;
+          response.headers.forEach((value, key) => res.setHeader(key, value));
+          res.end(await response.text());
+        });
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use(async (req, res, next) => {
+          const response = publicRouteResponse(new Request('http://localhost' + req.url, { method: req.method === 'HEAD' ? 'HEAD' : 'GET' }), process.env.VERCEL_ENV === 'preview');
+          if (!response) return next();
+          res.statusCode = response.status;
+          response.headers.forEach((value, key) => res.setHeader(key, value));
+          res.end(await response.text());
+        });
+      },
       generateBundle(_options, bundle) {
         const index = bundle['index.html'];
         if (!index || index.type !== 'asset') throw new Error('Missing built index.html');
@@ -17,6 +36,7 @@ export default defineConfig(({command}) => {
         const preview = process.env.VERCEL_ENV === 'preview';
         index.source = routeHtml(html, 'home', preview);
         this.emitFile({ type: 'asset', fileName: 'seo/editorial.html', source: routeHtml(html, 'editorial', preview) });
+        this.emitFile({ type: 'asset', fileName: 'seo/privacy.html', source: routeHtml(html, 'privacy', preview) });
         this.emitFile({ type: 'asset', fileName: 'seo/fallback.html', source: routeHtml(html, 'fallback', preview) });
       },
     }],

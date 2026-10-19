@@ -19,6 +19,14 @@
       "destination": "/seo/editorial.html"
     },
     {
+      "source": "/privacidad",
+      "destination": "/seo/privacy.html"
+    },
+    {
+      "source": "/privacidad/",
+      "destination": "/seo/privacy.html"
+    },
+    {
       "source": "/:page(servicios|contacto|victoria)",
       "destination": "/index.html"
     },
