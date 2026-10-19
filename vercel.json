@@ -11,8 +11,20 @@
       "destination": "/api/server?path=:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/de-mi-para-ti",
+      "destination": "/seo/editorial.html"
+    },
+    {
+      "source": "/de-mi-para-ti/",
+      "destination": "/seo/editorial.html"
+    },
+    {
+      "source": "/:page(servicios|contacto|victoria)/?",
       "destination": "/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/seo/fallback.html"
     }
   ],
   "headers": [
