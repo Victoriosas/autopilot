@@ -19,7 +19,11 @@
       "destination": "/seo/editorial.html"
     },
     {
-      "source": "/:page(servicios|contacto|victoria)/?",
+      "source": "/:page(servicios|contacto|victoria)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/:page(servicios|contacto|victoria)/",
       "destination": "/index.html"
     },
     {
