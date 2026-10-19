@@ -2,7 +2,7 @@ export type PublicDocument = 'home' | 'editorial' | 'privacy' | 'fallback';
 export function routeHtml(html: string, route: PublicDocument, preview: boolean): string {
   if (route === 'editorial' || route === 'privacy') {
     const title = route === 'editorial' ? 'De mí para ti · Victoriosas' : 'Contacto y privacidad · Victoriosas';
-    const description = route === 'editorial' ? 'Un espacio pensado como una pausa. Bienestar, belleza y pequeños rituales para el cuidado cotidiano.' : 'Cómo contactar con Victoriosas por WhatsApp y qué tener en cuenta antes de compartir información personal.';
+    const description = route === 'editorial' ? 'Un espacio pensado como una pausa. Bienestar, belleza y pequeños rituales para el cuidado cotidiano.' : 'Cómo contactar con Victoriosas por email o WhatsApp y qué tener en cuenta antes de compartir información personal.';
     const canonical = 'https://victoriosas.online/' + (route === 'editorial' ? 'de-mi-para-ti' : 'privacidad');
     html = html.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
       .replace(/(<meta name="description" content=")[^"]*/, `$1${description}`)

@@ -131,6 +131,10 @@
 .beauty-care-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px}
 #servicios .beauty-text-link{min-height:44px;align-items:center}
 .beauty-start-help{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;margin-top:40px;padding-top:30px;border-top:1px solid var(--gold)}
+.beauty-contact-options{display:flex;align-items:center;flex-wrap:wrap;gap:8px 24px}
+.beauty-email-address{overflow-wrap:anywhere;word-break:break-word}
+.professional-site .beauty-email-block{margin-top:24px;padding-top:24px;border-top:1px solid var(--line)}
+.beauty-email-block .beauty-text-link{min-height:44px;max-width:100%}
 .beauty-start-help h3{font-size:30px;margin:0 0 8px}
 .beauty-start-help p{margin:0;font-size:14px}
 .professional-site .beauty-start-note{margin:24px 0 0;max-width:760px}
