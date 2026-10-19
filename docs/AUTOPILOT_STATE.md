@@ -594,3 +594,12 @@ Propietario aprueba propuesta de convertir visitas en consultas. Se reutilizan t
 RED45f8889 cuatro intereses fallan; GREEN5/5, verify207/207 Windows y ambos buildsOK. Edge1440/768/390/320 y axe sin errores/overflow/imagenes rotas/infracciones; cuatro destinos wa.me interceptados, no recepcion humana. Documentacion y tres piezas sociales propuestas en docs/CONSULTAS_Y_LANZAMIENTO_20261019.md; plantilla vacia sin PII en docs/consultas-metricas-template.csv. No duplicar Metricool ni enviar campañas.
 
 Siguiente: CI y preview exactos, integrar mejora web autorizada y comprobar dominio/SHA y links reales; operacion humana pendiente de confirmar titular/receptor/profesional. Luego revisar las propuestas con el propietario y usar registro privado para consultas reales, sin inventar metricas ni subir datos de clientes a Git.
+
+
+## 2026-10-19 - Email gratuito autorizado para la web
+
+Propietario crea y muestra bandeja Victoriosas@proton.me, rechaza todo pago y pide consultas por correo ademas de WhatsApp. No crear ni anunciar consultas@victoriosas.online. Se agrega channel=email a ContactLink sin cambiar defaultWhatsApp, mensajes por interes, direccion visible/copiar, contacto/footer/privacidad y metadatos coherentes. Sin SMTP, DNS, suscripciones, formularios, cuenta nueva, envio automatico o cambios de seguridad. DesktopCommander vuelveOnline; helperGUI no disponible, no se modifica Proton ni se leen mensajes.
+
+RED293b562 cinco pruebas email fallan; GREEN10/10 y verify212/212 localWindows tipos/buildsOK. Edge1440/768/390/320 sin overflow/imagenes rotas/erroresJS/axe; mailto por teclado interceptado. Direccion confirmada por captura y autorizacion del propietario, no recepcion humana probada. Docs CONSULTAS_Y_LANZAMIENTO actualizados y plantilla privada vacia incorpora canal.
+
+Siguiente: CI y preview exactos, integrar cambio web autorizado y comprobar dominio/SHA/email+WhatsApp; conservar pagos/forms/borradores cerrados. Correo operativo elegido Victoriosas@proton.me, no volver a pedir plan ni registrar dominio de correo. No enviar mensajes de prueba sin solicitud expresa. Roles y modalidad/zona siguen pendientes; no inferirlos. Preservar PR90 documental de perfiles y cambios ajenos.
