@@ -23,3 +23,5 @@ The owner requested the copy and composition of this frame on 2026-10-19, with a
 | 2011:2131 | Direct contact | fcd40.svg |
 
 Local fonts in ../fonts/ are Cormorant Garamond (italic 400, regular 400 and 500) and Inter (regular 400 and 500), obtained from Google Fonts. Their SIL Open Font Licenses are included alongside them. No external font or Figma asset URL is requested at runtime.
+
+The final site uses WOFF2 Latin and Latin Extended subsets (453,344 bytes total), replacing the earlier TTF downloads (1,523,892 bytes). The same font families and weights remain. Social sharing artwork in ../social-victoriosas.png is a 1200x630 browser render of scripts/social-card.html using the same local source photograph and fonts; it is not a screenshot of the Figma canvas.

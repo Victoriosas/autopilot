@@ -3,35 +3,80 @@
   font-style: italic;
   font-weight: 400;
   font-display: swap;
-  src: url(/brand/fonts/font-0.ttf) format('truetype');
+  src: url(/brand/fonts/cormorant-italic-400-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/brand/fonts/cormorant-italic-400-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
   font-family: 'Cormorant Garamond';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(/brand/fonts/font-1.ttf) format('truetype');
+  src: url(/brand/fonts/cormorant-normal-400-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/brand/fonts/cormorant-normal-400-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
   font-family: 'Cormorant Garamond';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url(/brand/fonts/font-2.ttf) format('truetype');
+  src: url(/brand/fonts/cormorant-normal-500-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(/brand/fonts/cormorant-normal-500-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
   font-family: 'Inter';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(/brand/fonts/font-3.ttf) format('truetype');
+  src: url(/brand/fonts/inter-normal-400-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/brand/fonts/inter-normal-400-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
   font-family: 'Inter';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url(/brand/fonts/font-4.ttf) format('truetype');
+  src: url(/brand/fonts/inter-normal-500-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(/brand/fonts/inter-normal-500-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 
@@ -55,7 +100,7 @@
 .beauty-brand{font:500 32px/1.2 'Cormorant Garamond',Georgia,serif;text-decoration:none;text-align:center;display:inline-block;white-space:nowrap}
 .beauty-brand span{display:block;color:var(--gold);font:9px/1.5 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;margin-top:6px}
 .beauty-header nav{display:flex;gap:32px;font-size:13px}
-.beauty-header nav a{text-decoration:none}
+.beauty-header nav a{text-decoration:none;display:inline-flex;align-items:center;min-height:44px}
 .beauty-header nav a:hover,.beauty-text-link:hover{text-decoration:underline;text-underline-offset:5px}
 .professional-site .beauty-eyebrow{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.11em;color:var(--gold);margin-bottom:22px}
 .professional-site .beauty-eyebrow a{text-decoration:none}
@@ -138,7 +183,15 @@
 .professional-site .beauty-footer h2{font:10px/1.5 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#ddc391;margin:0 0 20px}
 .beauty-footer-grid>div>a:not(.beauty-brand){display:block;font-size:13px;text-decoration:none;margin-bottom:16px}
 .beauty-footer-grid>div>p:not(.beauty-footer-promise){font-size:12px;color:#ddd0b9;margin-bottom:16px}
-.beauty-footer-bottom{display:flex;justify-content:space-between;gap:24px;border-top:1px solid #796743;margin-top:48px;padding-top:32px;font-size:11px;color:#ddd0b9}
+.beauty-footer-bottom{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px 24px;border-top:1px solid #796743;margin-top:48px;padding-top:32px;font-size:11px;color:#ddd0b9}
+.beauty-footer-bottom a{min-height:32px;display:inline-flex;align-items:center;text-underline-offset:4px}
+.beauty-privacy{max-width:800px;margin:24px auto 80px}
+.beauty-privacy>.beauty-eyebrow{margin-top:40px}
+.professional-site .beauty-privacy h1{font-size:clamp(44px,6vw,72px);line-height:1.05}
+.beauty-privacy section{padding-top:30px;border-top:1px solid var(--line);margin-top:32px}
+.professional-site .beauty-privacy h2{font-size:36px}
+.beauty-privacy p{color:var(--muted)}
+.beauty-privacy p a{text-decoration:underline;text-underline-offset:4px;color:var(--gold)}
 .professional-site .beauty-footer-bottom p{margin:0}
 .beauty-skip{position:absolute;left:20px;top:-100px;padding:10px;background:var(--paper);z-index:100}
 .beauty-skip:focus{top:10px}

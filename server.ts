@@ -17,7 +17,7 @@ const app = express();
 const PORT = 3000;
 
 app.use(async (req, res, next) => {
-  const response = publicRouteResponse(new Request('http://localhost' + req.originalUrl, { method: req.method }), process.env.NODE_ENV !== 'production');
+  const response = publicRouteResponse(new Request('http://localhost' + req.originalUrl, { method: req.method === 'HEAD' ? 'HEAD' : 'GET' }), process.env.NODE_ENV !== 'production');
   if (!response) return next();
   res.status(response.status);
   response.headers.forEach((value, key) => res.setHeader(key, value));

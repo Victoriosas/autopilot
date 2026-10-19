@@ -13,7 +13,7 @@ export default defineConfig(({command}) => {
       enforce: 'post',
       configureServer(server) {
         server.middlewares.use(async (req, res, next) => {
-          const response = publicRouteResponse(new Request('http://localhost' + req.url, { method: req.method }), true);
+          const response = publicRouteResponse(new Request('http://localhost' + req.url, { method: req.method === 'HEAD' ? 'HEAD' : 'GET' }), true);
           if (!response) return next();
           res.statusCode = response.status;
           response.headers.forEach((value, key) => res.setHeader(key, value));
@@ -22,7 +22,7 @@ export default defineConfig(({command}) => {
       },
       configurePreviewServer(server) {
         server.middlewares.use(async (req, res, next) => {
-          const response = publicRouteResponse(new Request('http://localhost' + req.url, { method: req.method }), process.env.VERCEL_ENV === 'preview');
+          const response = publicRouteResponse(new Request('http://localhost' + req.url, { method: req.method === 'HEAD' ? 'HEAD' : 'GET' }), process.env.VERCEL_ENV === 'preview');
           if (!response) return next();
           res.statusCode = response.status;
           response.headers.forEach((value, key) => res.setHeader(key, value));
@@ -36,6 +36,7 @@ export default defineConfig(({command}) => {
         const preview = process.env.VERCEL_ENV === 'preview';
         index.source = routeHtml(html, 'home', preview);
         this.emitFile({ type: 'asset', fileName: 'seo/editorial.html', source: routeHtml(html, 'editorial', preview) });
+        this.emitFile({ type: 'asset', fileName: 'seo/privacy.html', source: routeHtml(html, 'privacy', preview) });
         this.emitFile({ type: 'asset', fileName: 'seo/fallback.html', source: routeHtml(html, 'fallback', preview) });
       },
     }],
