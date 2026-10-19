@@ -129,6 +129,11 @@
 .beauty-section-heading h2{margin:0}
 .beauty-section-heading>p{font-size:14px;color:var(--muted);max-width:338px;margin:0}
 .beauty-care-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px}
+#servicios .beauty-text-link{min-height:44px;align-items:center}
+.beauty-start-help{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;margin-top:40px;padding-top:30px;border-top:1px solid var(--gold)}
+.beauty-start-help h3{font-size:30px;margin:0 0 8px}
+.beauty-start-help p{margin:0;font-size:14px}
+.professional-site .beauty-start-note{margin:24px 0 0;max-width:760px}
 .beauty-care-image{width:100%;height:auto;aspect-ratio:400/348;object-fit:cover;border-radius:8px}
 .beauty-care-image-0,.beauty-care-image-2{border-radius:170px 170px 8px 8px}
 .beauty-care-title{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:26px 0 14px}

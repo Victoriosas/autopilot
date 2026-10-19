@@ -585,3 +585,12 @@ Sin DNS, credenciales, pagos, SQLhosted, datos reales, compras, mensajes o campa
 Usuario solicita revisar todas las tareas y continuar; menciona AWS pendiente de aclaracion. Automatizacion victoriosa-autopilot-6h actualizada ACTIVE sin duplicar cadencia/hilo, con estado publicado y prioridades81/84. Metricool confirma dos borradores2nov10h/5nov15h draft=true autoPublish=false; sin envios. No CLI/config/credentials/conector AWS identificado; no inventar cuenta o migracion.
 
 Monitor publico pasa de diario a6h; GET unicamente, HTTP200/410/404, SHA valido y cierre estricto checkout/Beauty/catalog/MP. RED5e408d7 modulo ausente, GREEN8/8 y smoke real2a2c118 correctos; verify202/202, tipos y ambos buildsOK. Informe docs/REPORTE_AUTOMATIZACIONES_20261019.md. Sin cambios visuales, pagos, SQL, secretos o DNS. Siguiente: comprobar CI del PR e integrar monitor autorizado, ejecutar workflow real; luego continuar81/84 con activos revisables sin publicar ni duplicar borradores. AWS solo tras identificar alcance/conexion; si no hay respuesta seguir tarea web independiente.
+
+
+## 2026-10-19 - Punto de partida y operacion de consultas
+
+Propietario aprueba propuesta de convertir visitas en consultas. Se reutilizan tres tarjetas existentes con heading Encontrá tu punto de partida y opcion de orientacion; ContactLink genera mensajes especificos con origen web, sin captacion/analytics ni envio automatico. Estilo dorado conservado y targets44px. Datos de identidad Victoria/Sofia, modalidad y zonas solicitados, pendientes; no asignar funciones o tarifas por inferencia.
+
+RED45f8889 cuatro intereses fallan; GREEN5/5, verify207/207 Windows y ambos buildsOK. Edge1440/768/390/320 y axe sin errores/overflow/imagenes rotas/infracciones; cuatro destinos wa.me interceptados, no recepcion humana. Documentacion y tres piezas sociales propuestas en docs/CONSULTAS_Y_LANZAMIENTO_20261019.md; plantilla vacia sin PII en docs/consultas-metricas-template.csv. No duplicar Metricool ni enviar campañas.
+
+Siguiente: CI y preview exactos, integrar mejora web autorizada y comprobar dominio/SHA y links reales; operacion humana pendiente de confirmar titular/receptor/profesional. Luego revisar las propuestas con el propietario y usar registro privado para consultas reales, sin inventar metricas ni subir datos de clientes a Git.

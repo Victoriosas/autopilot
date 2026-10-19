@@ -2,15 +2,16 @@ import React from 'react';
 import './professional.css';
 import { EditorialPage } from './EditorialPage';
 import { ContactLink } from './ContactLink';
+import type { ConsultationInterest } from './ContactLink';
 import { PrivacyPage } from './PrivacyPage';
 
 const asset = '/brand/figma-gold/';
 const arrow = asset + 'e3eb3.svg';
 const whiteArrow = asset + '774e5.svg';
-const cares = [
-  { title: 'Estética facial', image: '8a000.png', alt: 'Imagen evocadora de cuidado facial', invitation: 'Escuchar tu piel.', description: 'Un cuidado que parte de cómo sientes tu piel y de lo que te gustaría atender. La orientación se define contigo.', action: 'Consultar por facial' },
-  { title: 'Estética corporal', image: 'dde65.png', alt: 'Imagen evocadora de una pausa de cuidado corporal', invitation: 'Habitarte con calma.', description: 'Un espacio para prestar atención a tu cuerpo, conversar sobre tus objetivos y explorar el cuidado adecuado para ti.', action: 'Consultar por corporal' },
-  { title: 'Masajes', image: 'ae5d6.png', alt: 'Imagen evocadora de un masaje de bienestar', invitation: 'Regalarte una pausa.', description: 'Tiempo para bajar el ritmo y conectar con tu bienestar. Conversamos sobre tus preferencias antes de coordinar.', action: 'Consultar por masajes' },
+const cares: { title: string; image: string; alt: string; invitation: string; description: string; action: string; interest: ConsultationInterest }[] = [
+  { title: 'Estética facial', interest: 'facial', image: '8a000.png', alt: 'Imagen evocadora de cuidado facial', invitation: 'Escuchar tu piel.', description: 'Un cuidado que parte de cómo sientes tu piel y de lo que te gustaría atender. La orientación se define contigo.', action: 'Consultar por facial' },
+  { title: 'Estética corporal', interest: 'corporal', image: 'dde65.png', alt: 'Imagen evocadora de una pausa de cuidado corporal', invitation: 'Habitarte con calma.', description: 'Un espacio para prestar atención a tu cuerpo, conversar sobre tus objetivos y explorar el cuidado adecuado para ti.', action: 'Consultar por corporal' },
+  { title: 'Masajes', interest: 'relajacion', image: 'ae5d6.png', alt: 'Imagen evocadora de un masaje de bienestar', invitation: 'Regalarte una pausa.', description: 'Tiempo para bajar el ritmo y conectar con tu bienestar. Conversamos sobre tus preferencias antes de coordinar.', action: 'Consultar por masajes' },
 ];
 const steps = [
   ['Nos escribes', 'Cuéntame qué te gustaría cuidar y qué dudas tienes. No necesitas tener todo claro para comenzar.', 'Primer contacto por WhatsApp'],
@@ -47,8 +48,10 @@ function Home() {
     </section>
     <section className="beauty-philosophy beauty-wrap"><span aria-hidden="true" /><h2>No se trata de cambiar quién eres.<br />Se trata de hacerte un lugar.</h2><p>Sin comparaciones ni exigencias. En Victoriosas, el cuidado empieza por reconocer tu propio ritmo y lo que te hace sentir bien.</p></section>
     <section id="servicios" className="beauty-band"><div className="beauty-wrap beauty-section">
-      <div className="beauty-section-heading"><div><p className="beauty-eyebrow">Tres formas de volver a ti</p><h2>Tu cuidado empieza aquí.</h2></div><p>No necesitas saber qué elegir.<br />Lo descubrimos en una primera conversación.</p></div>
-      <div className="beauty-care-grid">{cares.map((care, i) => <article key={care.title}><img className={'beauty-care-image beauty-care-image-' + i} src={asset + care.image} alt={care.alt} width="400" height="348" loading="lazy" /><div className="beauty-care-title"><h3>{care.title}</h3><span>0{i + 1}</span></div><p className="beauty-care-invitation">{care.invitation}</p><p className="beauty-care-description">{care.description}</p><ContactLink className="beauty-text-link" icon={arrow}>{care.action}</ContactLink></article>)}</div>
+      <div className="beauty-section-heading"><div><p className="beauty-eyebrow">Tu cuidado empieza aquí.</p><h2>Encontrá tu punto de partida.</h2></div><p>Tres formas de volver a ti.<br />Elegí qué te gustaría conversar. No necesitás tenerlo todo claro.</p></div>
+      <div className="beauty-care-grid">{cares.map((care, i) => <article key={care.title}><img className={'beauty-care-image beauty-care-image-' + i} src={asset + care.image} alt={care.alt} width="400" height="348" loading="lazy" /><div className="beauty-care-title"><h3>{care.title}</h3><span>0{i + 1}</span></div><p className="beauty-care-invitation">{care.invitation}</p><p className="beauty-care-description">{care.description}</p><ContactLink interest={care.interest} className="beauty-text-link" icon={arrow}>{care.action}</ContactLink></article>)}</div>
+      <div className="beauty-start-help"><div><h3>¿Todavía no sabés qué elegir?</h3><p>Podemos empezar por una conversación, a tu ritmo.</p></div><ContactLink interest="orientacion" className="beauty-button beauty-button-outline" icon={arrow}>Quiero orientación</ContactLink></div>
+      <p className="beauty-small beauty-start-note">Cada opción abre un mensaje editable en WhatsApp. Vos decidís si enviarlo; no confirma una reserva. Tarifas, modalidad, zona y disponibilidad se acuerdan personalmente antes de confirmar.</p>
     </div></section>
     <section id="nosotras" className="beauty-wrap beauty-section beauty-split">
       <figure className="beauty-essence-image"><img src={asset + '98809.png'} alt="Toallas y cuenco en un espacio de calma, imagen evocadora" width="544" height="520" loading="lazy" /><figcaption>Menos prisa. Más presencia.</figcaption></figure>
