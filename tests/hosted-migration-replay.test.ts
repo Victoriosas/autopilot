@@ -68,8 +68,8 @@ test('Beauty FK indexes are repeatable and preserve rows, RLS and foreign keys',
     alter table public.beauty_requests enable row level security;
     insert into public.beauty_evaluations values (1,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
     insert into public.beauty_requests values (1,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');`);
-  await apply('supabase/migrations/20261020020414_beauty_foreign_key_indexes.sql');
-  await apply('supabase/migrations/20261020020414_beauty_foreign_key_indexes.sql');
+  await apply('supabase/migrations/20261020020713_beauty_foreign_key_indexes.sql');
+  await apply('supabase/migrations/20261020020713_beauty_foreign_key_indexes.sql');
   assert.equal(await sql(`select count(*) from pg_index where indexrelid in (
     'public.beauty_evaluations_practitioner_id_idx'::regclass,
     'public.beauty_requests_catalog_service_id_idx'::regclass)
