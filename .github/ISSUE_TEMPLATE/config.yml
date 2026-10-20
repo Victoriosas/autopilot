@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Reportar una vulnerabilidad en privado
+    url: https://github.com/Victoriosas/autopilot/security/advisories/new
+    about: No publiques credenciales, datos de clientes ni detalles de vulnerabilidades en issues públicas.

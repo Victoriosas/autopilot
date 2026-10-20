@@ -602,3 +602,31 @@ Siguiente: CI y preview exactos, integrar mejora web autorizada y comprobar domi
 - Sin métricas reales suficientes de visitas, consultas, reservas, ingresos o mejoras porcentuales. No hubo DNS, credenciales, SQL alojado, pagos, campañas, formularios, envíos ni datos de clientes en Git. Archivos sin seguimiento ajenos preservados.
 
 Siguiente prompt: revisar el borrador de perfiles y confirmar humanamente roles Victoria/Sofía, titular/receptor del WhatsApp, modalidades, zonas e imágenes autorizadas. Mientras no exista esa respuesta, auditar en solo lectura los enlaces y metadatos públicos y preparar solo activos no personales sin duplicar los posts existentes. Antes de editar, verificar Git/remoto/PR/CI y concurrencia; mantener artículos, formularios y cobros cerrados. Si no aparece una mejora independiente verificable, cerrar el ciclo sin bucle ni automatización nueva.
+
+## 2026-10-19 - Email gratuito autorizado para la web
+
+Propietario crea y muestra bandeja Victoriosas@proton.me, rechaza todo pago y pide consultas por correo ademas de WhatsApp. No crear ni anunciar consultas@victoriosas.online. Se agrega channel=email a ContactLink sin cambiar defaultWhatsApp, mensajes por interes, direccion visible/copiar, contacto/footer/privacidad y metadatos coherentes. Sin SMTP, DNS, suscripciones, formularios, cuenta nueva, envio automatico o cambios de seguridad. DesktopCommander vuelveOnline; helperGUI no disponible, no se modifica Proton ni se leen mensajes.
+
+RED293b562 cinco pruebas email fallan; GREEN10/10 y verify212/212 localWindows tipos/buildsOK. Edge1440/768/390/320 sin overflow/imagenes rotas/erroresJS/axe; mailto por teclado interceptado. Direccion confirmada por captura y autorizacion del propietario, no recepcion humana probada. Docs CONSULTAS_Y_LANZAMIENTO actualizados y plantilla privada vacia incorpora canal.
+
+Siguiente: CI y preview exactos, integrar cambio web autorizado y comprobar dominio/SHA/email+WhatsApp; conservar pagos/forms/borradores cerrados. Correo operativo elegido Victoriosas@proton.me, no volver a pedir plan ni registrar dominio de correo. No enviar mensajes de prueba sin solicitud expresa. Roles y modalidad/zona siguen pendientes; no inferirlos. Preservar PR90 documental de perfiles y cambios ajenos.
+
+
+## 2026-10-19 - Gmail oficial reemplaza Proton
+
+Instruccion vigente del propietario: victoriosas.online@gmail.com es el correo oficial; retirar Proton del contacto web. ContactLink central, cinco pruebas email y privacidad actualizados; referencias de Proton ausentes en src. Guia operativa distingue registro historico y contacto vigente. Automatizacion6h actualizada, sin duplicar ni cambiar cadencia. No se borraron cuentas/mensajes, no envio real ni cambios DNS/SMTP/secretos.
+
+verify212/212 Windows, tipos/builds/check-route-html/diffOK. Edge1440/768/390/320: siete mailtoGmail por home, cuatro intereses, WhatsApp conservado, privacidad correcta; sin overflow, imagenes rotas, erroresJS o axe. Teclado interceptado sin enviar. Evidencia output/playwright/official-gmail-*.png y official-gmail-local-results.log.
+
+Siguiente: comprobar CI/preview exactos e integrar contacto autorizado; comprobar dominio/SHA y Gmail sin reintroducir Proton. Conservar WhatsApp y gates comerciales cerrados; no enviar pruebas ni vincular una cuenta Google ajena por inferencia del correo publicado. PR90 documental y cambios ajenos preservados.
+
+
+## 2026-10-19 - Indices Beauty verificados en Supabase
+
+PR102: dos indices aditivos para beauty_evaluations.practitioner_id y beauty_requests.catalog_service_id. Supabase CLI2.121.0 genero el archivo; tras apply_migration se alinea version local con la version alojada20261020020713, mismo SQL. No db push masivo: historial previo conserva versiones divergentes.
+
+CI b8b423255f3b0601e58caa3aeb83faef1d2dc6e8: validate/postgres/CodeQL SUCCESS, Vercel success; Supabase Preview SKIPPED. Regresion PostgreSQL sobre fixture sintetico: reaplicacion, columnas e indices validos, filas/RLS preservadas y claves foraneas activas. Cambio posterior de nombre de archivo y continuidad requiere CI final.
+
+Migracion individual alojada aplicada y verificada: ambos indices indisvalid/indisready=true; advisory unindexed_foreign_keys ya no aparece. Tablas siguen vacias y RLStrue; huella de politicas antes/despues identica. Avisos unused_index aumentan porque no hay trafico; no eliminarlos por ese motivo. Permisos de funciones revisados sin cambios: trigger y mantenimiento con control de administrador; no afirmar ausencia global de vulnerabilidades.
+
+Auth URL principal y redirect raiz oficial alineados a https://victoriosas.online, previews conservadas; cambios persistieron al recargar. Vercel previews/forks protegidos, sourcemaps protegidos, directory listing desactivado. Sin DNS, credenciales, pagos, registros de clientes ni politicas RLS modificados. Siguiente: validar CI final de PR102; integracion requiere autorizacion vigente y verificaciones del SHA, conservar limites comerciales.

@@ -1,169 +1,35 @@
-# Victoriosa Autopilot - Agents Guide
+# Victoriosas / Autopilot: guía de trabajo
 
-This document describes the specialized agents available for improving the Victoriosa Autopilot platform.
+## Antes de actuar
+- Leer este archivo, `docs/AUTOPILOT_STATE.md` y `.github/copilot-instructions.md`.
+- Las notas de continuidad están fechadas: comprobar código, main, PR abiertas y CI actuales. No tratar entradas históricas como estado vigente.
+- Revisar issues y ramas antes de crear trabajo; conservar cambios ajenos y archivos sin seguimiento.
+- Marca: **Victoriosas**. Web oficial: https://victoriosas.online. Contenido visible en español.
+- No restaurar dominios, contactos, imágenes o textos antiguos por instrucciones históricas.
 
-## Available Agents
+## Entrega
+1. Trabajar en rama y PR acotada; describir problema, resultado, validación y límites.
+2. Ejecutar `npm run verify` para código de aplicación. Para configuración o documentación, validar estructura y enlaces; observar la CI sin inventar pruebas locales.
+3. Revisar `validate` y `postgres` del SHA final; Supabase omitido no equivale a integración probada.
+4. Resolver conversaciones antes de fusionar. No hacer auto-merge ni despliegues manuales.
+5. Actualizar continuidad en `docs/AUTOPILOT_STATE.md` cuando cambie el estado técnico u operativo.
+6. Elegir la siguiente tarea segura sin duplicar automatizaciones. No afirmar ejecución futura sin un runtime activo.
 
-### 1. Sourcing Agent (`sourcing`)
-**Purpose:** Find and import products from CJ Dropshipping
+## Límites
+- Sin secretos, datos personales de clientes, respuestas médicas ni archivos de entorno en Git, issues, logs o capturas.
+- Reportar vulnerabilidades mediante https://github.com/Victoriosas/autopilot/security/advisories/new.
+- Pagos, compras, publicación comercial, DNS, credenciales, migraciones remotas y promoción a producción requieren autorización específica.
+- Evaluación estética inicial remota; no inventar credenciales, tarifas, disponibilidad ni resultados garantizados.
+- Mantener borradores editoriales y controles comerciales según configuración vigente.
 
-**When to use:**
-- Importing new products from CJ
-- Searching for products in specific categories
-- Managing product inventory
-- Checking category counts
+## Perfiles existentes
+Los archivos de `.opencode/agent/` son instrucciones para un runtime OpenCode, no procesos autónomos de GitHub.
+| Perfil | Uso | Límite |
+| --- | --- | --- |
+| sourcing | Descubrir candidatos de proveedores | No importar ni publicar sin autorización y evidencia |
+| analyzer | Examinar costos, margen y riesgos | No inventar precios, stock o rentabilidad |
+| seo | Preparar metadatos y contenido | Respetar identidad y textos aprobados |
+| monitor | Diagnosticar salud pública e integraciones | No exponer datos ni duplicar el monitor de seis horas |
+| deploy | Revisar build, preview y recuperación | No cambiar DNS ni producción por iniciativa propia |
 
-**Example commands:**
-```
-/user: Find 5 wireless chargers from CJ and import them
-/user: Import electronics products from these URLs
-/user: Check how many products we have in each category
-```
-
-**Key features:**
-- Websearch for real CJ URLs (CJ search API is unreliable)
-- Product ID extraction from URLs
-- Rate limiting (1 req/sec for CJ)
-- Category management (30 products max per category)
-
----
-
-### 2. Analyzer Agent (`analyzer`)
-**Purpose:** AI-powered product analysis
-
-**When to use:**
-- Analyzing product quality
-- Assessing market potential
-- Optimizing pricing
-- Generating Spanish content
-
-**Example commands:**
-```
-/user: Analyze this product for quality and market potential
-/user: What's the optimal price for this wireless charger?
-/user: Generate SEO content for this product in Spanish
-```
-
-**Key features:**
-- Multi-provider AI (Groq primary)
-- Quality scoring (0-100)
-- Pricing optimization (30-60% margin)
-- Spanish content generation
-
----
-
-### 3. SEO Agent (`seo`)
-**Purpose:** Optimize product listings for search
-
-**When to use:**
-- Optimizing product titles
-- Creating compelling descriptions
-- Suggesting relevant tags
-- Improving search visibility
-
-**Example commands:**
-```
-/user: Optimize this product title for SEO
-/user: Generate a compelling description for this wireless charger
-/user: Suggest tags for this beauty product
-```
-
-**Key features:**
-- Keyword research
-- Spanish SEO optimization
-- Title formulas
-- Tag strategies
-
----
-
-### 4. Deploy Agent (`deploy`)
-**Purpose:** Deployment automation
-
-**When to use:**
-- Deploying frontend to Vercel
-- Deploying backend to Railway
-- Configuring DNS for victoriosa.click
-- Managing environment variables
-
-**Example commands:**
-```
-/user: Deploy the frontend to Vercel
-/user: Configure DNS for victoriosa.click
-/user: Set up environment variables on Railway
-```
-
-**Key features:**
-- Vercel deployment
-- Railway deployment
-- DNS configuration
-- Environment management
-
----
-
-### 5. Monitor Agent (`monitor`)
-**Purpose:** Platform monitoring
-
-**When to use:**
-- Checking system health
-- Monitoring AI provider status
-- Checking CJ API status
-- Verifying database performance
-
-**Example commands:**
-```
-/user: Check system health status
-/user: What's the current AI provider status?
-/user: How many products do we have in each category?
-```
-
-**Key features:**
-- Health checks
-- Performance monitoring
-- Alert management
-- Resource tracking
-
----
-
-## Agent Configuration
-
-All agents are configured in `opencode.json`:
-
-```json
-{
-  "agent": {
-    "sourcing": { "mode": "subagent" },
-    "analyzer": { "mode": "subagent" },
-    "seo": { "mode": "subagent" },
-    "deploy": { "mode": "subagent" },
-    "monitor": { "mode": "subagent" }
-  }
-}
-```
-
-## Agent Files
-
-Each agent has a detailed markdown file:
-- `.opencode/agent/sourcing.md`
-- `.opencode/agent/analyzer.md`
-- `.opencode/agent/seo.md`
-- `.opencode/agent/deploy.md`
-- `.opencode/agent/monitor.md`
-
-## Using Agents
-
-Agents can be invoked via the `/agent` command or by describing your intent. The system will automatically route to the appropriate agent based on your request.
-
-## Best Practices
-
-1. **Be specific** - Include details like product URLs, categories, or counts
-2. **Provide context** - Mention what you're trying to accomplish
-3. **Check status** - Use the monitor agent to verify changes
-4. **Follow up** - After an agent completes, verify the results
-
-## Support
-
-For issues with agents, check:
-- Agent files in `.opencode/agent/`
-- Configuration in `opencode.json`
-- Logs in the application
-- API status of providers (Groq, CJ, Supabase)
+Copilot y Codex utilizan sus propias integraciones. Verificar cuota y permisos; no comprar créditos ni habilitar servicios pagos.

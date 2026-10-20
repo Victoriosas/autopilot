@@ -7,7 +7,7 @@ import { publicRouteResponse } from './src/storefront/publicRouting';
 
 export default defineConfig(({command}) => {
   return {
-    define: { __EDITORIAL_REVIEW__: JSON.stringify(command === 'serve' || process.env.VERCEL_ENV === 'preview') },
+    define: { __SERVICE_REVIEW__: JSON.stringify(command === 'serve' || process.env.VERCEL_ENV === 'preview'), __EDITORIAL_REVIEW__: JSON.stringify(command === 'serve' || process.env.VERCEL_ENV === 'preview') },
     plugins: [react(), tailwindcss(), {
       name: 'public-route-html',
       enforce: 'post',

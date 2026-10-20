@@ -27,3 +27,18 @@ for (const [interest, label] of [['facial', 'cuidado facial'], ['corporal', 'cui
     assert.match(html, /rel="noopener noreferrer"/);
   });
 }
+
+for (const interest of [undefined, 'facial', 'corporal', 'relajacion', 'orientacion'] as const) {
+  test(`free email prepares ${interest ?? 'general'} without sending or altering WhatsApp`, () => {
+    const html = renderToStaticMarkup(React.createElement(ContactLink, { channel: 'email', interest }));
+    const href = html.match(/href="([^"]+)"/)?.[1];
+    assert.ok(href);
+    const url = new URL(href.replace(/&amp;/g, '&'));
+    assert.equal(url.protocol, 'mailto:');
+    assert.equal(url.pathname, 'victoriosas.online@gmail.com');
+    assert.equal(url.searchParams.get('subject'), 'Consulta · Victoriosas');
+    assert.ok(url.searchParams.get('body')?.includes('evaluación inicial remota'));
+    assert.deepEqual([...url.searchParams.keys()].sort(), ['body', 'subject']);
+    assert.doesNotMatch(html, /target=|consultas@victoriosas\.online|<form|<button/);
+  });
+}

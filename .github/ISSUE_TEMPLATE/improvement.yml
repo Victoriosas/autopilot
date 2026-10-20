@@ -1,0 +1,33 @@
+name: Proponer una mejora
+description: Definir una tarea concreta con criterios de aceptación.
+title: "[Mejora] "
+body:
+  - type: markdown
+    attributes:
+      value: "Revisá las issues y PR abiertas antes de crear una tarea. No incluyas datos privados."
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objetivo y beneficio
+      description: Qué necesita la persona usuaria y qué resultado observable buscamos.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceptación
+      description: Lista breve de condiciones verificables para cerrar esta tarea.
+    validations:
+      required: true
+  - type: textarea
+    id: limits
+    attributes:
+      label: Alcance y límites
+      description: Dependencias, decisiones pendientes y si requiere autorización para publicar, desplegar o cambiar integraciones.
+    validations:
+      required: true
+  - type: textarea
+    id: related
+    attributes:
+      label: Trabajo relacionado
+      description: Issues, PR, diseños o documentación existente para evitar duplicación.
