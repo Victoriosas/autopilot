@@ -1,0 +1,33 @@
+name: Reportar un fallo
+description: Informar un problema reproducible sin datos privados.
+title: "[Fallo] "
+body:
+  - type: markdown
+    attributes:
+      value: "Este repositorio es público. No incluyas claves, datos de clientes ni información médica. Las vulnerabilidades se reportan por el canal privado de Security."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema y resultado esperado
+      description: Explicá qué ocurrió y qué debería ocurrir.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducir
+      description: Usá datos ficticios y rutas sin tokens ni información personal.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Entorno
+      placeholder: "Preview o producción; navegador y tamaño de pantalla"
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidencia pública y alcance
+      description: SHA, enlace de CI o captura revisada sin datos privados. Indicá si bloquea consultas o navegación.
