@@ -52,3 +52,39 @@ test('canonical hosted history accepts forward migrations without losing legacy 
   assert.equal(await sql(`select has_function_privilege('service_role','public.commerce_checkout_command(text,jsonb)','execute');`), 't');
   assert.equal(await sql(`select has_function_privilege('anon','public.archive_and_clear_products(text)','execute');`), 'f');
 });
+
+
+test('Beauty FK indexes are repeatable and preserve rows, RLS and foreign keys', { timeout: 120000 }, async () => {
+  // Minimal synthetic fixture in the disposable database, never hosted data.
+  await sql(`create table public.beauty_fk_test_parent(id uuid primary key);
+    insert into public.beauty_fk_test_parent values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+    create table public.beauty_evaluations(
+      id integer primary key,
+      practitioner_id uuid references public.beauty_fk_test_parent(id));
+    create table public.beauty_requests(
+      id integer primary key,
+      catalog_service_id uuid references public.beauty_fk_test_parent(id));
+    alter table public.beauty_evaluations enable row level security;
+    alter table public.beauty_requests enable row level security;
+    insert into public.beauty_evaluations values (1,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+    insert into public.beauty_requests values (1,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');`);
+  await apply('supabase/migrations/20261020020713_beauty_foreign_key_indexes.sql');
+  await apply('supabase/migrations/20261020020713_beauty_foreign_key_indexes.sql');
+  assert.equal(await sql(`select count(*) from pg_index where indexrelid in (
+    'public.beauty_evaluations_practitioner_id_idx'::regclass,
+    'public.beauty_requests_catalog_service_id_idx'::regclass)
+    and indisvalid and indisready and indpred is null;`), '2');
+  assert.equal(await sql(`select string_agg(a.attname,',' order by a.attname)
+    from pg_index i join pg_attribute a on a.attrelid=i.indrelid and a.attnum=i.indkey[0]
+    where i.indexrelid in ('public.beauty_evaluations_practitioner_id_idx'::regclass,
+    'public.beauty_requests_catalog_service_id_idx'::regclass);`), 'catalog_service_id,practitioner_id');
+  assert.equal(await sql('select count(*) from public.beauty_evaluations'), '1');
+  assert.equal(await sql('select count(*) from public.beauty_requests'), '1');
+  assert.equal(await sql(`select count(*) from pg_class where oid in
+    ('public.beauty_evaluations'::regclass,'public.beauty_requests'::regclass)
+    and relrowsecurity;`), '2');
+  await assert.rejects(sql(`insert into public.beauty_requests values
+    (2,'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');`), /foreign key/);
+  await assert.rejects(sql(`insert into public.beauty_evaluations values
+    (2,'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');`), /foreign key/);
+});
