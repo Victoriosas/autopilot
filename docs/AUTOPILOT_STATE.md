@@ -595,6 +595,13 @@ RED45f8889 cuatro intereses fallan; GREEN5/5, verify207/207 Windows y ambos buil
 
 Siguiente: CI y preview exactos, integrar mejora web autorizada y comprobar dominio/SHA y links reales; operacion humana pendiente de confirmar titular/receptor/profesional. Luego revisar las propuestas con el propietario y usar registro privado para consultas reales, sin inventar metricas ni subir datos de clientes a Git.
 
+## 2026-10-19 18:42 America/Montevideo — vigilancia pública y perfiles en borrador
+
+- `main` local/remoto en `a470bd5262bd0e601c19d2adb8f1c2c2208bc7f5`; Core exacta `39307721123` success. Producción `/api/health` 200 confirma el mismo SHA, checkout false y requested false. `node scripts/public-health.mjs` pasó con páginas 200, retiradas 410, borradores 404 y gates comerciales cerrados. Workflow Victoriosas Public Health activo; sus corridas más recientes revisadas estaban en success, aunque no sobre este SHA. `victoriosa.click` sigue 402 DEPLOYMENT_DISABLED; no se infiere migración de dominio.
+- Issues #81 y #84 siguen OPEN; sin PR abiertas al inicio del lote. SEO técnico por ruta ya publicado. Se preparó `docs/SOCIAL_PROFILE_ALIGNMENT_20261019.md` como borrador revisable: copy por canal, enlace oficial, checklist de estado sin afirmar cambios en cuentas y aprobaciones de identidad, WhatsApp e imágenes. Las tres piezas y reel existentes permanecen en `docs/CONSULTAS_Y_LANZAMIENTO_20261019.md`; no se duplicaron ni programaron. `docs/MARKETING_LAUNCH_PLAN.md` es histórico del antiguo embudo de lista y no se reutilizó para lanzar captación.
+- Sin métricas reales suficientes de visitas, consultas, reservas, ingresos o mejoras porcentuales. No hubo DNS, credenciales, SQL alojado, pagos, campañas, formularios, envíos ni datos de clientes en Git. Archivos sin seguimiento ajenos preservados.
+
+Siguiente prompt: revisar el borrador de perfiles y confirmar humanamente roles Victoria/Sofía, titular/receptor del WhatsApp, modalidades, zonas e imágenes autorizadas. Mientras no exista esa respuesta, auditar en solo lectura los enlaces y metadatos públicos y preparar solo activos no personales sin duplicar los posts existentes. Antes de editar, verificar Git/remoto/PR/CI y concurrencia; mantener artículos, formularios y cobros cerrados. Si no aparece una mejora independiente verificable, cerrar el ciclo sin bucle ni automatización nueva.
 
 ## 2026-10-19 - Email gratuito autorizado para la web
 
@@ -623,3 +630,11 @@ CI b8b423255f3b0601e58caa3aeb83faef1d2dc6e8: validate/postgres/CodeQL SUCCESS, V
 Migracion individual alojada aplicada y verificada: ambos indices indisvalid/indisready=true; advisory unindexed_foreign_keys ya no aparece. Tablas siguen vacias y RLStrue; huella de politicas antes/despues identica. Avisos unused_index aumentan porque no hay trafico; no eliminarlos por ese motivo. Permisos de funciones revisados sin cambios: trigger y mantenimiento con control de administrador; no afirmar ausencia global de vulnerabilidades.
 
 Auth URL principal y redirect raiz oficial alineados a https://victoriosas.online, previews conservadas; cambios persistieron al recargar. Vercel previews/forks protegidos, sourcemaps protegidos, directory listing desactivado. Sin DNS, credenciales, pagos, registros de clientes ni politicas RLS modificados. Siguiente: validar CI final de PR102; integracion requiere autorizacion vigente y verificaciones del SHA, conservar limites comerciales.
+
+## 2026-10-20 18:42 America/Montevideo — conflicto documental de PR90 resuelto
+
+- `main` y producción en `97fc36e3b2fb3e3c86472aa6ac9279720e9bf5f7`; `node scripts/public-health.mjs` pasó, checkout false. Workflow Victoriosas Public Health `39465616215` success sobre ese SHA. `victoriosa.click` sigue 402 DEPLOYMENT_DISABLED; no se cambió el dominio.
+- PR #90 permaneció en borrador y pasó a CONFLICTING por nuevas entradas de continuidad en `main`. En un worktree aislado se fusionó `origin/main` sin reescribir historia; se conservaron ambas secciones documentales. Push fast-forward a `9a3955e`, PR nuevamente MERGEABLE. Diferencia respecto de `main`: solo este archivo y `docs/SOCIAL_PROFILE_ALIGNMENT_20261019.md`; `git diff --check origin/main...HEAD` pasó.
+- La CI del nuevo SHA aún debe confirmarse; no se atribuye la CI anterior. Sin edición de perfiles, publicaciones, mensajes, datos de clientes, SQL, cobros, DNS o producción. No hay datos reales suficientes de consultas o ingresos.
+
+Siguiente prompt: verificar la CI exacta de PR #90 y mantenerla en borrador hasta revisión. Confirmar con el propietario roles Victoria/Sofía, titular del WhatsApp, modalidades, zonas y material de imagen autorizado antes de editar perfiles. Si eso sigue pendiente, continuar solo auditorías públicas o activos no personales que no dupliquen borradores; preservar gates comerciales y no crear automatizaciones nuevas.
