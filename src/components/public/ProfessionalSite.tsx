@@ -4,6 +4,7 @@ import { EditorialPage } from './EditorialPage';
 import { ContactLink, contactEmail } from './ContactLink';
 import { ServiceCatalog } from './ServiceCatalog';
 import { PublicNavigation } from './PublicNavigation';
+import { ServicesDirectory } from './ServicesDirectory';
 import { visibleCareServices } from '../../storefront/careCatalog';
 import { PrivacyPage } from './PrivacyPage';
 
@@ -73,12 +74,13 @@ export function ProfessionalSite() {
   const path = window.location.pathname.replace(/\/$/, '') || '/';
   const editorial = path === '/de-mi-para-ti' || path.startsWith('/de-mi-para-ti/');
   const privacy = path === '/privacidad';
-  const known = editorial || privacy || ['/', '/servicios', '/contacto', '/victoria'].includes(path);
+  const directory = path === '/nuestros-servicios';
+  const known = editorial || privacy || directory || ['/', '/servicios', '/contacto', '/victoria'].includes(path);
   if (!known) return <div className="professional-site"><main className="beauty-wrap beauty-section"><h1>Esta página ya no está disponible.</h1><p><a href="/">Volver al inicio de Victoriosas</a></p><ContactLink /></main></div>;
   return <div className="professional-site">
     <a className="beauty-skip" href="#contenido">Saltar al contenido</a>
     <header className="beauty-header beauty-wrap"><Brand /><PublicNavigation /><ContactLink className="beauty-button beauty-button-outline" icon={asset + '37645.svg'}>Consultar</ContactLink></header>
-    <main id="contenido" className={editorial || privacy ? 'beauty-editorial-main beauty-wrap' : undefined}>{privacy ? <PrivacyPage /> : editorial ? <EditorialPage /> : <Home />}</main>
+    <main id="contenido" className={editorial || privacy ? 'beauty-editorial-main beauty-wrap' : undefined}>{privacy ? <PrivacyPage /> : editorial ? <EditorialPage /> : directory ? <ServicesDirectory /> : <Home />}</main>
     <footer className="beauty-footer"><div className="beauty-wrap"><div className="beauty-footer-grid"><div><Brand /><p className="beauty-footer-promise">Para sentirte segura y victoriosa.</p></div><div><h2>Cuidados</h2>{visibleCareServices().map(care => <a key={care.id} href="/#servicios">{care.name}</a>)}</div><div><h2>Victoriosas</h2><a href="/#nosotras">Atención personal</a><a href="/#como-empezar">Cómo empezar</a><a href="/de-mi-para-ti">De mí para ti</a><a href="/#preguntas">Preguntas frecuentes</a></div><div><h2>Conversemos</h2><a href="https://wa.me/59897045305" target="_blank" rel="noopener noreferrer">+598 97 045 305 ↗</a><a className="beauty-email-address" href={'mailto:' + contactEmail}>{contactEmail}</a><p>Uruguay</p><p>Atención coordinada<br />personalmente con Victoria.</p></div></div><div className="beauty-footer-bottom"><p>© Victoriosas · Estética profesional</p><p>Cuidado personal. Respeto por tu historia. Confidencialidad.</p><a href="/privacidad">Contacto y privacidad</a><a href="#contenido">Volver arriba ↑</a></div></div></footer>
   </div>;
 }
