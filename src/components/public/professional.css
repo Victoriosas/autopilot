@@ -318,3 +318,15 @@
 .beauty-services-directory>section{scroll-margin-top:95px}
 .beauty-menu-dialog .beauty-services-submenu{margin:10px 0 18px;padding:10px}
 @media(max-width:760px){.beauty-directory-list{grid-template-columns:1fr}.beauty-services-directory{padding-top:35px}.beauty-nav-dropdown>.beauty-services-submenu{position:static}}
+
+/* Fichas detalladas, sin cambiar la identidad ni los textos previos */
+.beauty-service-subtitle{font-weight:500;min-height:3em}
+.beauty-service-expand{margin:12px 0 22px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 0}
+.beauty-service-expand>summary{cursor:pointer;color:var(--gold);font-weight:600;min-height:44px;display:flex;align-items:center}
+.beauty-service-expand>summary:focus-visible{outline:3px solid var(--gold);outline-offset:4px}
+.beauty-service-expand-body{padding:12px 0;line-height:1.65}
+.beauty-service-expand-body h4{font-size:18px;margin:18px 0 8px}
+.beauty-service-expand-body ul{padding-left:22px;margin:6px 0 18px;list-style:disc}
+.beauty-service-expand-body ul li{background:none;border:0;padding:3px 0;display:list-item;scroll-margin:0}
+.beauty-service-expand-body ul li::before{content:none;counter-increment:none}
+.beauty-service-caution{font-size:14px}
