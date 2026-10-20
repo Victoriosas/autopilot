@@ -612,3 +612,14 @@ Instruccion vigente del propietario: victoriosas.online@gmail.com es el correo o
 verify212/212 Windows, tipos/builds/check-route-html/diffOK. Edge1440/768/390/320: siete mailtoGmail por home, cuatro intereses, WhatsApp conservado, privacidad correcta; sin overflow, imagenes rotas, erroresJS o axe. Teclado interceptado sin enviar. Evidencia output/playwright/official-gmail-*.png y official-gmail-local-results.log.
 
 Siguiente: comprobar CI/preview exactos e integrar contacto autorizado; comprobar dominio/SHA y Gmail sin reintroducir Proton. Conservar WhatsApp y gates comerciales cerrados; no enviar pruebas ni vincular una cuenta Google ajena por inferencia del correo publicado. PR90 documental y cambios ajenos preservados.
+
+
+## 2026-10-19 - Indices Beauty verificados en Supabase
+
+PR102: dos indices aditivos para beauty_evaluations.practitioner_id y beauty_requests.catalog_service_id. Supabase CLI2.121.0 genero el archivo; tras apply_migration se alinea version local con la version alojada20261020020713, mismo SQL. No db push masivo: historial previo conserva versiones divergentes.
+
+CI b8b423255f3b0601e58caa3aeb83faef1d2dc6e8: validate/postgres/CodeQL SUCCESS, Vercel success; Supabase Preview SKIPPED. Regresion PostgreSQL sobre fixture sintetico: reaplicacion, columnas e indices validos, filas/RLS preservadas y claves foraneas activas. Cambio posterior de nombre de archivo y continuidad requiere CI final.
+
+Migracion individual alojada aplicada y verificada: ambos indices indisvalid/indisready=true; advisory unindexed_foreign_keys ya no aparece. Tablas siguen vacias y RLStrue; huella de politicas antes/despues identica. Avisos unused_index aumentan porque no hay trafico; no eliminarlos por ese motivo. Permisos de funciones revisados sin cambios: trigger y mantenimiento con control de administrador; no afirmar ausencia global de vulnerabilidades.
+
+Auth URL principal y redirect raiz oficial alineados a https://victoriosas.online, previews conservadas; cambios persistieron al recargar. Vercel previews/forks protegidos, sourcemaps protegidos, directory listing desactivado. Sin DNS, credenciales, pagos, registros de clientes ni politicas RLS modificados. Siguiente: validar CI final de PR102; integracion requiere autorizacion vigente y verificaciones del SHA, conservar limites comerciales.
