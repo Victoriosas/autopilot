@@ -64,3 +64,5 @@ La [PR #107](https://github.com/Victoriosas/autopilot/pull/107) se integró el 2
 - La ampliación de QA a `/consultanos` detectó contraste insuficiente del rótulo pequeño sobre el nuevo fondo. El cierre visual cambia ese rótulo al dorado oscuro ya existente. Tras corregirlo, 30 vistas locales de cinco rutas a 1440/1137/768/390/360/320 aprobaron axe, imágenes, overflow y errores JavaScript. El resultado final del despliegue de esta corrección se registra en la PR de cierre y en la entrega al propietario.
 
 No hay métricas comerciales reales suficientes. No se realizaron envíos, capturas de clientes, activación de formularios, campañas, cambios de pagos o escrituras en Supabase.
+
+El cierre también integra los parches acotados ya preparados por Dependabot: #108 (`body-parser` 1.20.9, solo lockfile) y #109 (Vite 6.4.5). Se revisaron sus diferencias y CI anteriores; el conjunto vuelve a pasar validación antes de integrarse. No se amplían rutas ni permisos.
