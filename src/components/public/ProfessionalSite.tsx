@@ -8,6 +8,7 @@ import { PublicNavigation } from './PublicNavigation';
 import { ServicesDirectory } from './ServicesDirectory';
 import { visibleCareServices } from '../../storefront/careCatalog';
 import { PrivacyPage } from './PrivacyPage';
+import { CareDiscovery } from './CareDiscovery';
 
 const asset = '/brand/figma-gold/';
 const arrow = asset + 'e3eb3.svg';

@@ -1,0 +1,24 @@
+.beauty-discovery{padding-block:12px 20px;border-bottom:1px solid var(--line)}
+.beauty-discovery-actions{display:flex;gap:10px;flex-wrap:wrap;margin-block:12px}
+.beauty-discovery-actions button,.beauty-discovery-options button,.editorial-print-action{font:inherit;color:var(--gold);background:var(--paper);border:1px solid var(--line);border-radius:24px;min-height:44px;padding:10px 18px;cursor:pointer}
+.beauty-discovery-actions button:hover,.beauty-discovery-options button:hover,.beauty-discovery-actions button[aria-pressed=true]{background:var(--wash)}
+.beauty-discovery-input{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--gold);border-radius:8px;padding:12px;width:100%;min-width:0;min-height:44px;margin-block:8px 14px}
+.beauty-search-results{padding-left:22px}
+.beauty-search-results li{padding-block:12px;border-bottom:1px solid var(--line)}
+.beauty-search-results p{margin-block:6px}
+.beauty-search-results .beauty-text-link{text-decoration:underline;text-underline-offset:4px}
+.beauty-discovery-options{display:grid;gap:12px;margin-block:20px}
+.beauty-discovery-options button{text-align:left}
+.beauty-discovery-fields{display:grid}
+.beauty-gift-preview{border:1px solid var(--gold);border-radius:12px;padding:24px;background:var(--wash);margin-block:16px;overflow-wrap:anywhere}
+.beauty-dialog-body .beauty-discovery-actions .beauty-button{white-space:normal;text-align:center;max-width:100%}
+.beauty-dialog-body p{overflow-wrap:anywhere}
+@media(max-width:600px){.beauty-discovery-actions{gap:8px}.beauty-discovery-actions button{padding:10px 12px;font-size:14px}.beauty-gift-preview{padding:16px}}
+@media print{
+ .professional-site{color:#000!important;background:#fff!important}
+ .beauty-header,.beauty-footer,.beauty-discovery,.beauty-skip,.editorial-print-action,.editorial-reading>aside,.editorial-reading>section,.editorial-reading>a{display:none!important}
+ .beauty-editorial-main,.editorial-reading{width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
+ .editorial-reading{font-size:12pt;line-height:1.6}
+ .editorial-cover{max-height:220px;object-fit:contain}
+ .editorial-reading h1{font-size:28pt;break-after:avoid}
+}
