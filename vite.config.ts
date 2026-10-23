@@ -38,6 +38,7 @@ export default defineConfig(({command}) => {
         this.emitFile({ type: 'asset', fileName: 'seo/editorial.html', source: routeHtml(html, 'editorial', preview) });
         this.emitFile({ type: 'asset', fileName: 'seo/privacy.html', source: routeHtml(html, 'privacy', preview) });
         this.emitFile({ type: 'asset', fileName: 'seo/services.html', source: routeHtml(html, 'services', preview) });
+        this.emitFile({ type: 'asset', fileName: 'seo/consultation.html', source: routeHtml(html, 'consultation', preview) });
         this.emitFile({ type: 'asset', fileName: 'seo/fallback.html', source: routeHtml(html, 'fallback', preview) });
       },
     }],

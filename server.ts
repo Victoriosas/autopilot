@@ -1,4 +1,5 @@
 import express from "express";
+import { createConsultationRouter } from './src/storefront/consultationRouter';
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
@@ -24,6 +25,7 @@ app.use(async (req, res, next) => {
   res.end(await response.text());
 });
 
+app.use('/api/beauty/inquiries', createConsultationRouter());
 app.use(express.json({ limit: "10mb" }));
 mountAutopilotV4(app);
 

@@ -1,10 +1,12 @@
 import express from 'express';
+import { createConsultationRouter } from './src/storefront/consultationRouter';
 import { mountAutopilotV4 } from './src/autopilot/mount';
 import { mercadoPagoAvailability } from './src/payments/mercadoPago';
 
 const app = express();
 app.disable('x-powered-by');
 app.use('/api', (_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
+app.use('/api/beauty/inquiries', createConsultationRouter());
 app.use(express.json({ limit: '10mb' }));
 mountAutopilotV4(app);
 
