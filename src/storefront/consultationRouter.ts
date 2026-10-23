@@ -39,10 +39,33 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; deli
       const token = req.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
       if (!token || !store.get) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
       if (!await store.get(token, req.params.id)) return res.status(404).json({ error: 'CONSULTATION_NOT_FOUND' });
-      const result = await beautyServerDatabase().from('consultation_reply_outbox')
-        .select('state,created_at,sent_at').eq('request_id', req.params.id).maybeSingle();
+      const db = beautyServerDatabase();
+      const [result, caseResult] = await Promise.all([
+        db.from('consultation_reply_outbox').select('state,created_at,sent_at').eq('request_id', req.params.id).maybeSingle(),
+        db.from('consultation_case_states').select('status,updated_at').eq('request_id', req.params.id).maybeSingle(),
+      ]);
+      if (result.error || caseResult.error) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
+      return res.json({ reply: result.data || null, case: caseResult.data || { status: 'new' } });
+    } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
+  });
+  // Administrative workflow is independent of delivery and can never send mail.
+  router.post('/admin/:id/case-status', deps.auth || requireSupabaseAdminAuth, json({ limit: '1kb', strict: true }), async (req, res) => {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(req.params.id)) return res.status(400).json({ error: 'CONSULTATION_INPUT_INVALID' });
+    if (req.get('origin') !== allowedOrigin() || req.get('x-consultation-approval') !== req.params.id) return res.status(403).json({ error: 'CONSULTATION_ORIGIN_INVALID' });
+    const valid = ['new', 'in_review', 'awaiting_contact', 'answered', 'closed'] as const;
+    const value = req.body;
+    if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length !== 1 || !valid.includes(value.status)) return res.status(400).json({ error: 'CONSULTATION_INPUT_INVALID' });
+    try {
+      const token = req.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
+      const adminId = res.locals.adminUserId;
+      if (!token || typeof adminId !== 'string' || !store.get) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
+      if (!await store.get(token, req.params.id)) return res.status(404).json({ error: 'CONSULTATION_NOT_FOUND' });
+      const result = await beautyServerDatabase().from('consultation_case_states').upsert({
+        request_id: req.params.id, status: value.status, updated_by: adminId,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'request_id' });
       if (result.error) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
-      return res.json({ reply: result.data || null });
+      return res.json({ status: value.status });
     } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
   });
   // Authenticated, read-only draft generation. No email is sent from this endpoint.
