@@ -5,7 +5,7 @@ import { serviceGroups, serviceSlug } from './serviceDirectory';
 export function PublicNavigation() {
   const [open, setOpen] = useState(false);
   const primary = [['/#servicios', 'Servicios'], ['/#nosotras', 'Victoria'], ['/#como-empezar', 'Cómo empezar'], ['/de-mi-para-ti', 'De mí para ti']];
-  const secondary = [['/#preguntas', 'Preguntas frecuentes'], ['/#contacto', 'Contacto'], ['/privacidad', 'Privacidad']];
+  const secondary = [['/#preguntas', 'Preguntas frecuentes'], ['/#consultanos', 'Consultanos'], ['/#contacto', 'Contacto'], ['/privacidad', 'Privacidad']];
   const directory = <div className="beauty-services-submenu">
     <a href="/nuestros-servicios">Ver todos los servicios</a>
     {serviceGroups.map(group => <details key={group.id}>
