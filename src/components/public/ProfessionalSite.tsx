@@ -1,5 +1,6 @@
 import React from 'react';
 import './professional.css';
+import { ConsultationForm } from './ConsultationForm';
 import { EditorialPage } from './EditorialPage';
 import { ContactLink, contactEmail } from './ContactLink';
 import { ServiceCatalog } from './ServiceCatalog';
@@ -67,6 +68,7 @@ function Home() {
     <section id="preguntas" className="beauty-band"><div className="beauty-wrap beauty-section beauty-faq"><div><p className="beauty-eyebrow">Con tranquilidad</p><h2>Tus dudas también<br />tienen su espacio.</h2><p>Si hay algo más que quieras saber, puedes preguntarme directamente. Estoy aquí para orientarte.</p><ContactLink className="beauty-text-link" icon={arrow}>Hacer otra consulta</ContactLink></div>
       <div>{faqs.map(([question, answer], i) => <details key={question} open={i < 2}><summary>{question}<img className="beauty-faq-plus" src={asset + 'e4e2b.svg'} alt="" width="18" height="18" /><img className="beauty-faq-minus" src={asset + '78bc1.svg'} alt="" width="18" height="18" /></summary><p>{answer}</p></details>)}</div>
     </div></section>
+    <div className="beauty-wrap beauty-section" id="consultanos"><ConsultationForm /></div>
     <section id="contacto" className="beauty-wrap beauty-section beauty-final"><div><p className="beauty-eyebrow">Cuando tú quieras</p><h2>Tu momento puede<br />empezar con <em>un hola.</em></h2><p>Escríbeme y encontramos juntas el primer paso.<br />A tu ritmo, con confianza y sin juicios.</p></div><div className="beauty-contact-card"><p className="beauty-eyebrow"><img src={asset + 'fcd40.svg'} alt="" width="23" height="23" />Directamente con Victoria</p><p className="beauty-small">Si quieres, puedes empezar así:</p><blockquote>“Hola, quisiera consultar por una evaluación inicial remota con Victoria.”</blockquote><ContactLink icon={whiteArrow}>Escribir a Victoria</ContactLink><p className="beauty-small">WhatsApp · +598 97 045 305</p><div className="beauty-email-block"><p className="beauty-eyebrow">¿Preferís escribir por correo?</p><ContactLink channel="email" className="beauty-button beauty-button-outline" icon={arrow}>Consultar por email</ContactLink><p className="beauty-small"><a className="beauty-email-address" href={'mailto:' + contactEmail}>{contactEmail}</a></p><p className="beauty-small">Se abre tu aplicación de correo con un mensaje editable. Si no se abre, copiá la dirección y escribinos desde tu correo habitual.</p></div></div></section>
   </>;
 }
@@ -79,7 +81,7 @@ export function ProfessionalSite() {
   if (!known) return <div className="professional-site"><main className="beauty-wrap beauty-section"><h1>Esta página ya no está disponible.</h1><p><a href="/">Volver al inicio de Victoriosas</a></p><ContactLink /></main></div>;
   return <div className="professional-site">
     <a className="beauty-skip" href="#contenido">Saltar al contenido</a>
-    <header className="beauty-header beauty-wrap"><Brand /><PublicNavigation /><ContactLink className="beauty-button beauty-button-outline" icon={asset + '37645.svg'}>Consultar</ContactLink></header>
+    <header className="beauty-header beauty-wrap"><Brand /><PublicNavigation /><a className="beauty-button beauty-button-outline" href="/#consultanos">Consultanos</a></header>
     <main id="contenido" className={editorial || privacy ? 'beauty-editorial-main beauty-wrap' : undefined}>{privacy ? <PrivacyPage /> : editorial ? <EditorialPage /> : directory ? <ServicesDirectory /> : <Home />}</main>
     <footer className="beauty-footer"><div className="beauty-wrap"><div className="beauty-footer-grid"><div><Brand /><p className="beauty-footer-promise">Para sentirte segura y victoriosa.</p></div><div><h2>Cuidados</h2>{visibleCareServices().map(care => <a key={care.id} href="/#servicios">{care.name}</a>)}</div><div><h2>Victoriosas</h2><a href="/#nosotras">Atención personal</a><a href="/#como-empezar">Cómo empezar</a><a href="/de-mi-para-ti">De mí para ti</a><a href="/#preguntas">Preguntas frecuentes</a></div><div><h2>Conversemos</h2><a href="https://wa.me/59897045305" target="_blank" rel="noopener noreferrer">+598 97 045 305 ↗</a><a className="beauty-email-address" href={'mailto:' + contactEmail}>{contactEmail}</a><p>Uruguay</p><p>Atención coordinada<br />personalmente con Victoria.</p></div></div><div className="beauty-footer-bottom"><p>© Victoriosas · Estética profesional</p><p>Cuidado personal. Respeto por tu historia. Confidencialidad.</p><a href="/privacidad">Contacto y privacidad</a><a href="#contenido">Volver arriba ↑</a></div></div></footer>
   </div>;
