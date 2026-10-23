@@ -8,8 +8,14 @@ export interface ConsultationStore {
   claim(input: ConsultationInput, fingerprint: string, abuseHash: string): Promise<ConsultationClaim>;
   finish(id: string, lease: string, providerId: string): Promise<boolean>;
   list?(token: string, offset: number): Promise<ConsultationRecord[]>;
+  get?(token: string, id: string): Promise<ConsultationRecord | null>;
 }
 export const consultationSupabaseStore: ConsultationStore = {
+  async get(token, id) {
+    const result = await beautyCallerDatabase(token).from('consultation_requests').select('id,input,created_at,expires_at').eq('id', id).gt('expires_at', new Date().toISOString()).maybeSingle();
+    if (result.error) throw Error('CONSULTATION_UNAVAILABLE');
+    return result.data as ConsultationRecord | null;
+  },
   async list(token, offset) {
     const result = await beautyCallerDatabase(token).from('consultation_requests').select('id,input,created_at,expires_at').gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).range(offset, offset + 49);
     if (result.error) throw Error('CONSULTATION_UNAVAILABLE');

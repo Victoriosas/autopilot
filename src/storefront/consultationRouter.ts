@@ -5,6 +5,8 @@ import { createHash, createHmac } from 'node:crypto';
 import { normalizeConsultationRequest } from './consultationRequest';
 import { consultationSupabaseStore, type ConsultationStore } from './consultationSupabase';
 import { createConsultationDelivery, type ConsultationDelivery } from './consultationDelivery';
+import { draftConsultationResponse } from './consultationResponseAgents';
+import { approveAndSendConsultationReply } from './consultationReplyDelivery';
 
 export function consultationAddress(req: { ip?: string; get(name: string): string | undefined }, vercel = process.env.VERCEL === '1'): string {
   // Vercel overwrites this header. Outside its runtime, use only Express's peer IP.
@@ -28,6 +30,35 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; deli
       if (!token || !store.list) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
       return res.json({ requests: await store.list(token, offset) });
     } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
+  });
+  // Authenticated, read-only draft generation. No email is sent from this endpoint.
+  router.get('/admin/:id/draft', deps.auth || requireSupabaseAdminAuth, async (req, res) => {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(req.params.id)) return res.status(400).json({ error: 'CONSULTATION_INPUT_INVALID' });
+    try {
+      const token = req.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
+      if (!token || !store.get) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
+      const record = await store.get(token, req.params.id);
+      if (!record) return res.status(404).json({ error: 'CONSULTATION_NOT_FOUND' });
+      return res.json({ draft: draftConsultationResponse(record.input) });
+    } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
+  });
+  // Explicit human approval only. No customer details appear in URL or logs.
+  router.post('/admin/:id/approve-send', deps.auth || requireSupabaseAdminAuth, async (req, res) => {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(req.params.id)) return res.status(400).json({ error: 'CONSULTATION_INPUT_INVALID' });
+    if (req.get('origin') !== allowedOrigin()) return res.status(403).json({ error: 'CONSULTATION_ORIGIN_INVALID' });
+    if (req.get('x-consultation-approval') !== req.params.id) return res.status(400).json({ error: 'CONSULTATION_APPROVAL_REQUIRED' });
+    try {
+      const token = req.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
+      const adminId = res.locals.adminUserId;
+      if (!token || typeof adminId !== 'string' || !store.get) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
+      const record = await store.get(token, req.params.id);
+      if (!record) return res.status(404).json({ error: 'CONSULTATION_NOT_FOUND' });
+      const result = await approveAndSendConsultationReply(record, adminId);
+      if (result === 'invalid_channel') return res.status(409).json({ error: 'CONSULTATION_REPLY_CHANNEL_UNAVAILABLE' });
+      if (result === 'already_processing') return res.status(409).json({ error: 'CONSULTATION_REPLY_ALREADY_PROCESSED' });
+      if (result === 'provider_unavailable') return res.status(503).json({ error: 'CONSULTATION_REPLY_UNAVAILABLE' });
+      return res.json({ status: 'sent' });
+    } catch { return res.status(503).json({ error: 'CONSULTATION_REPLY_UNAVAILABLE' }); }
   });
   router.post('/', async (req, res, next) => {
     if (!await available()) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
