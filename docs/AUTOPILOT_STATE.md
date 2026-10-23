@@ -676,3 +676,16 @@ PR107 fusionada por autorizacion explicita de despliegue; #105/#106 quedaron MER
 QA ampliada encontro contraste insuficiente del rotulo de consultas cerradas sobre el fondo nuevo; rama codex/ai-studio-release-qa-20261023 usa el dorado oscuro existente. Las 30 vistas locales ampliadas a cinco rutas aprobaron sin overflow, imagenes rotas, JS ni infracciones detectadas. Informe docs/AI_STUDIO_INTEGRATION_20261023.md conserva origen, evidencia, limites y recuperacion; resultados finales de este cierre se registran en su PR y entrega. Supabase sigue sin la migracion de consultas ni proveedor; newsletter y captura permanecen cerradas. No escrituras SQL remotas, pagos, DNS, credenciales ni campanas.
 
 El cierre integra tambien las PR Dependabot108/109 (body-parser1.20.9 y Vite6.4.5), conservando sus commits y el lockfile. No duplicar actualizaciones ni tomar CI anterior como prueba del conjunto; comprobar validate/postgres del SHA de cierre y su despliegue final.
+
+
+## Activación de consultas web — 2026-10-23, America/Montevideo
+
+- Autorización expresa del propietario para incorporar configuración y activar formulario.
+- Producción READY: dpl_6iRgD772FbLWaqbsUVY9y4SrzDmx, SHA 0f5bbc66faeac1a03b3d0f9425a92bbf85e7bb6e, https://victoriosas.online/consultanos. Redeploy del código ya publicado, sin cambios de aplicación ni migración adicional.
+- Resend: victoriosas.online verificado; clave limitada a envío de ese dominio guardada como secreto de producción. Variables de correo, habilitación, privacidad, retención y secreto antiabuso incorporadas al nuevo despliegue. No registrar valores secretos.
+- GET /api/beauty/inquiries/config: HTTP200, enabled=true, privacyVersion=consultation-v1, retentionDays=30. Health HTTP200 confirma SHA y checkoutEnabled=false. GET admin sin autenticación devuelve401.
+- Prueba desde navegador con datos sintéticos identificados como prueba: UI confirma registro; Supabase conserva una solicitud con vencimiento a30d y outbox aceptado por el proveedor; Gmail recibe aviso con solo referencia. No se incluyen identificadores ni datos de contacto de la prueba en esta nota.
+- Límite pendiente de entrega: primera prueba de proveedor llegó a INBOX; el aviso generado por el formulario fue clasificado SPAM. No afirmar entrega garantizada en bandeja principal ni modificar filtros de Gmail sin autorización. La solicitud queda accesible en el panel privado independientemente de la clasificación del correo.
+- Retención: consulta schema_ready devuelve consultation-v1; cron consultation-retention-hourly activo con schedule 0 * * * * y función de purga previamente aplicada. No se duplicó cron ni ejecutó purga manual.
+- CI del SHA publicado: validate, postgres y ambos análisis CodeQL success. Supabase Preview failure por historial de migraciones divergente en otro proyecto; no se reparó el historial ni se ejecutó db push. La prueba descrita sí verificó registro y aviso contra producción.
+- Consulta sintética permanece identificada como PRUEBA TÉCNICA; su teléfono es ficticio y no debe contactarse. Se conserva bajo la retención normal.
