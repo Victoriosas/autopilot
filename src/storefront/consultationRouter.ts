@@ -7,6 +7,7 @@ import { consultationSupabaseStore, type ConsultationStore } from './consultatio
 import { createConsultationDelivery, type ConsultationDelivery } from './consultationDelivery';
 import { draftConsultationResponse } from './consultationResponseAgents';
 import { approveAndSendConsultationReply } from './consultationReplyDelivery';
+import { beautyServerDatabase } from './beautyDatabase';
 
 export function consultationAddress(req: { ip?: string; get(name: string): string | undefined }, vercel = process.env.VERCEL === '1'): string {
   // Vercel overwrites this header. Outside its runtime, use only Express's peer IP.
@@ -29,6 +30,19 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; deli
       const token = req.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
       if (!token || !store.list) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
       return res.json({ requests: await store.list(token, offset) });
+    } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
+  });
+  // Read-only delivery audit, scoped to verified administrators and valid consultation records.
+  router.get('/admin/:id/reply-status', deps.auth || requireSupabaseAdminAuth, async (req, res) => {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(req.params.id)) return res.status(400).json({ error: 'CONSULTATION_INPUT_INVALID' });
+    try {
+      const token = req.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
+      if (!token || !store.get) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
+      if (!await store.get(token, req.params.id)) return res.status(404).json({ error: 'CONSULTATION_NOT_FOUND' });
+      const result = await beautyServerDatabase().from('consultation_reply_outbox')
+        .select('state,created_at,sent_at').eq('request_id', req.params.id).maybeSingle();
+      if (result.error) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
+      return res.json({ reply: result.data || null });
     } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
   });
   // Authenticated, read-only draft generation. No email is sent from this endpoint.
