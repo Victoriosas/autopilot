@@ -66,7 +66,7 @@ export function ConsultationInbox() {
         <p className="font-semibold">{drafts[row.id].subject}</p>
         <p className="whitespace-pre-wrap">{drafts[row.id].text}</p>
         {drafts[row.id].channel === 'email' ? <button className="mt-3 rounded border border-emerald-600 px-3 py-2" disabled={busy || Boolean(replyState[row.id])} onClick={() => void approve(row.id)}>Aprobar y enviar por Resend</button> : drafts[row.id].channel === 'whatsapp' ? <div className="mt-3 space-y-2">
-          <p>WhatsApp: respuesta preparada para revisión manual. Peach no está conectado todavía al backend.</p>
+          <p>WhatsApp: respuesta preparada para revisión manual. El envío es manual y no necesita integraciones externas.</p>
           <button className="rounded border border-sky-500 px-3 py-2" disabled={busy} onClick={() => { void navigator.clipboard.writeText(drafts[row.id].text).then(() => setReplyState(previous => ({ ...previous, [row.id]: 'Borrador copiado. Abrí el chat correcto en WhatsApp y revisá el destinatario antes de enviarlo.' }))).catch(() => setReplyState(previous => ({ ...previous, [row.id]: 'No se pudo copiar la respuesta.' }))); }}>Copiar borrador de WhatsApp</button>
         </div> : <p>La clienta prefiere una llamada. Coordiná el contacto personalmente.</p>}
       </div>}
