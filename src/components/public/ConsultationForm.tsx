@@ -1,85 +1,89 @@
-import React, { useState } from 'react';
-import { serviceGroups } from './serviceDirectory';
-import { contactEmail } from './ContactLink';
+import React, { useEffect, useRef, useState } from 'react';
+import { serviceGroups, serviceSlug } from './serviceDirectory';
+import { ContactLink } from './ContactLink';
+import { normalizeConsultationRequest } from '../../storefront/consultationRequest';
 
-const serviceNames = serviceGroups.flatMap(group => group.services);
-const categories = ['Orientación general', 'Asesoría cosmetológica online', ...serviceNames, 'Otra consulta'];
-type Channel = 'whatsapp' | 'email' | 'llamada';
-declare global { interface Window { turnstile?: { render: (element: HTMLElement, options: { sitekey: string; callback: (token: string) => void; 'expired-callback': () => void }) => unknown } } }
-const siteKey = import.meta.env.VITE_BEAUTY_TURNSTILE_SITE_KEY as string | undefined;
+const endpoint = '/api/beauty/inquiries';
+const choices = [{ id: 'orientacion', name: 'Quiero orientación' }, ...serviceGroups.flatMap(group => group.services.map(name => ({ id: serviceSlug(name), name })))];
 
-export function ConsultationForm({ initialService = '' }: { initialService?: string }) {
-  const [service, setService] = useState(initialService && categories.includes(initialService) ? initialService : 'Orientación general');
-  const [channel, setChannel] = useState<Channel>('whatsapp');
+export function ConsultationForm() {
+  const [ready, setReady] = useState(false);
+  const [channel, setChannel] = useState('whatsapp');
+  const [service, setService] = useState('orientacion');
   const [pending, setPending] = useState(false);
-  const [result, setResult] = useState('');
   const [sent, setSent] = useState(false);
-  const [captcha, setCaptcha] = useState('');
-  const captchaRef = React.useRef<HTMLDivElement>(null);
-  React.useEffect(() => {
-    if (!siteKey || !captchaRef.current) return;
-    let alive = true;
-    const render = () => {
-      if (alive && captchaRef.current && window.turnstile) window.turnstile.render(captchaRef.current, { sitekey: siteKey, callback: setCaptcha, 'expired-callback': () => setCaptcha('') });
-    };
-    if (window.turnstile) { render(); return () => { alive = false; }; }
-    const script = document.createElement('script');
-    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-    script.async = true;
-    script.onload = render;
-    document.head.appendChild(script);
-    return () => { alive = false; script.onload = null; };
+  const [result, setResult] = useState('');
+  // Uncertain retries keep identical data in memory; never browser storage.
+  const attempt = useRef<ReturnType<typeof normalizeConsultationRequest> | null>(null);
+  const busy = useRef(false);
+  const [locked, setLocked] = useState(false);
+  useEffect(() => {
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), 8000);
+    fetch(endpoint + '/config', { credentials: 'omit', cache: 'no-store', signal: abort.signal })
+      .then(async response => { if (response.ok) { const config = await response.json(); if (!abort.signal.aborted) setReady(config.enabled === true && config.privacyVersion === 'consultation-v1' && config.retentionDays === 30); } })
+      .catch(() => {}).finally(() => clearTimeout(timer));
+    return () => { clearTimeout(timer); abort.abort(); };
+  }, []);
+  useEffect(() => {
+    const sync = () => { const slug = window.location.hash.slice(1); if (choices.some(choice => choice.id === slug) && !attempt.current) setService(slug); };
+    sync(); window.addEventListener('hashchange', sync);
+    return () => window.removeEventListener('hashchange', sync);
   }, []);
 
-  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending) return;
-    setPending(true); setResult('');
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    const payload = {
-      name: String(data.get('name') || '').trim(),
-      phone: String(data.get('phone') || '').trim(),
-      email: String(data.get('email') || '').trim(),
-      age: String(data.get('age') || '').trim(),
-      service, channel,
-      message: String(data.get('message') || '').trim(),
-      consent: data.get('consent') === 'yes',
-      website: String(data.get('website') || ''),
-      captcha,
-    };
-    if (channel === 'email' && !payload.email) { setResult('Ingresá un correo para recibir la respuesta.'); setPending(false); return; }
+    if (!ready || busy.current || sent) return;
+    const data = new FormData(event.currentTarget);
     try {
-      const response = await fetch('/api/beauty/public/consultations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'omit', body: JSON.stringify(payload) });
-      if (response.status === 202) { setSent(true); setResult('Recibimos tu consulta. Te responderemos por el medio que elegiste.'); form.reset(); }
-      else if (response.status === 503) setResult('El formulario aún no está habilitado. Por ahora podés escribirnos por WhatsApp o email.');
-      else if (response.status === 429) setResult('Se alcanzó el límite de intentos. Probá nuevamente más tarde.');
-      else setResult('No pudimos recibir la consulta. Revisá los datos o utilizá WhatsApp.');
-    } catch { setResult('No pudimos conectarnos. Escribinos por WhatsApp o email.'); }
-    finally { setPending(false); }
-  };
+      if (!attempt.current) attempt.current = normalizeConsultationRequest({
+        id: crypto.randomUUID(), fullName: data.get('fullName'), phone: data.get('phone'), email: data.get('email'),
+        age: data.get('age') === '' ? null : Number(data.get('age')), service, message: data.get('message'),
+        responseChannel: channel, consent: data.get('consent') === 'yes', consentVersion: 'consultation-v1', website: data.get('website'),
+      });
+    } catch { setResult('Revisá los campos y el consentimiento. Usá solo texto y un celular de 8 a 15 dígitos.'); return; }
+    busy.current = true; setPending(true); setLocked(true); setResult('');
+    try {
+      const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'omit', signal: AbortSignal.timeout(20000), body: JSON.stringify(attempt.current) });
+      const receipt = await response.json().catch(() => null);
+      if (response.status === 202 && receipt?.id === attempt.current.id && receipt.status === 'accepted') {
+        attempt.current = null; setSent(true); setResult('Tu consulta quedó registrada. La atención se coordina personalmente; esto no confirma una reserva.');
+      } else if (response.status === 400 || response.status === 413 || response.status === 415) {
+        attempt.current = null; setLocked(false); setResult('Revisá los datos y el consentimiento antes de volver a intentar.');
+      } else if (response.status === 429) {
+        setResult('Se alcanzó el límite de intentos. Esperá antes de reintentar o escribinos por WhatsApp.');
+      } else {
+        setResult('No pudimos confirmar el envío. Podés reintentar con los mismos datos o consultar por WhatsApp.');
+      }
+    } catch { setResult('No pudimos confirmar el envío. Podés reintentar con los mismos datos o consultar por WhatsApp.'); }
+    finally { busy.current = false; setPending(false); }
+  }
+
   return <section className="beauty-consultation" aria-labelledby="consultation-title">
     <p className="beauty-eyebrow">Un primer paso, a tu ritmo</p>
     <h2 id="consultation-title">Hablemos de tu cuidado</h2>
-    <p>Contanos qué te interesa. Los datos se usan para responderte, no para confirmar reservas. No incluyas información médica sensible.</p>
-    {sent ? <p role="status">{result}</p> : <form onSubmit={submit}>
-      <div className="beauty-consultation-grid">
-        <label>Nombre y apellido *<input name="name" required minLength={2} maxLength={100} autoComplete="name" /></label>
-        <label>Celular *<input name="phone" type="tel" required minLength={7} maxLength={25} autoComplete="tel" /></label>
-        <label>Correo electrónico {channel === 'email' ? '*' : '(opcional)'}<input name="email" type="email" required={channel === 'email'} maxLength={254} autoComplete="email" /></label>
-        <label>Edad (opcional)<input name="age" type="number" min="18" max="120" /></label>
-      </div>
-      <label>Servicio que te interesa<select value={service} onChange={e => setService(e.target.value)}>{categories.map(item => <option key={item}>{item}</option>)}</select></label>
-      <label>¿Qué te gustaría consultar?<textarea name="message" rows={4} maxLength={1000} placeholder="Describí tu interés sin incluir información médica sensible." /></label>
-      <fieldset><legend>¿Cómo preferís que te contactemos?</legend>
-        {([['whatsapp','WhatsApp'],['email','Correo electrónico'],['llamada','Llamada']] as const).map(([value,label]) => <label className="beauty-consultation-radio" key={value}><input type="radio" name="channel" checked={channel === value} onChange={() => setChannel(value)} /> {label}</label>)}
-      </fieldset>
-      <label className="beauty-consultation-consent"><input name="consent" type="checkbox" value="yes" required /> Acepto el tratamiento de mis datos para responder esta consulta según la <a href="/privacidad">política de privacidad</a>.</label>
-      <div className="beauty-consultation-trap" aria-hidden="true"><label>Sitio web<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
-      {siteKey ? <div ref={captchaRef} /> : <p className="beauty-small">El formulario estará disponible cuando se habilite la verificación segura.</p>}
-      <button className="beauty-button" type="submit" disabled={pending || !captcha || !siteKey}>{pending ? 'Enviando…' : 'Enviar consulta'}</button>
-      {result && <p role="status">{result}</p>}
-    </form>}
-    <p className="beauty-small">¿Preferís escribirnos directamente? <a href="https://wa.me/59897045305">WhatsApp</a> · <a href={'mailto:' + contactEmail}>{contactEmail}</a></p>
+    {!ready ? <p role="status">Por ahora, consultanos directamente por WhatsApp o email.</p> : sent ? <p role="status">{result}</p> : <>
+      <p>Contanos qué te interesa y cómo preferís una respuesta. No incluyas datos de salud, historia clínica ni fotografías.</p>
+      <form onSubmit={submit} aria-busy={pending}>
+        <fieldset disabled={pending || locked} className="beauty-consultation-fields"><legend>Tu consulta</legend>
+          <div className="beauty-consultation-grid">
+            <label>Nombre y apellido *<input name="fullName" required maxLength={120} autoComplete="name" /></label>
+            <label>Celular *<input name="phone" type="tel" required minLength={8} maxLength={25} autoComplete="tel" aria-describedby="consultation-phone-help" /></label>
+            <label>Correo electrónico {channel === 'email' ? '*' : '(opcional)'}<input name="email" type="email" required={channel === 'email'} maxLength={254} autoComplete="email" /></label>
+            <label>Edad (opcional)<input name="age" type="number" min="0" max="120" step="1" /></label>
+          </div>
+          <p id="consultation-phone-help" className="beauty-small">Celular de 8 a 15 dígitos. Podés incluir el código de país.</p>
+          <label>Servicio que te interesa<select value={service} onChange={event => setService(event.target.value)}>{choices.map(choice => <option key={choice.id} value={choice.id}>{choice.name}</option>)}</select></label>
+          <label>¿Qué te gustaría consultar? *<textarea name="message" required rows={4} maxLength={600} /></label>
+          <fieldset><legend>¿Cómo preferís que te contactemos?</legend>{([['whatsapp', 'WhatsApp'], ['email', 'Correo electrónico'], ['phone', 'Llamada']] as const).map(([value, label]) => <label className="beauty-consultation-radio" key={value}><input type="radio" name="channel" value={value} checked={channel === value} onChange={() => setChannel(value)} />{label}</label>)}</fieldset>
+          <label className="beauty-consultation-consent"><input name="consent" type="checkbox" value="yes" required /><span>Acepto que Victoriosas use estos datos para responder esta consulta, según la <a href="/privacidad">política de privacidad</a>. No me suscribe a campañas.</span></label>
+          <div className="beauty-consultation-trap" aria-hidden="true"><label>Sitio web<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
+        </fieldset>
+        <button className="beauty-button" type="submit" disabled={pending}>{pending ? 'Enviando…' : locked ? 'Reintentar consulta' : 'Enviar consulta'}</button>
+        {result && <p role="status">{result}</p>}
+      </form>
+    </>}
+    <div className="beauty-contact-options"><ContactLink /><ContactLink channel="email" /></div>
+    <p className="beauty-small">victoriosas.online@gmail.com</p>
   </section>;
 }

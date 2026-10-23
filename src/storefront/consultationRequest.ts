@@ -11,8 +11,9 @@ export function normalizeConsultationRequest(value: unknown): ConsultationInput 
   if (Object.keys(b).some(key => !keys.includes(key)) || b.consent !== true || b.consentVersion !== 'consultation-v1' || b.website !== '') return invalid();
   const text = (key: string, max: number, required = true) => {
     if (typeof b[key] !== 'string') return invalid();
-    const result = (b[key] as string).trim();
-    if ((required && !result) || result.length > max || /[\x00-\x1f\x7f<>]/.test(result)) return invalid();
+    const result = (b[key] as string).replace(/\r\n/g, '\n').trim();
+    const forbidden = key === 'message' ? /[\x00-\x09\x0b-\x1f\x7f<>\u202a-\u202e\u2066-\u2069]/ : /[\x00-\x1f\x7f<>\u202a-\u202e\u2066-\u2069]/;
+    if ((required && !result) || result.length > max || forbidden.test(result)) return invalid();
     return result;
   };
   const id = text('id', 36).toLowerCase(), fullName = text('fullName', 120), phone = text('phone', 25), email = text('email', 254, false).toLowerCase(), service = text('service', 80), message = text('message', 600);

@@ -1,6 +1,5 @@
 import React from 'react';
 import { ContactLink } from './ContactLink';
-import { ConsultationForm } from './ConsultationForm';
 import { serviceGroups, serviceSlug } from './serviceDirectory';
 import { serviceDetails } from './serviceDetails';
 
@@ -12,7 +11,7 @@ export function ServicesDirectory() {
     <nav aria-label="Categorías de servicios" className="beauty-directory-categories">
       {serviceGroups.map(group => <a key={group.id} href={'#' + group.id}>{group.title}</a>)}
     </nav>
-    <p><a className="beauty-button beauty-button-outline" href="#consultanos">Abrir formulario de consulta</a></p>
+    <p><a className="beauty-button beauty-button-outline" href="/consultanos">Consultanos</a></p>
     {serviceGroups.map(group => <section id={group.id} key={group.id}>
       <h2>{group.title}</h2>
       <ol className="beauty-directory-list">{group.services.map(name => {
@@ -38,6 +37,5 @@ export function ServicesDirectory() {
         </li>;
       })}</ol>
     </section>)}
-    <div id="consultanos"><ConsultationForm /></div>
   </section>;
 }
