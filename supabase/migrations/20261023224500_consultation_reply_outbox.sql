@@ -12,5 +12,6 @@ create table if not exists public.consultation_reply_outbox (
 );
 alter table public.consultation_reply_outbox enable row level security;
 revoke all on public.consultation_reply_outbox from public, anon, authenticated;
+grant select, insert, update on public.consultation_reply_outbox to service_role;
 comment on table public.consultation_reply_outbox is 'Private, approval-gated one-shot consultation replies. Unknown delivery states are not auto-retried.';
 create index if not exists consultation_reply_outbox_created_at_idx on public.consultation_reply_outbox(created_at);
