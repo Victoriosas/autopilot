@@ -67,7 +67,7 @@ export function ConsultationInbox() {
         <p className="whitespace-pre-wrap">{drafts[row.id].text}</p>
         {drafts[row.id].channel === 'email' ? <button className="mt-3 rounded border border-emerald-600 px-3 py-2" disabled={busy || Boolean(replyState[row.id])} onClick={() => void approve(row.id)}>Aprobar y enviar por Resend</button> : <p>La clienta prefiere otro canal. Coordiná el contacto personalmente.</p>}
       </div>}
-      {replyState[row.id] && <p role="status">{replyState[row.id]}</p>
+      {replyState[row.id] && <p role="status">{replyState[row.id]}</p>}
     </li>)}</ul>
     {rows.length > 0 && <div className="flex gap-4"><button disabled={busy || offset === 0} onClick={() => void load(Math.max(0, offset - 50))}>Anterior</button><button disabled={busy || rows.length < 50} onClick={() => void load(offset + 50)}>Siguiente</button></div>}
   </section>;
