@@ -1,5 +1,6 @@
 import React from 'react';
 import './professional.css';
+import './discovery.css';
 import { ConsultationForm } from './ConsultationForm';
 import { EditorialPage } from './EditorialPage';
 import { ContactLink, contactEmail } from './ContactLink';
@@ -8,7 +9,9 @@ import { PublicNavigation } from './PublicNavigation';
 import { ServicesDirectory } from './ServicesDirectory';
 import { visibleCareServices } from '../../storefront/careCatalog';
 import { PrivacyPage } from './PrivacyPage';
-import { CareDiscovery } from './CareDiscovery';
+import { GiftVoucherModal } from './GiftVoucherModal';
+import { NewsletterSubscribe } from './NewsletterSubscribe';
+import { CopyMessageButton } from './CopyMessageButton';
 
 const asset = '/brand/figma-gold/';
 const arrow = asset + 'e3eb3.svg';
@@ -35,11 +38,13 @@ function Brand() {
   return <a href="/" className="beauty-brand">VICTORIOSAS<span>Estética profesional</span></a>;
 }
 function Home() {
+  const [giftOpen, setGiftOpen] = React.useState(false);
   return <>
     <section className="beauty-hero beauty-wrap">
       <div className="beauty-welcome"><p className="beauty-eyebrow">Tu bienestar, a tu manera</p><h1>Para sentirte<br />segura y<br /><em>victoriosa.</em></h1>
         <p className="beauty-intro">Estética facial, corporal y masajes. Un espacio de cuidado para escucharte, acompañarte y empezar por lo que necesitas hoy.</p>
         <ContactLink icon={whiteArrow}>Conversemos por WhatsApp</ContactLink><p className="beauty-small">Empezamos con una evaluación inicial remota.</p>
+        <div className="beauty-hero-tools"><button type="button" className="beauty-button beauty-button-outline" onClick={() => window.dispatchEvent(new CustomEvent('open-care-finder'))}>Orientador de cuidado</button><button type="button" className="beauty-hero-search-link" onClick={() => window.dispatchEvent(new CustomEvent('open-quick-search'))}>Buscar en el catálogo</button></div>
         <a className="beauty-discover" href="#servicios"><img src={asset + 'd7cd8.svg'} alt="" width="15" height="15" />Conocer los cuidados</a>
       </div>
       <figure className="beauty-hero-art"><img className="beauty-hero-image" src={asset + 'eafbd.png'} alt="Imagen evocadora de un momento de cuidado facial" width="600" height="648" fetchPriority="high" />
@@ -50,9 +55,11 @@ function Home() {
     <section id="servicios" className="beauty-band"><div className="beauty-wrap beauty-section">
       <div className="beauty-section-heading"><div><p className="beauty-eyebrow">Tu cuidado empieza aquí.</p><h2>Encontrá tu punto de partida.</h2></div><p>Tres formas de volver a ti.<br />Elegí qué te gustaría conversar. No necesitás tenerlo todo claro.</p></div>
       <ServiceCatalog review={__SERVICE_REVIEW__} />
+      <div className="beauty-gift-card"><figure className="beauty-gift-card-media"><img src="/brand/ai-studio/regalo-cuidado.jpg" alt="Detalle evocador de una experiencia de regalo y autocuidado" width="340" height="255" loading="lazy" /></figure><div className="beauty-gift-card-content"><p className="beauty-eyebrow">Para agasajar</p><h3>¿Querés regalar un momento de cuidado?</h3><p>Prepará una propuesta personalizada para conversar con Victoria. Las condiciones y la disponibilidad se confirman personalmente.</p><button type="button" className="beauty-button" onClick={() => setGiftOpen(true)}>Diseñar una propuesta de regalo</button></div></div>
       <div className="beauty-start-help"><div><h3>¿Todavía no sabés qué elegir?</h3><p>Podemos empezar por una conversación, a tu ritmo.</p></div><div className="beauty-contact-options"><ContactLink interest="orientacion" className="beauty-button beauty-button-outline" icon={arrow}>Quiero orientación</ContactLink><ContactLink channel="email" interest="orientacion" className="beauty-text-link" icon={arrow}>Orientación por email</ContactLink></div></div>
       <p className="beauty-small beauty-start-note">Podés consultar por WhatsApp o email. Los enlaces preparan un mensaje para que lo revises y decidas si enviarlo; no confirman una reserva. Tarifas, modalidad, zona y disponibilidad se acuerdan personalmente antes de confirmar.</p>
     </div></section>
+    {giftOpen && <GiftVoucherModal onClose={() => setGiftOpen(false)} />}
     <section id="nosotras" className="beauty-wrap beauty-section beauty-split">
       <figure className="beauty-essence-image"><img src={asset + '98809.png'} alt="Toallas y cuenco en un espacio de calma, imagen evocadora" width="544" height="520" loading="lazy" /><figcaption>Menos prisa. Más presencia.</figcaption></figure>
       <div><p className="beauty-eyebrow">La esencia de Victoriosas</p><h2>Detrás de cada cuidado,<br />una conversación.</h2><p>Soy Victoria, responsable de Victoriosas, en Uruguay. Te acompaño personalmente desde el primer mensaje, para entender qué buscas y orientarte con claridad.</p><p>Cada persona llega con una historia distinta. Por eso, antes de definir los próximos pasos, hay tiempo para escucharte, resolver tus dudas y respetar tus decisiones.</p><ul className="beauty-values"><li>Escucha</li><li>Respeto</li><li>Confidencialidad</li></ul><ContactLink className="beauty-text-link" icon={arrow}>Quiero conversar con Victoria</ContactLink><p className="beauty-signature">Victoria</p></div>
@@ -66,11 +73,12 @@ function Home() {
       <figure className="beauty-everyday-image"><img src={asset + 'b7846.png'} alt="Un rincón tranquilo con luz natural y pequeños detalles de cuidado" width="544" height="610" loading="lazy" /><figcaption>Lo pequeño también es cuidado.</figcaption></figure>
       <div><p className="beauty-eyebrow"><a href="/de-mi-para-ti">De mí para ti</a></p><h2>La belleza también está<br />en lo cotidiano.</h2><p>El bienestar no ocurre solo durante una atención. También vive en esos pequeños rituales que te devuelven a ti.</p><div className="beauty-rituals">{rituals.map(([title, text]) => <section key={title}><h3>{title}</h3><p>{text}</p></section>)}</div></div>
     </section>
+    <div className="beauty-wrap"><NewsletterSubscribe /></div>
     <section id="preguntas" className="beauty-band"><div className="beauty-wrap beauty-section beauty-faq"><div><p className="beauty-eyebrow">Con tranquilidad</p><h2>Tus dudas también<br />tienen su espacio.</h2><p>Si hay algo más que quieras saber, puedes preguntarme directamente. Estoy aquí para orientarte.</p><ContactLink className="beauty-text-link" icon={arrow}>Hacer otra consulta</ContactLink></div>
       <div>{faqs.map(([question, answer], i) => <details key={question} open={i < 2}><summary>{question}<img className="beauty-faq-plus" src={asset + 'e4e2b.svg'} alt="" width="18" height="18" /><img className="beauty-faq-minus" src={asset + '78bc1.svg'} alt="" width="18" height="18" /></summary><p>{answer}</p></details>)}</div>
     </div></section>
     <div className="beauty-wrap beauty-section"><a className="beauty-button beauty-button-outline" href="/consultanos">Hablemos de tu cuidado</a></div>
-    <section id="contacto" className="beauty-wrap beauty-section beauty-final"><div><p className="beauty-eyebrow">Cuando tú quieras</p><h2>Tu momento puede<br />empezar con <em>un hola.</em></h2><p>Escríbeme y encontramos juntas el primer paso.<br />A tu ritmo, con confianza y sin juicios.</p></div><div className="beauty-contact-card"><p className="beauty-eyebrow"><img src={asset + 'fcd40.svg'} alt="" width="23" height="23" />Directamente con Victoria</p><p className="beauty-small">Si quieres, puedes empezar así:</p><blockquote>“Hola, quisiera consultar por una evaluación inicial remota con Victoria.”</blockquote><ContactLink icon={whiteArrow}>Escribir a Victoria</ContactLink><p className="beauty-small">WhatsApp · +598 97 045 305</p><div className="beauty-email-block"><p className="beauty-eyebrow">¿Preferís escribir por correo?</p><ContactLink channel="email" className="beauty-button beauty-button-outline" icon={arrow}>Consultar por email</ContactLink><p className="beauty-small"><a className="beauty-email-address" href={'mailto:' + contactEmail}>{contactEmail}</a></p><p className="beauty-small">Se abre tu aplicación de correo con un mensaje editable. Si no se abre, copiá la dirección y escribinos desde tu correo habitual.</p></div></div></section>
+    <section id="contacto" className="beauty-wrap beauty-section beauty-final"><div><p className="beauty-eyebrow">Cuando tú quieras</p><h2>Tu momento puede<br />empezar con <em>un hola.</em></h2><p>Escríbeme y encontramos juntas el primer paso.<br />A tu ritmo, con confianza y sin juicios.</p></div><div className="beauty-contact-card"><p className="beauty-eyebrow"><img src={asset + 'fcd40.svg'} alt="" width="23" height="23" />Directamente con Victoria</p><p className="beauty-small">Si quieres, puedes empezar así:</p><blockquote>“Hola, quisiera consultar por una evaluación inicial remota con Victoria.”</blockquote><CopyMessageButton text="Hola, quisiera consultar por una evaluación inicial remota con Victoria." /><ContactLink icon={whiteArrow}>Escribir a Victoria</ContactLink><p className="beauty-small">WhatsApp · +598 97 045 305</p><div className="beauty-email-block"><p className="beauty-eyebrow">¿Preferís escribir por correo?</p><ContactLink channel="email" className="beauty-button beauty-button-outline" icon={arrow}>Consultar por email</ContactLink><p className="beauty-small"><a className="beauty-email-address" href={'mailto:' + contactEmail}>{contactEmail}</a></p><p className="beauty-small">Se abre tu aplicación de correo con un mensaje editable. Si no se abre, copiá la dirección y escribinos desde tu correo habitual.</p></div></div></section>
   </>;
 }
 export function ProfessionalSite() {

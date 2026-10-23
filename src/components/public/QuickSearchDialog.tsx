@@ -4,7 +4,8 @@ import { discoveryItems, searchCare, type DiscoveryCategory } from '../../storef
 import { ConsultationDialog } from './ConsultationDialog';
 import { ContactLink } from './ContactLink';
 
-const items = discoveryItems(__EDITORIAL_REVIEW__ ? articles : getPublishedArticles());
+const review = typeof __EDITORIAL_REVIEW__ !== 'undefined' && __EDITORIAL_REVIEW__;
+const items = discoveryItems(review ? articles : getPublishedArticles());
 const categories: [DiscoveryCategory, string][] = [['todos', 'Todos'], ['faciales', 'Faciales'], ['corporales', 'Corporales'], ['masajes', 'Masajes'], ['editorial', 'Editorial']];
 export function QuickSearchDialog({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState('');
@@ -17,9 +18,10 @@ export function QuickSearchDialog({ onClose }: { onClose: () => void }) {
     <div className="beauty-discovery-actions" role="group" aria-label="Filtrar resultados">
       {categories.map(([value, label]) => <button type="button" key={value} aria-pressed={category === value} onClick={() => setCategory(value)}>{label} ({searchCare(items, '', value).length})</button>)}
     </div>
-    <p role="status">{results.length} resultados{__EDITORIAL_REVIEW__ ? ' · Incluye borradores para revisión' : ''}</p>
+    <p role="status">{results.length} resultados{review ? ' · Incluye borradores para revisión' : ''}</p>
     <ul className="beauty-search-results">{results.map(item => <li key={item.href}>
       <a className="beauty-text-link" href={item.href} onClick={onClose}>{item.title}</a><p>{item.description}</p>
+      {item.homeTip && <p className="beauty-small"><strong>Un gesto en casa:</strong> {item.homeTip}</p>}
     </li>)}</ul>
     {!results.length && <><p>Probá con otra palabra o consultá para empezar con orientación personal.</p><ContactLink interest="orientacion" /></>}
   </ConsultationDialog>;
