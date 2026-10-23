@@ -50,4 +50,17 @@ Publicar mediante una PR de integración y el despliegue Git de `main`, después
 
 Comprobar en `https://victoriosas.online`: SHA del merge, rutas y recursos 200, borradores 404, rutas comerciales retiradas 410, `checkoutEnabled=false`, consultas `enabled=false` y administración anónima 401. Los resultados alojados finales se registran en continuidad al verificarse.
 
-Recuperación: revertir el merge por Git y permitir el nuevo build de producción. No hay SQL remoto ni cambios de credenciales que revertir en esta integración. No se modifican DNS, pagos, catálogo comercial ni campañas; no hay datos reales suficientes para atribuir ventas o mejoras porcentuales.
+Recuperación: revertir el merge por Git y permitir el nuevo build de producción. No hay migraciones ni escrituras SQL remotas ni cambios de credenciales que revertir en esta integración. No se modifican DNS, pagos, catálogo comercial ni campañas; no hay datos reales suficientes para atribuir ventas o mejoras porcentuales.
+
+
+## Evidencia alojada de la integración
+
+La [PR #107](https://github.com/Victoriosas/autopilot/pull/107) se integró el 23/10/2026 a las 18:47 de Uruguay. Al incluir sus commits, #105 y #106 quedaron fusionadas también. SHA de producción funcional: `26e54e98aa7efb0b854c03ef7b5c704ee41c1225`; deployment `dpl_Gtw8PaTGAxPwmo7tiJ4hcuCErLvB`, `READY`, contexto `production`, generado por Git de main.
+
+- PR: validate/postgres y CodeQL aprobados; integración aislada Auth/PostgREST/RLS aprobó 5 + 6 + 5 pruebas y se detuvo. La integración aislada no aplica la migración en el proyecto alojado.
+- Main: CI `40029302622` validate/postgres aprobada e integración aislada `40029302619` aprobada sobre `26e54e9`.
+- Preview protegido de `de760c4`: 20 vistas de diálogos en navegador, sin errores JavaScript ni infracciones automatizadas; contexto, foco, reinicio y descarte aprobados. Config de consultas deshabilitada y administración anónima 401.
+- Dominio público: 20 vistas de diálogos aprobadas, sin envíos. Rutas públicas y `/consultanos` 200; recursos nuevos 200; borradores 404; rutas comerciales retiradas 410; checkout/Beauty/catálogo cerrados; consultas `enabled=false`; bandeja anónima 401.
+- La ampliación de QA a `/consultanos` detectó contraste insuficiente del rótulo pequeño sobre el nuevo fondo. El cierre visual cambia ese rótulo al dorado oscuro ya existente. Tras corregirlo, 30 vistas locales de cinco rutas a 1440/1137/768/390/360/320 aprobaron axe, imágenes, overflow y errores JavaScript. El resultado final del despliegue de esta corrección se registra en la PR de cierre y en la entrega al propietario.
+
+No hay métricas comerciales reales suficientes. No se realizaron envíos, capturas de clientes, activación de formularios, campañas, cambios de pagos o escrituras en Supabase.

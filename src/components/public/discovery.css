@@ -17,7 +17,7 @@
 .beauty-discovery-options{grid-template-columns:repeat(2,minmax(0,1fr))}
 .beauty-discovery-options button{padding:18px;min-height:66px}
 .beauty-finder-result{padding:24px;background:var(--wash);border:1px solid var(--line);border-radius:16px;box-shadow:var(--velvet-shadow)}
-.beauty-finder-result .beauty-eyebrow,.beauty-finder-result .beauty-text-link{color:var(--gold-dark)!important}
+.beauty-finder-result .beauty-eyebrow,.beauty-finder-result .beauty-text-link,.beauty-consultation .beauty-eyebrow{color:var(--gold-dark)!important}
 .beauty-gift-preview{background:linear-gradient(145deg,#fffdf8,var(--wash-deep));border-radius:20px;text-align:center;box-shadow:var(--velvet-shadow-lg),var(--velvet-glow)}
 .beauty-nav-quick-btn{font:inherit;font-size:12px;min-height:44px;border:1px solid var(--line);border-radius:24px;background:var(--paper);color:var(--ink);padding:8px 12px;cursor:pointer;white-space:nowrap;box-shadow:var(--velvet-glow)}
 .beauty-nav-quick-btn:hover{background:var(--wash)}
