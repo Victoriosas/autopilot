@@ -101,9 +101,9 @@ export function ConsultationInbox() {
       <p className="whitespace-pre-wrap">{row.input.message}</p>
       <p>Consentimiento: {row.input.consentVersion} · Recibida: {row.created_at} · Caduca: {row.expires_at}</p>
       <label className="mt-2 block text-sm">Estado administrativo
-        <select className="ml-2 rounded border border-neutral-600 bg-neutral-800 p-2" disabled={busy}
-          value={caseStatuses[row.id] || 'new'} onChange={event => void saveStatus(row.id, event.target.value)}>
-          <option value="new">Nueva</option><option value="in_review">En revisión</option>
+        <select className="ml-2 rounded border border-neutral-600 bg-neutral-800 p-2" disabled={busy || !caseStatuses[row.id]}
+          value={caseStatuses[row.id] || ''} onChange={event => void saveStatus(row.id, event.target.value)}>
+          <option value="" disabled>Ver estado primero</option><option value="new">Nueva</option><option value="in_review">En revisión</option>
           <option value="awaiting_contact">Pendiente de contacto</option>
           <option value="answered">Respondida</option><option value="closed">Cerrada</option>
         </select>
