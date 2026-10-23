@@ -343,6 +343,8 @@
 .beauty-consultation-radio,.beauty-consultation-consent{display:flex!important;align-items:flex-start;gap:10px;min-height:44px}
 .beauty-consultation input[type=checkbox],.beauty-consultation input[type=radio]{width:20px;height:20px;flex:none}
 .beauty-consultation button:disabled{opacity:.5;cursor:not-allowed}
+.professional-site h1.beauty-consultation-heading{font-size:clamp(44px,6vw,72px);line-height:1.05}
+.beauty-consultation{overflow-wrap:anywhere}
 .beauty-consultation .beauty-consultation-fields{display:grid;gap:20px;min-width:0;border:0;padding:0}
 .beauty-consultation-fields>legend{font-weight:600;margin-bottom:16px}
 .beauty-consultation input,.beauty-consultation textarea,.beauty-consultation select{min-width:0;box-sizing:border-box}

@@ -1,9 +1,16 @@
 import { Router, json, type ErrorRequestHandler, type RequestHandler } from 'express';
+import { isIP } from 'node:net';
 import { requireSupabaseAdminAuth } from '../security/adminAuth';
 import { createHash, createHmac } from 'node:crypto';
 import { normalizeConsultationRequest } from './consultationRequest';
 import { consultationSupabaseStore, type ConsultationStore } from './consultationSupabase';
 import { createConsultationDelivery, type ConsultationDelivery } from './consultationDelivery';
+
+export function consultationAddress(req: { ip?: string; get(name: string): string | undefined }, vercel = process.env.VERCEL === '1'): string {
+  // Vercel overwrites this header. Outside its runtime, use only Express's peer IP.
+  const address = vercel ? req.get('x-vercel-forwarded-for') : undefined;
+  return address && isIP(address) ? address : req.ip || 'unknown';
+}
 
 export function createConsultationRouter(deps: { store?: ConsultationStore; delivery?: ConsultationDelivery; enabled?: () => boolean; origin?: () => string | undefined; abuseKey?: () => string | undefined; auth?: RequestHandler } = {}) {
   const router = Router(), store = deps.store || consultationSupabaseStore, delivery = deps.delivery || createConsultationDelivery();
@@ -33,8 +40,7 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; deli
     try { input = normalizeConsultationRequest(req.body); } catch { return res.status(400).json({ error: 'CONSULTATION_INPUT_INVALID' }); }
     try {
       const fingerprint = createHash('sha256').update(JSON.stringify({ input, delivery: delivery.signature?.() || '' })).digest('hex');
-      // Uses Express's audited proxy configuration, never an arbitrary client X-Forwarded-For.
-      const abuseHash = createHmac('sha256', abuseKey()!).update(req.ip || 'unknown').digest('hex');
+      const abuseHash = createHmac('sha256', abuseKey()!).update(consultationAddress(req)).digest('hex');
       const claim = await store.claim(input, fingerprint, abuseHash);
       if (claim.state === 'conflict') return res.status(409).json({ error: 'CONSULTATION_IDEMPOTENCY_CONFLICT' });
       if (claim.state === 'throttled') return res.status(429).json({ error: 'CONSULTATION_RATE_LIMITED' });
