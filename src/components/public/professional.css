@@ -331,3 +331,17 @@
 .beauty-service-expand-body ul li{background:none;border:0;padding:3px 0;display:list-item;scroll-margin:0}
 .beauty-service-expand-body ul li::before{content:none;counter-increment:none}
 .beauty-service-caution{font-size:14px}
+
+/* Formulario de consulta: armonía con identidad editorial y campos accesibles */
+.beauty-consultation{max-width:860px;margin:0 auto;background:var(--wash);border:1px solid var(--line);padding:clamp(22px,5vw,52px);border-radius:18px}
+.beauty-consultation form{display:grid;gap:20px;margin:28px 0}
+.beauty-consultation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.beauty-consultation label:not(.beauty-consultation-radio){display:grid;gap:8px}
+.beauty-consultation input:not([type=radio]):not([type=checkbox]),.beauty-consultation select,.beauty-consultation textarea{width:100%;background:#fff;color:#352f29;border:1px solid #a69b8b;padding:13px 14px;border-radius:8px;font:inherit;min-height:46px}
+.beauty-consultation input:focus-visible,.beauty-consultation select:focus-visible,.beauty-consultation textarea:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.beauty-consultation fieldset{border:1px solid var(--line);padding:16px;display:flex;gap:18px;flex-wrap:wrap}
+.beauty-consultation-radio,.beauty-consultation-consent{display:flex!important;align-items:flex-start;gap:10px;min-height:44px}
+.beauty-consultation input[type=checkbox],.beauty-consultation input[type=radio]{width:20px;height:20px;flex:none}
+.beauty-consultation button:disabled{opacity:.5;cursor:not-allowed}
+.beauty-consultation-trap{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+@media(max-width:600px){.beauty-consultation-grid{grid-template-columns:1fr}}
