@@ -29,6 +29,7 @@ export function ServicesDirectory() {
             </div>
           </details>
           <div className="beauty-contact-options">
+            <a className="beauty-text-link" href={'/consultanos#' + serviceSlug(name)}>Hablemos de tu cuidado<span aria-hidden="true"> ↗</span></a>
             <ContactLink service={name} className="beauty-text-link">Consultar por {name.toLowerCase()}</ContactLink>
             <ContactLink service={name} channel="email" className="beauty-text-link">Consultar por email sobre {name.toLowerCase()}</ContactLink>
           </div>
