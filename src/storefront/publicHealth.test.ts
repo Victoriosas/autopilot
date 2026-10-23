@@ -39,3 +39,10 @@ test('public monitor rejects redirects that hide missing drafts', async () => {
 test('public monitor propagates unavailable hosting', async () => {
   await assert.rejects(checkPublicHealth('https://example.test', async () => { throw new Error('offline'); }));
 });
+
+test('public monitor rejects missing service discovery', async () => {
+  const normal = responses();
+  await assert.rejects(checkPublicHealth('https://example.test', async (url: string) =>
+    new URL(url).pathname === '/nuestros-servicios'
+      ? new Response('', { status: 404 }) : normal(url)));
+});
