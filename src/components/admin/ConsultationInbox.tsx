@@ -13,6 +13,7 @@ export function ConsultationInbox() {
   const [replyState, setReplyState] = useState<Record<string, string>>({});
   const [channelFilter, setChannelFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [caseStatuses, setCaseStatuses] = useState<Record<string, string>>({});
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   async function load(page = 0) {
@@ -42,12 +43,28 @@ export function ConsultationInbox() {
       if (!response.ok) throw Error();
       const payload = await response.json();
       const reply = payload.reply as { state: string; sent_at: string | null } | null;
+      if (alive.current) setCaseStatuses(previous => ({ ...previous, [id]: payload.case?.status || 'new' }));
       const label = !reply ? 'Sin respuesta por correo registrada' :
         reply.state === 'sent' ? 'Correo enviado' :
         reply.state === 'sending' ? 'Envío en proceso: verificá antes de actuar' :
         'Entrega incierta: revisar Resend, no reenviar automáticamente';
       if (alive.current) setReplyState(previous => ({ ...previous, [id]: label }));
     } catch { if (alive.current) setError('No fue posible verificar el historial de envío.'); }
+    finally { if (alive.current) setBusy(false); }
+  }
+  async function saveStatus(id: string, status: string) {
+    setBusy(true); setError('');
+    try {
+      const response = await apiFetch('/api/beauty/inquiries/admin/' + encodeURIComponent(id) + '/case-status', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-consultation-approval': id },
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) throw Error();
+      if (alive.current) {
+        setCaseStatuses(previous => ({ ...previous, [id]: status }));
+        setReplyState(previous => ({ ...previous, [id]: 'Estado administrativo guardado' }));
+      }
+    } catch { if (alive.current) setError('No se pudo guardar el estado administrativo.'); }
     finally { if (alive.current) setBusy(false); }
   }
   async function approve(id: string) {
@@ -83,6 +100,14 @@ export function ConsultationInbox() {
       <p>Preferencia: {({ whatsapp: 'WhatsApp', email: 'Correo electrónico', phone: 'Llamada' })[row.input.responseChannel]}</p>
       <p className="whitespace-pre-wrap">{row.input.message}</p>
       <p>Consentimiento: {row.input.consentVersion} · Recibida: {row.created_at} · Caduca: {row.expires_at}</p>
+      <label className="mt-2 block text-sm">Estado administrativo
+        <select className="ml-2 rounded border border-neutral-600 bg-neutral-800 p-2" disabled={busy}
+          value={caseStatuses[row.id] || 'new'} onChange={event => void saveStatus(row.id, event.target.value)}>
+          <option value="new">Nueva</option><option value="in_review">En revisión</option>
+          <option value="awaiting_contact">Pendiente de contacto</option>
+          <option value="answered">Respondida</option><option value="closed">Cerrada</option>
+        </select>
+      </label>
       <div className="mt-3 flex flex-wrap gap-2"><button className="rounded border border-amber-600 px-3 py-2" disabled={busy} onClick={() => void prepare(row.id)}>Preparar respuesta</button><button className="rounded border px-3 py-2" disabled={busy} onClick={() => void checkReply(row.id)}>Ver estado de respuesta</button></div>
       {drafts[row.id] && <div className="mt-3 rounded border border-neutral-600 bg-neutral-950 p-3">
         <p>Prioridad: {drafts[row.id].priority} · Canal: {drafts[row.id].channel}</p>
