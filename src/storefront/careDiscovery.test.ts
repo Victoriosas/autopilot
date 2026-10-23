@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { articles } from './editorial';
-import { careAreas, careGoals, careStarts, careMessage, discoveryItems, giftMessage, searchCare } from './careDiscovery';
+import { careAreas, careGoals, careStarts, careMessage, careGoalOptions, careServiceHref, discoveryItems, giftMessage, searchCare } from './careDiscovery';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ContactLink } from '../components/public/ContactLink';
@@ -50,4 +50,21 @@ test('both contact channels encode the complete proposal as text without adding 
     assert.ok(url.searchParams.get(channel === 'email' ? 'body' : 'text')?.endsWith(context));
     assert.deepEqual([...url.searchParams.keys()].sort(), channel === 'email' ? ['body', 'subject'] : ['text']);
   }
+});
+
+test('finder preserves the selected treatment and modality without publishing draft services', () => {
+  assert.ok(careGoalOptions('facial').includes('Limpieza profunda'));
+  assert.equal(careGoalOptions('relajacion').length, 4);
+  const message = careMessage('facial', 'Limpieza profunda', 'Consultar una atención presencial');
+  assert.match(message, /Limpieza profunda/);
+  assert.match(message, /consultar una atención presencial/);
+  assert.equal(careServiceHref('Limpieza profunda'), '/nuestros-servicios#limpieza-profunda');
+  assert.equal(careServiceHref('Asesoría de cuidado facial online'), null);
+  assert.ok(careGoalOptions('rutina').every(goal => !goal.includes('Asesoría')));
+});
+
+test('gift proposals preserve the optional sender and bound every user field', () => {
+  assert.match(giftMessage('Ana', 'Una pausa', 'Cuidado corporal', 'Sofía'), /De parte de: Sofía/);
+  assert.doesNotMatch(giftMessage('Ana', '', 'Libre elección'), /De parte de:/);
+  assert.ok(giftMessage('a'.repeat(100), 'b'.repeat(300), 'Libre elección', 'c'.repeat(100)).length < 800);
 });
