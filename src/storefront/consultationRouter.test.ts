@@ -24,3 +24,20 @@ test('consultation HTTP fails closed and accepts only durable recorded/provider-
     await t.test('replay sends nothing; conflicts and durable abuse denial are distinct', async () => { sent = false; state = 'accepted'; assert.equal((await post()).status, 202); assert.equal(sent, false); state = 'conflict'; assert.equal((await post()).status, 409); state = 'throttled'; assert.equal((await post()).status, 429); state = 'pending'; assert.equal((await post()).status, 503); });
   } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); }
 });
+
+test('consultation inbox requires authorization and lists through the caller identity', async () => {
+  let called = false;
+  const app = express();
+  app.use('/inquiries', createConsultationRouter({
+    store: { ready: async () => true, claim: async () => ({ state: 'pending' }), finish: async () => false,
+      list: async (token: string, offset: number) => { called = true; assert.equal(token, 'synthetic-admin'); assert.equal(offset, 50); return []; } },
+    auth: (req, res, next) => req.get('authorization') === 'Bearer synthetic-admin' ? next() : res.status(401).json({ error: 'ADMIN_AUTH_REQUIRED' }),
+  }));
+  const server = app.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const url = `http://127.0.0.1:${(server.address() as any).port}/inquiries/admin?offset=50`;
+  try {
+    assert.equal((await fetch(url)).status, 401); assert.equal(called, false);
+    const response = await fetch(url, { headers: { authorization: 'Bearer synthetic-admin' } });
+    assert.equal(response.status, 200); assert.deepEqual(await response.json(), { requests: [] }); assert.equal(called, true);
+  } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); }
+});
