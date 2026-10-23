@@ -47,3 +47,39 @@ test('consultation inbox requires authorization and lists through the caller ide
     assert.equal(response.status, 200); assert.deepEqual(await response.json(), { requests: [] }); assert.equal(called, true);
   } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); }
 });
+
+test('reply status endpoint is private and never queries outbox for an unknown consultation', async () => {
+  const app = express();
+  app.use('/inquiries', createConsultationRouter({
+    store: { ready: async () => true, claim: async () => ({ state: 'pending' }), finish: async () => false,
+      get: async () => null },
+    auth: (req, res, next) => req.get('authorization') === 'Bearer synthetic-admin' ? next() : res.status(401).json({ error: 'ADMIN_AUTH_REQUIRED' }),
+  }));
+  const server = app.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const url = `http://127.0.0.1:${(server.address() as any).port}/inquiries/admin/88888888-8888-4888-8888-888888888888/reply-status`;
+  try {
+    assert.equal((await fetch(url)).status, 401);
+    assert.equal((await fetch(url, { headers: { authorization: 'Bearer synthetic-admin' } })).status, 404);
+  } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); }
+});
+
+test('case state change rejects unauthenticated, foreign origin and invalid state', async () => {
+  const app = express();
+  const id = '88888888-8888-4888-8888-888888888888';
+  app.use('/inquiries', createConsultationRouter({
+    origin: () => 'https://victoriosas.online',
+    store: { ready: async () => true, claim: async () => ({ state: 'pending' }), finish: async () => false,
+      get: async () => null },
+    auth: (req, res, next) => req.get('authorization') === 'Bearer synthetic-admin' ? next() : res.status(401).json({ error: 'ADMIN_AUTH_REQUIRED' }),
+  }));
+  const server = app.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const url = `http://127.0.0.1:${(server.address() as any).port}/inquiries/admin/${id}/case-status`;
+  const post = (status: string, headers: Record<string, string> = {}) => fetch(url, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify({ status }),
+  });
+  try {
+    assert.equal((await post('closed')).status, 401);
+    assert.equal((await post('closed', { authorization: 'Bearer synthetic-admin', origin: 'https://attacker.invalid', 'x-consultation-approval': id })).status, 403);
+    assert.equal((await post('deleted', { authorization: 'Bearer synthetic-admin', origin: 'https://victoriosas.online', 'x-consultation-approval': id })).status, 400);
+  } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); }
+});
