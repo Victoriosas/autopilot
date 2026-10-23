@@ -9,3 +9,10 @@ test('consultation validates explicit consent, optional age/email and bounded pl
     assert.throws(() => normalizeConsultationRequest({ ...consultationFixture, ...change }), /CONSULTATION_INPUT_INVALID/);
   }
 });
+
+test('consultation accepts ordinary multiline questions without accepting control characters', () => {
+  assert.equal(normalizeConsultationRequest({ ...consultationFixture, message: 'Hola,\nquisiera orientación.' }).message, 'Hola,\nquisiera orientación.');
+  for (const message of ['Hola\u0000', 'Hola<script>', 'Hola\u202e']) {
+    assert.throws(() => normalizeConsultationRequest({ ...consultationFixture, message }), /CONSULTATION_INPUT_INVALID/);
+  }
+});
