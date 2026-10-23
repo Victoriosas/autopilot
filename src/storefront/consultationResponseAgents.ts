@@ -1,5 +1,5 @@
 import type { ConsultationInput } from './consultationRequest';
-import { serviceGroups, serviceSlug } from '../components/public/serviceDirectory';
+import { approvedServiceName } from './consultationKnowledge';
 
 /**
  * Deterministic, privacy-preserving triage. Never sends customer communications.
@@ -16,8 +16,6 @@ export type ConsultationDraft = {
   text: string;
 };
 
-const SERVICE_NAMES = new Map(serviceGroups.flatMap(group =>
-  group.services.map(name => [serviceSlug(name), name] as const)));
 const urgentTerms = /\b(?:suicid|autolesi[oó]n|no puedo respirar|dificultad (?:para )?respirar|dolor (?:fuerte|intenso) en el pecho|reacci[oó]n al[eé]rgica grave|anafilaxia|desmayo|sangrado abundante)\b/i;
 const sensitiveTerms = /\b(?:embaraz|lactancia|menor de edad|infecci[oó]n|quemadura|herida|medicaci[oó]n|antibi[oó]tico|alergia|dermatitis|ros[aá]cea|dolor|acn[eé]|diagn[oó]stico|enfermedad|c[aá]ncer|manchas sospechosas)\b/i;
 
@@ -25,7 +23,7 @@ export function draftConsultationResponse(input: ConsultationInput): Consultatio
   const message = input.message.normalize('NFC').slice(0, 600);
   const urgent = urgentTerms.test(message);
   const sensitive = !urgent && (sensitiveTerms.test(message) || input.age !== null && input.age < 18);
-  const service = SERVICE_NAMES.get(input.service);
+  const service = approvedServiceName(input.service);
   const category = urgent ? 'urgent' : sensitive ? 'sensitive' : service ? 'service' : 'general';
   const reasons = [
     ...(urgent ? ['possible_urgent_health_concern'] : []),

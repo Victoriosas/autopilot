@@ -23,6 +23,20 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; deli
   const available = async () => { try { return enabled() && Boolean(allowedOrigin()) && Boolean(abuseKey() && (deps.abuseKey || abuseKey()!.length >= 32)) && delivery.ready() && await store.ready(); } catch { return false; } };
   router.use((_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
   router.get('/config', async (_req, res) => res.json({ enabled: await available(), privacyVersion: 'consultation-v1', retentionDays: 30 }));
+  // Aggregate-only private dashboard; no names, email addresses or clinical details.
+  router.get('/admin/metrics', deps.auth || requireSupabaseAdminAuth, async (_req, res) => {
+    try {
+      const db = beautyServerDatabase();
+      const cutoff = new Date().toISOString();
+      const [requests, sent, uncertain] = await Promise.all([
+        db.from('consultation_requests').select('id', { count: 'exact', head: true }).gt('expires_at', cutoff),
+        db.from('consultation_reply_outbox').select('request_id', { count: 'exact', head: true }).eq('state', 'sent').gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString()),
+        db.from('consultation_reply_outbox').select('request_id', { count: 'exact', head: true }).eq('state', 'failed_unknown').gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString()),
+      ]);
+      if (requests.error || sent.error || uncertain.error) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
+      return res.json({ activeRequests: requests.count || 0, sentLast30Days: sent.count || 0, uncertainLast30Days: uncertain.count || 0 });
+    } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
+  });
   router.get('/admin', deps.auth || requireSupabaseAdminAuth, async (req, res) => {
     const offset = req.query.offset === undefined ? 0 : Number(req.query.offset);
     if (!Number.isSafeInteger(offset) || offset < 0 || offset > 10000) return res.status(400).json({ error: 'CONSULTATION_INPUT_INVALID' });
