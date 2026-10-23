@@ -2,7 +2,7 @@ name: Isolated Beauty Supabase
 on:
   push:
     branches: [main, 'codex/**', 'chatgpt/beauty-contact-form-20261023']
-    paths: ['src/storefront/beauty*', 'src/storefront/consultation*', 'src/security/adminAuth.ts', 'tests/beauty*', 'tests/consultation*', 'supabase/migrations/*beauty*.sql', 'supabase/migrations/*consultation*.sql', '.github/workflows/beauty-supabase.yml']
+    paths: ['src/storefront/beauty*', 'src/storefront/consultation*', 'src/security/adminAuth.ts', 'tests/beauty*', 'tests/consultation*', 'supabase/migrations/*beauty*.sql', 'supabase/migrations/*consultation*.sql', 'docs/CONSULTATION_FORM_104_QA.md', '.github/workflows/beauty-supabase.yml']
 permissions:
   contents: read
 concurrency:
