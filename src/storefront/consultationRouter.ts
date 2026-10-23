@@ -1,10 +1,11 @@
-import { Router, json, type ErrorRequestHandler } from 'express';
+import { Router, json, type ErrorRequestHandler, type RequestHandler } from 'express';
+import { requireSupabaseAdminAuth } from '../security/adminAuth';
 import { createHash, createHmac } from 'node:crypto';
 import { normalizeConsultationRequest } from './consultationRequest';
 import { consultationSupabaseStore, type ConsultationStore } from './consultationSupabase';
 import { createConsultationDelivery, type ConsultationDelivery } from './consultationDelivery';
 
-export function createConsultationRouter(deps: { store?: ConsultationStore; delivery?: ConsultationDelivery; enabled?: () => boolean; origin?: () => string | undefined; abuseKey?: () => string | undefined } = {}) {
+export function createConsultationRouter(deps: { store?: ConsultationStore; delivery?: ConsultationDelivery; enabled?: () => boolean; origin?: () => string | undefined; abuseKey?: () => string | undefined; auth?: RequestHandler } = {}) {
   const router = Router(), store = deps.store || consultationSupabaseStore, delivery = deps.delivery || createConsultationDelivery();
   const enabled = deps.enabled || (() => process.env.CONSULTATION_REQUESTS_ENABLED === 'true' && process.env.CONSULTATION_PRIVACY_APPROVED === 'true' && process.env.CONSULTATION_RETENTION_READY === 'true');
   const origin = deps.origin || (() => process.env.PUBLIC_APP_URL), abuseKey = deps.abuseKey || (() => process.env.CONSULTATION_ABUSE_SECRET);
@@ -12,6 +13,15 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; deli
   const available = async () => { try { return enabled() && Boolean(allowedOrigin()) && Boolean(abuseKey() && (deps.abuseKey || abuseKey()!.length >= 32)) && delivery.ready() && await store.ready(); } catch { return false; } };
   router.use((_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
   router.get('/config', async (_req, res) => res.json({ enabled: await available(), privacyVersion: 'consultation-v1', retentionDays: 30 }));
+  router.get('/admin', deps.auth || requireSupabaseAdminAuth, async (req, res) => {
+    const offset = req.query.offset === undefined ? 0 : Number(req.query.offset);
+    if (!Number.isSafeInteger(offset) || offset < 0 || offset > 10000) return res.status(400).json({ error: 'CONSULTATION_INPUT_INVALID' });
+    try {
+      const token = req.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
+      if (!token || !store.list) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
+      return res.json({ requests: await store.list(token, offset) });
+    } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
+  });
   router.post('/', async (req, res, next) => {
     if (!await available()) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
     if (req.get('origin') !== allowedOrigin() || req.get('sec-fetch-site') === 'cross-site') return res.status(403).json({ error: 'CONSULTATION_ORIGIN_INVALID' });

@@ -28,6 +28,7 @@ const ConnectorsDirectoryModal = lazy(() => import('./components/admin/Connector
 const GlobalAdminSearchModal = lazy(() => import('./components/admin/GlobalAdminSearchModal').then((module) => ({ default: module.GlobalAdminSearchModal })));
 const ReleaseReadinessCard = lazy(() => import('./components/admin/ReleaseReadinessCard').then((module) => ({ default: module.ReleaseReadinessCard })));
 const BeautyRequestsPanel = lazy(() => import('./components/admin/BeautyRequestsPanel').then((module) => ({ default: module.BeautyRequestsPanel })));
+const ConsultationInbox = lazy(() => import('./components/admin/ConsultationInbox').then((module) => ({ default: module.ConsultationInbox })));
 const BeautyCatalogPanel = lazy(() => import('./components/admin/BeautyCatalogPanel').then((module) => ({ default: module.BeautyCatalogPanel })));
 const BeautyEvaluationPanel = lazy(() => import('./components/admin/BeautyEvaluationPanel').then((module) => ({ default: module.BeautyEvaluationPanel })));
 import { AuthModal } from './components/auth/AuthModal';
@@ -220,6 +221,7 @@ export function App() {
 
           <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <BeautyRequestsPanel key={user?.id||"signed-out"} />
+            <ConsultationInbox key={user?.id||"signed-out"} />
             <BeautyCatalogPanel key={user?.id||"signed-out"} />
             <ReleaseReadinessCard />
             {adminTab === 'pipeline' ? (

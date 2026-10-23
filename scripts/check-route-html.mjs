@@ -9,6 +9,10 @@ const editorial = read('seo/editorial.html');
 const fallback = read('seo/fallback.html');
 const privacy = read('seo/privacy.html');
 const services = read('seo/services.html');
+const consultation = read('seo/consultation.html');
+assert.match(consultation, /<title>Consultanos · Victoriosas<\/title>/);
+assert.match(consultation, /rel="canonical" href="https:\/\/victoriosas.online\/consultanos"/);
+for (const source of ['/consultanos', '/consultanos/']) assert.equal(config.rewrites.find(rule => rule.source === source)?.destination, '/seo/consultation.html');
 assert.match(services, /<title>Nuestros servicios · Victoriosas<\/title>/);
 assert.match(services, /rel="canonical" href="https:\/\/victoriosas.online\/nuestros-servicios"/);
 assert.match(services, /property="og:url" content="https:\/\/victoriosas.online\/nuestros-servicios"/);
@@ -32,7 +36,7 @@ for (const [, cssPath] of home.matchAll(/<link[^>]+href="(\/assets\/[^\"]+\.css)
     assert.ok(existsSync(`dist${url}`), `Missing stylesheet asset: ${url}`);
   }
 }
-for (const html of [home, editorial, fallback, privacy, services]) {
+for (const html of [home, editorial, fallback, privacy, services, consultation]) {
   const script = html.match(/<script[^>]+src="([^"]+)"/)[1];
   assert.ok(existsSync(`dist${script}`), `Missing entry asset: ${script}`);
 }

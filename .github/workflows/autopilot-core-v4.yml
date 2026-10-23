@@ -95,6 +95,16 @@ jobs:
         env:
           HOSTED_REPLAY_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/victoriosa_hosted_replay_test
 
+      - name: Create disposable consultation database
+        run: createdb -h 127.0.0.1 -p 5432 -U postgres victoriosa_beauty_test
+        env:
+          PGPASSWORD: isolated-test-password
+
+      - name: Consultation concurrency privacy and retention regression
+        run: node --import tsx --test tests/consultation-postgres.test.ts
+        env:
+          BEAUTY_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/victoriosa_beauty_test
+
       - name: Governance guardrails
         shell: bash
         run: |

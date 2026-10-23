@@ -1,8 +1,8 @@
 name: Isolated Beauty Supabase
 on:
   push:
-    branches: [main, 'codex/**']
-    paths: ['src/storefront/beauty*', 'src/security/adminAuth.ts', 'tests/beauty*', 'supabase/migrations/*beauty*.sql', '.github/workflows/beauty-supabase.yml']
+    branches: [main, 'codex/**', 'chatgpt/beauty-contact-form-20261023']
+    paths: ['src/storefront/beauty*', 'src/storefront/consultation*', 'src/security/adminAuth.ts', 'tests/beauty*', 'tests/consultation*', 'supabase/migrations/*beauty*.sql', 'supabase/migrations/*consultation*.sql', '.github/workflows/beauty-supabase.yml']
 permissions:
   contents: read
 concurrency:
@@ -35,6 +35,7 @@ jobs:
           cp supabase/migrations/20261017220000_beauty_requests.sql "$fixture/supabase/migrations/"
           cp supabase/migrations/20261017221000_beauty_retention.sql "$fixture/supabase/migrations/"
           cp supabase/migrations/20261017230000_beauty_catalog_evaluations.sql "$fixture/supabase/migrations/"
+          cp supabase/migrations/20261023042129_consultation_private_outbox.sql "$fixture/supabase/migrations/"
       - name: Start real local Auth and PostgREST
         run: |
           supabase start --workdir "$RUNNER_TEMP/victoriosa-beauty-ci" -x studio,imgproxy,realtime,storage-api,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit > "$RUNNER_TEMP/beauty-start.log" 2>&1
@@ -45,6 +46,7 @@ jobs:
           command -v psql > /dev/null
           node --import tsx --test tests/beauty-supabase.test.ts
           node --import tsx --test tests/beauty-management-supabase.test.ts
+          node --import tsx --test tests/consultation-supabase.test.ts
         env:
           BEAUTY_SYNTHETIC_SUPABASE: 'true'
           SUPABASE_LOCAL_STATUS_FILE: ${{ runner.temp }}/beauty-status.json
