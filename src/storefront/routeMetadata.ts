@@ -1,9 +1,9 @@
-export type PublicDocument = 'home' | 'editorial' | 'privacy' | 'fallback';
+export type PublicDocument = 'home' | 'editorial' | 'privacy' | 'services' | 'fallback';
 export function routeHtml(html: string, route: PublicDocument, preview: boolean): string {
-  if (route === 'editorial' || route === 'privacy') {
-    const title = route === 'editorial' ? 'De mí para ti · Victoriosas' : 'Contacto y privacidad · Victoriosas';
-    const description = route === 'editorial' ? 'Un espacio pensado como una pausa. Bienestar, belleza y pequeños rituales para el cuidado cotidiano.' : 'Cómo contactar con Victoriosas por email o WhatsApp y qué tener en cuenta antes de compartir información personal.';
-    const canonical = 'https://victoriosas.online/' + (route === 'editorial' ? 'de-mi-para-ti' : 'privacidad');
+  if (route === 'editorial' || route === 'privacy' || route === 'services') {
+    const title = route === 'services' ? 'Nuestros servicios · Victoriosas' : route === 'editorial' ? 'De mí para ti · Victoriosas' : 'Contacto y privacidad · Victoriosas';
+    const description = route === 'services' ? 'Explorá los cuidados faciales, corporales y masajes de Victoriosas. Consultá por WhatsApp o email para una evaluación inicial remota.' : route === 'editorial' ? 'Un espacio pensado como una pausa. Bienestar, belleza y pequeños rituales para el cuidado cotidiano.' : 'Cómo contactar con Victoriosas por email o WhatsApp y qué tener en cuenta antes de compartir información personal.';
+    const canonical = 'https://victoriosas.online/' + (route === 'services' ? 'nuestros-servicios' : route === 'editorial' ? 'de-mi-para-ti' : 'privacidad');
     html = html.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
       .replace(/(<meta name="description" content=")[^"]*/, `$1${description}`)
       .replace(/(<meta property="og:title" content=")[^"]*/, `$1${title}`)

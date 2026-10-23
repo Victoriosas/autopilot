@@ -11,7 +11,7 @@ export async function checkPublicHealth(origin, request = fetch) {
     console.log(`${path}: HTTP ${response.status}`);
     return response;
   }
-  for (const path of ['/', '/de-mi-para-ti', '/privacidad', '/robots.txt', '/sitemap.xml']) await get(path);
+  for (const path of ['/', '/nuestros-servicios', '/de-mi-para-ti', '/privacidad', '/robots.txt', '/sitemap.xml']) await get(path);
   for (const path of ['/tienda', '/checkout', '/tratamientos']) await get(path, 410);
   for (const slug of ['una-pausa-tranquila-para-vos', 'ordenar-tu-rutina-cosmetica']) await get(`/de-mi-para-ti/${slug}`, 404);
   const health = await (await get('/api/health')).json();

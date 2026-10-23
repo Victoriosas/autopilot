@@ -19,6 +19,14 @@
       "destination": "/seo/editorial.html"
     },
     {
+      "source": "/nuestros-servicios",
+      "destination": "/seo/services.html"
+    },
+    {
+      "source": "/nuestros-servicios/",
+      "destination": "/seo/services.html"
+    },
+    {
       "source": "/privacidad",
       "destination": "/seo/privacy.html"
     },

@@ -315,6 +315,7 @@
 .beauty-directory-list li{background:var(--wash);padding:26px;border:1px solid var(--line);scroll-margin-top:110px}
 .beauty-directory-list li::before{counter-increment:service;content:counter(service,decimal-leading-zero);font-size:14px;color:var(--gold)}
 .beauty-directory-list h3{margin:8px 0 12px}
+.beauty-directory-list .beauty-text-link{min-height:44px}
 .beauty-services-directory>section{scroll-margin-top:95px}
 .beauty-menu-dialog .beauty-services-submenu{margin:10px 0 18px;padding:10px}
 @media(max-width:760px){.beauty-directory-list{grid-template-columns:1fr}.beauty-services-directory{padding-top:35px}.beauty-nav-dropdown>.beauty-services-submenu{position:static}}

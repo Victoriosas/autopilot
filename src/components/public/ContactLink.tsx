@@ -1,4 +1,6 @@
 import React from 'react';
+import type { serviceGroups } from './serviceDirectory';
+type ServiceName = typeof serviceGroups[number]['services'][number];
 const interests = {
   facial: 'me interesa el cuidado facial',
   corporal: 'me interesa el cuidado corporal',
@@ -8,8 +10,10 @@ const interests = {
 };
 export type ConsultationInterest = keyof typeof interests;
 export const contactEmail = 'victoriosas.online@gmail.com';
-export function ContactLink({children, className = 'beauty-button', icon, interest, channel = 'whatsapp'}: {children?: React.ReactNode; className?: string; icon?: string; interest?: ConsultationInterest; channel?: 'whatsapp' | 'email'}) {
-  const message = interest === 'online'
+export function ContactLink({children, className = 'beauty-button', icon, interest, service, channel = 'whatsapp'}: {children?: React.ReactNode; className?: string; icon?: string; interest?: ConsultationInterest; service?: ServiceName; channel?: 'whatsapp' | 'email'}) {
+  const message = service
+    ? `Hola, me interesa consultar por ${service}. Quisiera conversar sobre una evaluación inicial remota. Desde la web de Victoriosas.`
+    : interest === 'online'
     ? 'Hola, Victoria. Me interesa conocer la asesoría de cuidado facial online. ¿Podés contarme cómo funciona, qué incluye y su valor? Desde la web de Victoriosas.'
     : interest
     ? `Hola, ${interests[interest]}. Quisiera consultar por una evaluación inicial remota. Desde la web de Victoriosas.`

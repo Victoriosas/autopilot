@@ -28,7 +28,10 @@ export function ServicesDirectory() {
               <p className="beauty-service-caution"><strong>Importante:</strong> {info.caution}</p>
             </div>
           </details>
-          <ContactLink interest="orientacion" className="beauty-text-link">Consultar por {name.toLowerCase()}</ContactLink>
+          <div className="beauty-contact-options">
+            <ContactLink service={name} className="beauty-text-link">Consultar por {name.toLowerCase()}</ContactLink>
+            <ContactLink service={name} channel="email" className="beauty-text-link">Consultar por email sobre {name.toLowerCase()}</ContactLink>
+          </div>
         </li>;
       })}</ol>
     </section>)}
