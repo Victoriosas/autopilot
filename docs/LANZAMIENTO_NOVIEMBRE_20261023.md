@@ -62,3 +62,13 @@ Issues #81/#84 ya incluyen propuestas de perfiles y contenidos. PR90 preservada;
 Próximas seis horas: revisar esa PR y preparar publicación únicamente con autorización vigente para este alcance; confirmar receptor/capacidad humana y condiciones profesionales para noviembre; recuperar lectura Supabase y conciliar evidencia de habilitación sin modificar políticas. Mantener campañas, borradores, pagos y datos cerrados hasta las aprobaciones correspondientes.
 
 Para seguir: leer el último checkpoint y la PR antes de repetir suites. Si CI y preview están aprobados, conservar evidencia y concentrarse en los bloqueos operativos. No presentar la web como un sistema de reservas integrado mientras el registro esté cerrado.
+
+## 7. Cierre remoto del lote
+
+PR borrador [#103](https://github.com/Victoriosas/autopilot/pull/103), MERGEABLE. SHA revisado `f491e832566d3133463948545d16ef4d7be2b385`: Core push `39894954240` y PR `39894960499`, ambos validate/postgres SUCCESS; CodeQL SUCCESS. Supabase Preview SKIPPED apunta al otro proyecto y no se considera prueba de Victoriosas. Ningún enlace a ese job autoriza modificarlo.
+
+Preview READY `dpl_9iKQSubYT5hvptbLArvaE8dtEhsS`: https://autopilot-30iqss33t-autopilot12.vercel.app. Health confirma el SHA exacto; checkout/MP/requests/catalog cerrados. HTTP200 en servicios con/sin barra, título/canonical/OG correctos y noindex de preview. Acceso de navegador mediante enlace temporal de Vercel, sin desactivar protección ni guardar credenciales en Git.
+
+Navegador real del preview a 1440/768/390/320: 17 fichas, 34 enlaces con tratamiento correcto, mínimo táctil 44px, detalles por teclado, navegación real del menú, ocho activaciones externas interceptadas y cero envíos. Axe con las 17 fichas desplegadas sin infracciones en los cuatro anchos. El mismo recorrido final pasó localmente. Log: `output/playwright/launch23-preview-interactions.log`; capturas de las fichas `launch23-final-card-*.png`. El bundle local apunta al proyecto Supabase correcto. Esto no valida acceso administrativo con una persona autorizada.
+
+El commit de cierre posterior a ese SHA modifica solamente documentación; revisar también sus checks en la PR. El código aprobado en CI y navegador permanece idéntico. Producción conserva `97fc36e`; publicación de #103 requiere aprobación específica. El siguiente prompt ejecutado fue verificar CI/preview, y queda completado en este alcance. No se exige ninguna intervención para deshacer errores técnicos; los pendientes reales son autorización de publicación, recepción humana, condiciones profesionales, lectura alojada estable y evidencia comercial de proveedores.
