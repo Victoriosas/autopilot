@@ -33,6 +33,6 @@ for (const channel of ['whatsapp', 'email'] as const) {
         assert.deepEqual([...url.searchParams.keys()], ['text']);
       }
     });
-    assert.equal(new Set(links.map(url => url.href)).size, 17);
+    assert.equal(new Set(links.map(url => url.href)).size, 19);
   });
 }
