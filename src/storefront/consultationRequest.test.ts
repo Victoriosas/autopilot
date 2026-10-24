@@ -16,3 +16,12 @@ test('consultation accepts ordinary multiline questions without accepting contro
     assert.throws(() => normalizeConsultationRequest({ ...consultationFixture, message }), /CONSULTATION_INPUT_INVALID/);
   }
 });
+
+test('AI consent is independent, optional and explicitly boolean', () => {
+  assert.deepEqual(normalizeConsultationRequest(consultationFixture), consultationFixture);
+  assert.equal(normalizeConsultationRequest({ ...consultationFixture, aiConsent: true }).aiConsent, true);
+  assert.equal(normalizeConsultationRequest({ ...consultationFixture, aiConsent: false }).aiConsent, false);
+  for (const aiConsent of ['true', null, 1]) {
+    assert.throws(() => normalizeConsultationRequest({ ...consultationFixture, aiConsent }), /CONSULTATION_INPUT_INVALID/);
+  }
+});
