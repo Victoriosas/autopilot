@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { runConsultationIntelligence, reviewConsultationIntelligence, type IntelligenceStore } from './consultationIntelligenceStore';
-import { intelligenceFixture } from './consultationIntelligence.test';
+import { intelligenceFixture } from './consultationIntelligence.fixtures';
 test('persistent orchestration claims once and cannot return a result from another conversation',async()=>{
  let writes=0; const saved:any[]=[];
  const store:IntelligenceStore={claim:async(id,version,config)=>{if(writes++)return {state:'busy'};return {state:'claimed',id:'run-fixture',lease:'lease-fixture'};},finish:async(id,lease,result)=>{saved.push(result);return true;},get:async()=>null,review:async()=>false,reserve:async()=>true,report:async()=>({})};

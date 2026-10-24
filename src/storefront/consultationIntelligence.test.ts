@@ -3,12 +3,7 @@ import assert from 'node:assert/strict';
 import { analyzeConsultation, checkExactAnswer, conversationVersion } from './consultationIntelligence';
 import { approvedConsultationFacts } from './consultationEvidence';
 import { intelligenceEvaluation } from './consultationIntelligence.eval';
-import type { ConsultationRecord } from './consultationSupabase';
-
-export const intelligenceFixture = (message = 'Precio del masaje relax'): ConsultationRecord => ({
- id:'88888888-8888-4888-8888-888888888888', created_at:'2026-10-24T00:00:00Z', expires_at:'2026-11-20T00:00:00Z',
- input:{id:'88888888-8888-4888-8888-888888888888',fullName:'Caso sintético',phone:'+59899123456',email:'synthetic@example.com',age:30,service:'orientacion',message,responseChannel:'email',consent:true,consentVersion:'consultation-v1',website:''},
-});
+import { intelligenceFixture } from './consultationIntelligence.fixtures';
 const now = new Date('2026-10-24T01:00:00Z');
 
 for (const [id,message,topics,risk] of intelligenceEvaluation) test(`intelligence frozen ${id}: ${message}`, async () => {
