@@ -49,7 +49,7 @@ export async function camelRunConsultationDraft(input: unknown, requestId: strin
     model: 'anthropic/claude-sonnet-5-5',
     input: JSON.stringify({ motive: typeof record?.message === 'string' ? record.message.slice(0, 600) : '',
       service: typeof record?.service === 'string' ? record.service.slice(0, 200) : '' }),
-    wait: true,
+    wait: 20,
     retentionSeconds: 3600,
     spendLimit: 0.15,
   });
@@ -61,9 +61,18 @@ export async function camelRunConsultationDraft(input: unknown, requestId: strin
     body: payload,
   });
   if (!response.ok) throw new Error('CAMELRUN_UNAVAILABLE');
-  const run: any = await response.json();
+  let run: any = await response.json();
   // Vercel execution time is bounded: fail closed rather than giving a partial draft.
-  if (run.status !== 'completed' && run.state !== 'completed') throw new Error('CAMELRUN_PENDING');
+  if (run.status !== 'completed' && run.state !== 'completed') {
+    const id = typeof run.id === 'string' ? run.id : null;
+    if (!id || !/^[a-zA-Z0-9_-]{8,128}$/.test(id)) throw new Error('CAMELRUN_PENDING');
+    const follow = await fetch('https://run.camelai.com/v1/runs/' + encodeURIComponent(id) + '?wait=15', {
+      signal, headers: { authorization: `Bearer ${key}` },
+    });
+    if (!follow.ok) throw new Error('CAMELRUN_UNAVAILABLE');
+    run = await follow.json();
+    if (run.status !== 'completed' && run.state !== 'completed') throw new Error('CAMELRUN_PENDING');
+  }
   let draft: unknown;
   try { draft = JSON.parse(run.text ?? run.outcome?.result?.reply ?? ''); }
   catch { throw new Error('CAMELRUN_INVALID_OUTPUT'); }
