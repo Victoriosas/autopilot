@@ -12,6 +12,15 @@ BEGIN
     RAISE EXCEPTION 'CONSULTATION_CLAIM_SCHEMA_UNEXPECTED';
   END IF;
   new_def := replace(old_def, old_check, new_check);
+  -- The existing hosted definition omits the final PL/pgSQL statement terminator.
+  -- Repair its serialized form before recompiling; preserve the existing logic.
+  new_def := replace(new_def, 'end$function
+END
+$migration$;
+, 'end; $function
+END
+$migration$;
+);
   EXECUTE new_def;
 END
 $migration$;
