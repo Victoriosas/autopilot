@@ -43,6 +43,8 @@ export async function camelRunConsultationDraft(input: unknown, requestId: strin
   if (!key) throw new Error('CAMELRUN_NOT_CONFIGURED');
   // Avoid sending metadata unrelated to the consultation, or logs with PII.
   const record = input as Record<string, unknown>;
+  // Older consultation-v1 records never authorized disclosure to an AI vendor.
+  if (record?.aiConsent !== true) throw new Error('CAMELRUN_CONSENT_REQUIRED');
   if (!record || typeof record.message !== 'string' || !record.message.trim()) throw new Error('CAMELRUN_INVALID_INPUT');
   const payload = JSON.stringify({
     systemPrompt: PROMPT,
