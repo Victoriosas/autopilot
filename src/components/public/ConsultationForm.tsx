@@ -8,7 +8,7 @@ const choices = [{ id: 'orientacion', name: 'Quiero orientación' }, ...serviceG
 
 export function ConsultationForm() {
   const [ready, setReady] = useState(false);
-  const [channel, setChannel] = useState('whatsapp');
+  const [channel, setChannel] = useState(() => new URLSearchParams(window.location.search).get('canal') === 'email' ? 'email' : 'whatsapp');
   const [service, setService] = useState('orientacion');
   const [pending, setPending] = useState(false);
   const [sent, setSent] = useState(false);
