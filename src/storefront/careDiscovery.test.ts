@@ -9,7 +9,7 @@ import { ContactLink } from '../components/public/ContactLink';
 test('public discovery includes all 19 services, unique destinations and no drafts', () => {
   const items = discoveryItems();
   assert.equal(items.length, 19);
-  assert.equal(new Set(items.map(item => item.href)).size, 17);
+  assert.equal(new Set(items.map(item => item.href)).size, 19);
   assert.ok(items.every(item => item.href.startsWith('/nuestros-servicios#')));
   assert.equal(discoveryItems(articles).length, 19);
 });
