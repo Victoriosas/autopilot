@@ -57,6 +57,30 @@ test('consultation actual disposable Auth PostgREST RPC and administrator RLS', 
       assert.equal(response.status, 200); const payload = await response.json();
       assert.equal(payload.requests.some((row: { id: string }) => row.id === input.id), true);
     });
+    await t.test('real administrator read markers persist and count unread without creating replies', async () => {
+      const adminHeaders = { authorization: 'Bearer ' + actors.admin.token, origin: 'https://victoriosas.online', 'content-type': 'application/json', 'x-consultation-approval': input.id };
+      const mark = (read: boolean, headers = adminHeaders) => fetch(base + '/admin/' + input.id + '/read-state', { method: 'POST', headers, body: JSON.stringify({ read }) });
+      const metrics = async () => {
+        const response = await fetch(base + '/admin/metrics', { headers: adminHeaders });
+        assert.equal(response.status, 200); return response.json();
+      };
+      assert.ok((await anon.from('consultation_read_states').select('*')).error);
+      assert.ok((await actors.admin.db.from('consultation_read_states').select('*')).error, 'even admins use the authorized server route');
+      assert.ok((await actors.customer.db.from('consultation_read_metrics').select('*')).error);
+      assert.equal((await mark(true, { ...adminHeaders, authorization: 'Bearer ' + actors.customer.token })).status, 403);
+      assert.equal((await metrics()).unreadRequests, 1);
+      const response = await mark(true); assert.equal(response.status, 200);
+      assert.equal(typeof (await response.json()).readAt, 'string');
+      assert.equal((await metrics()).unreadRequests, 0);
+      const listed = await (await fetch(base + '/admin', { headers: adminHeaders })).json();
+      assert.equal(typeof listed.readStates[input.id], 'string');
+      assert.equal((await mark(true)).status, 200); assert.equal((await metrics()).unreadRequests, 0);
+      const audit = await service.from('consultation_read_states').select('read_by').eq('request_id', input.id).single();
+      assert.equal(audit.error, null); assert.equal(audit.data!.read_by, actors.admin.id);
+      assert.equal((await mark(false)).status, 200); assert.equal((await metrics()).unreadRequests, 1);
+      const counts = await metrics(); assert.equal(counts.activeRequests, 1); assert.equal(counts.sentLast30Days, 0);
+      assert.equal(deliveries, 1, 'reading must not send or resend the notification');
+    });
   } finally {
     server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve()));
     for (const actor of Object.values(actors)) { await actor.db.auth.signOut(); await service.auth.admin.deleteUser(actor.id); }

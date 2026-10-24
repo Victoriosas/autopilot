@@ -35,7 +35,7 @@ jobs:
           cp supabase/migrations/20261017220000_beauty_requests.sql "$fixture/supabase/migrations/"
           cp supabase/migrations/20261017221000_beauty_retention.sql "$fixture/supabase/migrations/"
           cp supabase/migrations/20261017230000_beauty_catalog_evaluations.sql "$fixture/supabase/migrations/"
-          cp supabase/migrations/20261023042129_consultation_private_outbox.sql "$fixture/supabase/migrations/"
+          cp supabase/migrations/*consultation*.sql "$fixture/supabase/migrations/"
       - name: Start real local Auth and PostgREST
         run: |
           supabase start --workdir "$RUNNER_TEMP/victoriosa-beauty-ci" -x studio,imgproxy,realtime,storage-api,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit > "$RUNNER_TEMP/beauty-start.log" 2>&1

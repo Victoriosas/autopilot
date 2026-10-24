@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { apiFetch } from '../../lib/api';
 import type { ConsultationRecord } from '../../storefront/consultationSupabase';
 import { serviceGroups, serviceSlug } from '../public/serviceDirectory';
+import { ConsultationReadControl } from './ConsultationReadControl';
 
 const labels = Object.fromEntries(serviceGroups.flatMap(group => group.services.map(name => [serviceSlug(name), name])));
 export function ConsultationInbox() {
@@ -15,18 +16,22 @@ export function ConsultationInbox() {
   const [search, setSearch] = useState('');
   const [caseStatuses, setCaseStatuses] = useState<Record<string, string>>({});
   const [sentIds, setSentIds] = useState<string[]>([]);
+  const [readStates, setReadStates] = useState<Record<string, string> | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
   const [source, setSource] = useState<'web' | 'whatsapp'>('web');
   const [folder, setFolder] = useState<'pending' | 'sent'>('pending');
   const alive = useRef(true);
-  useEffect(() => { alive.current = true; void load(); return () => { alive.current = false; }; }, []);
+  const loadVersion = useRef(0);
+  useEffect(() => { alive.current = true; void load(); return () => { alive.current = false; loadVersion.current++; }; }, []);
   async function load(page = 0) {
-    setRows([]); setError(''); setBusy(true);
+    const version = ++loadVersion.current;
+    setRows([]); setReadStates(null); setSentIds([]); setCaseStatuses({}); setError(''); setBusy(true);
     try {
       const response = await apiFetch('/api/beauty/inquiries/admin?offset=' + page);
       if (!response.ok) throw Error();
       const payload = await response.json();
-      if (alive.current) { setRows(payload.requests); setOffset(page); }
+      if (!alive.current || version !== loadVersion.current) return;
+      if (alive.current) { setRows(payload.requests); setReadStates(payload.readStates ?? null); setOffset(page); }
       setStatusLoading(true);
       const statuses = await Promise.all((payload.requests as ConsultationRecord[]).map(async row => {
         try {
@@ -36,9 +41,27 @@ export function ConsultationInbox() {
           return { id: row.id, sent: data.reply?.state === 'sent', status: data.case?.status || 'new' };
         } catch { return { id: row.id, sent: false }; }
       }));
-      if (alive.current) { setSentIds(statuses.filter(value => value.sent).map(value => value.id)); setCaseStatuses(previous => ({ ...previous, ...Object.fromEntries(statuses.filter(value => value.status).map(value => [value.id, value.status!])) })); }
-      setStatusLoading(false);
-    } catch { if (alive.current) setError('No se pudieron cargar las consultas. Revisá tu sesión y la configuración.'); }
+      if (alive.current && version === loadVersion.current) { setSentIds(statuses.filter(value => value.sent).map(value => value.id)); setCaseStatuses(previous => ({ ...previous, ...Object.fromEntries(statuses.filter(value => value.status).map(value => [value.id, value.status!])) })); setStatusLoading(false); }
+    } catch { if (alive.current && version === loadVersion.current) setError('No se pudieron cargar las consultas. Revisá tu sesión y la configuración.'); }
+    finally { if (alive.current && version === loadVersion.current) { setBusy(false); setStatusLoading(false); } }
+  }
+  async function saveReading(id: string, read: boolean) {
+    setBusy(true); setError('');
+    try {
+      const response = await apiFetch('/api/beauty/inquiries/admin/' + encodeURIComponent(id) + '/read-state', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-consultation-approval': id }, body: JSON.stringify({ read }),
+      });
+      if (!response.ok) throw Error();
+      const payload = await response.json();
+      if (read ? typeof payload.readAt !== 'string' : payload.readAt !== null) throw Error();
+      if (alive.current) {
+        setReadStates(previous => {
+          if (previous === null) return null;
+          const next = { ...previous }; if (payload.readAt) next[id] = payload.readAt; else delete next[id]; return next;
+        });
+        window.dispatchEvent(new Event('consultation-reading-changed'));
+      }
+    } catch { if (alive.current) { setReadStates(null); setError('No se pudo confirmar el cambio de lectura. Actualizá para comprobar el estado.'); window.dispatchEvent(new Event('consultation-reading-changed')); } }
     finally { if (alive.current) setBusy(false); }
   }
   async function prepare(id: string) {
@@ -110,7 +133,7 @@ export function ConsultationInbox() {
         <button type="button" aria-pressed={folder === 'pending'} onClick={() => setFolder('pending')} className={`rounded border px-3 py-2 ${folder === 'pending' ? 'border-amber-500 bg-amber-900/30' : 'border-neutral-600'}`}>En espera de respuesta ({rows.length - sentIds.length})</button>
         <button type="button" aria-pressed={folder === 'sent'} onClick={() => setFolder('sent')} className={`rounded border px-3 py-2 ${folder === 'sent' ? 'border-amber-500 bg-amber-900/30' : 'border-neutral-600'}`}>Respondidas con asistencia de IA ({sentIds.length})</button>
       </div>
-      <p className="text-xs text-neutral-400">Los totales corresponden a esta página de consultas, no a mensajes sin leer. Una respuesta aparece como enviada solamente con confirmación registrada; los borradores no cuentan como enviados.</p>
+      <p className="text-xs text-neutral-400">Los totales de estas carpetas corresponden a esta página. La campana cuenta consultas sin leer de toda la bandeja. La lectura es compartida por administración y se marca expresamente; no equivale a responder. Los borradores no cuentan como enviados.</p>
       {statusLoading && <p role="status">Verificando respuestas registradas…</p>}
     {error && <p role="alert">{error}</p>}
     <div className="my-3 flex flex-wrap gap-3">
@@ -121,6 +144,7 @@ export function ConsultationInbox() {
     </div>
     <ul className="space-y-4">{rows.filter(row => (folder === 'sent' ? sentIds.includes(row.id) : !sentIds.includes(row.id)) && (channelFilter === 'all' || row.input.responseChannel === channelFilter) && ((labels[row.input.service] || 'Orientación') + ' ' + row.input.message).toLowerCase().includes(search.trim().toLowerCase())).map(row => <li key={row.id} className="rounded border border-neutral-600 p-4 break-words">
       <h3 className="text-lg font-semibold">{row.input.fullName} · {labels[row.input.service] || 'Orientación'}</h3>
+      <ConsultationReadControl readAt={readStates === null ? undefined : readStates[row.id] ?? null} busy={busy} onChange={read => void saveReading(row.id, read)} />
       <p>Referencia: {row.id}</p><p>Celular: {row.input.phone}</p>
       {row.input.email && <p>Email: {row.input.email}</p>}
       {row.input.age !== null && <p>Edad informada: {row.input.age}</p>}

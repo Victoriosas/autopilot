@@ -9,6 +9,7 @@ import { draftConsultationResponse } from './consultationResponseAgents';
 import { maybeSendAutomaticConsultationReply } from './consultationAutoReply';
 import { approveAndSendConsultationReply } from './consultationReplyDelivery';
 import { beautyServerDatabase } from './beautyDatabase';
+import { consultationReadStore, type ConsultationReadStore } from './consultationReading';
 
 export function consultationAddress(req: { ip?: string; get(name: string): string | undefined }, vercel = process.env.VERCEL === '1'): string {
   // Vercel overwrites this header. Outside its runtime, use only Express's peer IP.
@@ -16,8 +17,9 @@ export function consultationAddress(req: { ip?: string; get(name: string): strin
   return address && isIP(address) ? address : req.ip || 'unknown';
 }
 
-export function createConsultationRouter(deps: { store?: ConsultationStore; delivery?: ConsultationDelivery; enabled?: () => boolean; origin?: () => string | undefined; abuseKey?: () => string | undefined; auth?: RequestHandler } = {}) {
+export function createConsultationRouter(deps: { store?: ConsultationStore; reads?: ConsultationReadStore; delivery?: ConsultationDelivery; enabled?: () => boolean; origin?: () => string | undefined; abuseKey?: () => string | undefined; auth?: RequestHandler } = {}) {
   const router = Router(), store = deps.store || consultationSupabaseStore, delivery = deps.delivery || createConsultationDelivery();
+  const reads = deps.reads || consultationReadStore;
   const enabled = deps.enabled || (() => process.env.CONSULTATION_REQUESTS_ENABLED === 'true' && process.env.CONSULTATION_PRIVACY_APPROVED === 'true' && process.env.CONSULTATION_RETENTION_READY === 'true');
   const origin = deps.origin || (() => process.env.PUBLIC_APP_URL), abuseKey = deps.abuseKey || (() => process.env.CONSULTATION_ABUSE_SECRET);
   const allowedOrigin = () => { try { const url = new URL(origin() || ''); return url.protocol === 'https:' && !url.username && !url.password ? url.origin : ''; } catch { return ''; } };
@@ -29,13 +31,14 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; deli
     try {
       const db = beautyServerDatabase();
       const cutoff = new Date().toISOString();
-      const [requests, sent, uncertain] = await Promise.all([
+      const [requests, sent, uncertain, unreadRequests] = await Promise.all([
         db.from('consultation_requests').select('id', { count: 'exact', head: true }).gt('expires_at', cutoff),
         db.from('consultation_reply_outbox').select('request_id', { count: 'exact', head: true }).eq('state', 'sent').gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString()),
         db.from('consultation_reply_outbox').select('request_id', { count: 'exact', head: true }).eq('state', 'failed_unknown').gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString()),
+        reads.unreadCount().catch(() => null),
       ]);
       if (requests.error || sent.error || uncertain.error) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
-      return res.json({ activeRequests: requests.count || 0, sentLast30Days: sent.count || 0, uncertainLast30Days: uncertain.count || 0 });
+      return res.json({ activeRequests: requests.count || 0, sentLast30Days: sent.count || 0, uncertainLast30Days: uncertain.count || 0, unreadRequests });
     } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
   });
   router.get('/admin', deps.auth || requireSupabaseAdminAuth, async (req, res) => {
@@ -44,7 +47,23 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; deli
     try {
       const token = req.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
       if (!token || !store.list) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
-      return res.json({ requests: await store.list(token, offset) });
+      const requests = await store.list(token, offset);
+      // Missing schema/permissions must mean unknown reading, never "all unread".
+      const readStates = await reads.list(requests.map(row => row.id)).catch(() => null);
+      return res.json({ requests, readStates });
+    } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
+  });
+  router.post('/admin/:id/read-state', deps.auth || requireSupabaseAdminAuth, json({ limit: '1kb', strict: true }), async (req, res) => {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(req.params.id)) return res.status(400).json({ error: 'CONSULTATION_INPUT_INVALID' });
+    if (req.get('origin') !== allowedOrigin() || req.get('x-consultation-approval') !== req.params.id) return res.status(403).json({ error: 'CONSULTATION_ORIGIN_INVALID' });
+    const value = req.body;
+    if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length !== 1 || typeof value.read !== 'boolean') return res.status(400).json({ error: 'CONSULTATION_INPUT_INVALID' });
+    try {
+      const token = req.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
+      const adminId = res.locals.adminUserId;
+      if (!token || typeof adminId !== 'string' || !store.get) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
+      if (!await store.get(token, req.params.id)) return res.status(404).json({ error: 'CONSULTATION_NOT_FOUND' });
+      return res.json({ readAt: await reads.set(req.params.id, adminId, value.read) });
     } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
   });
   // Read-only delivery audit, scoped to verified administrators and valid consultation records.

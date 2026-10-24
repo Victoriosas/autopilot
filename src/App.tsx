@@ -81,15 +81,25 @@ export function App() {
   // Admin State & Modals
   const [adminTab, setAdminTab] = useState<'pipeline' | 'fulfillment' | 'suppliers'>('pipeline');
   const [adminSection, setAdminSection] = useState<'consultas' | 'operaciones'>('consultas');
-  const [activeConsultations, setActiveConsultations] = useState<number | null>(null);
+  const [unreadConsultations, setUnreadConsultations] = useState<number | null>(null);
   React.useEffect(() => {
+    setUnreadConsultations(null);
     if (effectiveViewMode !== 'admin') return;
-    let mounted = true;
-    const refresh = async () => { try { const res = await apiFetch('/api/beauty/inquiries/admin/metrics'); if (res.ok) { const data = await res.json(); if (mounted) setActiveConsultations(data.activeRequests); } } catch { /* Keep counter unknown on error. */ } };
+    let mounted = true, sequence = 0;
+    const refresh = async () => {
+      const current = ++sequence;
+      try {
+        const res = await apiFetch('/api/beauty/inquiries/admin/metrics'); if (!res.ok) throw Error();
+        const data = await res.json();
+        if (mounted && current === sequence) setUnreadConsultations(Number.isSafeInteger(data.unreadRequests) && data.unreadRequests >= 0 ? data.unreadRequests : null);
+      } catch { if (mounted && current === sequence) setUnreadConsultations(null); }
+    };
+    const onReadingChanged = () => { void refresh(); };
     void refresh();
     const interval = window.setInterval(() => void refresh(), 60000);
-    return () => { mounted = false; window.clearInterval(interval); };
-  }, [effectiveViewMode]);
+    window.addEventListener('consultation-reading-changed', onReadingChanged);
+    return () => { mounted = false; window.clearInterval(interval); window.removeEventListener('consultation-reading-changed', onReadingChanged); };
+  }, [effectiveViewMode, user?.id]);
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
   const [isRunnerOpen, setIsRunnerOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -233,7 +243,7 @@ export function App() {
 
           <nav aria-label="Secciones de administración" className="mx-auto flex w-full max-w-7xl flex-wrap gap-3 px-4 pt-5 sm:px-6">
             <button type="button" aria-current={adminSection === 'consultas' ? 'page' : undefined} className={`flex items-center gap-2 rounded-lg border px-4 py-3 ${adminSection === 'consultas' ? 'border-amber-500 bg-amber-950/40 text-amber-100' : 'border-neutral-700'}`} onClick={() => setAdminSection('consultas')}>
-              <Bell size={17} aria-hidden="true" /> Consultas {activeConsultations !== null && <span className="rounded-full bg-amber-700 px-2 py-0.5 text-xs" aria-label={`${activeConsultations} consultas activas`}>{activeConsultations}</span>}
+              <Bell size={17} aria-hidden="true" /> Consultas {unreadConsultations !== null ? <span className="rounded-full bg-amber-700 px-2 py-0.5 text-xs" aria-label={`${unreadConsultations} consultas sin leer`}>{unreadConsultations}</span> : <span className="text-xs">Lectura sin confirmar</span>}
             </button>
             <button type="button" aria-current={adminSection === 'operaciones' ? 'page' : undefined} className="rounded-lg border border-neutral-700 px-4 py-3" onClick={() => setAdminSection('operaciones')}>Operaciones</button>
           </nav>
