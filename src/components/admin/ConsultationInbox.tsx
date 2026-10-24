@@ -10,6 +10,8 @@ export function ConsultationInbox() {
   const [error, setError] = useState('');
   const [offset, setOffset] = useState(0);
   const [drafts, setDrafts] = useState<Record<string, { text: string; priority: string; subject: string; channel: string }>>({});
+  const [plans, setPlans] = useState<Record<string, { options: { id: string; title: string; text: string }[]; needsVictoria: boolean; reason: string }>>({});
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [replyState, setReplyState] = useState<Record<string, string>>({});
   const [channelFilter, setChannelFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -47,7 +49,11 @@ export function ConsultationInbox() {
       const response = await apiFetch('/api/beauty/inquiries/admin/' + encodeURIComponent(id) + '/draft');
       if (!response.ok) throw Error();
       const payload = await response.json();
-      if (alive.current) setDrafts(previous => ({ ...previous, [id]: payload.draft }));
+      if (alive.current) {
+        setDrafts(previous => ({ ...previous, [id]: { ...payload.draft, text: payload.plan?.options?.[0]?.text || payload.draft.text } }));
+        if (payload.plan) setPlans(previous => ({ ...previous, [id]: payload.plan }));
+        setSelectedOptions(previous => ({ ...previous, [id]: 'personalizada' }));
+      }
     } catch { if (alive.current) setError('No fue posible preparar el borrador.'); }
     finally { if (alive.current) setBusy(false); }
   }
@@ -89,7 +95,7 @@ export function ConsultationInbox() {
     setError(''); setBusy(true);
     try {
       const response = await apiFetch('/api/beauty/inquiries/admin/' + encodeURIComponent(id) + '/approve-send', {
-        method: 'POST', headers: { 'x-consultation-approval': id },
+        method: 'POST', headers: { 'x-consultation-approval': id, 'Content-Type': 'application/json' }, body: JSON.stringify({ text: draft.text }),
       });
       if (!response.ok) throw Error();
       if (alive.current) { setReplyState(previous => ({ ...previous, [id]: 'Respuesta enviada por Resend.' })); setSentIds(previous => [...new Set([...previous, id])]); }
@@ -135,12 +141,23 @@ export function ConsultationInbox() {
           <option value="answered">Respondida</option><option value="closed">Cerrada</option>
         </select>
       </label>
-      <div className="mt-3 flex flex-wrap gap-2"><button className="rounded border border-amber-600 px-3 py-2" disabled={busy} onClick={() => void prepare(row.id)}>Preparar respuesta</button><button className="rounded border px-3 py-2" disabled={busy} onClick={() => void checkReply(row.id)}>Ver estado de respuesta</button></div>
+      <div className="mt-3 flex flex-wrap gap-2"><button className="rounded border border-amber-600 px-3 py-2" disabled={busy} onClick={() => void prepare(row.id)}>Preparar 3 respuestas</button><button className="rounded border px-3 py-2" disabled={busy} onClick={() => void checkReply(row.id)}>Ver estado de respuesta</button></div>
       {drafts[row.id] && <div className="mt-3 rounded border border-neutral-600 bg-neutral-950 p-3">
         <p>Prioridad: {drafts[row.id].priority} · Canal: {drafts[row.id].channel}</p>
         <p className="font-semibold">{drafts[row.id].subject}</p>
-        <p className="whitespace-pre-wrap">{drafts[row.id].text}</p>
-        {drafts[row.id].channel === 'email' ? <button className="mt-3 rounded border border-emerald-600 px-3 py-2" disabled={busy || Boolean(replyState[row.id])} onClick={() => void approve(row.id)}>Aprobar y enviar por Resend</button> : drafts[row.id].channel === 'whatsapp' ? <div className="mt-3 space-y-2">
+        {plans[row.id]?.needsVictoria && <p role="status" className="rounded border border-amber-500 p-2">Requiere decisión de Victoria: {plans[row.id].reason}</p>}
+        {plans[row.id] && <label className="mt-3 block">Elegir una propuesta
+          <select className="ml-2 rounded bg-neutral-800 p-2" value={selectedOptions[row.id] || 'personalizada'} onChange={event => {
+            const option = plans[row.id].options.find(item => item.id === event.target.value);
+            if (!option) return;
+            setSelectedOptions(previous => ({ ...previous, [row.id]: option.id }));
+            setDrafts(previous => ({ ...previous, [row.id]: { ...previous[row.id], text: option.text } }));
+          }}>{plans[row.id].options.map(option => <option key={option.id} value={option.id}>{option.title}</option>)}</select>
+        </label>}
+        <label className="mt-3 block">Respuesta editable
+          <textarea className="mt-2 block w-full rounded border border-neutral-600 bg-neutral-800 p-3" rows={8} maxLength={2000} value={drafts[row.id].text} onChange={event => setDrafts(previous => ({ ...previous, [row.id]: { ...previous[row.id], text: event.target.value } }))} />
+        </label>
+        {drafts[row.id].channel === 'email' ? <button className="mt-3 rounded border border-emerald-600 px-3 py-2" disabled={busy || Boolean(replyState[row.id]) || Boolean(plans[row.id]?.needsVictoria)} onClick={() => void approve(row.id)}>Aprobar y enviar por Resend</button> : drafts[row.id].channel === 'whatsapp' ? <div className="mt-3 space-y-2">
           <p>WhatsApp: respuesta preparada para revisión manual. El envío es manual y no necesita integraciones externas.</p>
           <button className="rounded border border-sky-500 px-3 py-2" disabled={busy} onClick={() => { void navigator.clipboard.writeText(drafts[row.id].text).then(() => setReplyState(previous => ({ ...previous, [row.id]: 'Borrador copiado. Abrí el chat correcto en WhatsApp y revisá el destinatario antes de enviarlo.' }))).catch(() => setReplyState(previous => ({ ...previous, [row.id]: 'No se pudo copiar la respuesta.' }))); }}>Copiar borrador de WhatsApp</button>
         </div> : <p>La clienta prefiere una llamada. Coordiná el contacto personalmente.</p>}
