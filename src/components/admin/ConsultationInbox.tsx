@@ -148,5 +148,6 @@ export function ConsultationInbox() {
       {replyState[row.id] && <p role="status">{replyState[row.id]}</p>}
     </li>)}</ul>
     {rows.length > 0 && <div className="flex gap-4"><button disabled={busy || offset === 0} onClick={() => void load(Math.max(0, offset - 50))}>Anterior</button><button disabled={busy || rows.length < 50} onClick={() => void load(offset + 50)}>Siguiente</button></div>}
+    </>}
   </section>;
 }
