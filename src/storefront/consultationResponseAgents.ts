@@ -1,5 +1,6 @@
 import type { ConsultationInput } from './consultationRequest';
 import { approvedServiceName } from './consultationKnowledge';
+import { consultationRisk } from './consultationSafety';
 
 /**
  * Deterministic, privacy-preserving triage. Never sends customer communications.
@@ -16,13 +17,11 @@ export type ConsultationDraft = {
   text: string;
 };
 
-const urgentTerms = /\b(?:suicid|autolesi[oó]n|no puedo respirar|dificultad (?:para )?respirar|dolor (?:fuerte|intenso) en el pecho|reacci[oó]n al[eé]rgica grave|anafilaxia|desmayo|sangrado abundante)\b/i;
-const sensitiveTerms = /\b(?:embaraz|lactancia|menor de edad|infecci[oó]n|quemadura|herida|medicaci[oó]n|antibi[oó]tico|alergia|dermatitis|ros[aá]cea|dolor|acn[eé]|diagn[oó]stico|enfermedad|c[aá]ncer|manchas sospechosas)\b/i;
-
 export function draftConsultationResponse(input: ConsultationInput): ConsultationDraft {
   const message = input.message.normalize('NFC').slice(0, 600);
-  const urgent = urgentTerms.test(message);
-  const sensitive = !urgent && (sensitiveTerms.test(message) || input.age !== null && input.age < 18);
+  const risk = consultationRisk(message, input.age);
+  const urgent = risk === 'urgent';
+  const sensitive = risk === 'review';
   const service = approvedServiceName(input.service);
   const category = urgent ? 'urgent' : sensitive ? 'sensitive' : service ? 'service' : 'general';
   const reasons = [

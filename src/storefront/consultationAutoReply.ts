@@ -1,6 +1,14 @@
 import { beautyServerDatabase } from './beautyDatabase';
 import type { ConsultationInput } from './consultationRequest';
 import { draftConsultationResponse } from './consultationResponseAgents';
+import { buildAutomaticPriceReply, classifyPriceInquiry, guardAutomaticPriceReply } from './consultationPricePolicy';
+
+type ReplyDatabase = { from(table: string): {
+  insert(row: Record<string, unknown>): PromiseLike<{ error: { code?: string } | null }>;
+  update(patch: Record<string, unknown>): { eq(key: string, value: string): {
+    eq(key: string, value: string): PromiseLike<{ error: unknown }>;
+  } };
+} };
 
 /** Opt-in, fail-closed, one-time acknowledgement for new, routine WEB email consultations.
  * Runs only for the first successfully delivered notification; never processes historic records.
@@ -8,7 +16,7 @@ import { draftConsultationResponse } from './consultationResponseAgents';
  */
 export async function maybeSendAutomaticConsultationReply(
   input: ConsultationInput,
-  deps: { env?: NodeJS.ProcessEnv; fetch?: typeof fetch } = {},
+  deps: { env?: NodeJS.ProcessEnv; fetch?: typeof fetch; database?: () => ReplyDatabase } = {},
 ): Promise<'disabled' | 'ineligible' | 'sent' | 'uncertain' | 'already_claimed'> {
   const env = deps.env || process.env;
   if (env.CONSULTATION_AUTO_REPLY_ENABLED !== 'true' ||
@@ -17,14 +25,23 @@ export async function maybeSendAutomaticConsultationReply(
       env.CONSULTATION_MAIL_FROM !== 'consultas@victoriosas.online' ||
       !env.RESEND_API_KEY) return 'disabled';
   if (input.responseChannel !== 'email' || !input.email || input.age === null || input.age < 18) return 'ineligible';
-  const draft = draftConsultationResponse(input);
-  if (draft.priority !== 'normal' || draft.reasons.length !== 0) return 'ineligible';
-  // Restrict autonomous replies to unambiguous routine enquiries, never medical or freeform requests.
-  const message = input.message.trim().normalize('NFC');
-  if (!/^(?:hola[,.! ]*)?(?:quisiera (?:saber|consultar) )?(?:precios?|tarifas?|cu[aá]nto cuesta|informaci[oó]n(?: de precios)?)(?:[.?! ]*)$/i.test(message)) return 'ineligible';
-  if (/prueba|test|config|simulaci[oó]n/i.test(input.fullName + ' ' + message)) return 'ineligible';
+  const reviewed = draftConsultationResponse(input);
+  if (reviewed.priority !== 'normal' || reviewed.reasons.length !== 0) return 'ineligible';
+  let draft: { subject: string; text: string } = reviewed;
+  if (env.CONSULTATION_AUTO_REPLY_PRICE_PHASE2_ENABLED === 'true') {
+    const inquiry = classifyPriceInquiry(input);
+    if (!inquiry) return 'ineligible';
+    const priceReply = buildAutomaticPriceReply(inquiry.service);
+    if (!priceReply || !guardAutomaticPriceReply(priceReply, inquiry.service)) return 'ineligible';
+    draft = priceReply;
+  } else {
+    // Preserve phase 1 until the separately reviewed phase 2 is explicitly enabled.
+    const message = input.message.trim().normalize('NFC');
+    if (!/^(?:hola[,.! ]*)?(?:quisiera (?:saber|consultar) )?(?:precios?|tarifas?|cu[aá]nto cuesta|informaci[oó]n(?: de precios)?)(?:[.?! ]*)$/i.test(message)) return 'ineligible';
+    if (/prueba|test|config|simulaci[oó]n/i.test(input.fullName + ' ' + message)) return 'ineligible';
+  }
 
-  const db = beautyServerDatabase();
+  const db = (deps.database || beautyServerDatabase)();
   const inserted = await db.from('consultation_reply_outbox').insert({
     request_id: input.id, approved_by: null, approval_mode: 'automatic',
     recipient: input.email, subject: draft.subject, body: draft.text, state: 'sending',
