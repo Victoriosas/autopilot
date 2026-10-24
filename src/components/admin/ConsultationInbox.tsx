@@ -14,6 +14,10 @@ export function ConsultationInbox() {
   const [channelFilter, setChannelFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [caseStatuses, setCaseStatuses] = useState<Record<string, string>>({});
+  const [sentIds, setSentIds] = useState<string[]>([]);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [source, setSource] = useState<'web' | 'whatsapp'>('web');
+  const [folder, setFolder] = useState<'pending' | 'sent'>('pending');
   const alive = useRef(true);
   useEffect(() => { alive.current = true; void load(); return () => { alive.current = false; }; }, []);
   async function load(page = 0) {
@@ -23,6 +27,17 @@ export function ConsultationInbox() {
       if (!response.ok) throw Error();
       const payload = await response.json();
       if (alive.current) { setRows(payload.requests); setOffset(page); }
+      setStatusLoading(true);
+      const statuses = await Promise.all((payload.requests as ConsultationRecord[]).map(async row => {
+        try {
+          const res = await apiFetch('/api/beauty/inquiries/admin/' + encodeURIComponent(row.id) + '/reply-status');
+          if (!res.ok) return { id: row.id, sent: false };
+          const data = await res.json();
+          return { id: row.id, sent: data.reply?.state === 'sent', status: data.case?.status || 'new' };
+        } catch { return { id: row.id, sent: false }; }
+      }));
+      if (alive.current) { setSentIds(statuses.filter(value => value.sent).map(value => value.id)); setCaseStatuses(previous => ({ ...previous, ...Object.fromEntries(statuses.filter(value => value.status).map(value => [value.id, value.status!])) })); }
+      setStatusLoading(false);
     } catch { if (alive.current) setError('No se pudieron cargar las consultas. Revisá tu sesión y la configuración.'); }
     finally { if (alive.current) setBusy(false); }
   }
@@ -77,14 +92,26 @@ export function ConsultationInbox() {
         method: 'POST', headers: { 'x-consultation-approval': id },
       });
       if (!response.ok) throw Error();
-      if (alive.current) setReplyState(previous => ({ ...previous, [id]: 'Respuesta enviada por Resend.' }));
+      if (alive.current) { setReplyState(previous => ({ ...previous, [id]: 'Respuesta enviada por Resend.' })); setSentIds(previous => [...new Set([...previous, id])]); }
     } catch { if (alive.current) setReplyState(previous => ({ ...previous, [id]: 'No se confirmó el envío. Revisá el historial antes de reintentar.' })); }
     finally { if (alive.current) setBusy(false); }
   }
   return <section className="my-6 rounded-xl border border-neutral-700 bg-neutral-900 p-5 text-white" aria-labelledby="consultation-inbox-title">
-    <h2 id="consultation-inbox-title" className="text-xl font-semibold">Consultas web · Bandeja privada</h2>
+    <h2 id="consultation-inbox-title" className="text-xl font-semibold">Consultas · Atención de Victoria</h2>
     <p>Acceso exclusivo de administración. El aviso por correo contiene solo una referencia. Esta bandeja permite revisar también consultas cuya notificación quedó pendiente.</p>
-    <button className="my-3 rounded border px-3 py-2" disabled={busy} onClick={() => void load()}>Cargar consultas</button>
+    <div className="my-4 flex flex-wrap gap-3" role="group" aria-label="Origen de consultas">
+      <button type="button" aria-pressed={source === 'web'} className={`rounded border px-4 py-2 ${source === 'web' ? 'border-amber-500 bg-amber-900/30' : 'border-neutral-600'}`} onClick={() => setSource('web')}>Web</button>
+      <button type="button" aria-pressed={source === 'whatsapp'} className={`rounded border px-4 py-2 ${source === 'whatsapp' ? 'border-amber-500 bg-amber-900/30' : 'border-neutral-600'}`} onClick={() => setSource('whatsapp')}>WhatsApp</button>
+      <button type="button" className="rounded border border-neutral-600 px-4 py-2" disabled={busy} onClick={() => void load()}>Actualizar</button>
+    </div>
+    {source === 'whatsapp' && <div className="rounded-lg border border-neutral-700 bg-neutral-950 p-5" role="status"><h3 className="font-semibold">WhatsApp · Integración pendiente</h3><p>Las consultas recibidas directamente en WhatsApp todavía no se sincronizan aquí. No se muestran mensajes simulados. Las consultas web que eligen WhatsApp como canal permanecen en Web hasta contar con una conexión autorizada.</p></div>}
+    {source === 'web' && <>
+      <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Estado de respuesta">
+        <button type="button" aria-pressed={folder === 'pending'} onClick={() => setFolder('pending')} className={`rounded border px-3 py-2 ${folder === 'pending' ? 'border-amber-500 bg-amber-900/30' : 'border-neutral-600'}`}>En espera de respuesta ({rows.length - sentIds.length})</button>
+        <button type="button" aria-pressed={folder === 'sent'} onClick={() => setFolder('sent')} className={`rounded border px-3 py-2 ${folder === 'sent' ? 'border-amber-500 bg-amber-900/30' : 'border-neutral-600'}`}>Respondidas con asistencia de IA ({sentIds.length})</button>
+      </div>
+      <p className="text-xs text-neutral-400">Los totales corresponden a esta página de consultas, no a mensajes sin leer. Una respuesta aparece como enviada solamente con confirmación registrada; los borradores no cuentan como enviados.</p>
+      {statusLoading && <p role="status">Verificando respuestas registradas…</p>}
     {error && <p role="alert">{error}</p>}
     <div className="my-3 flex flex-wrap gap-3">
       <label className="text-sm">Canal <select className="ml-2 rounded bg-neutral-800 p-2" value={channelFilter} onChange={event => setChannelFilter(event.target.value)}>
@@ -92,7 +119,7 @@ export function ConsultationInbox() {
       </select></label>
       <label className="text-sm">Buscar servicio o mensaje <input className="ml-2 rounded bg-neutral-800 p-2" value={search} onChange={event => setSearch(event.target.value)} placeholder="Servicio o texto de la consulta" /></label>
     </div>
-    <ul className="space-y-4">{rows.filter(row => (channelFilter === 'all' || row.input.responseChannel === channelFilter) && ((labels[row.input.service] || 'Orientación') + ' ' + row.input.message).toLowerCase().includes(search.trim().toLowerCase())).map(row => <li key={row.id} className="rounded border border-neutral-600 p-4 break-words">
+    <ul className="space-y-4">{rows.filter(row => (folder === 'sent' ? sentIds.includes(row.id) : !sentIds.includes(row.id)) && (channelFilter === 'all' || row.input.responseChannel === channelFilter) && ((labels[row.input.service] || 'Orientación') + ' ' + row.input.message).toLowerCase().includes(search.trim().toLowerCase())).map(row => <li key={row.id} className="rounded border border-neutral-600 p-4 break-words">
       <h3 className="text-lg font-semibold">{row.input.fullName} · {labels[row.input.service] || 'Orientación'}</h3>
       <p>Referencia: {row.id}</p><p>Celular: {row.input.phone}</p>
       {row.input.email && <p>Email: {row.input.email}</p>}
