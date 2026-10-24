@@ -47,3 +47,9 @@ test('non-email channel is flagged for personal contact', () => {
   const draft = draftConsultationResponse({ ...input, responseChannel: 'whatsapp' });
   assert.ok(draft.reasons.includes('requested_channel_requires_personal_contact'));
 });
+
+test('pregnancy, efficacy, surgery, medication variants and consultations about children require human review', () => {
+  for (const message of ['Precios si estoy embarazada', 'Estoy amamantando', 'Si es efectivo', '¿Funciona?', 'Tengo alergias', 'Tuve cirugías', 'Tomo medicamentos', 'Es para mi hija', 'Tengo lunares que cambian', 'Precios con lactancia']) {
+    assert.equal(draftConsultationResponse({ ...input, message }).priority, 'review', message);
+  }
+});
