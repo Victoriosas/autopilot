@@ -17,7 +17,7 @@ for (const channel of ['whatsapp', 'email'] as const) {
   test(`each service keeps its selected name in the ${channel} consultation`, () => {
     const links = destinations().filter(url => channel === 'email'
       ? url.protocol === 'mailto:' : url.hostname === 'wa.me');
-    assert.equal(links.length, 17);
+    assert.equal(links.length, 19);
     names.forEach((name, index) => {
       const url = links[index];
       const body = url.searchParams.get(channel === 'email' ? 'body' : 'text')!;
