@@ -1,5 +1,3 @@
-import type { ConsultationRequest } from './consultationRequest';
-
 // camelRun processes one isolated, stateless request. Never reuse the conversational
 // supervisor across client records: its persistent history could mix private cases.
 const PROMPT = `Sos un agente de borradores de Victoriosas, supervisado por Victoria.
@@ -44,7 +42,7 @@ export async function camelRunConsultationDraft(input: unknown, requestId: strin
   const payload = JSON.stringify({
     systemPrompt: PROMPT,
     model: 'anthropic/claude-sonnet-5-5',
-    input: JSON.stringify({ motive: typeof record?.reason === 'string' ? record.reason.slice(0, 2000) : '',
+    input: JSON.stringify({ motive: typeof record?.message === 'string' ? record.message.slice(0, 600) : '',
       service: typeof record?.service === 'string' ? record.service.slice(0, 200) : '' }),
     wait: true,
     retentionSeconds: 3600,
