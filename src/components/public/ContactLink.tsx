@@ -20,6 +20,8 @@ export function ContactLink({children, className = 'beauty-button', icon, intere
     : 'Hola, quisiera consultar por una evaluación inicial remota con Victoria.';
   const preparedMessage = context || message;
   const whatsapp = 'https://wa.me/59897045305?text=' + encodeURIComponent(preparedMessage);
-  const href = channel === 'email' ? '/consultanos' : whatsapp;
-  return <a className={className} href={href} target={channel === 'whatsapp' ? '_blank' : undefined} rel={channel === 'whatsapp' ? 'noopener noreferrer' : undefined}>{children ?? (channel === 'email' ? 'Consultanos' : 'Consultar por WhatsApp')}{icon ? <img className="beauty-icon" src={icon} alt="" width="17" height="17" /> : <span aria-hidden="true"> ↗</span>}</a>;
+  const href = channel === 'email'
+    ? `mailto:${contactEmail}?subject=${encodeURIComponent('Consulta · Victoriosas')}&body=${encodeURIComponent(preparedMessage)}`
+    : whatsapp;
+  return <a className={className} href={href} target={channel === 'whatsapp' ? '_blank' : undefined} rel={channel === 'whatsapp' ? 'noopener noreferrer' : undefined}>{children ?? (channel === 'email' ? 'Consultar por email' : 'Consultar por WhatsApp')}{icon ? <img className="beauty-icon" src={icon} alt="" width="17" height="17" /> : <span aria-hidden="true"> ↗</span>}</a>;
 }
