@@ -49,7 +49,8 @@ begin
   next_lease:=gen_random_uuid();
   insert into private.consultation_outbox(request_id,lease,lease_until)values(request_uuid,next_lease,now()+interval '2 minutes');
   return jsonb_build_object('state','send','lease',next_lease);
-end$$;
+end;
+$;
 
 revoke all on function public.consultation_claim(jsonb,text,text) from public,anon,authenticated;
 grant execute on function public.consultation_claim(jsonb,text,text) to service_role;
