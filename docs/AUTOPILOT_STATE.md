@@ -703,3 +703,14 @@ apply_migration individual consultation_read_states confirmado success=true. Ver
 Advisors antes/despues: advertencias previas de funcion Beauty y proteccion de contrasenas sin cambios. Nuevo INFO RLS Enabled No Policy en tabla de lectura es coherente con acceso exclusivo service_role y clientes sin grants; no crear politicas publicas para silenciarlo. Referencia: https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy. No afirmar ausencia global de avisos de seguridad.
 
 PR123 continua en borrador y la interfaz nueva no se publica por esta autorizacion de migracion. PR122 tampoco se activa. Siguiente: comprobar CI del renombrado y registrar verificacion en PR123; publicacion de la interfaz requiere su autorizacion especifica. No pagos, DNS, credenciales, correos ni cambios de registros personales.
+
+
+## 2026-10-24 - PR123 publicada por autorizacion explicita
+
+El propietario responde "hazlo" a la publicacion de la interfaz posterior a la migracion. PR123 fusionada mediante squash, sin auto-merge ni deploy manual; main27558f3e6161c12c2df0ba23112262e56787f8c0 genera build nuevo en contexto production por Git. Vercel dpl_AKzPuCTWWKnojvYPgVivR2Fjtks8 READY, target production, alias victoriosas.online y /api/health confirman el mismo SHA. No promocion de Preview.
+
+Smoke publico aprobado: paginas200, borradores404 y rutas retiradas410; checkoutEnabled/checkoutRequested false, catalogo Beauty y cobros cerrados. /api/beauty/inquiries/config conserva enabled=true; consultas y metricas administrativas sin autenticacion401. Assets publicados incluyen campana, contador unreadRequests y controles leida/no leida. No se abrieron consultas personales ni se probaron escrituras sobre clientas reales; persistencia y autorizacion se acreditan con SQL alojado en solo lectura previo y Auth/PostgREST aislado.
+
+CI main: Core40063144560 validate/postgres aprobados; CodeQL40063144272 aprobado. Integracion Beauty40063144568 aprobada, incluyendo pruebas Auth/PostgREST reales y cierre del stack desechable. verify261/261 y QA Edge/axe previos corresponden al codigo integrado sin cambios funcionales posteriores. Supabase Preview omitido no se usa como evidencia alojada.
+
+Migracion20261024040055 ya aplicada individualmente en jfjzpwlrhzqbcrvqxhzf; sin nueva migracion ni marcado historico. PR122 de precios sigue OPEN/DRAFT en0623fbc41b1c0aba0a1c6131698acbdb106fd0e5; esta autorizacion no activa fase2. No envios reales, pagos, DNS, credenciales ni automatizaciones nuevas. Registro documental posterior separado de la aplicacion publicada.
