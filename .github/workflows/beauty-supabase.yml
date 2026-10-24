@@ -46,7 +46,7 @@ jobs:
           command -v psql > /dev/null
           node --import tsx --test tests/beauty-supabase.test.ts
           node --import tsx --test tests/beauty-management-supabase.test.ts
-          node --import tsx --test tests/consultation-supabase.test.ts
+          node --import tsx --experimental-test-coverage --test-coverage-include='**/consultationReading.ts' --test tests/consultation-supabase.test.ts
         env:
           BEAUTY_SYNTHETIC_SUPABASE: 'true'
           SUPABASE_LOCAL_STATUS_FILE: ${{ runner.temp }}/beauty-status.json

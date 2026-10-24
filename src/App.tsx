@@ -223,7 +223,7 @@ export function App() {
           />
 
           <nav aria-label="Secciones de administración" className="mx-auto flex w-full max-w-7xl flex-wrap gap-3 px-4 pt-5 sm:px-6">
-            <ConsultationBell key={user?.id || 'signed-out'} selected={adminSection === 'consultas'} onOpen={() => setAdminSection('consultas')} />
+            <React.Fragment key={user?.id || 'signed-out'}><ConsultationBell selected={adminSection === 'consultas'} onOpen={() => setAdminSection('consultas')} /></React.Fragment>
             <button type="button" aria-current={adminSection === 'operaciones' ? 'page' : undefined} className="rounded-lg border border-neutral-700 px-4 py-3" onClick={() => setAdminSection('operaciones')}>Operaciones</button>
           </nav>
           <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
