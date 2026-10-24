@@ -8,7 +8,7 @@ export type ReplyOutcome = 'sent' | 'already_processing' | 'invalid_channel' | '
  */
 export async function approveAndSendConsultationReply(
   record: ConsultationRecord, adminId: string,
-  deps: { fetch?: typeof fetch; env?: NodeJS.ProcessEnv } = {},
+  deps: { fetch?: typeof fetch; env?: NodeJS.ProcessEnv; approvedText?: string } = {},
 ): Promise<ReplyOutcome> {
   const env = deps.env || process.env;
   if (record.input.responseChannel !== 'email' || !record.input.email) return 'invalid_channel';
@@ -17,13 +17,14 @@ export async function approveAndSendConsultationReply(
       env.CONSULTATION_MAIL_PROVIDER !== 'resend' || !env.RESEND_API_KEY ||
       env.CONSULTATION_MAIL_FROM !== 'consultas@victoriosas.online') return 'provider_unavailable';
   const draft = draftConsultationResponse(record.input);
+  const approvedBody = deps.approvedText ?? draft.text;
   const db = beautyServerDatabase();
   const approved = await db.from('consultation_reply_outbox').insert({
     request_id: record.id,
     approved_by: adminId,
     recipient: record.input.email,
     subject: draft.subject,
-    body: draft.text,
+    body: approvedBody,
     state: 'sending',
   });
   if (approved.error) {
@@ -40,7 +41,7 @@ export async function approveAndSendConsultationReply(
       },
       body: JSON.stringify({
         from: env.CONSULTATION_MAIL_FROM, to: [record.input.email],
-        subject: draft.subject, text: draft.text,
+        subject: draft.subject, text: approvedBody,
       }),
     });
     if (!response.ok) throw Error('CONSULTATION_REPLY_PROVIDER_UNAVAILABLE');
