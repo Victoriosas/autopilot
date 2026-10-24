@@ -25,3 +25,17 @@ test('prevents unsupported outbound claims', () => {
  assert.notEqual(validateApprovedAnswer('Hola, turno confirmado. Victoria | Victoriosas'), null);
  assert.equal(validateApprovedAnswer('Hola, podemos conversar en una evaluación inicial remota. Victoria | Victoriosas'), null);
 });
+
+test('matches complete service names before shared words and preserves ambiguity', () => {
+ assert.equal(prepareAnswerOptions(input).matchedService, 'Limpieza profunda');
+ assert.equal(prepareAnswerOptions({ ...input, service: 'orientacion', message: 'Precio de hidratación de labios' }).matchedService, 'Hidratación de labios');
+ const ambiguous = prepareAnswerOptions({ ...input, message: 'Limpieza profunda o higiene y limpieza facial' });
+ assert.equal(ambiguous.needsVictoria, true);
+ assert.equal(ambiguous.matchedService, null);
+});
+
+test('blocks prices in both orders and quantified promises', () => {
+ for (const claim of ['1500 UYU', 'UYU 1500', '1500 pesos', 'desde $ 1500', 'elimina las arrugas', 'resultados garantizados']) {
+  assert.notEqual(validateApprovedAnswer('Hola, ' + claim + '. Victoria | Victoriosas'), null, claim);
+ }
+});

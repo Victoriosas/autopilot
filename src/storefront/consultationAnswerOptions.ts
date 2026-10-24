@@ -8,14 +8,13 @@ export type AnswerPlan = { options: AnswerOption[]; needsVictoria: boolean; reas
 
 const normalize = (text: string) => text.toLocaleLowerCase('es-UY').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const risk = /embaraz|lactan|medic|alerg|dermat|cirug|herid|infecc|menor|hij[oa]|dolor|enfermedad|diagnost|urgenc|sangrad|riesgo|contraindic|efectiv|garantiz|seguro para|lunar|lesion|acne|estrias|salud/i;
-const serviceWords = (name: string) => normalize(name).split(/\s+/).filter(word => word.length > 4 && !['tratamiento','profunda','facial','masaje','hidratacion'].includes(word));
 
 export function prepareAnswerOptions(input: ConsultationInput): AnswerPlan {
   const base = draftConsultationResponse(input);
   const message = normalize(input.message);
   const selected = approvedServiceName(input.service);
-  const identified = Object.keys(serviceDetails).filter(name => serviceWords(name).some(word => message.includes(word)));
-  const ambiguous = identified.length > 1 && !(selected && identified.includes(selected));
+  const identified = Object.keys(serviceDetails).filter(name => message.includes(normalize(name)));
+  const ambiguous = identified.length > 1;
   const service = ambiguous ? null : identified[0] || (input.service !== 'orientacion' ? selected : null);
   const isRisk = base.priority !== 'normal' || risk.test(message);
   const price = /precio|cuanto (sale|cuesta)|tarifa|valor|presupuesto|costo/.test(message);
@@ -46,7 +45,7 @@ export function prepareAnswerOptions(input: ConsultationInput): AnswerPlan {
 export function validateApprovedAnswer(text: string): string | null {
   if (typeof text !== 'string' || text.trim().length < 20 || text.length > 2000) return 'invalid_length';
   if (!text.trim().endsWith('Victoria | Victoriosas')) return 'signature_required';
-  if (/\$\s*\d|\b(?:UYU|USD)\s*\d/i.test(text)) return 'prices_require_review';
-  if (/garantiz(?:amos|ado)|sin dolor|elimina(?:mos)? (?:arrugas|manchas|estrias)|turno confirmado|reserva confirmada/i.test(normalize(text))) return 'unsafe_claim';
+  if (/\$\s*\d|\b(?:UYU|USD)\s*\d|\d[\d., ]*\s*(?:UYU|USD|pesos|dolares)\b/i.test(normalize(text))) return 'prices_require_review';
+  if (/garantiz(?:amos|ad[oa]s?)|sin dolor|elimina(?:mos)? (?:las? )?(?:arrugas|manchas|estrias)|turno confirmado|reserva confirmada/i.test(normalize(text))) return 'unsafe_claim';
   return null;
 }
