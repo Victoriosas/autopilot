@@ -19,7 +19,8 @@ begin
      or p_input->>'website' is distinct from ''
      or not(p_input ?& array['id','fullName','phone','email','age','service','message','responseChannel','consent','consentVersion','website'])
      or (p_input ? 'aiConsent' and jsonb_typeof(p_input->'aiConsent') <> 'boolean')
-     or (select count(*) from jsonb_object_keys(p_input)) <> case when p_input ? 'aiConsent' then 12 else 11 end then
+     or ((p_input ? 'aiConsent') and (select count(*) from jsonb_object_keys(p_input)) <> 12)
+     or (not (p_input ? 'aiConsent') and (select count(*) from jsonb_object_keys(p_input)) <> 11) then
     raise exception 'CONSULTATION_INPUT_INVALID';
   end if;
   request_uuid := (p_input->>'id')::uuid;
