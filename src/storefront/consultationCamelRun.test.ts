@@ -24,3 +24,18 @@ test('camelRun only accepts supervised no-send drafts', () => {
   assert.equal(validCamelRunDraft({ ...valid, questions: [null] }), false);
   assert.equal(validCamelRunDraft({ ...valid, schema_version: '2.0' }), false);
 });
+
+test('camelRun fails closed when activation gates are disabled', async () => {
+  const { camelRunConsultationDraft } = await import('./consultationCamelRun');
+  const old = process.env.CAMELRUN_CONSULTATION_DRAFTS_ENABLED;
+  process.env.CAMELRUN_CONSULTATION_DRAFTS_ENABLED = 'false';
+  try {
+    await assert.rejects(
+      camelRunConsultationDraft({ message: 'Consulta de prueba', service: 'orientacion' }, 'sample'),
+      /CAMELRUN_NOT_ENABLED/,
+    );
+  } finally {
+    if (old === undefined) delete process.env.CAMELRUN_CONSULTATION_DRAFTS_ENABLED;
+    else process.env.CAMELRUN_CONSULTATION_DRAFTS_ENABLED = old;
+  }
+});
