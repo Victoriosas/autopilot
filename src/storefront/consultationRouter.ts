@@ -6,6 +6,7 @@ import { normalizeConsultationRequest } from './consultationRequest';
 import { consultationSupabaseStore, type ConsultationStore } from './consultationSupabase';
 import { createConsultationDelivery, type ConsultationDelivery } from './consultationDelivery';
 import { draftConsultationResponse } from './consultationResponseAgents';
+import { maybeSendAutomaticConsultationReply } from './consultationAutoReply';
 import { approveAndSendConsultationReply } from './consultationReplyDelivery';
 import { beautyServerDatabase } from './beautyDatabase';
 
@@ -130,6 +131,9 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; deli
         if (claim.state !== 'send' || !claim.lease) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
         const providerId = await delivery.send(input.id);
         if (!await store.finish(input.id, claim.lease, providerId)) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
+        // Only a newly accepted form with confirmed owner notification may trigger auto-acknowledgement.
+        // Failure never causes form resubmission or a second automatic send attempt.
+        try { await maybeSendAutomaticConsultationReply(input); } catch { /* Fail closed; never retry an uncertain email. */ }
       }
       return res.status(202).json({ id: input.id, status: 'accepted' });
     } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
