@@ -6,6 +6,7 @@ import { normalizeConsultationRequest } from './consultationRequest';
 import { consultationSupabaseStore, type ConsultationStore } from './consultationSupabase';
 import { createConsultationDelivery, type ConsultationDelivery } from './consultationDelivery';
 import { prepareConsultationForReview } from './consultationOperationsAgents';
+import { prepareAnswerOptions, validateApprovedAnswer } from './consultationAnswerOptions';
 import { maybeSendAutomaticConsultationReply } from './consultationAutoReply';
 import { approveAndSendConsultationReply } from './consultationReplyDelivery';
 import { beautyServerDatabase } from './beautyDatabase';
@@ -92,11 +93,12 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; deli
       const record = await store.get(token, req.params.id);
       if (!record) return res.status(404).json({ error: 'CONSULTATION_NOT_FOUND' });
       const review = prepareConsultationForReview(record.input);
-      return res.json({ draft: { text: review.draft, subject: review.subject, priority: review.priority, channel: record.input.responseChannel, requiresHumanApproval: true, reasons: review.issues, category: review.category } });
+      const plan = prepareAnswerOptions(record.input);
+      return res.json({ plan, draft: { text: review.draft, subject: review.subject, priority: review.priority, channel: record.input.responseChannel, requiresHumanApproval: true, reasons: review.issues, category: review.category } });
     } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
   });
   // Explicit human approval only. No customer details appear in URL or logs.
-  router.post('/admin/:id/approve-send', deps.auth || requireSupabaseAdminAuth, async (req, res) => {
+  router.post('/admin/:id/approve-send', deps.auth || requireSupabaseAdminAuth, json({ limit: '4kb', strict: true }), async (req, res) => {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(req.params.id)) return res.status(400).json({ error: 'CONSULTATION_INPUT_INVALID' });
     if (req.get('origin') !== allowedOrigin()) return res.status(403).json({ error: 'CONSULTATION_ORIGIN_INVALID' });
     if (req.get('x-consultation-approval') !== req.params.id) return res.status(400).json({ error: 'CONSULTATION_APPROVAL_REQUIRED' });
@@ -106,7 +108,11 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; deli
       if (!token || typeof adminId !== 'string' || !store.get) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
       const record = await store.get(token, req.params.id);
       if (!record) return res.status(404).json({ error: 'CONSULTATION_NOT_FOUND' });
-      const result = await approveAndSendConsultationReply(record, adminId);
+      const body = req.body;
+      if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).length !== 1 || typeof body.text !== 'string') return res.status(400).json({ error: 'CONSULTATION_REPLY_INVALID' });
+      const validation = validateApprovedAnswer(body.text);
+      if (validation) return res.status(400).json({ error: 'CONSULTATION_REPLY_INVALID', reason: validation });
+      const result = await approveAndSendConsultationReply(record, adminId, { approvedText: body.text });
       if (result === 'invalid_channel') return res.status(409).json({ error: 'CONSULTATION_REPLY_CHANNEL_UNAVAILABLE' });
       if (result === 'already_processing') return res.status(409).json({ error: 'CONSULTATION_REPLY_ALREADY_PROCESSED' });
       if (result === 'provider_unavailable') return res.status(503).json({ error: 'CONSULTATION_REPLY_UNAVAILABLE' });
