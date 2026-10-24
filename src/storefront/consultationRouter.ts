@@ -5,7 +5,7 @@ import { createHash, createHmac } from 'node:crypto';
 import { normalizeConsultationRequest } from './consultationRequest';
 import { consultationSupabaseStore, type ConsultationStore } from './consultationSupabase';
 import { createConsultationDelivery, type ConsultationDelivery } from './consultationDelivery';
-import { draftConsultationResponse } from './consultationResponseAgents';
+import { prepareConsultationForReview } from './consultationOperationsAgents';
 import { maybeSendAutomaticConsultationReply } from './consultationAutoReply';
 import { approveAndSendConsultationReply } from './consultationReplyDelivery';
 import { beautyServerDatabase } from './beautyDatabase';
@@ -91,7 +91,8 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; deli
       if (!token || !store.get) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
       const record = await store.get(token, req.params.id);
       if (!record) return res.status(404).json({ error: 'CONSULTATION_NOT_FOUND' });
-      return res.json({ draft: draftConsultationResponse(record.input) });
+      const review = prepareConsultationForReview(record.input);
+      return res.json({ draft: { text: review.draft, subject: review.subject, priority: review.priority, channel: record.input.responseChannel, requiresHumanApproval: true, reasons: review.issues, category: review.category } });
     } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
   });
   // Explicit human approval only. No customer details appear in URL or logs.
