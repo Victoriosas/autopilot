@@ -42,7 +42,7 @@ test('online inquiries identify the proposal in both channels without claiming a
     const html = renderToStaticMarkup(React.createElement(ContactLink, { channel, interest: 'online' }));
     const url = new URL(html.match(/href="([^"]+)"/)![1].replace(/&amp;/g, '&'));
     const message = url.searchParams.get(channel === 'email' ? 'body' : 'text')!;
-    assert.equal(channel === 'email' ? url.pathname : url.host + url.pathname, channel === 'email' ? 'victoriosas.online@gmail.com' : 'wa.me/59897045305');
+    assert.equal(channel === 'email' ? url.pathname : url.host + url.pathname, channel === 'email' ? 'consultas@victoriosas.online' : 'wa.me/59897045305');
     assert.match(message, /asesoría de cuidado facial online/);
     assert.match(message, /Desde la web de Victoriosas/);
     assert.doesNotMatch(message, /evaluación inicial|diagnóstico|foto|historia clínica|reservado/i);
