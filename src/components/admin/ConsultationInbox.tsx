@@ -31,7 +31,7 @@ export function ConsultationInbox() {
       const statuses = await Promise.all((payload.requests as ConsultationRecord[]).map(async row => {
         try {
           const res = await apiFetch('/api/beauty/inquiries/admin/' + encodeURIComponent(row.id) + '/reply-status');
-          if (!res.ok) return { id: row.id, sent: false };
+          if (!res.ok) return { id: row.id, sent: false, status: 'new' };
           const data = await res.json();
           return { id: row.id, sent: data.reply?.state === 'sent', status: data.case?.status || 'new' };
         } catch { return { id: row.id, sent: false }; }
