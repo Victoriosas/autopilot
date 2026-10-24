@@ -11,7 +11,7 @@ Devolvé SOLO JSON con:
 "guardian":{"status":"REQUIERE_VICTORIA","reasons":[]},"action":"BORRADOR_NO_ENVIADO"}.
 La revisión semántica no sustituye controles deterministas ni autorización de envío.`;
 
-type AIDraft = {
+export type AIDraft = {
   schema_version: string; questions: string[]; services_candidates: string[];
   knowledge_gaps: string[];
   variants: { personalizada: string; breve: string; orientacion: string };
@@ -19,14 +19,18 @@ type AIDraft = {
   action: string;
 };
 
-function valid(result: any): result is AIDraft {
+export function validCamelRunDraft(result: any): result is AIDraft {
   return result && result.schema_version === '1.0' &&
     Array.isArray(result.questions) && Array.isArray(result.services_candidates) &&
     Array.isArray(result.knowledge_gaps) &&
+    result.questions.every((q: unknown) => typeof q === 'string') &&
+    result.services_candidates.every((q: unknown) => typeof q === 'string') &&
+    result.knowledge_gaps.every((q: unknown) => typeof q === 'string') &&
     result.variants && ['personalizada','breve','orientacion'].every(k =>
       typeof result.variants[k] === 'string' && result.variants[k].length > 0 && result.variants[k].length < 4000) &&
     result.guardian && result.guardian.status === 'REQUIERE_VICTORIA' &&
-    Array.isArray(result.guardian.reasons) && result.action === 'BORRADOR_NO_ENVIADO';
+    Array.isArray(result.guardian.reasons) &&
+    result.guardian.reasons.every((q: unknown) => typeof q === 'string') && result.action === 'BORRADOR_NO_ENVIADO';
 }
 
 export async function camelRunConsultationDraft(input: unknown, requestId: string): Promise<AIDraft> {
@@ -39,6 +43,7 @@ export async function camelRunConsultationDraft(input: unknown, requestId: strin
   if (!key) throw new Error('CAMELRUN_NOT_CONFIGURED');
   // Avoid sending metadata unrelated to the consultation, or logs with PII.
   const record = input as Record<string, unknown>;
+  if (!record || typeof record.message !== 'string' || !record.message.trim()) throw new Error('CAMELRUN_INVALID_INPUT');
   const payload = JSON.stringify({
     systemPrompt: PROMPT,
     model: 'anthropic/claude-sonnet-5-5',
@@ -48,7 +53,7 @@ export async function camelRunConsultationDraft(input: unknown, requestId: strin
     retentionSeconds: 3600,
     spendLimit: 0.15,
   });
-  const signal = AbortSignal.timeout(55000);
+  const signal = AbortSignal.timeout(45000);
   const response = await fetch('https://run.camelai.com/v1/runs', {
     method: 'POST', signal,
     headers: { 'content-type': 'application/json', authorization: `Bearer ${key}`,
@@ -56,12 +61,12 @@ export async function camelRunConsultationDraft(input: unknown, requestId: strin
     body: payload,
   });
   if (!response.ok) throw new Error('CAMELRUN_UNAVAILABLE');
-  let run: any = await response.json();
+  const run: any = await response.json();
   // Vercel execution time is bounded: fail closed rather than giving a partial draft.
   if (run.status !== 'completed' && run.state !== 'completed') throw new Error('CAMELRUN_PENDING');
   let draft: unknown;
   try { draft = JSON.parse(run.text ?? run.outcome?.result?.reply ?? ''); }
   catch { throw new Error('CAMELRUN_INVALID_OUTPUT'); }
-  if (!valid(draft)) throw new Error('CAMELRUN_INVALID_OUTPUT');
+  if (!validCamelRunDraft(draft)) throw new Error('CAMELRUN_INVALID_OUTPUT');
   return draft;
 }
