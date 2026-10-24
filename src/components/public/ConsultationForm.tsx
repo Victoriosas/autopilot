@@ -39,7 +39,7 @@ export function ConsultationForm() {
       if (!attempt.current) attempt.current = normalizeConsultationRequest({
         id: crypto.randomUUID(), fullName: data.get('fullName'), phone: data.get('phone'), email: data.get('email'),
         age: data.get('age') === '' ? null : Number(data.get('age')), service, message: data.get('message'),
-        responseChannel: channel, consent: data.get('consent') === 'yes', consentVersion: 'consultation-v1', website: data.get('website'),
+        responseChannel: channel, consent: data.get('consent') === 'yes', consentVersion: 'consultation-v1', aiConsent: data.get('aiConsent') === 'yes', website: data.get('website'),
       });
     } catch { setResult('Revisá los campos y el consentimiento. Usá solo texto y un celular de 8 a 15 dígitos.'); return; }
     busy.current = true; setPending(true); setLocked(true); setResult('');
@@ -76,7 +76,8 @@ export function ConsultationForm() {
           <label>Servicio que te interesa<select value={service} onChange={event => setService(event.target.value)}>{choices.map(choice => <option key={choice.id} value={choice.id}>{choice.name}</option>)}</select></label>
           <label>¿Qué te gustaría consultar? *<textarea name="message" required rows={4} maxLength={600} /></label>
           <fieldset><legend>¿Cómo preferís que te contactemos?</legend>{([['whatsapp', 'WhatsApp'], ['email', 'Correo electrónico'], ['phone', 'Llamada']] as const).map(([value, label]) => <label className="beauty-consultation-radio" key={value}><input type="radio" name="channel" value={value} checked={channel === value} onChange={() => setChannel(value)} />{label}</label>)}</fieldset>
-          <label className="beauty-consultation-consent"><input name="consent" type="checkbox" value="yes" required /><span>Acepto que Victoriosas use estos datos para responder esta consulta, según la <a href="/privacidad">política de privacidad</a>. No me suscribe a campañas.</span></label>
+          <label className="beauty-consultation-consent"><input name="consent" type="checkbox" value="yes" required /><span>Acepto que Victoriosas use estos datos para responder esta consulta, según la <a href="/privacidad">política de privacidad</a>. No me suscribe a campañas. La atención humana está disponible aunque no autorices IA.</span></label>
+          <label className="beauty-consultation-consent"><input name="aiConsent" type="checkbox" value="yes" /><span>Opcional: autorizo que el motivo de consulta y servicio seleccionado se procesen mediante camelRun para preparar borradores de IA que Victoria revisará. No se envían nombre ni datos de contacto al proveedor. Puedo consultar o revocar este permiso escribiendo al correo de contacto. <a href="/privacidad">Más información</a>.</span></label>
           <div className="beauty-consultation-trap" aria-hidden="true"><label>Sitio web<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
         </fieldset>
         <button className="beauty-button" type="submit" disabled={pending}>{pending ? 'Enviando…' : locked ? 'Reintentar consulta' : 'Enviar consulta'}</button>
