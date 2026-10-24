@@ -15,7 +15,7 @@ export function ConsultationInbox() {
   const [search, setSearch] = useState('');
   const [caseStatuses, setCaseStatuses] = useState<Record<string, string>>({});
   const alive = useRef(true);
-  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+  useEffect(() => { alive.current = true; void load(); return () => { alive.current = false; }; }, []);
   async function load(page = 0) {
     setRows([]); setError(''); setBusy(true);
     try {
@@ -90,15 +90,15 @@ export function ConsultationInbox() {
       <label className="text-sm">Canal <select className="ml-2 rounded bg-neutral-800 p-2" value={channelFilter} onChange={event => setChannelFilter(event.target.value)}>
         <option value="all">Todos</option><option value="email">Email</option><option value="whatsapp">WhatsApp</option><option value="phone">Llamada</option>
       </select></label>
-      <label className="text-sm">Buscar por servicio <input className="ml-2 rounded bg-neutral-800 p-2" value={search} onChange={event => setSearch(event.target.value)} placeholder="Servicio" /></label>
+      <label className="text-sm">Buscar servicio o mensaje <input className="ml-2 rounded bg-neutral-800 p-2" value={search} onChange={event => setSearch(event.target.value)} placeholder="Servicio o texto de la consulta" /></label>
     </div>
-    <ul className="space-y-4">{rows.filter(row => (channelFilter === 'all' || row.input.responseChannel === channelFilter) && (labels[row.input.service] || 'Orientación').toLowerCase().includes(search.trim().toLowerCase())).map(row => <li key={row.id} className="rounded border border-neutral-600 p-4 break-words">
-      <h3>{row.input.fullName} · {labels[row.input.service] || 'Orientación'}</h3>
+    <ul className="space-y-4">{rows.filter(row => (channelFilter === 'all' || row.input.responseChannel === channelFilter) && ((labels[row.input.service] || 'Orientación') + ' ' + row.input.message).toLowerCase().includes(search.trim().toLowerCase())).map(row => <li key={row.id} className="rounded border border-neutral-600 p-4 break-words">
+      <h3 className="text-lg font-semibold">{row.input.fullName} · {labels[row.input.service] || 'Orientación'}</h3>
       <p>Referencia: {row.id}</p><p>Celular: {row.input.phone}</p>
       {row.input.email && <p>Email: {row.input.email}</p>}
       {row.input.age !== null && <p>Edad informada: {row.input.age}</p>}
       <p>Preferencia: {({ whatsapp: 'WhatsApp', email: 'Correo electrónico', phone: 'Llamada' })[row.input.responseChannel]}</p>
-      <p className="whitespace-pre-wrap">{row.input.message}</p>
+      <p className="mt-2 whitespace-pre-wrap rounded bg-neutral-800 p-3"><strong>Mensaje recibido:</strong> {row.input.message}</p>
       <p>Consentimiento: {row.input.consentVersion} · Recibida: {row.created_at} · Caduca: {row.expires_at}</p>
       <label className="mt-2 block text-sm">Estado administrativo
         <select className="ml-2 rounded border border-neutral-600 bg-neutral-800 p-2" disabled={busy || !caseStatuses[row.id]}
