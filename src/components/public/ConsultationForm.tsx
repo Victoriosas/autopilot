@@ -84,6 +84,6 @@ export function ConsultationForm() {
       </form>
     </>}
     <div className="beauty-contact-options"><ContactLink /><ContactLink channel="email" /></div>
-    <p className="beauty-small">victoriosas.online@gmail.com</p>
+    <p className="beauty-small">Consultas web: <a href="mailto:consultas@victoriosas.online">consultas@victoriosas.online</a>. Para otros asuntos: <a href="mailto:victoriosas.online@gmail.com">victoriosas.online@gmail.com</a>.</p>
   </section>;
 }

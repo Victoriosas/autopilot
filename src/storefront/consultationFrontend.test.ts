@@ -16,7 +16,7 @@ test('consultation is visible in navigation and every service has a contextual e
   for (const group of serviceGroups) for (const name of group.services) {
     assert.ok(directory.includes(`href="/consultanos#${serviceSlug(name)}"`), name);
   }
-  assert.equal((directory.match(/Hablemos de tu cuidado/g) ?? []).length, 17);
+  assert.equal((directory.match(/Hablemos de tu cuidado/g) ?? []).length, 19);
 });
 
 test('consultation has a public route and distinct initial metadata, with previews noindex', () => {

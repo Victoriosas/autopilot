@@ -7,6 +7,9 @@ export const serviceGroups = [
   { id: 'corporales', title: 'Corporales', services: [
     'Exfoliación e hidratación', 'Masaje modelador', 'Masaje de drenaje linfático',
     'Masaje descontracturante', 'Masaje relax', 'Reducción de estrías'
+  ] },
+  { id: 'experiencias', title: 'Orientación y experiencias', services: [
+    'Asesoría cosmetológica online', 'Ritual facial y masaje'
   ] }
 ] as const;
 
