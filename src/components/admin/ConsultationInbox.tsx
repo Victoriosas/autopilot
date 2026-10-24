@@ -12,6 +12,11 @@ export function ConsultationInbox() {
   const [offset, setOffset] = useState(0);
   const [drafts, setDrafts] = useState<Record<string, { text: string; priority: string; subject: string; channel: string }>>({});
   const [replyState, setReplyState] = useState<Record<string, string>>({});
+  const [aiDrafts, setAiDrafts] = useState<Record<string, {
+    variants: { personalizada: string; breve: string; orientacion: string };
+    questions: string[]; knowledge_gaps: string[];
+    guardian: { status: string; reasons: string[] };
+  }>>({});
   const [channelFilter, setChannelFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [caseStatuses, setCaseStatuses] = useState<Record<string, string>>({});
@@ -73,6 +78,22 @@ export function ConsultationInbox() {
       if (alive.current) setDrafts(previous => ({ ...previous, [id]: payload.draft }));
     } catch { if (alive.current) setError('No fue posible preparar el borrador.'); }
     finally { if (alive.current) setBusy(false); }
+  }
+  async function prepareAI(id: string) {
+    setBusy(true); setError('');
+    try {
+      const response = await apiFetch('/api/beauty/inquiries/admin/' + encodeURIComponent(id) + '/draft-ai', {
+        method: 'POST', headers: { 'x-consultation-approval': id },
+      });
+      if (!response.ok) throw Error();
+      const payload = await response.json();
+      if (payload.delivery !== 'NOT_SENT' || payload.reviewRequired !== true ||
+          payload.draft?.action !== 'BORRADOR_NO_ENVIADO' ||
+          payload.draft?.guardian?.status !== 'REQUIERE_VICTORIA') throw Error();
+      if (alive.current) setAiDrafts(previous => ({ ...previous, [id]: payload.draft }));
+    } catch {
+      if (alive.current) setError('No se pudo generar la propuesta de IA. La función puede no estar habilitada o necesitar revisión de configuración.');
+    } finally { if (alive.current) setBusy(false); }
   }
   async function checkReply(id: string) {
     setBusy(true); setError('');
@@ -159,7 +180,20 @@ export function ConsultationInbox() {
           <option value="answered">Respondida</option><option value="closed">Cerrada</option>
         </select>
       </label>
-      <div className="mt-3 flex flex-wrap gap-2"><button className="rounded border border-amber-600 px-3 py-2" disabled={busy} onClick={() => void prepare(row.id)}>Preparar respuesta</button><button className="rounded border px-3 py-2" disabled={busy} onClick={() => void checkReply(row.id)}>Ver estado de respuesta</button></div>
+      <div className="mt-3 flex flex-wrap gap-2"><button className="rounded border border-amber-600 px-3 py-2" disabled={busy} onClick={() => void prepare(row.id)}>Preparar respuesta</button><button className="rounded border border-amber-400 px-3 py-2" disabled={busy} onClick={() => void prepareAI(row.id)}>Generar propuesta IA</button><button className="rounded border px-3 py-2" disabled={busy} onClick={() => void checkReply(row.id)}>Ver estado de respuesta</button></div>
+      {aiDrafts[row.id] && <div className="mt-3 rounded border border-amber-600/60 bg-neutral-950 p-3" aria-label="Propuesta de inteligencia artificial no enviada">
+        <p className="font-semibold text-amber-200">Propuesta de IA · Solo revisión humana, no enviada</p>
+        <p className="mt-2 text-sm">Control: {aiDrafts[row.id].guardian.status}. Victoria debe revisar los textos y verificar fuentes antes de usar cualquiera.</p>
+        <p className="mt-2 font-semibold">Alternativa personalizada</p>
+        <p className="whitespace-pre-wrap">{aiDrafts[row.id].variants.personalizada}</p>
+        <p className="mt-2 font-semibold">Alternativa breve</p>
+        <p className="whitespace-pre-wrap">{aiDrafts[row.id].variants.breve}</p>
+        <p className="mt-2 font-semibold">Orientación inicial</p>
+        <p className="whitespace-pre-wrap">{aiDrafts[row.id].variants.orientacion}</p>
+        {aiDrafts[row.id].knowledge_gaps.length > 0 && <p className="mt-2 text-sm">Información faltante: {aiDrafts[row.id].knowledge_gaps.join('; ')}</p>}
+        <p className="mt-2 text-sm">Motivos de revisión: {aiDrafts[row.id].guardian.reasons.join('; ')}</p>
+        <p className="mt-2 text-sm text-amber-200">Este panel no envía ni aprueba automáticamente ninguna de las alternativas de IA.</p>
+      </div>}
       {drafts[row.id] && <div className="mt-3 rounded border border-neutral-600 bg-neutral-950 p-3">
         <p>Prioridad: {drafts[row.id].priority} · Canal: {drafts[row.id].channel}</p>
         <p className="font-semibold">{drafts[row.id].subject}</p>

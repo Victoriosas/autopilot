@@ -6,6 +6,7 @@ import { normalizeConsultationRequest } from './consultationRequest';
 import { consultationSupabaseStore, type ConsultationStore } from './consultationSupabase';
 import { createConsultationDelivery, type ConsultationDelivery } from './consultationDelivery';
 import { draftConsultationResponse } from './consultationResponseAgents';
+import { camelRunConsultationDraft } from './consultationCamelRun';
 import { maybeSendAutomaticConsultationReply } from './consultationAutoReply';
 import { approveAndSendConsultationReply } from './consultationReplyDelivery';
 import { beautyServerDatabase } from './beautyDatabase';
@@ -112,6 +113,22 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; read
       if (!record) return res.status(404).json({ error: 'CONSULTATION_NOT_FOUND' });
       return res.json({ draft: draftConsultationResponse(record.input) });
     } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
+  });
+  // Opt-in AI drafting only; never sends replies, never accepts anonymous callers.
+  router.post('/admin/:id/draft-ai', deps.auth || requireSupabaseAdminAuth, async (req, res) => {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(req.params.id)) return res.status(400).json({ error: 'CONSULTATION_INPUT_INVALID' });
+    if (req.get('origin') !== allowedOrigin() || req.get('x-consultation-approval') !== req.params.id) return res.status(403).json({ error: 'CONSULTATION_ORIGIN_INVALID' });
+    try {
+      const token = req.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
+      if (!token || !store.get) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
+      const record = await store.get(token, req.params.id);
+      if (!record) return res.status(404).json({ error: 'CONSULTATION_NOT_FOUND' });
+      const draft = await camelRunConsultationDraft(record.input, req.params.id);
+      return res.json({ draft, delivery: 'NOT_SENT', reviewRequired: true, source: 'camelrun-stateless' });
+    } catch {
+      // Fail closed. Never substitute an unreviewed automated reply.
+      return res.status(503).json({ error: 'CONSULTATION_AI_DRAFT_UNAVAILABLE' });
+    }
   });
   // Explicit human approval only. No customer details appear in URL or logs.
   router.post('/admin/:id/approve-send', deps.auth || requireSupabaseAdminAuth, async (req, res) => {
