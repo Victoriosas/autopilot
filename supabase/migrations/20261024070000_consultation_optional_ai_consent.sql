@@ -2,7 +2,7 @@
 -- Explicit Boolean aiConsent is recorded in input with the request.
 begin;
 create or replace function public.consultation_claim(p_input jsonb,p_fingerprint text,p_abuse_hash text) returns jsonb
-language plpgsql security definer set search_path='' as $$
+language plpgsql security definer set search_path='' as $consultation_body$
 declare
   request_uuid uuid;
   request_row public.consultation_requests;
@@ -50,7 +50,7 @@ begin
   insert into private.consultation_outbox(request_id,lease,lease_until)values(request_uuid,next_lease,now()+interval '2 minutes');
   return jsonb_build_object('state','send','lease',next_lease);
 end;
-$;
+$consultation_body$;
 
 revoke all on function public.consultation_claim(jsonb,text,text) from public,anon,authenticated;
 grant execute on function public.consultation_claim(jsonb,text,text) to service_role;
