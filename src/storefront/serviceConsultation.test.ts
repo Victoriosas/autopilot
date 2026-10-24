@@ -26,7 +26,7 @@ for (const channel of ['whatsapp', 'email'] as const) {
       assert.match(body, /Desde la web de Victoriosas/);
       assert.doesNotMatch(body, /todavía no sé|reservado|confirmado|cédula|historia clínica/i);
       if (channel === 'email') {
-        assert.equal(url.pathname, 'victoriosas.online@gmail.com');
+        assert.equal(url.pathname, 'consultas@victoriosas.online');
         assert.deepEqual([...url.searchParams.keys()].sort(), ['body', 'subject']);
       } else {
         assert.equal(url.origin + url.pathname, 'https://wa.me/59897045305');
