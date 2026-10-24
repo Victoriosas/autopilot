@@ -9,7 +9,7 @@ const interests = {
   online: 'me interesa la asesoría de cuidado facial online',
 };
 export type ConsultationInterest = keyof typeof interests;
-export const contactEmail = 'victoriosas.online@gmail.com';
+export const contactEmail = 'consultas@victoriosas.online';
 export function ContactLink({children, className = 'beauty-button', icon, interest, service, context, channel = 'whatsapp'}: {children?: React.ReactNode; className?: string; icon?: string; interest?: ConsultationInterest; service?: ServiceName; context?: string; channel?: 'whatsapp' | 'email'}) {
   const message = service
     ? `Hola, me interesa consultar por ${service}. Quisiera conversar sobre una evaluación inicial remota. Desde la web de Victoriosas.`
