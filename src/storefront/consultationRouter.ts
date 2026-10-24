@@ -110,6 +110,7 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; deli
       if (!record) return res.status(404).json({ error: 'CONSULTATION_NOT_FOUND' });
       const body = req.body;
       if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).length !== 1 || typeof body.text !== 'string') return res.status(400).json({ error: 'CONSULTATION_REPLY_INVALID' });
+      if (prepareAnswerOptions(record.input).needsVictoria) return res.status(409).json({ error: 'CONSULTATION_HUMAN_REVIEW_REQUIRED' });
       const validation = validateApprovedAnswer(body.text);
       if (validation) return res.status(400).json({ error: 'CONSULTATION_REPLY_INVALID', reason: validation });
       const result = await approveAndSendConsultationReply(record, adminId, { approvedText: body.text });
