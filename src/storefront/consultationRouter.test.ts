@@ -44,7 +44,60 @@ test('consultation inbox requires authorization and lists through the caller ide
   try {
     assert.equal((await fetch(url)).status, 401); assert.equal(called, false);
     const response = await fetch(url, { headers: { authorization: 'Bearer synthetic-admin' } });
-    assert.equal(response.status, 200); assert.deepEqual(await response.json(), { requests: [] }); assert.equal(called, true);
+    assert.equal(response.status, 200); assert.deepEqual(await response.json(), { requests: [], readStates: {} }); assert.equal(called, true);
+  } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); }
+});
+
+test('reading is explicit, persistent, admin-only and independent of replies', async () => {
+  const id = '88888888-8888-4888-8888-888888888888';
+  const readAt = '2026-10-24T03:30:00.000Z';
+  let visible = true, writes = 0, fail = false;
+  const marked = new Map<string, string>();
+  const deps = {
+    origin: () => 'https://victoriosas.online',
+    auth: (req: any, res: any, next: any) => {
+      if (req.get('authorization') !== 'Bearer synthetic-admin') return res.status(401).json({ error: 'ADMIN_AUTH_REQUIRED' });
+      res.locals.adminUserId = '11111111-1111-4111-8111-111111111111'; next();
+    },
+    store: { ready: async () => true, claim: async () => ({ state: 'pending' as const }), finish: async () => false,
+      get: async () => visible ? { id, input: input as any, created_at: readAt, expires_at: '2099-01-01' } : null,
+      list: async () => [{ id, input: input as any, created_at: readAt, expires_at: '2099-01-01' }] },
+    reads: {
+      list: async () => { if (fail) throw Error('PRIVATE_DATABASE_DETAIL'); return Object.fromEntries(marked); },
+      unreadCount: async () => 1 - marked.size,
+      set: async (requestId: string, adminId: string, read: boolean) => {
+        assert.equal(adminId, '11111111-1111-4111-8111-111111111111');
+        if (fail) throw Error('PRIVATE_DATABASE_DETAIL');
+        writes++; if (read) marked.set(requestId, readAt); else marked.delete(requestId);
+        return read ? readAt : null;
+      },
+    },
+  };
+  const app = express(); app.use('/inquiries', createConsultationRouter(deps));
+  const server = app.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const base = `http://127.0.0.1:${(server.address() as any).port}/inquiries`;
+  const headers = { authorization: 'Bearer synthetic-admin', origin: 'https://victoriosas.online', 'x-consultation-approval': id, 'content-type': 'application/json' };
+  const post = (body: unknown, override = {}, targetId = id) => fetch(base + '/admin/' + targetId + '/read-state', { method: 'POST', headers: { ...headers, ...override }, body: JSON.stringify(body) });
+  const list = async () => (await fetch(base + '/admin', { headers })).json();
+  try {
+    assert.equal((await post({ read: true }, { authorization: '' })).status, 401);
+    assert.equal((await post({ read: true }, { origin: 'https://attacker.test' })).status, 403);
+    assert.equal((await post({ read: true }, { 'x-consultation-approval': '' })).status, 403);
+    assert.equal((await post({ read: 'true' })).status, 400);
+    assert.equal((await post({ read: true, status: 'answered' })).status, 400);
+    assert.equal((await post({ read: true }, {}, 'invalid-id')).status, 400);
+    assert.equal(writes, 0);
+    assert.deepEqual((await list()).readStates, {}); assert.equal(writes, 0);
+    visible = false; assert.equal((await post({ read: true })).status, 404); assert.equal(writes, 0); visible = true;
+    const read = await post({ read: true }); assert.equal(read.status, 200); assert.deepEqual(await read.json(), { readAt });
+    assert.deepEqual((await list()).readStates, { [id]: readAt });
+    const unread = await post({ read: false }); assert.equal(unread.status, 200); assert.deepEqual(await unread.json(), { readAt: null });
+    assert.deepEqual((await list()).readStates, {});
+    fail = true;
+    assert.equal((await list()).readStates, null, 'unknown must not become an empty unread map');
+    const failure = await post({ read: true }); assert.equal(failure.status, 503);
+    assert.deepEqual(await failure.json(), { error: 'CONSULTATION_UNAVAILABLE' });
+    assert.equal(writes, 2);
   } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); }
 });
 

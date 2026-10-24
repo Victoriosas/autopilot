@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 
 const database = process.env.BEAUTY_TEST_DATABASE_URL;
@@ -24,6 +24,8 @@ test('private consultation outbox on disposable PostgreSQL', { timeout: 120000 }
   await sql(`do $$begin if not exists(select 1 from pg_roles where rolname='anon') then create role anon;end if;if not exists(select 1 from pg_roles where rolname='authenticated') then create role authenticated;end if;if not exists(select 1 from pg_roles where rolname='service_role') then create role service_role bypassrls;end if;end$$;create schema auth;create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to authenticated;grant execute on function auth.uid() to authenticated;create table public.profiles(id uuid primary key,role text);grant select on public.profiles to authenticated;insert into profiles values('11111111-1111-4111-8111-111111111111','admin'),('22222222-2222-4222-8222-222222222222','customer');`);
   const migration = readFileSync('supabase/migrations/20261023042129_consultation_private_outbox.sql', 'utf8');
   await sql(migration);
+  const readingMigration = readdirSync('supabase/migrations').find(name => name.endsWith('_consultation_read_states.sql'));
+  if (readingMigration) await sql(readFileSync('supabase/migrations/' + readingMigration, 'utf8'));
   await t.test('schema ready only through service role; migration can be reapplied', async () => {
     assert.equal(await sql('set role service_role;select public.consultation_schema_ready()'), 'consultation-v1');
     await sql(migration);
@@ -73,5 +75,29 @@ test('private consultation outbox on disposable PostgreSQL', { timeout: 120000 }
     assert.equal(await sql('set role service_role;select public.consultation_purge_expired()'), '1');
     assert.equal(await sql(`select count(*) from private.consultation_outbox where request_id='${input.id}'`), '0');
     await assert.rejects(sql('set role anon;select public.consultation_purge_expired()'), /permission denied/);
+  });
+  await t.test('shared read state is private, reversible, expiry-scoped and cascades with consultations', async () => {
+    assert.equal(await sql("select to_regclass('public.consultation_read_states')::text"), 'consultation_read_states');
+    await sql(readFileSync('supabase/migrations/' + readingMigration!, 'utf8'));
+    const current = fixture(), expired = fixture(), admin = '11111111-1111-4111-8111-111111111111';
+    const baseline = Number(await sql('set role service_role;select unread_requests from public.consultation_read_metrics'));
+    await sql(`insert into public.consultation_requests(id,fingerprint,input,expires_at) values('${current.id}','${hash}',${literal(current)},now()+interval '1 day'),('${expired.id}','${hash}',${literal(expired)},now()-interval '1 day')`);
+    assert.equal(await sql('set role service_role;select unread_requests from public.consultation_read_metrics'), String(baseline + 1));
+    await sql(`set role service_role;insert into public.consultation_read_states(request_id,read_by) values('${current.id}','${admin}')`);
+    assert.equal(await sql('set role service_role;select unread_requests from public.consultation_read_metrics'), String(baseline));
+    assert.equal(await sql(`select count(*) from private.consultation_outbox where request_id='${current.id}'`), '0', 'read never creates a delivery');
+    for (const role of ['anon', 'authenticated']) {
+      await assert.rejects(sql(`set role ${role};select * from public.consultation_read_states`), /permission denied/);
+      await assert.rejects(sql(`set role ${role};select * from public.consultation_read_metrics`), /permission denied/);
+      await assert.rejects(sql(`set role ${role};insert into public.consultation_read_states(request_id,read_by) values('${expired.id}','${admin}')`), /permission denied/);
+    }
+    await assert.rejects(sql('set role service_role;select input from public.consultation_requests'), /permission denied/);
+    assert.equal(await sql("select relrowsecurity from pg_class where oid='public.consultation_read_states'::regclass"), 't');
+    assert.match(await sql("select reloptions::text from pg_class where oid='public.consultation_read_metrics'::regclass"), /security_invoker=true/);
+    await sql(`set role service_role;delete from public.consultation_read_states where request_id='${current.id}'`);
+    assert.equal(await sql('set role service_role;select unread_requests from public.consultation_read_metrics'), String(baseline + 1));
+    await sql(`set role service_role;insert into public.consultation_read_states(request_id,read_by) values('${current.id}','${admin}')`);
+    await sql(`delete from public.consultation_requests where id='${current.id}'`);
+    assert.equal(await sql(`select count(*) from public.consultation_read_states where request_id='${current.id}'`), '0');
   });
 });
