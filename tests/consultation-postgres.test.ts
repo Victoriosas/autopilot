@@ -100,4 +100,33 @@ test('private consultation outbox on disposable PostgreSQL', { timeout: 120000 }
     await sql(`delete from public.consultation_requests where id='${current.id}'`);
     assert.equal(await sql(`select count(*) from public.consultation_read_states where request_id='${current.id}'`), '0');
   });
+  await t.test('intelligence leases, budgets, approval CAS and retention on real PostgreSQL',async()=>{
+    const file=readdirSync('supabase/migrations').find(name=>name.endsWith('_consultation_intelligence_shadow.sql'))!;
+    await sql(readFileSync('supabase/migrations/'+file,'utf8'));
+    const current=fixture();await claim(current,hash,'f'.repeat(64));
+    const acquire=()=>sql(`set role service_role;select consultation_ai_claim('${current.id}','${hash}','fixture-v1')`).then(JSON.parse);
+    const results=await Promise.all(Array.from({length:6},acquire));
+    assert.equal(results.filter(r=>r.state==='claimed').length,1);
+    assert.equal(results.filter(r=>r.state==='busy').length,5);
+    const claimed=results.find(r=>r.state==='claimed');
+    const reserve=()=>sql(`set role service_role;select consultation_ai_reserve_budget('${claimed.id}',50000,50000,50000)`);
+    assert.deepEqual(await Promise.all([reserve(),reserve()]),['t','f']);
+    const analysis={version:'consultation-intelligence-v1',mode:'shadow',conversationVersion:hash,expiresAt:new Date(Date.now()+600000).toISOString(),guardian:{status:'approved',codes:[]},drafts:[{text:'Respuesta sintética. Victoria | Victoriosas'}],fingerprint:hash,statistics:{calls:0}};
+    const finish=(lease:string)=>sql(`set role service_role;select consultation_ai_finish('${claimed.id}','${lease}',${literal(analysis)})`);
+    assert.equal(await finish(randomUUID()),'f');assert.equal(await finish(claimed.lease),'t');assert.equal(await finish(claimed.lease),'f');
+    assert.equal((await acquire()).state,'ready');
+    const approve=(text:string)=>sql(`set role service_role;select consultation_ai_review('${current.id}','${claimed.id}','11111111-1111-4111-8111-111111111111','${text}','${hash}','approve')`);
+    assert.equal(await approve('Texto cambiado'),'f');assert.equal(await approve(analysis.drafts[0].text),'t');
+    assert.equal(await sql(`select count(*) from consultation_intelligence_events where run_id='${claimed.id}' and kind='approve'`),'1');
+    for(const role of ['anon','authenticated']){
+      await assert.rejects(sql(`set role ${role};select * from consultation_intelligence_runs`),/permission denied/);
+      await assert.rejects(sql(`set role ${role};select consultation_ai_claim('${current.id}','${hash}','fixture-v1')`),/permission denied/);
+    }
+    await assert.rejects(sql('set role service_role;select input from consultation_requests'),/permission denied/);
+    await sql(`update consultation_requests set expires_at=now()-interval '1 minute' where id='${current.id}'`);
+    assert.equal(await approve(analysis.drafts[0].text),'f');
+    await sql('set role service_role;select consultation_purge_expired()');
+    assert.equal(await sql(`select count(*) from consultation_intelligence_runs where request_id='${current.id}'`),'0');
+    assert.equal(await sql(`select count(*) from consultation_intelligence_events where run_id='${claimed.id}'`),'0');
+  });
 });
