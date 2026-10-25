@@ -12,6 +12,13 @@ const val = (n: string, d: string) => { const i = args.indexOf(n); return i >= 0
 const split = val('--split', 'desarrollo');
 const limit = Number(val('--limit', '0')) || Infinity;
 const maxUsd = Number(val('--max-usd', '3'));
+if (!Number.isFinite(maxUsd) || maxUsd <= 0 || maxUsd > 3) {
+  console.error('Presupuesto inválido: --max-usd debe ser mayor que 0 y como máximo 3.');
+  process.exit(2);
+}
+// Reserva el máximo que autoriza cada ejecución, incluso si el proveedor omite el costo real.
+const MAX_PER_AGENT_RUN_USD = 0.15;
+const MAX_PER_CASE_USD = 3 * MAX_PER_AGENT_RUN_USD;
 const file = validateEvalFile(JSON.parse(readFileSync('docs/consultation-agents/eval-cases-v1.json', 'utf8')));
 
 if ((split === 'final' || split === 'all') && !has('--confirm-final')) {
@@ -34,19 +41,31 @@ if (!key) { console.error('Falta CAMELAI_API_KEY (variable de entorno; nunca en 
 const results: CaseResult[] = [];
 const controlResults: Awaited<ReturnType<typeof runControl>>[] = [];
 let spent = 0;
+let reserved = 0;
+let budgetExhausted = false;
 for (const ctl of controls) {
-  if (spent > maxUsd) break;
+  if (reserved + MAX_PER_AGENT_RUN_USD > maxUsd + 1e-9) {
+    budgetExhausted = true;
+    break;
+  }
+  reserved += MAX_PER_AGENT_RUN_USD;
   const r = await runControl(fetch as any, key, ctl); spent += r.cost_usd; controlResults.push(r);
   console.log(`${r.pass ? 'OK ' : 'FALLA'} ${r.id} ${r.family}`);
 }
 for (const c of cases) {
-  if (spent > maxUsd) { console.error(`Tope de gasto alcanzado (${maxUsd} USD): corrida parcial.`); break; }
+  if (reserved + MAX_PER_CASE_USD > maxUsd + 1e-9) {
+    budgetExhausted = true;
+    console.error(`Presupuesto reservado agotado (${maxUsd} USD): corrida parcial segura.`);
+    break;
+  }
+  reserved += MAX_PER_CASE_USD;
   const r = await runCase(fetch as any, key, c); spent += r.cost_usd; results.push(r);
   console.log(`${r.pass ? 'OK ' : 'FALLA'} ${r.id} ${r.family}${r.critical ? ' [crítico]' : ''} ${r.issues.map(i => i.code + ':' + i.detail).join(' | ')}`);
 }
 const summary = summarize(results, controlResults);
+const complete = results.length === cases.length && controlResults.length === controls.length && !budgetExhausted;
 const out = val('--out', `output/consultation-agents-eval/report-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
 mkdirSync(dirname(out), { recursive: true });
-writeFileSync(out, JSON.stringify({ version: file.version, split, summary, results, controls: controlResults }, null, 1));
+writeFileSync(out, JSON.stringify({ version: file.version, split, complete, maximum_authorized_usd: reserved, summary, results, controls: controlResults }, null, 1), { mode: 0o600 });
 console.log(JSON.stringify(summary, null, 1), '\nInforme:', out);
-process.exit(summary.gate_ok && results.length === cases.length ? 0 : 1);
+process.exit(summary.gate_ok && complete ? 0 : 1);
