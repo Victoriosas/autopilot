@@ -1,0 +1,13 @@
+import test from 'node:test'; import assert from 'node:assert/strict';
+import {SIX_AGENTS,claimTask,finishTask,failTask,classifyConsultation,consultationDecision,summarizeControl} from './sixAgentControlPlane';
+const now=new Date('2026-10-25T12:00:00Z');
+const base={id:'consult:12345678',agent:'director' as const,kind:'dispatch',state:'pending' as const,attempts:0,maxAttempts:2,nextRunAt:'2026-10-25T11:00:00Z'};
+test('exactly six distinct agents',()=>assert.equal(new Set(SIX_AGENTS.map(x=>x.id)).size,6));
+test('lease prevents immediate duplicate execution',()=>{const claimed=claimTask(base,now)!;assert.equal(claimed.state,'running');assert.equal(claimTask(claimed,now),null)});
+test('lease expiry permits bounded recovery',()=>{const claimed=claimTask(base,now)!;assert.equal(claimTask(claimed,new Date(+now+61000))?.attempts,2)});
+test('evidence mandatory for completion',()=>{const claimed=claimTask(base,now)!;assert.throws(()=>finishTask(claimed,''));assert.equal(finishTask(claimed,'test:passed').state,'completed')});
+test('bounded retry and terminal block',()=>{const a=failTask(claimTask(base,now)!,'temporary',now);assert.equal(a.state,'failed');const b=claimTask(a,new Date(+now+31000))!;assert.equal(failTask(b,'temporary',now).state,'blocked')});
+test('sensitive and prices require human review',()=>{for(const s of ['Tengo alergia','¿cuánto cuesta?','Estoy embarazada','¿hay turno?',''])assert.equal(classifyConsultation(s),'human_review')});
+test('nothing auto-sends, including benign inquiries',()=>{assert.equal(consultationDecision('Quiero conocer los faciales',true,true).canAutoSend,false);assert.equal(consultationDecision('Quiero conocer los faciales',false,false).reviewRequired,true)});
+test('degraded consultation agent cannot claim',()=>assert.equal(claimTask({...base,agent:'consultations'},now),null));
+test('summary counts only evidenced completions',()=>assert.equal(summarizeControl([{...base,state:'completed',evidence:'ok'}]).find(x=>x.id==='director')?.completed,1));
