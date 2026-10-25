@@ -4,11 +4,11 @@ set -euo pipefail
 psql "$AUTOPILOT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
 create schema auth;
 create function auth.role() returns text language sql stable as 'select current_setting(''request.jwt.claim.role'',true)';
-do $ begin
+do $guard$ begin
  if not exists(select 1 from pg_roles where rolname='service_role') then create role service_role; end if;
  if not exists(select 1 from pg_roles where rolname='authenticated') then create role authenticated; end if;
  if not exists(select 1 from pg_roles where rolname='anon') then create role anon; end if;
-end $;
+end $guard$;
 create table public.agent_tasks(
  id text primary key, goal text not null,actor text not null,action text not null,
  status text not null check(status in('queued','running','awaiting_approval','completed','failed','blocked')),
