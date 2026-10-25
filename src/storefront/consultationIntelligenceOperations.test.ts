@@ -20,3 +20,14 @@ test('operations produce only sourced content drafts and non-identifiable learni
  assert.equal(validateWorkflowEvent({kind:'consent_recorded',key:'a'.repeat(64),payload:{occurredAt:now.toISOString(),email:'private@example.com'}},now),false);
  assert.equal(validateWorkflowEvent({kind:'system',key:'a'.repeat(64),payload:{}},now),false);
 });
+
+test('opt-out takes precedence when consent and withdrawal timestamps tie',()=>{
+ const consent=event('consent_recorded',4,'consent');
+ const optedOut=event('opt_out',4,'withdrawal');
+ const confirmed=event('proposal_confirmed',3,'confirmed');
+ for(const order of [[consent,optedOut,confirmed],[optedOut,consent,confirmed]]){
+  const result=prepareIntelligenceOperations(order,now);
+  assert.equal(result.consentRecorded,false);
+  assert.equal(result.followups.length,0);
+ }
+});
