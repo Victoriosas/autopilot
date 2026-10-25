@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "test": "node --import tsx --test src/autopilot/*.test.ts src/payments/*.test.ts src/storefront/*.test.ts src/integrations/*.test.ts src/security/*.test.ts",
+    "eval:consultation-agents": "node --import tsx scripts/eval-consultation-agents.ts",
     "build:vercel": "vite build && esbuild vercel-api.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist/vercel-api.cjs",
     "test:db": "node --import tsx --test tests/sourcing-postgres.test.ts && node --import tsx --test tests/shadow-auth-postgres.test.ts",
     "test:commerce:db": "node scripts/test-commerce-postgres.mjs",
