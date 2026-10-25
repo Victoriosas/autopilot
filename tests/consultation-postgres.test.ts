@@ -104,6 +104,8 @@ test('private consultation outbox on disposable PostgreSQL', { timeout: 120000 }
     const file=readdirSync('supabase/migrations').find(name=>name.endsWith('_consultation_intelligence_shadow.sql'))!;
     await sql(readFileSync('supabase/migrations/20261023224500_consultation_reply_outbox.sql','utf8'));
     await sql(readFileSync('supabase/migrations/'+file,'utf8'));
+    const generation=readdirSync('supabase/migrations').find(name=>name.endsWith('_consultation_ai_generation_budget.sql'))!;
+    await sql(readFileSync('supabase/migrations/'+generation,'utf8'));
     const current={...fixture(),email:'synthetic@example.test',responseChannel:'email'};await claim(current,hash,'f'.repeat(64));
     const acquire=()=>sql(`set role service_role;select consultation_ai_claim('${current.id}','${hash}','fixture-v1')`).then(JSON.parse);
     const results=await Promise.all(Array.from({length:6},acquire));
@@ -142,5 +144,18 @@ test('private consultation outbox on disposable PostgreSQL', { timeout: 120000 }
     await sql('set role service_role;select consultation_purge_expired()');
     assert.equal(await sql(`select count(*) from consultation_intelligence_runs where request_id='${current.id}'`),'0');
     assert.equal(await sql(`select count(*) from consultation_intelligence_events where run_id='${claimed.id}'`),'0');
+  });
+  await t.test('each regenerated analysis reserves once for its new lease and preserves previous spend',async()=>{
+    const current={...fixture(),email:'synthetic@example.test',responseChannel:'email'};
+    await claim(current,hash,'8'.repeat(64));
+    const acquire=()=>sql(`set role service_role;select consultation_ai_claim('${current.id}','${hash}','retry-fixture')`).then(JSON.parse);
+    const first=await acquire();assert.equal(first.state,'claimed');
+    const reserve=()=>sql(`set role service_role;select consultation_ai_reserve_budget('${first.id}',60000,300000,300000)`);
+    assert.equal(await reserve(),'t');assert.equal(await reserve(),'f');
+    await sql(`update consultation_intelligence_runs set lease_until=now()-interval '1 second' where id='${first.id}'`);
+    const second=await acquire();assert.equal(second.id,first.id);assert.notEqual(second.lease,first.lease);
+    assert.deepEqual((await Promise.all([reserve(),reserve()])).sort(),['f','t']);
+    assert.equal(await sql(`select count(*) from private.consultation_ai_budget where reservation_id in('${first.lease}','${second.lease}')`),'2');
+    assert.equal(await sql(`select sum(reserved_microusd) from private.consultation_ai_budget where reservation_id in('${first.lease}','${second.lease}')`),'120000');
   });
 });

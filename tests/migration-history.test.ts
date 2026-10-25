@@ -14,7 +14,7 @@ test('migration history must be reconciled before any hosted db push', () => {
   const hostedVersions = new Set(hosted.map(migration => migration.version));
   const localVersions = new Set(local.map(migration => migration.version));
   assert.equal(hosted.length, 21, 'The pinned hosted catalog changed; review it before planning a push');
-  assert.equal(local.length, 35, 'The local migration directory changed; review the mapping');
+  assert.equal(local.length, 36, 'The local migration directory changed; review the mapping');
   assert.equal(hostedVersions.size, hosted.length, 'Hosted versions must be unique');
   assert.equal(localVersions.size, local.length, 'Local versions must be unique');
 
@@ -46,6 +46,7 @@ test('migration history must be reconciled before any hosted db push', () => {
     'consultation_read_states',
     'consultation_intelligence_shadow',
     'consultation_optional_ai_consent',
+    'consultation_ai_generation_budget',
   ]);
   // This inventories a mismatch, not the exact behavior of Supabase CLI against a linked project.
   // It intentionally provides no operation that repairs history or applies migrations.

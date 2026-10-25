@@ -147,17 +147,24 @@ export type CaseResult = {
 
 export async function runCase(fetchImpl: FetchLike, key: string, c: EvalCase, runId = 'synthetic'): Promise<CaseResult> {
   const r: CaseResult = { id: c.id, family: c.family, critical: c.critical, pass: false, issues: [], warnings: [], cost_usd: 0, ms: 0 };
+  const step = async (prompt: string, input: unknown, tag: string) => {
+    const started = Date.now();
+    try {
+      const result = await statelessRun(fetchImpl, key, prompt, input, `${runId}-${c.id}-${tag}`);
+      r.cost_usd += result.usage.costUsd;
+      return result.text;
+    } catch (error) {
+      // Unknown outcomes still consume the request's preventive reservation.
+      r.cost_usd += 0.02;
+      throw error;
+    } finally { r.ms += Date.now() - started; }
+  };
   try {
-    const a = await statelessRun(fetchImpl, key, COMPRENSION_PROMPT, { consulta: c.message }, `${runId}-${c.id}-a`);
-    const interp = parseStrict(a.text);
-    const b = await statelessRun(fetchImpl, key, REDACTOR_PROMPT,
-      { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence }, `${runId}-${c.id}-b`);
-    const draft = parseStrict(b.text);
-    const g = await statelessRun(fetchImpl, key, GUARDIAN_PROMPT,
-      { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence, borradores: draft?.variants ?? null }, `${runId}-${c.id}-c`);
-    const guard = parseStrict(g.text);
-    r.cost_usd = a.usage.costUsd + b.usage.costUsd + g.usage.costUsd;
-    r.ms = a.usage.ms + b.usage.ms + g.usage.ms;
+    const interp = parseStrict(await step(COMPRENSION_PROMPT, { consulta: c.message }, 'a'));
+    const draft = parseStrict(await step(REDACTOR_PROMPT,
+      { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence }, 'b'));
+    const guard = parseStrict(await step(GUARDIAN_PROMPT,
+      { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence, borradores: draft?.variants ?? null }, 'c'));
     if (!validInterpretation(interp)) r.issues.push({ code: 'COMPRENSION_INVALID_JSON', detail: 'schema' });
     if (!draft) r.issues.push({ code: 'REDACTOR_INVALID_JSON', detail: '' }); else r.issues.push(...checkDraft(c, draft));
     const cg = checkGuardian(c, guard);

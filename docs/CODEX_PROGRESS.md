@@ -26,4 +26,10 @@ Worktree propio: `consultation-integration/autopilot`, rama `codex/consultation-
 
 La habilitación prevista es solo `CONSULTATION_INTELLIGENCE_ENABLED=true` con proveedor determinista local. `CONSULTATION_MODEL_GATEWAY_ENABLED`, procesamiento IA remoto y todos los flags de envío de inteligencia permanecen apagados. Recuperación: apagar el flag de inteligencia y revertir el commit por PR; conservar tablas aditivas y datos, sin DROP ni purgas manuales. No cambiar el correo existente por inferencia.
 
+## Revisión de PR132
+
+SHA inicial `1ccc220`: validate/postgres, evaluador sin secretos, CodeQL y stacks reales de Supabase Beauty y comercio aprobados. Preview READY y health confirma el SHA y checkout cerrado. Panel sintético a 1440/768/390/320: sin overflow ni infracciones axe WCAG A/AA detectadas; validación explícita registra revisión sin envío. Esta evidencia visual usa fixtures, no una sesión administrativa real.
+
+Dos hallazgos automáticos detuvieron la fusión: reserva ligada al run impedía regenerar; costo parcial se perdía si una etapa posterior fallaba. Corregidos con reserva por lease y acumulación inmediata con reserva conservadora de fallos. PostgreSQL e inventario: 12/12. La migración base ya está alojada como `20261025024834_consultation_intelligence_shadow`; RLS en tres tablas, ocho RPCs exclusivamente service_role, search_path fijo y cero análisis. La corrección se entrega como una segunda migración aditiva, sin reescribir el SQL aplicado ni eliminar reservas. Falta validar CI del nuevo SHA y resolver los hilos con esta evidencia.
+
 Documentación de contrato: [camelRun OpenAPI](https://run.camelai.com/v1/openapi.json), [costos](https://run.camelai.com/docs/pricing.md), [Ollama chat](https://docs.ollama.com/api/chat).

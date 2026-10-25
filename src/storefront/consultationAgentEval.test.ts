@@ -130,3 +130,11 @@ test('partial JSON, contradictory guardian statuses and empty evaluations fail c
   const r = await runCase((async () => reply('{}')) as any, 'k', base);
   assert.equal(r.pass, false); assert.ok(r.issues.some(i => i.code === 'COMPRENSION_INVALID_JSON'));
 });
+
+test('later provider failures retain previous costs and reserve unknown outcomes', async () => {
+  let calls=0;
+  const result=await runCase((async()=>{if(calls++===0)return reply(JSON.stringify(interpretation()),0.01);throw Error('private upstream error');}) as any,'k',base);
+  assert.equal(calls,2);assert.equal(result.pass,false);
+  assert.equal(result.cost_usd,0.03);assert.equal(summarize([result],[]).cost_usd,0.03);
+  assert.equal(result.error,'EVAL_RUN_FAILED');assert.ok(!JSON.stringify(result).includes('private upstream'));
+});
