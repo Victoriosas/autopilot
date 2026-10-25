@@ -1,0 +1,26 @@
+name: Victoriosas infrastructure availability
+on:
+  schedule:
+    # Four checks per day; best-effort scheduling, no daemon.
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: victoriosas-infrastructure-availability
+  cancel-in-progress: false
+jobs:
+  public-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test public health guards
+        run: node --test scripts/infrastructure-health.test.mjs
+      - name: Verify public site
+        run: node scripts/infrastructure-health.mjs
