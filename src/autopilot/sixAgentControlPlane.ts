@@ -36,7 +36,7 @@ export function failTask(task:ControlTask, reason:string, now:Date):ControlTask 
 }
 export function classifyConsultation(message:string):'human_review'|'general_information' {
  const normalized=message.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
- if(!normalized.trim()||normalized.length>4000||/(embaraz|medicament|alerg|diagnostic|enfermedad|dolor|lesion|contraindic|sangr|acne severo|tratamiento medico|menor de edad|precio|tarifa|turno|horario|disponibilidad)/.test(normalized))return 'human_review';
+ if(!normalized.trim()||normalized.length>4000||/(embaraz|medicament|alerg|diagnostic|enfermedad|dolor|lesion|contraindic|sangr|acne severo|tratamiento medico|menor de edad|precio|tarifa|turno|horario|disponibilidad|cuanto|cuesta|costo|valor)/.test(normalized))return 'human_review';
  return 'general_information';
 }
 export function consultationDecision(message:string, consent:boolean, deliveryApproved:boolean){
