@@ -3,6 +3,8 @@ import { apiFetch } from '../../lib/api';
 import type { ConsultationRecord } from '../../storefront/consultationSupabase';
 import { serviceGroups, serviceSlug } from '../public/serviceDirectory';
 import { ConsultationReadControl } from './ConsultationReadControl';
+import { ConsultationIntelligencePanel } from './ConsultationIntelligencePanel';
+import { ConsultationIntelligenceReport } from './ConsultationIntelligenceReport';
 
 const labels = Object.fromEntries(serviceGroups.flatMap(group => group.services.map(name => [serviceSlug(name), name])));
 export function ConsultationInbox() {
@@ -12,17 +14,13 @@ export function ConsultationInbox() {
   const [offset, setOffset] = useState(0);
   const [drafts, setDrafts] = useState<Record<string, { text: string; priority: string; subject: string; channel: string }>>({});
   const [replyState, setReplyState] = useState<Record<string, string>>({});
-  const [aiDrafts, setAiDrafts] = useState<Record<string, {
-    variants: { personalizada: string; breve: string; orientacion: string };
-    questions: string[]; knowledge_gaps: string[];
-    guardian: { status: string; reasons: string[] };
-  }>>({});
   const [channelFilter, setChannelFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [caseStatuses, setCaseStatuses] = useState<Record<string, string>>({});
   const [sentIds, setSentIds] = useState<string[]>([]);
   const [readStates, setReadStates] = useState<Record<string, string> | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [intelligenceEnabled,setIntelligenceEnabled]=useState(false);
   const [source, setSource] = useState<'web' | 'whatsapp'>('web');
   const [folder, setFolder] = useState<'pending' | 'sent'>('pending');
   const alive = useRef(true);
@@ -37,6 +35,11 @@ export function ConsultationInbox() {
       const payload = await response.json();
       if (!alive.current || version !== loadVersion.current) return;
       if (alive.current) { setRows(payload.requests); setReadStates(payload.readStates ?? null); setOffset(page); }
+      try {
+        const config=await apiFetch('/api/beauty/inquiries/admin/intelligence-config');
+        const state=config.ok?await config.json():{};
+        if(alive.current&&version===loadVersion.current)setIntelligenceEnabled(state.enabled===true);
+      }catch{if(alive.current&&version===loadVersion.current)setIntelligenceEnabled(false);}
       setStatusLoading(true);
       const statuses = await Promise.all((payload.requests as ConsultationRecord[]).map(async row => {
         try {
@@ -78,22 +81,6 @@ export function ConsultationInbox() {
       if (alive.current) setDrafts(previous => ({ ...previous, [id]: payload.draft }));
     } catch { if (alive.current) setError('No fue posible preparar el borrador.'); }
     finally { if (alive.current) setBusy(false); }
-  }
-  async function prepareAI(id: string) {
-    setBusy(true); setError('');
-    try {
-      const response = await apiFetch('/api/beauty/inquiries/admin/' + encodeURIComponent(id) + '/draft-ai', {
-        method: 'POST', headers: { 'x-consultation-approval': id },
-      });
-      if (!response.ok) throw Error();
-      const payload = await response.json();
-      if (payload.delivery !== 'NOT_SENT' || payload.reviewRequired !== true ||
-          payload.draft?.action !== 'BORRADOR_NO_ENVIADO' ||
-          payload.draft?.guardian?.status !== 'REQUIERE_VICTORIA') throw Error();
-      if (alive.current) setAiDrafts(previous => ({ ...previous, [id]: payload.draft }));
-    } catch {
-      if (alive.current) setError('No se pudo generar la propuesta de IA. La función puede no estar habilitada o necesitar revisión de configuración.');
-    } finally { if (alive.current) setBusy(false); }
   }
   async function checkReply(id: string) {
     setBusy(true); setError('');
@@ -150,6 +137,7 @@ export function ConsultationInbox() {
     </div>
     {source === 'whatsapp' && <div className="rounded-lg border border-neutral-700 bg-neutral-950 p-5" role="status"><h3 className="font-semibold">WhatsApp · Integración pendiente</h3><p>Las consultas recibidas directamente en WhatsApp todavía no se sincronizan aquí. No se muestran mensajes simulados. Las consultas web que eligen WhatsApp como canal permanecen en Web hasta contar con una conexión autorizada.</p></div>}
     {source === 'web' && <>
+      <ConsultationIntelligenceReport enabled={intelligenceEnabled}/>
       <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Estado de respuesta">
         <button type="button" aria-pressed={folder === 'pending'} onClick={() => setFolder('pending')} className={`rounded border px-3 py-2 ${folder === 'pending' ? 'border-amber-500 bg-amber-900/30' : 'border-neutral-600'}`}>En espera de respuesta ({rows.length - sentIds.length})</button>
         <button type="button" aria-pressed={folder === 'sent'} onClick={() => setFolder('sent')} className={`rounded border px-3 py-2 ${folder === 'sent' ? 'border-amber-500 bg-amber-900/30' : 'border-neutral-600'}`}>Respondidas con asistencia de IA ({sentIds.length})</button>
@@ -180,20 +168,7 @@ export function ConsultationInbox() {
           <option value="answered">Respondida</option><option value="closed">Cerrada</option>
         </select>
       </label>
-      <div className="mt-3 flex flex-wrap gap-2"><button className="rounded border border-amber-600 px-3 py-2" disabled={busy} onClick={() => void prepare(row.id)}>Preparar respuesta</button><button className="rounded border border-amber-400 px-3 py-2" disabled={busy} onClick={() => void prepareAI(row.id)}>Generar propuesta IA</button><button className="rounded border px-3 py-2" disabled={busy} onClick={() => void checkReply(row.id)}>Ver estado de respuesta</button></div>
-      {aiDrafts[row.id] && <div className="mt-3 rounded border border-amber-600/60 bg-neutral-950 p-3" aria-label="Propuesta de inteligencia artificial no enviada">
-        <p className="font-semibold text-amber-200">Propuesta de IA · Solo revisión humana, no enviada</p>
-        <p className="mt-2 text-sm">Control: {aiDrafts[row.id].guardian.status}. Victoria debe revisar los textos y verificar fuentes antes de usar cualquiera.</p>
-        <p className="mt-2 font-semibold">Alternativa personalizada</p>
-        <p className="whitespace-pre-wrap">{aiDrafts[row.id].variants.personalizada}</p>
-        <p className="mt-2 font-semibold">Alternativa breve</p>
-        <p className="whitespace-pre-wrap">{aiDrafts[row.id].variants.breve}</p>
-        <p className="mt-2 font-semibold">Orientación inicial</p>
-        <p className="whitespace-pre-wrap">{aiDrafts[row.id].variants.orientacion}</p>
-        {aiDrafts[row.id].knowledge_gaps.length > 0 && <p className="mt-2 text-sm">Información faltante: {aiDrafts[row.id].knowledge_gaps.join('; ')}</p>}
-        <p className="mt-2 text-sm">Motivos de revisión: {aiDrafts[row.id].guardian.reasons.join('; ')}</p>
-        <p className="mt-2 text-sm text-amber-200">Este panel no envía ni aprueba automáticamente ninguna de las alternativas de IA.</p>
-      </div>}
+      <div className="mt-3 flex flex-wrap gap-2"><button className="rounded border border-amber-600 px-3 py-2" disabled={busy} onClick={() => void prepare(row.id)}>Preparar respuesta</button><button className="rounded border px-3 py-2" disabled={busy} onClick={() => void checkReply(row.id)}>Ver estado de respuesta</button></div>
       {drafts[row.id] && <div className="mt-3 rounded border border-neutral-600 bg-neutral-950 p-3">
         <p>Prioridad: {drafts[row.id].priority} · Canal: {drafts[row.id].channel}</p>
         <p className="font-semibold">{drafts[row.id].subject}</p>
@@ -204,6 +179,7 @@ export function ConsultationInbox() {
         </div> : <p>La clienta prefiere una llamada. Coordiná el contacto personalmente.</p>}
       </div>}
       {replyState[row.id] && <p role="status">{replyState[row.id]}</p>}
+      <ConsultationIntelligencePanel requestId={row.id} enabled={intelligenceEnabled}/>
     </li>)}</ul>
     {rows.length > 0 && <div className="flex gap-4"><button disabled={busy || offset === 0} onClick={() => void load(Math.max(0, offset - 50))}>Anterior</button><button disabled={busy || rows.length < 50} onClick={() => void load(offset + 50)}>Siguiente</button></div>}
     </>}
