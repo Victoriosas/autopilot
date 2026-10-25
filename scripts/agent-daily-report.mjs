@@ -15,7 +15,7 @@ export function summarize(rows,now=new Date()){
 }
 export function markdown(report,state){
  const table=report?.agents.map(a=>`| ${a.agent} | ${a.queued} | ${a.running} | ${a.failed} | ${a.blocked} | ${a.completedWithEvidence} | ${a.lastActivity||'sin registros'} |`).join('\n')||'';
- return `# Victoriosas | Informe diario de agentes\n\nEstado: **${state}**\n\nEl reporte se generó a las ${new Date().toISOString()} UTC. Horario objetivo: 19:00 Uruguay, sin garantía de puntualidad.\n\n${report?'| Agente | En espera | En curso | Fallida | Bloqueada | Completada con evidencia | Última actividad |\n|---|---:|---:|---:|---:|---:|---|\n'+table:'No se obtuvo telemetría. No se afirma que los agentes estén ejecutándose.'}\n\nNo certifica ejecución permanente ni envía mensajes.\n`;
+ return `# Victoriosas | Informe diario de agentes\n\nEstado: **${state}**\n\nEl reporte se generó a las ${new Date().toISOString()} UTC. Horario objetivo: 19:00 Uruguay, sin garantía de puntualidad.\n\n${report?'| Agente | En espera | En curso | Fallida | Bloqueada | Completada con evidencia | Última actividad |\n|---|---:|---:|---:|---:|---:|---|\n'+table:'No se obtuvo telemetría privada de Supabase. La programación del informe está activa, pero la ejecución de los agentes no está verificada.'}\n\nNo certifica ejecución permanente ni envía mensajes.\n`;
 }
 export async function retrieveReport({url,key,fetcher=fetch,now=new Date()}){
  if(!url||!key)return {state:'sin credencial de lectura configurada',report:null};
@@ -33,6 +33,6 @@ async function main(){
  const content=markdown(outcome.report,outcome.state);
  if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,content);
  else process.stdout.write(content);
- if(!outcome.report)process.exitCode=1;
+ if(!outcome.report && process.env.SIX_AGENT_REPORT_READ_KEY)process.exitCode=1;
 }
 if(process.argv[1]&&import.meta.url===new URL(`file://${process.argv[1]}`).href)await main();
