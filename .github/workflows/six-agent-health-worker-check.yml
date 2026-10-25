@@ -1,0 +1,25 @@
+name: Verify restricted infrastructure worker
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/six-agent-health-worker/**'
+      - 'supabase/staged/six_agent_public_health_claim_20261025.sql'
+      - 'scripts/agent-health-queue*'
+      - '.github/workflows/victoriosas-infrastructure-availability.yml'
+      - '.github/workflows/six-agent-health-worker-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify OIDC boundaries and executor result handling
+        run: node --test scripts/agent-health-queue.test.mjs

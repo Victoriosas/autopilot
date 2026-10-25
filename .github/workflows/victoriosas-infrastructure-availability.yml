@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  id-token: write
 concurrency:
   group: victoriosas-infrastructure-availability
   cancel-in-progress: false
@@ -22,5 +23,7 @@ jobs:
           node-version: '24'
       - name: Test public health guards
         run: node --test scripts/infrastructure-health.test.mjs
-      - name: Verify public site
-        run: node scripts/infrastructure-health.mjs
+      - name: Test queued worker guards
+        run: node --test scripts/agent-health-queue.test.mjs
+      - name: Execute persisted infrastructure task
+        run: node scripts/agent-health-queue.mjs
