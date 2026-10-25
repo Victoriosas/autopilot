@@ -1,3 +1,4 @@
+import { SixAgentStatusPanel } from './SixAgentStatusPanel';
 import { ManualCatalogPanel } from './ManualCatalogPanel';
 import React, { useState, useMemo } from 'react';
 import { 
@@ -187,6 +188,7 @@ export const AutopilotDashboard: React.FC<AutopilotDashboardProps> = ({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Real-time Operational Alerts */}
       <SystemAlertsBanner />
+      <SixAgentStatusPanel />
       <ManualCatalogPanel />
       
       {/* 1. KPI Top Cards Deck */}
