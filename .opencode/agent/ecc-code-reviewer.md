@@ -1,6 +1,13 @@
 ---
 description: ECC code-reviewer reviewer for Victoriosas; read-only advisory subagent
 mode: subagent
+permission:
+  edit: deny
+  bash: deny
+  task: deny
+  external_directory: deny
+  webfetch: deny
+  websearch: deny
 ---
 
 ## Victoriosas safety overlay (takes precedence)
