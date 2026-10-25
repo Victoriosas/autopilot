@@ -42,7 +42,7 @@ set request.jwt.claim.role='service_role';
 insert into public.agent_tasks(id,goal,actor,action,status,agent_id,input) values
  ('six-health:infrastructure:fixture','synthetic site health','six-agent-safe-worker','read_only_public_health','queued','infrastructure','{"kind":"public_site_health","synthetic":true}'),
  ('other-infrastructure','unrelated task','codex','real_action','queued','infrastructure','{"synthetic":true}');
-do $
+do $$
 declare got_id text; tok uuid; duplicates integer; completed boolean;
 begin
  select task_id,claim_token into got_id,tok from public.six_agent_claim_public_health(90);
@@ -59,7 +59,7 @@ begin
  if not completed then raise exception 'safe completion missing'; end if;
  if (select count(*) from public.agent_audit_events where task_id=got_id)<>2 then
    raise exception 'safe audit trail missing'; end if;
-end $;
+end $$;
 reset request.jwt.claim.role;
 SQL
 echo 'six-agent atomic queue and restricted health claim smoke tests passed'
