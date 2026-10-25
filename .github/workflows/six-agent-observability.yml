@@ -1,0 +1,27 @@
+name: Victoriosas six-agent observability
+on:
+  schedule:
+    # 22:00 UTC = 19:00 in Uruguay; GitHub scheduling is best-effort.
+    - cron: '0 22 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: victoriosas-six-agent-observability
+  cancel-in-progress: false
+jobs:
+  daily-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SIX_AGENT_REPORT_READ_KEY: ${{ secrets.SIX_AGENT_REPORT_READ_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify report invariants
+        run: node --test scripts/agent-daily-report.test.mjs
+      - name: Generate private GitHub Step Summary
+        run: node scripts/agent-daily-report.mjs
