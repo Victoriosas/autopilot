@@ -17,7 +17,7 @@ language plpgsql security definer set search_path = ''
 as $$
 declare v_id text; v_token uuid;
 begin
- if auth.role() <> 'service_role' then raise exception 'unauthorized'; end if;
+ if auth.role() is distinct from 'service_role' then raise exception 'unauthorized'; end if;
  if p_agent not in ('director','software','infrastructure','consultations','followup','reports')
     or p_lease_seconds not between 5 and 300 then raise exception 'invalid_parameters'; end if;
  -- Consultations remain paused until explicitly approved through policy.
@@ -41,7 +41,7 @@ returns boolean language plpgsql security definer set search_path = ''
 as $$
 declare v_changed integer;
 begin
- if auth.role() <> 'service_role' then raise exception 'unauthorized'; end if;
+ if auth.role() is distinct from 'service_role' then raise exception 'unauthorized'; end if;
  if length(btrim(coalesce(p_evidence,'')))<3 or length(p_evidence)>500 then raise exception 'evidence_required'; end if;
  update public.agent_tasks t set status='completed',completed_evidence=p_evidence,
  lease_until=null, execution_token=null,updated_at=now()
@@ -57,7 +57,7 @@ returns boolean language plpgsql security definer set search_path = ''
 as $$
 declare v_changed integer;
 begin
- if auth.role()<>'service_role' then raise exception 'unauthorized'; end if;
+ if auth.role() is distinct from 'service_role' then raise exception 'unauthorized'; end if;
  if length(btrim(coalesce(p_reason,'')))=0 then raise exception 'reason_required'; end if;
  update public.agent_tasks t set
  status=case when t.attempt_count>=t.max_attempts then 'blocked' else 'failed' end,
