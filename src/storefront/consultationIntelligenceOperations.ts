@@ -15,7 +15,7 @@ export function validateWorkflowEvent(value:unknown,now:Date):value is WorkflowE
 }
 /** Proposals only; no retention extension, scheduler, channel integration or message delivery. */
 export function prepareIntelligenceOperations(events:readonly WorkflowEvent[],now:Date){
- const sorted=[...events].filter(e=>Number.isFinite(Date.parse(e.payload.occurredAt))&&Date.parse(e.payload.occurredAt)<=+now).sort((a,b)=>Date.parse(a.payload.occurredAt)-Date.parse(b.payload.occurredAt));
+ const sorted=[...events].filter(e=>Number.isFinite(Date.parse(e.payload.occurredAt))&&Date.parse(e.payload.occurredAt)<=+now).sort((a,b)=>Date.parse(a.payload.occurredAt)-Date.parse(b.payload.occurredAt)||(a.kind==='opt_out'?1:0)-(b.kind==='opt_out'?1:0));
  const lastPermission=sorted.filter(e=>['consent_recorded','opt_out'].includes(e.kind)).at(-1);
  const consent=lastPermission?.kind==='consent_recorded'&&!!lastPermission.payload.consentReference;
  const proposed=sorted.filter(e=>e.kind==='followup_proposed');
