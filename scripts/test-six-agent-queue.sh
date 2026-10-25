@@ -36,4 +36,31 @@ begin
 end $$;
 reset request.jwt.claim.role;
 SQL
-echo 'six-agent atomic queue smoke test passed'
+psql "$AUTOPILOT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/staged/six_agent_public_health_claim_20261025.sql
+psql "$AUTOPILOT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+set request.jwt.claim.role='service_role';
+insert into public.agent_tasks(id,goal,actor,action,status,agent_id,input) values
+ ('six-health:infrastructure:fixture','synthetic site health','six-agent-safe-worker','read_only_public_health','queued','infrastructure','{"kind":"public_site_health","synthetic":true}'),
+ ('other-infrastructure','unrelated task','codex','real_action','queued','infrastructure','{"synthetic":true}');
+do $$
+declare got_id text; tok uuid; duplicates integer; completed boolean;
+begin
+ select task_id,claim_token into got_id,tok from public.six_agent_claim_public_health(90);
+ if got_id is distinct from 'six-health:infrastructure:fixture' or tok is null then
+   raise exception 'specific health claim failed';
+ end if;
+ select count(*) into duplicates from public.six_agent_claim_public_health(90);
+ if duplicates<>0 then raise exception 'duplicate health claim'; end if;
+ if (select status from public.agent_tasks where id='other-infrastructure')<>'queued' then
+   raise exception 'unsafe claim of unrelated task'; end if;
+ select public.six_agent_complete(got_id,gen_random_uuid(),'wrong_token') into completed;
+ if completed then raise exception 'fencing failed'; end if;
+ select public.six_agent_complete(got_id,tok,'site_http_200_brand_verified') into completed;
+ if not completed then raise exception 'safe completion missing'; end if;
+ if (select count(*) from public.agent_audit_events where task_id=got_id)<>2 then
+   raise exception 'safe audit trail missing'; end if;
+end $$;
+reset request.jwt.claim.role;
+SQL
+echo 'six-agent atomic queue and restricted health claim smoke tests passed'
+
