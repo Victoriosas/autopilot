@@ -73,7 +73,9 @@ export function checkGuardian(c: EvalCase, g: any): { issues: Issue[]; warnings:
   if (c.expected_requires_victoria && status === 'APTO_PARA_REVISION_HUMANA') {
     issues.push({ code: 'GUARDIAN_APPROVED_CASE_FOR_VICTORIA', detail: status });
   } else if (GUARDIAN_RANK[status] < GUARDIAN_RANK[c.expected_guardian_global]) {
-    warnings.push({ code: 'GUARDIAN_LAXER_THAN_EXPECTED', detail: `${status} < ${c.expected_guardian_global}` });
+    const finding = { code: 'GUARDIAN_LAXER_THAN_EXPECTED', detail: `${status} < ${c.expected_guardian_global}` };
+    if (c.critical) issues.push(finding);
+    else warnings.push(finding);
   }
   return { issues, warnings };
 }
