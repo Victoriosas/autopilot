@@ -3,7 +3,9 @@
 // ejecuciones aisladas y sin estado, igual que el adaptador de producción.
 import { createHash } from 'node:crypto';
 import { validCamelRunDraft } from './consultationCamelRun';
-import { AGENT_MODEL, COMPRENSION_PROMPT, GUARDIAN_PROMPT, REDACTOR_PROMPT } from './consultationAgentPrompts';
+import { COMPRENSION_PROMPT, GUARDIAN_PROMPT, REDACTOR_PROMPT } from './consultationAgentPrompts';
+import { boundedModelJSON } from './consultationModelGateway';
+export const EVAL_MODEL = 'anthropic/claude-haiku-5-5';
 
 export type Evidence = { id: string; version: string; vigente: boolean; extracto: string };
 export type EvalCase = {
@@ -30,7 +32,7 @@ const FUTURE_COMMITMENTS = [
 const norm = (s: string) => s.toLowerCase().normalize('NFC');
 
 export function validateEvalFile(file: any): EvalFile {
-  if (!file || !Array.isArray(file.cases) || !Array.isArray(file.guardian_controls)) throw new Error('EVAL_FILE_INVALID');
+  if (!file || file.frozen !== true || typeof file.version !== 'string' || !Array.isArray(file.cases) || !file.cases.length || !Array.isArray(file.guardian_controls) || !file.guardian_controls.length) throw new Error('EVAL_FILE_INVALID');
   const digest = createHash('sha256')
     .update(JSON.stringify({ cases: file.cases, guardian_controls: file.guardian_controls })).digest('hex');
   if (file.frozen && digest !== file.cases_sha256) throw new Error('EVAL_FILE_MODIFIED_AFTER_FREEZE');
@@ -43,6 +45,25 @@ export function validateEvalFile(file: any): EvalFile {
     if (c.split !== 'desarrollo' && c.split !== 'final') throw new Error('EVAL_BAD_SPLIT');
   }
   return file as EvalFile;
+}
+
+const strings = (v: unknown): v is string[] => Array.isArray(v) && v.length <= 80 && v.every(s => typeof s === 'string' && s.length <= 4000);
+export function validInterpretation(v: any): boolean {
+  return !!v && v.schema_version === 'comprension-1.0' && ['es','en','otro'].includes(v.language) &&
+    v.intents && typeof v.intents.primary === 'string' && strings(v.intents.secondary) &&
+    Array.isArray(v.questions) && v.questions.length <= 40 && v.questions.every((q: any, i: number) => q?.id === `q${i+1}` && typeof q.text === 'string' && typeof q.type === 'string' && typeof q.answerable_with_general_info === 'boolean') &&
+    v.services && typeof v.services.ambiguous === 'boolean' && typeof v.services.mentioned === 'string' && Array.isArray(v.services.candidates) && v.services.candidates.every((c: any) => typeof c?.name === 'string' && typeof c.reason === 'string') &&
+    Array.isArray(v.provided_data) && Array.isArray(v.missing_info) && strings(v.ambiguities) && strings(v.contradictions) &&
+    Array.isArray(v.risks) && v.risks.every((r: any) => typeof r?.code === 'string' && typeof r.detail === 'string') &&
+    typeof v.requires_victoria === 'boolean' && typeof v.needs_clarification === 'boolean' &&
+    v.confidence && ['alta','media','baja'].includes(v.confidence.level) && strings(v.confidence.observable_reasons);
+}
+export function validGuardian(v: any): boolean {
+  if (!v || v.schema_version !== 'guardian-1.0' || !Object.hasOwn(GUARDIAN_RANK, v.global_status) || !v.variants ||
+      !strings(v.unanswered_questions) || !strings(v.evidence_problems) || !strings(v.summary_reasons)) return false;
+  const variants = ['personalizada','breve','orientacion'].map(k => v.variants[k]);
+  return variants.every(a => a && Object.hasOwn(GUARDIAN_RANK, a.status) && Array.isArray(a.findings) && a.findings.every((f: any) => typeof f?.code === 'string' && typeof f.quote === 'string' && typeof f.fix === 'string')) &&
+    GUARDIAN_RANK[v.global_status] === Math.max(...variants.map(a => GUARDIAN_RANK[a.status]));
 }
 
 export type Issue = { code: string; detail: string };
@@ -69,7 +90,7 @@ export function checkDraft(c: EvalCase, draft: any): Issue[] {
 export function checkGuardian(c: EvalCase, g: any): { issues: Issue[]; warnings: Issue[] } {
   const issues: Issue[] = [], warnings: Issue[] = [];
   const status = g?.global_status;
-  if (!(status in GUARDIAN_RANK)) return { issues: [{ code: 'GUARDIAN_INVALID', detail: String(status) }], warnings };
+  if (!validGuardian(g)) return { issues: [{ code: 'GUARDIAN_INVALID', detail: 'schema' }], warnings };
   if (c.expected_requires_victoria && status === 'APTO_PARA_REVISION_HUMANA') {
     issues.push({ code: 'GUARDIAN_APPROVED_CASE_FOR_VICTORIA', detail: status });
   } else if (GUARDIAN_RANK[status] < GUARDIAN_RANK[c.expected_guardian_global]) {
@@ -97,18 +118,24 @@ export type RunUsage = { costUsd: number; ms: number };
 
 // Ejecución aislada y sin estado (POST /v1/runs), igual que el adaptador de producción.
 export async function statelessRun(
-  fetchImpl: FetchLike, key: string, systemPrompt: string, input: unknown, requestId: string, spendLimit = 0.15,
+  fetchImpl: FetchLike, key: string, systemPrompt: string, input: unknown, requestId: string, spendLimit = 0.02,
 ): Promise<{ text: string; usage: RunUsage }> {
+  if (!Number.isFinite(spendLimit) || spendLimit <= 0 || spendLimit > 0.02) throw new Error('EVAL_BUDGET_INVALID');
+  if (Buffer.byteLength(systemPrompt) + Buffer.byteLength(JSON.stringify(input) ?? '') > 12000) throw new Error('EVAL_INPUT_LIMIT');
   const started = Date.now();
   const response = await fetchImpl('https://run.camelai.com/v1/runs', {
-    method: 'POST', signal: AbortSignal.timeout(90000),
+    method: 'POST', signal: AbortSignal.timeout(90000), redirect: 'error',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${key}`, 'Idempotency-Key': `victoriosas-eval-${requestId}` },
-    body: JSON.stringify({ systemPrompt, model: AGENT_MODEL, input: JSON.stringify(input), wait: 60, retentionSeconds: 3600, spendLimit }),
+    body: JSON.stringify({ systemPrompt, model: EVAL_MODEL, input: JSON.stringify(input), wait: 60, retentionSeconds: 60, spendLimit: { usd: spendLimit },
+      maxOutputTokens: 2048, thinkingLevel: 'off', builtins: [], fileTools: false, codeMode: false,
+      runLimits: { maxResponses: 1, maxSeconds: 45, contextTokens: 20000 } }),
   });
   if (!response.ok) throw new Error('CAMELRUN_UNAVAILABLE');
-  const run: any = await response.json();
+  const run: any = await boundedModelJSON(response as any);
   if (run.status !== 'completed' && run.state !== 'completed') throw new Error('CAMELRUN_PENDING');
-  return { text: String(run.text ?? run.outcome?.result?.reply ?? ''), usage: { costUsd: Number(run.usage?.costUsd ?? 0), ms: Date.now() - started } };
+  const text = run.text ?? run.outcome?.result?.reply;
+  if (typeof text !== 'string' || text.length > 24000) throw new Error('CAMELRUN_INVALID_OUTPUT');
+  return { text, usage: { costUsd: typeof run.usage?.costUsd === 'number' && Number.isFinite(run.usage.costUsd) && run.usage.costUsd >= 0 ? run.usage.costUsd : spendLimit, ms: Date.now() - started } };
 }
 
 const parseStrict = (t: string) => { try { return JSON.parse(t); } catch { return null; } };
@@ -118,38 +145,39 @@ export type CaseResult = {
   guardian_status?: string; cost_usd: number; ms: number; error?: string;
 };
 
-export async function runCase(fetchImpl: FetchLike, key: string, c: EvalCase): Promise<CaseResult> {
+export async function runCase(fetchImpl: FetchLike, key: string, c: EvalCase, runId = 'synthetic'): Promise<CaseResult> {
   const r: CaseResult = { id: c.id, family: c.family, critical: c.critical, pass: false, issues: [], warnings: [], cost_usd: 0, ms: 0 };
   try {
-    const a = await statelessRun(fetchImpl, key, COMPRENSION_PROMPT, { consulta: c.message }, `${c.id}-a`);
+    const a = await statelessRun(fetchImpl, key, COMPRENSION_PROMPT, { consulta: c.message }, `${runId}-${c.id}-a`);
     const interp = parseStrict(a.text);
     const b = await statelessRun(fetchImpl, key, REDACTOR_PROMPT,
-      { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence }, `${c.id}-b`);
+      { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence }, `${runId}-${c.id}-b`);
     const draft = parseStrict(b.text);
     const g = await statelessRun(fetchImpl, key, GUARDIAN_PROMPT,
-      { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence, borradores: draft?.variants ?? null }, `${c.id}-c`);
+      { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence, borradores: draft?.variants ?? null }, `${runId}-${c.id}-c`);
     const guard = parseStrict(g.text);
     r.cost_usd = a.usage.costUsd + b.usage.costUsd + g.usage.costUsd;
     r.ms = a.usage.ms + b.usage.ms + g.usage.ms;
-    if (!interp) r.issues.push({ code: 'COMPRENSION_INVALID_JSON', detail: '' });
+    if (!validInterpretation(interp)) r.issues.push({ code: 'COMPRENSION_INVALID_JSON', detail: 'schema' });
     if (!draft) r.issues.push({ code: 'REDACTOR_INVALID_JSON', detail: '' }); else r.issues.push(...checkDraft(c, draft));
     const cg = checkGuardian(c, guard);
     r.issues.push(...cg.issues); r.warnings.push(...cg.warnings); r.guardian_status = guard?.global_status;
   } catch (e: any) {
-    r.error = e?.message ?? 'ERROR'; r.issues.push({ code: 'RUN_ERROR', detail: r.error });
+    r.error = /^CAMELRUN_[A-Z_]+$|^EVAL_[A-Z_]+$/.test(e?.message) ? e.message : 'EVAL_RUN_FAILED'; r.issues.push({ code: 'RUN_ERROR', detail: r.error });
   }
   r.pass = r.issues.length === 0;
   return r;
 }
 
-export async function runControl(fetchImpl: FetchLike, key: string, ctl: GuardianControl) {
+export async function runControl(fetchImpl: FetchLike, key: string, ctl: GuardianControl, runId = 'synthetic') {
   try {
     const g = await statelessRun(fetchImpl, key, GUARDIAN_PROMPT,
-      { consulta: ctl.message, interpretacion: null, evidencia_aprobada: ctl.evidence, borradores: ctl.drafts }, `${ctl.id}`);
-    const issues = checkControl(ctl, parseStrict(g.text));
+      { consulta: ctl.message, interpretacion: null, evidencia_aprobada: ctl.evidence, borradores: ctl.drafts }, `${runId}-${ctl.id}`);
+    const parsed = parseStrict(g.text);
+    const issues = validGuardian(parsed) ? checkControl(ctl, parsed) : [{ code: 'GUARDIAN_INVALID', detail: 'schema' }];
     return { id: ctl.id, family: ctl.family, pass: issues.length === 0, issues, cost_usd: g.usage.costUsd };
   } catch (e: any) {
-    return { id: ctl.id, family: ctl.family, pass: false, issues: [{ code: 'RUN_ERROR', detail: e?.message ?? 'ERROR' }], cost_usd: 0 };
+    return { id: ctl.id, family: ctl.family, pass: false, issues: [{ code: 'RUN_ERROR', detail: 'EVAL_RUN_FAILED' }], cost_usd: 0.02 };
   }
 }
 
@@ -161,6 +189,6 @@ export function summarize(results: CaseResult[], controls: { pass: boolean; cost
     warnings: results.reduce((n, r) => n + r.warnings.length, 0),
     controls_total: controls.length, controls_passed: controls.filter(x => x.pass).length,
     cost_usd: Number((results.reduce((n, r) => n + r.cost_usd, 0) + controls.reduce((n, x) => n + x.cost_usd, 0)).toFixed(4)),
-    gate_ok: critical.every(r => r.pass) && controls.every(x => x.pass),
+    gate_ok: results.length > 0 && results.every(r => r.pass) && controls.every(x => x.pass),
   };
 }

@@ -100,4 +100,47 @@ test('private consultation outbox on disposable PostgreSQL', { timeout: 120000 }
     await sql(`delete from public.consultation_requests where id='${current.id}'`);
     assert.equal(await sql(`select count(*) from public.consultation_read_states where request_id='${current.id}'`), '0');
   });
+  await t.test('intelligence leases, budgets, approval CAS and retention on real PostgreSQL',async()=>{
+    const file=readdirSync('supabase/migrations').find(name=>name.endsWith('_consultation_intelligence_shadow.sql'))!;
+    await sql(readFileSync('supabase/migrations/20261023224500_consultation_reply_outbox.sql','utf8'));
+    await sql(readFileSync('supabase/migrations/'+file,'utf8'));
+    const current={...fixture(),email:'synthetic@example.test',responseChannel:'email'};await claim(current,hash,'f'.repeat(64));
+    const acquire=()=>sql(`set role service_role;select consultation_ai_claim('${current.id}','${hash}','fixture-v1')`).then(JSON.parse);
+    const results=await Promise.all(Array.from({length:6},acquire));
+    assert.equal(results.filter(r=>r.state==='claimed').length,1);
+    assert.equal(results.filter(r=>r.state==='busy').length,5);
+    const claimed=results.find(r=>r.state==='claimed');
+    const reserve=()=>sql(`set role service_role;select consultation_ai_reserve_budget('${claimed.id}',50000,50000,50000)`);
+    assert.deepEqual((await Promise.all([reserve(),reserve()])).sort(),['f','t']);
+    const analysis={version:'consultation-intelligence-v1',mode:'shadow',conversationVersion:hash,knowledgeVersion:hash,expiresAt:new Date(Date.now()+600000).toISOString(),guardian:{status:'approved',codes:[]},drafts:[{text:'Respuesta sintética. Victoria | Victoriosas'}],fingerprint:hash,statistics:{calls:0}};
+    const finish=(lease:string)=>sql(`set role service_role;select consultation_ai_finish('${claimed.id}','${lease}',${literal(analysis)})`);
+    assert.equal(await finish(randomUUID()),'f');assert.equal(await finish(claimed.lease),'t');assert.equal(await finish(claimed.lease),'f');
+    assert.equal((await acquire()).state,'ready');
+    const approve=(text:string)=>sql(`set role service_role;select consultation_ai_review('${current.id}','${claimed.id}','11111111-1111-4111-8111-111111111111','${text}','${hash}','approve')`);
+    assert.equal(await approve('Texto cambiado'),'f');assert.equal(await approve(analysis.drafts[0].text),'t');
+    assert.equal(await sql(`select count(*) from consultation_intelligence_events where run_id='${claimed.id}' and kind='approve'`),'1');
+    const event=(kind:string,key:string,payload:unknown)=>sql(`set role service_role;select consultation_ai_record_event('${current.id}','${claimed.id}','11111111-1111-4111-8111-111111111111','${kind}','${key}',${literal(payload)})`);
+    const occurredAt=new Date(Date.now()-3*86400000).toISOString(),source='1'.repeat(64);
+    assert.equal(await event('proposal_confirmed',source,{occurredAt}),'t');
+    assert.equal(await event('followup_proposed','2'.repeat(64),{occurredAt,sourceKey:source}),'f','general form consent is not followup consent');
+    assert.equal(await event('consent_recorded','3'.repeat(64),{occurredAt,consentReference:randomUUID()}),'t');
+    assert.equal(await event('followup_proposed','2'.repeat(64),{occurredAt,sourceKey:source}),'t');
+    assert.equal(await event('followup_proposed','4'.repeat(64),{occurredAt,sourceKey:source}),'f','a different event key cannot duplicate a source followup');
+    const report=JSON.parse(await sql('set role service_role;select consultation_ai_report()'));
+    assert.equal(report.runs,1);assert.equal(report.actualCost,null);assert.equal(report.delivered,null);
+    const dispatch=(body=current)=>sql(`set role service_role;select consultation_ai_begin_dispatch('${current.id}','${claimed.id}','11111111-1111-4111-8111-111111111111','${hash}',${literal(body)},'${hash}')`);
+    assert.equal(await dispatch({...current,email:'changed@example.test'}),'f');
+    const dispatched=await Promise.all([dispatch(),dispatch()]);assert.deepEqual(dispatched.sort(),['f','t']);
+    assert.equal(await sql(`select body from consultation_reply_outbox where request_id='${current.id}'`),analysis.drafts[0].text);
+    for(const role of ['anon','authenticated']){
+      await assert.rejects(sql(`set role ${role};select * from consultation_intelligence_runs`),/permission denied/);
+      await assert.rejects(sql(`set role ${role};select consultation_ai_claim('${current.id}','${hash}','fixture-v1')`),/permission denied/);
+    }
+    await assert.rejects(sql('set role service_role;select input from consultation_requests'),/permission denied/);
+    await sql(`update consultation_requests set expires_at=now()-interval '1 minute' where id='${current.id}'`);
+    assert.equal(await approve(analysis.drafts[0].text),'f');
+    await sql('set role service_role;select consultation_purge_expired()');
+    assert.equal(await sql(`select count(*) from consultation_intelligence_runs where request_id='${current.id}'`),'0');
+    assert.equal(await sql(`select count(*) from consultation_intelligence_events where run_id='${claimed.id}'`),'0');
+  });
 });

@@ -29,7 +29,13 @@ foreach ($entry in $sources) {
     $source = Join-Path $repository $entry.Source
     $destination = Join-Path $migrations $entry.Target
     Copy-Item -LiteralPath $source -Destination $destination
-    if ((Get-FileHash -LiteralPath $source).Hash -ne (Get-FileHash -LiteralPath $destination).Hash) {
+    # Native .NET works in minimal PowerShell hosts without the Get-FileHash module.
+    $hasher = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $sourceHash = [BitConverter]::ToString($hasher.ComputeHash([IO.File]::ReadAllBytes($source)))
+        $destinationHash = [BitConverter]::ToString($hasher.ComputeHash([IO.File]::ReadAllBytes($destination)))
+    } finally { $hasher.Dispose() }
+    if ($sourceHash -ne $destinationHash) {
         throw "Fixture copy verification failed: $($entry.Source)"
     }
 }

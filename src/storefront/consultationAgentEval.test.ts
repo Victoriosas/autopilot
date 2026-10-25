@@ -21,6 +21,15 @@ const goodDraft = () => ({
   },
   guardian: { status: 'REQUIERE_VICTORIA', reasons: ['sin evidencia'] }, action: 'BORRADOR_NO_ENVIADO',
 });
+const guardian = (status = 'REQUIERE_VICTORIA') => ({ schema_version: 'guardian-1.0', global_status: status,
+  variants: Object.fromEntries(['personalizada','breve','orientacion'].map(k => [k, { status, findings: [] }])),
+  unanswered_questions: [], evidence_problems: [], summary_reasons: [],
+});
+const interpretation = () => ({ schema_version: 'comprension-1.0', language: 'es', intents: { primary: 'precio', secondary: [] },
+  questions: [{ id: 'q1', text: 'cuánto sale', type: 'precio', answerable_with_general_info: false }],
+  services: { mentioned: '', candidates: [], ambiguous: false }, provided_data: [], missing_info: [], ambiguities: [], contradictions: [],
+  risks: [], needs_clarification: false, requires_victoria: true, confidence: { level: 'alta', observable_reasons: [] },
+});
 
 test('el archivo de casos es sintético, está congelado y completo', () => {
   const f = validateEvalFile(raw());
@@ -54,11 +63,11 @@ test('preguntas como objetos no pasan el validador de producción', () => {
 });
 
 test('el guardián nunca puede aprobar un caso que exige a Victoria', () => {
-  assert.equal(checkGuardian(base, { global_status: 'APTO_PARA_REVISION_HUMANA' }).issues.length, 1);
-  assert.equal(checkGuardian(base, { global_status: 'REQUIERE_VICTORIA' }).issues.length, 0);
-  const lax = checkGuardian({ ...base, expected_guardian_global: 'BLOQUEADO' }, { global_status: 'REQUIERE_VICTORIA' });
+  assert.equal(checkGuardian(base, guardian('APTO_PARA_REVISION_HUMANA')).issues.length, 1);
+  assert.equal(checkGuardian(base, guardian()).issues.length, 0);
+  const lax = checkGuardian({ ...base, expected_guardian_global: 'BLOQUEADO' }, guardian());
   assert.equal(lax.issues.length, 1); assert.equal(lax.warnings.length, 0);
-  const nonCritical = checkGuardian({ ...base, critical: false, expected_guardian_global: 'BLOQUEADO' }, { global_status: 'REQUIERE_VICTORIA' });
+  const nonCritical = checkGuardian({ ...base, critical: false, expected_guardian_global: 'BLOQUEADO' }, guardian());
   assert.equal(nonCritical.issues.length, 0); assert.equal(nonCritical.warnings.length, 1);
   assert.equal(checkGuardian(base, { global_status: 'inventado' }).issues[0].code, 'GUARDIAN_INVALID');
 });
@@ -88,7 +97,8 @@ test('cada etapa es una ejecución aislada y sin agente persistente', async () =
   await statelessRun(fetchImpl, 'k', 'prompt', { a: 1 }, 'rid');
   const body = JSON.parse(seen[0].init.body);
   assert.equal(seen[0].url, 'https://run.camelai.com/v1/runs');
-  assert.equal(body.systemPrompt, 'prompt'); assert.ok(body.spendLimit <= 0.15); assert.equal(body.agent, undefined);
+  assert.equal(body.systemPrompt, 'prompt'); assert.ok(body.spendLimit.usd <= 0.02); assert.equal(body.agent, undefined);
+  assert.equal(body.maxOutputTokens,2048);assert.equal(body.runLimits.maxResponses,1);assert.equal(body.thinkingLevel,'off');
   assert.equal(seen[0].init.headers['Idempotency-Key'], 'victoriosas-eval-rid');
 });
 
@@ -99,9 +109,9 @@ test('falla cerrado ante error de red o ejecución pendiente', async () => {
 
 test('runCase encadena las tres etapas y resume el costo', async () => {
   const responses = [
-    JSON.stringify({ schema_version: 'comprension-1.0', questions: [] }),
+    JSON.stringify(interpretation()),
     JSON.stringify(goodDraft()),
-    JSON.stringify({ global_status: 'REQUIERE_VICTORIA', variants: {} }),
+    JSON.stringify(guardian()),
   ];
   let n = 0;
   const r = await runCase((async () => reply(responses[n++])) as any, 'k', base);
@@ -110,4 +120,13 @@ test('runCase encadena las tres etapas y resume el costo', async () => {
   assert.equal(s.gate_ok, true); assert.equal(s.cost_usd, 0.03);
   const bad = await runCase((async () => reply('no es json')) as any, 'k', base);
   assert.equal(bad.pass, false);
+});
+
+test('partial JSON, contradictory guardian statuses and empty evaluations fail closed', async () => {
+  for (const value of [{ global_status: 'REQUIERE_VICTORIA' }, { ...guardian(), variants: { ...guardian().variants, breve: { status: 'BLOQUEADO', findings: [] } } }]) {
+    assert.equal(checkGuardian(base, value).issues[0].code, 'GUARDIAN_INVALID');
+  }
+  assert.equal(summarize([], []).gate_ok, false);
+  const r = await runCase((async () => reply('{}')) as any, 'k', base);
+  assert.equal(r.pass, false); assert.ok(r.issues.some(i => i.code === 'COMPRENSION_INVALID_JSON'));
 });

@@ -21,7 +21,7 @@ test('consultation actual disposable Auth PostgREST RPC and administrator RLS', 
   const actors: Record<string, { token: string; db: ReturnType<typeof client>; id: string }> = {};
   const app = express();
   let deliveries = 0;
-  app.use('/inquiries', createConsultationRouter({ enabled: () => true, origin: () => 'https://victoriosas.online', abuseKey: () => 'synthetic-only', delivery: { ready: () => true, send: async () => { deliveries++; return 'fixture-provider'; } } }));
+  app.use('/inquiries', createConsultationRouter({ intelligence:{enabled:()=>true},enabled: () => true, origin: () => 'https://victoriosas.online', abuseKey: () => 'synthetic-only', delivery: { ready: () => true, send: async () => { deliveries++; return 'fixture-provider'; } } }));
   const server = app.listen(0, '127.0.0.1'); await once(server, 'listening');
   const base = `http://127.0.0.1:${(server.address() as any).port}/inquiries`;
   const input = { id: randomUUID(), fullName: 'Consulta sintética', phone: '+598 099123456', email: '', age: null, service: 'orientacion', message: 'Información general.', responseChannel: 'whatsapp', consent: true, consentVersion: 'consultation-v1', website: '' };
@@ -80,6 +80,17 @@ test('consultation actual disposable Auth PostgREST RPC and administrator RLS', 
       assert.equal((await mark(false)).status, 200); assert.equal((await metrics()).unreadRequests, 1);
       const counts = await metrics(); assert.equal(counts.activeRequests, 1); assert.equal(counts.sentLast30Days, 0);
       assert.equal(deliveries, 1, 'reading must not send or resend the notification');
+    });
+    await t.test('shadow analysis uses real authenticated persistence without sending',async()=>{
+      const headers={authorization:'Bearer '+actors.admin.token,origin:'https://victoriosas.online','content-type':'application/json','x-consultation-approval':input.id};
+      const path=base+'/admin/'+input.id+'/intelligence';
+      assert.equal((await fetch(path,{method:'POST',headers:{...headers,authorization:'Bearer '+actors.customer.token},body:'{}'})).status,403);
+      const response=await fetch(path,{method:'POST',headers,body:'{}'});assert.equal(response.status,200);const result=await response.json();
+      assert.equal(result.analysis.mode,'shadow');assert.equal(result.analysis.decision.action,'no_send');
+      const stored=await service.from('consultation_intelligence_runs').select('analysis').eq('id',result.id).single();assert.equal(stored.error,null);assert.equal(stored.data!.analysis.fingerprint,result.analysis.fingerprint);
+      assert.ok((await actors.admin.db.from('consultation_intelligence_runs').select('*')).error);
+      const replay=await (await fetch(path,{method:'POST',headers,body:'{}'})).json();assert.equal(replay.id,result.id);
+      assert.equal(deliveries,1);assert.ok((await anon.rpc('consultation_ai_report')).error);
     });
   } finally {
     server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve()));
