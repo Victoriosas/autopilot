@@ -4,7 +4,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { EVAL_MODEL, runCase, runControl, summarize, validateEvalFile, type CaseResult } from '../src/storefront/consultationAgentEval';
+import { EVAL_MODEL, runCase, runControl, selectEvaluationCases, summarize, validateEvalFile, type CaseResult } from '../src/storefront/consultationAgentEval';
 import { verifyCamelCost } from '../src/storefront/consultationModelGateway';
 
 const args = process.argv.slice(2);
@@ -29,7 +29,7 @@ if ((split === 'final' || split === 'all') && !has('--confirm-final')) {
   console.error('Los casos finales no se usan para ajustar prompts: agregá --confirm-final solo para la medición final.');
   process.exit(2);
 }
-const cases = file.cases.filter(c => split === 'all' || c.split === split).slice(0, limit);
+const cases = selectEvaluationCases(file, split, limit);
 const controls = split === 'final' ? [] : file.guardian_controls;
 
 if (has('--dry-run')) {
@@ -60,7 +60,7 @@ for (const ctl of controls) {
   console.log(`${r.pass ? 'OK ' : 'FALLA'} ${r.id} ${r.family}`);
 }
 for (const c of cases) {
-  if (c.split === 'final' && results.some(r => !r.pass)) { console.error('Casos finales reservados: desarrollo no aprobado.'); break; }
+  if (c.split === 'final' && (results.some(r => !r.pass) || controlResults.some(r => !r.pass))) { console.error('Casos finales reservados: desarrollo no aprobado.'); break; }
   if (reserved + MAX_PER_CASE_USD > maxUsd + 1e-9) {
     budgetExhausted = true;
     console.error(`Presupuesto reservado agotado (${maxUsd} USD): corrida parcial segura.`);

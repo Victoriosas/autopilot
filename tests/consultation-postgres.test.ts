@@ -106,6 +106,8 @@ test('private consultation outbox on disposable PostgreSQL', { timeout: 120000 }
     await sql(readFileSync('supabase/migrations/'+file,'utf8'));
     const generation=readdirSync('supabase/migrations').find(name=>name.endsWith('_consultation_ai_generation_budget.sql'))!;
     await sql(readFileSync('supabase/migrations/'+generation,'utf8'));
+    const refresh=readdirSync('supabase/migrations').find(name=>name.endsWith('_consultation_ai_refresh_attempts.sql'))!;
+    await sql(readFileSync('supabase/migrations/'+refresh,'utf8'));
     const current={...fixture(),email:'synthetic@example.test',responseChannel:'email'};await claim(current,hash,'f'.repeat(64));
     const acquire=()=>sql(`set role service_role;select consultation_ai_claim('${current.id}','${hash}','fixture-v1')`).then(JSON.parse);
     const results=await Promise.all(Array.from({length:6},acquire));
@@ -157,5 +159,21 @@ test('private consultation outbox on disposable PostgreSQL', { timeout: 120000 }
     assert.deepEqual((await Promise.all([reserve(),reserve()])).sort(),['f','t']);
     assert.equal(await sql(`select count(*) from private.consultation_ai_budget where reservation_id in('${first.lease}','${second.lease}')`),'2');
     assert.equal(await sql(`select sum(reserved_microusd) from private.consultation_ai_budget where reservation_id in('${first.lease}','${second.lease}')`),'120000');
+  });
+  await t.test('successful TTL refreshes stay available while consecutive abandoned leases remain bounded',async()=>{
+    const current={...fixture(),email:'synthetic@example.test',responseChannel:'email'};await claim(current,hash,'9'.repeat(64));
+    const acquire=(config:string)=>sql(`set role service_role;select consultation_ai_claim('${current.id}','${hash}','${config}')`).then(JSON.parse);
+    for(let i=0;i<5;i++){
+      const run=await acquire('refresh-fixture');assert.equal(run.state,'claimed');
+      const analysis={version:'consultation-intelligence-v1',mode:'shadow',conversationVersion:hash,expiresAt:new Date(Date.now()+600000).toISOString(),guardian:{status:'approved',codes:[]},drafts:[],statistics:{calls:0}};
+      assert.equal(await sql(`set role service_role;select consultation_ai_finish('${run.id}','${run.lease}',${literal(analysis)})`),'t');
+      await sql(`update consultation_intelligence_runs set analysis=jsonb_set(analysis,'{expiresAt}',to_jsonb((now()-interval '1 second')::text)) where id='${run.id}'`);
+    }
+    let abandoned:any;
+    for(let i=0;i<3;i++){
+      abandoned=await acquire('abandoned-fixture');assert.equal(abandoned.state,'claimed');
+      await sql(`update consultation_intelligence_runs set lease_until=now()-interval '1 second' where id='${abandoned.id}'`);
+    }
+    assert.equal((await acquire('abandoned-fixture')).state,'failed');
   });
 });

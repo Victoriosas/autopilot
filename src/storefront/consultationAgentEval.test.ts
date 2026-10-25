@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
-  checkControl, checkDraft, checkGuardian, runCase, statelessRun, summarize, validateEvalFile, type EvalCase,
+  checkControl, checkDraft, checkGuardian, runCase, selectEvaluationCases, statelessRun, summarize, validateEvalFile, type EvalCase,
 } from './consultationAgentEval';
 import { REDACTOR_PROMPT, GUARDIAN_PROMPT, COMPRENSION_PROMPT } from './consultationAgentPrompts';
 
@@ -137,4 +137,13 @@ test('later provider failures retain previous costs and reserve unknown outcomes
   assert.equal(calls,2);assert.equal(result.pass,false);
   assert.equal(result.cost_usd,0.03);assert.equal(summarize([result],[]).cost_usd,0.03);
   assert.equal(result.error,'EVAL_RUN_FAILED');assert.ok(!JSON.stringify(result).includes('private upstream'));
+});
+
+test('interleaved frozen holdouts run only after the complete development phase', () => {
+ const file=validateEvalFile(raw()),selected=selectEvaluationCases(file,'all',Infinity);
+ assert.equal(selected.length,40);
+ assert.ok(selected.slice(0,32).every(c=>c.split==='desarrollo'));
+ assert.ok(selected.slice(32).every(c=>c.split==='final'));
+ assert.ok(selectEvaluationCases(file,'all',4).every(c=>c.split==='desarrollo'));
+ assert.equal(selectEvaluationCases(file,'final',Infinity).length,8);
 });

@@ -19,6 +19,10 @@ export type GuardianControl = {
   expected_global: string; expected_codes_any: string[];
 };
 export type EvalFile = { version: string; frozen: boolean; cases_sha256: string; cases: EvalCase[]; guardian_controls: GuardianControl[] };
+export function selectEvaluationCases(file: EvalFile, split: string, limit: number): EvalCase[] {
+  return file.cases.filter(c => split === 'all' || c.split === split)
+    .sort((a,b) => Number(a.split === 'final') - Number(b.split === 'final')).slice(0,limit);
+}
 
 export const GUARDIAN_RANK: Record<string, number> = {
   APTO_PARA_REVISION_HUMANA: 0, REQUIERE_CORRECCION: 1, REQUIERE_VICTORIA: 2, BLOQUEADO: 3,
