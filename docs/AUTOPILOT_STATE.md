@@ -827,3 +827,39 @@ Fecha/hora: 2026-10-26 13:15 America/Montevideo. Ciclo: continuación manual, si
 7. Verificación:
 - Prueba real documentada en docs/CONSULTATION_AGENTS_EVAL_20261024.md; reportes solo de estado/códigos, sin textos ni datos de clientas. Node ejecutado sin proxy para el loopback.
 - npm run verify local:359/359, cero omitidas, tipos y ambos builds aprobados; HTML/assets, secret scan y diffcheck correctos. Cinco regresiones enfocadas aprobadas. CI final se registra en la PR. QA visual local no repetido por ausencia de cambios de interfaz; no afirmar revisión de imágenes/links/carrito/checkout a partir de este diagnóstico.
+
+
+## 2026-10-26 - Cierre de acceso prematuro a casos finales
+
+VICTORIOSA AUTOPILOT — REPORTE CICLO
+
+Fecha/hora: 2026-10-26 19:29 America/Montevideo. Ciclo: continuación manual, sin numeración histórica verificable. Modo: corrección local del evaluador en rama codex/evaluation-final-gates-20261026.
+
+1. Estado general:
+- Main y health del dominio siguen en27b95a5, checkout cerrado. PR142/144/145 continúan separadas y sin fusionar. El modelo local sigue sin evaluación completa aprobada; este cambio no corrige ni oculta su discrepancia semántica.
+- Home/producto/carrito/mobile/SEO/catálogo sin cambios de interfaz; QA visual y recorrido de compra no repetidos. Riesgo técnico bajo: evaluador offline, sin activación productiva.
+
+2. Cambios realizados:
+- scripts/eval-consultation-agents.ts y consultationAgentEval.ts: se rechaza ejecutar final por separado antes de leer claves/precios. La medición real exige all y confirmación explícita, con desarrollo y controles completos aprobados en la misma corrida.
+- Cobertura por identificadores únicos: casos o controles faltantes, duplicados o desconocidos no pueden completar la fase. Se conserva el corte ante cualquier fallo previo, incluidos finales anteriores.
+- Una muestra de desarrollo queda complete=false y gate_ok=false, con código1. Una selección all parcial se rechaza antes de llamadas. Los informes distinguen expected_cases, selection_complete en inventario y full_evaluation_passed; esta última solo acredita el conjunto completo aprobado.
+- Documentación de uso actualizada; no se modificaron prompts, casos congelados ni criterios semánticos para aprobar el modelo.
+
+3. Mejoras comerciales:
+- Conversión/confianza: evitar habilitaciones basadas en evaluaciones parciales o casos finales ejecutados sin prerrequisitos. Impacto cualitativo; producto/mercado/contenido/SEO sin cambios comerciales.
+
+4. Métricas:
+- Ventas reales, sesiones, add to cart, checkout iniciado, conversión, ticket promedio y mejoras porcentuales: No hay datos reales suficientes todavía.
+
+5. Próximo plan de 6 horas:
+- Prioridad1: CI validate/postgres, evaluación seca, navegador y preview del SHA final; conservar PR en borrador sin auto-merge ni despliegue manual.
+- Prioridad2: disponer de modelo/capacidad que supere desarrollo y controles dentro de los límites existentes. Recién entonces medir los ocho finales sin ajustar prompts con sus resultados.
+- Prioridad3: revisión administrativa y recepción humana por circuito autorizado; no habilitar modelos, envíos o campañas por esta corrección del evaluador.
+
+6. Bloqueos:
+- Evaluación real completa pendiente. No se inició Ollama, consumió API remota, usaron datos de clientas ni modificó Supabase/Vercel, DNS, pagos, credenciales, límites o automatizaciones en este ciclo.
+
+7. Verificación:
+- Siete regresiones nuevas, incluidas pruebas del CLI real con fetch interceptado antes de importarlo. No hay solicitudes externas ni claves reales: la simulación demuestra que desarrollo fallido no ejecuta finales y que una muestra no se reporta completa.
+- Inventario seco:40 casos,29 críticos,6 controles, máximo teórico2.52USD frente a techo3USD; full_evaluation_passed=false. Esto es planificación sintética, no costo real ni evaluación aprobada.
+- Suite local361/361, cero omitidas; builds, análisis estático y CI final se registran en la PR. La evidencia de ramas anteriores no se atribuye al nuevo SHA. No se hizo QA visual local por ausencia de cambios de interfaz.

@@ -24,6 +24,23 @@ export function selectEvaluationCases(file: EvalFile, split: string, limit: numb
     .sort((a,b) => Number(a.split === 'final') - Number(b.split === 'final')).slice(0,limit);
 }
 
+type GateResult = { id: string; pass: boolean };
+export function hasEvaluationCoverage(expected: readonly { id: string }[], actual: readonly { id: string }[]): boolean {
+  const ids = new Set(expected.map(r => r.id));
+  return ids.size === expected.length && actual.length === expected.length &&
+    new Set(actual.map(r => r.id)).size === actual.length && actual.every(r => ids.has(r.id));
+}
+
+// Count exact case/control identities, not merely an absence of failed results.
+export function developmentGatePassed(file: EvalFile, results: readonly GateResult[], controls: readonly GateResult[]): boolean {
+  const expected = file.cases.filter(c => c.split === 'desarrollo');
+  const ids = new Set(expected.map(c => c.id));
+  const development = results.filter(r => ids.has(r.id));
+  return expected.length > 0 && file.guardian_controls.length > 0 &&
+    hasEvaluationCoverage(expected, development) && development.every(r => r.pass) &&
+    hasEvaluationCoverage(file.guardian_controls, controls) && controls.every(r => r.pass);
+}
+
 export const GUARDIAN_RANK: Record<string, number> = {
   APTO_PARA_REVISION_HUMANA: 0, REQUIERE_CORRECCION: 1, REQUIERE_VICTORIA: 2, BLOQUEADO: 3,
 };

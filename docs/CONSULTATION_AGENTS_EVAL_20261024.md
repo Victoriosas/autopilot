@@ -16,7 +16,11 @@ Fuente única de los prompts: `src/storefront/consultationAgentPrompts.ts` (vers
 npm run eval:consultation-agents -- --dry-run          # sin red ni clave
 CAMELAI_API_KEY=... npm run eval:consultation-agents   # casos de desarrollo + controles del guardián
 ```
-`--split final --confirm-final` solo para la medición final; no se ajustan prompts con esos casos. `--max-usd` (3 por defecto) corta la corrida. La clave solo va como variable de entorno local, nunca en Git. El informe se guarda en `output/consultation-agents-eval/` (ignorado por Git).
+La medición final usa `--split all --confirm-final`: primero deben aprobar los 32 casos de desarrollo y los seis controles en esa misma corrida. La selección `--split final --confirm-final` solo permite inventario con `--dry-run`; en ejecución real se rechaza antes de leer credenciales o verificar precios. No se aceptan recibos históricos de aprobación ni se ajustan prompts con casos finales.
+
+`--limit N` permite muestras de desarrollo, pero el informe queda `complete=false`, `summary.gate_ok=false` y el proceso termina con código1: una muestra no aprueba la fase. Una ejecución real `all` con selección parcial se rechaza antes de cualquier llamada. Los informes incluyen `expected_cases` y `full_evaluation_passed`, que solo puede ser true si aprobaron los 40 casos y seis controles completos. El inventario seco incluye `selection_complete` y nunca acredita aprobación.
+
+`--max-usd` (3 por defecto) corta la corrida. La clave solo va como variable de entorno local, nunca en Git. El informe se guarda en `output/consultation-agents-eval/` (ignorado por Git). Estos controles no habilitan IA ni envíos y no autorizan gasto por sí mismos.
 
 Los 40 casos y 6 controles malos del guardián están en `docs/consultation-agents/eval-cases-v1.json`: 100 % sintéticos, congelados con hash SHA-256 (modificarlos crea una versión nueva). 32 son de desarrollo y 8 finales; 29 son críticos.
 
