@@ -714,3 +714,38 @@ Validacion: 10 pruebas nuevas y 275 de 275 en npm test, tsc limpio. Corrida real
 Worktree aislado consultation-integration, rama codex/consultation-integration-20261024 desde main a8daca9. Reutiliza #129/#130/#131 y trabajo previo en sombra sin modificar los originales de Claude. Producción y Supabase auditados: consultas, consentimiento y retención ya operativos; las entradas antiguas de captura cerrada son históricas. Nueva inteligencia mantiene no_send y proveedor determinista; el correo existente conserva su circuito.
 
 Gateway común, consentimiento antes de modelos, extracción de evidencia vigente, tres etapas aisladas, validación JSON, presupuesto preventivo y panel de revisión persistente. Contrato camelRun corregido contra OpenAPI: spendLimit es objeto y corte entre solicitudes; además se acotan tokens/respuestas y se verifica precio vivo. Ver docs/CODEX_PROGRESS.md para inventario, evidencia, recuperación y pendientes. verify local 337/337 y builds OK; PG18 aislado 10/10. CI del conjunto, Auth/PostgREST, preview, evaluación sintética real y migración alojada aún pendientes. No afirmar activación remota ni recepción humana.
+
+## 2026-10-26 - Diagnóstico real del modelo local, sin habilitación
+
+VICTORIOSA AUTOPILOT — REPORTE CICLO
+
+Fecha/hora: 2026-10-26 13:15 America/Montevideo. Ciclo: continuación manual, sin numeración histórica verificable. Modo: prueba local con datos sintéticos y cambio acotado en rama codex/local-model-preflight-20261026.
+
+1. Estado general:
+- Main sigue en27b95a5; PR142 (77ffba6) y PR144 (7770296) permanecen separadas y sin fusionar, con sus checks finales aprobados. No se incluyen sus cambios en esta rama.
+- Home/producto/carrito/mobile/SEO/catálogo sin cambios visibles ni nuevo recorrido de compra. Riesgo técnico bajo por herramienta diagnóstica aislada; riesgo semántico observado mantiene bloqueada la habilitación del modelo.
+
+2. Cambios realizados:
+- Comando npm check:consultation-local-model y helper consultationLocalModelCheck: verifica versión, modelo instalado, chat JSON exacto y un caso sintético por el adaptador real de tres etapas. Solo loopback, sin DB, credenciales, descargas, fallback ni envío. No modifica process.env ni flags de Vercel.
+- Cinco regresiones cubren ruta y modelo local, inventario ausente/remoto, fallo semántico aunque chat responda, conservación de no_send, minimización de datos, errores sanitizados y ausencia de reintentos. Informe siempre synthetic_smoke_only/fullEvaluation=false.
+- El CLI devuelve0 solo si el guardián aprueba las tres etapas;1 para fallo/bloqueo y2 para uso incorrecto. La documentación distingue prueba básica, análisis semántico y evaluación completa.
+
+3. Mejoras comerciales:
+- Conversión/confianza: impedir que una respuesta básica del modelo se presente como capacidad operativa de consultas. Impacto cualitativo; producto/mercado/contenido/SEO sin cambios comerciales.
+
+4. Métricas:
+- Ventas reales, sesiones, add to cart, checkout iniciado, conversión, ticket promedio y mejoras porcentuales: No hay datos reales suficientes todavía.
+
+5. Próximo plan de 6 horas:
+- Prioridad1: comprobar Core validate/postgres, navegador y preview del SHA final de esta rama, conservar PR en borrador sin auto-merge ni despliegue manual.
+- Prioridad2: resolver viabilidad del modelo/capacidad local antes de evaluación completa. No ajustar prompts con casos finales, ampliar límites de producción ni activar fallback remoto para pasar una prueba.
+- Prioridad3: completar evaluación reproducible de32 casos de desarrollo y revisión administrativa autorizada; los ocho finales siguen reservados. Recepción humana no verificada en este ciclo.
+
+6. Bloqueos:
+- Ollama estaba instalado pero sin servicio. Al iniciarlo temporalmente, la GPU falló por PTX/toolchain incompatible. Con CPU explícita y nube deshabilitada, gemma3:270m respondió el JSON; qwen3:4b superó30s en esa prueba básica.
+- El diagnóstico real completo con gemma llegó a tres llamadas y bloqueó por MODEL_DISAGREEMENT_REVIEW y MODEL_REVIEW_NOT_APPROVED, conservando no_send. No hay evaluación completa aprobada ni autorización de habilitación derivada de esta prueba.
+- Proceso creado para el test detenido, cero modelos cargados antes del cierre y listener ausente después. No se tocaron drivers, variables persistentes, Vercel/Supabase, DNS, credenciales, pagos, campañas o correos. No hubo inferencia remota ni gasto de API. No se crearon automatizaciones.
+
+7. Verificación:
+- Prueba real documentada en docs/CONSULTATION_AGENTS_EVAL_20261024.md; reportes solo de estado/códigos, sin textos ni datos de clientas. Node ejecutado sin proxy para el loopback.
+- npm run verify local:359/359, cero omitidas, tipos y ambos builds aprobados; HTML/assets, secret scan y diffcheck correctos. Cinco regresiones enfocadas aprobadas. CI final se registra en la PR. QA visual local no repetido por ausencia de cambios de interfaz; no afirmar revisión de imágenes/links/carrito/checkout a partir de este diagnóstico.

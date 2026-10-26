@@ -32,3 +32,22 @@ Las indicaciones médicas y de cuidados no se publican en la web ni se dan por c
 - No cambia producción: el adaptador de producción, los flags y las variables de Vercel no se tocaron; no hay migraciones ni SQL remoto.
 - Sin envíos, correos, pagos, DNS ni credenciales.
 - Pendiente: corrida real de los 32 casos (requiere clave local de camelRun), medición final con los 8 casos finales, evidencia aprobada real (catálogo, tarifas, contacto) y conexión con la rama de inteligencia en sombra.
+
+## Diagnóstico local reproducible (2026-10-26)
+
+Antes de una evaluación completa, se puede comprobar el gateway y el adaptador real con **un único caso sintético**, sin base de datos ni correo:
+
+```powershell
+$env:NODE_USE_ENV_PROXY='0'
+npm run check:consultation-local-model -- --model gemma3:270m
+```
+
+Requiere un servidor Ollama existente en `127.0.0.1:11434`, configurado con `OLLAMA_NO_CLOUD=1`, y el modelo ya instalado. El comando no inicia el servidor, descarga modelos, acepta mensajes de usuarias ni habilita flags productivos. Rechaza modelos ausentes, de tamaño cero o con metadatos remotos; no admite modelos con sufijo cloud ni destinos configurables. No hay fallback ni reintentos automáticos.
+
+El informe separa versión, inventario, chat JSON exacto y análisis supervisado de tres etapas con los límites actuales de la aplicación. Solo aprueba si las tres etapas terminan, el guardián aprueba y la decisión sigue siendo `no_send`. Siempre indica `scope=synthetic_smoke_only` y `fullEvaluation=false`: no reemplaza los 32 casos de desarrollo ni los ocho finales. Código de salida 0 si aprueba, 1 si falla o queda bloqueado, 2 si faltan argumentos.
+
+En este equipo la carga GPU falló con `CUDA error: the provided PTX was compiled with an unsupported toolchain`. Se inició temporalmente Ollama 0.40.11 solo en loopback, sin nube, con `CUDA_VISIBLE_DEVICES=-1` para usar CPU; no se cambiaron drivers ni variables persistentes. [Selección CPU oficial](https://docs.ollama.com/gpu#gpu-selection), [modo local sin nube](https://docs.ollama.com/faq#how-do-i-disable-ollamas-cloud-features), [contrato chat JSON](https://docs.ollama.com/api/chat).
+
+Resultados observados: `gemma3:270m` respondió el JSON básico en CPU; `qwen3:4b` superó 30 segundos en esa misma prueba básica. Con gemma, el comando completo llegó a tres llamadas pero quedó `guardian=blocked`, `action=no_send`, códigos `MODEL_DISAGREEMENT_REVIEW` y `MODEL_REVIEW_NOT_APPROVED`. No se ajustaron prompts ni guardas para convertir este resultado en aprobado. El modelo pequeño **no queda habilitado para consultas** y el resultado no acredita rendimiento del modelo grande.
+
+El proceso temporal creado por esta prueba se detuvo, con cero modelos cargados antes del cierre y sin listener después. Los servicios que ya estuvieran activos no deben detenerse por este procedimiento. No hubo inferencia remota, gasto de API, SQL alojado, datos de clientas, envíos ni cambios de producción. La corrida camelRun completa y la recepción humana siguen pendientes.
