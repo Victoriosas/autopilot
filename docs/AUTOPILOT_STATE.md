@@ -714,3 +714,39 @@ Validacion: 10 pruebas nuevas y 275 de 275 en npm test, tsc limpio. Corrida real
 Worktree aislado consultation-integration, rama codex/consultation-integration-20261024 desde main a8daca9. Reutiliza #129/#130/#131 y trabajo previo en sombra sin modificar los originales de Claude. Producción y Supabase auditados: consultas, consentimiento y retención ya operativos; las entradas antiguas de captura cerrada son históricas. Nueva inteligencia mantiene no_send y proveedor determinista; el correo existente conserva su circuito.
 
 Gateway común, consentimiento antes de modelos, extracción de evidencia vigente, tres etapas aisladas, validación JSON, presupuesto preventivo y panel de revisión persistente. Contrato camelRun corregido contra OpenAPI: spendLimit es objeto y corte entre solicitudes; además se acotan tokens/respuestas y se verifica precio vivo. Ver docs/CODEX_PROGRESS.md para inventario, evidencia, recuperación y pendientes. verify local 337/337 y builds OK; PG18 aislado 10/10. CI del conjunto, Auth/PostgREST, preview, evaluación sintética real y migración alojada aún pendientes. No afirmar activación remota ni recepción humana.
+
+## 2026-10-26 - Dependencias y alineación con Node 24
+
+VICTORIOSA AUTOPILOT — REPORTE CICLO
+
+Fecha/hora: 2026-10-26 12:48 America/Montevideo. Ciclo: continuación manual, sin numeración histórica verificable. Modo: revisión técnica en rama de PR existente.
+
+1. Estado general:
+- Main y health del dominio siguen en 27b95a5c5ff4fd845ac7b318e0c1a55b25aaa44b; checkoutEnabled=false y checkoutRequested=false. Home/producto/carrito/mobile/SEO/catálogo sin cambios de interfaz ni QA visual nuevo. Riesgo técnico bajo, sin publicación.
+- PR144 conserva 7770296 y CI validate/postgres, CodeQL, navegador y preview aprobados. No está integrada y no se copia su monitor a esta rama. Su evidencia final queda en https://github.com/Victoriosas/autopilot/pull/144.
+
+2. Cambios realizados:
+- Se reutiliza PR142 y su rama remota Dependabot, sin abrir otra PR. La propuesta original llevaba @types/node26 para una aplicación engines.node24.x.
+- package.json/package-lock.json ahora usan @types/node24.19.2; dependencias de ejecución preservadas. ECC Browser Smoke pasa de Node22 a24, coherente con Core/Vercel. Dependabot excluye solo @types/node>=25, conservando las actualizaciones24; revisar esa regla junto con cualquier futura migración de runtime.
+- Impacto esperado: validar con la misma serie de Node que ejecuta el servidor y evitar desalineaciones automáticas de tipos. No demuestra incompatibilidad efectiva de una llamada de aplicación bajo Node26 ni cambia el runtime productivo.
+
+3. Mejoras comerciales:
+- Conversión/confianza: mantenimiento preventivo, sin estimación de ingresos. Producto/mercado/contenido/SEO sin cambios comerciales.
+
+4. Métricas:
+- Ventas reales, sesiones, add to cart, checkout iniciado, conversión, ticket promedio y mejoras porcentuales: No hay datos reales suficientes todavía.
+
+5. Próximo plan de 6 horas:
+- Prioridad1: CI validate/postgres y smoke de navegador del SHA final corregido de PR142; conservar revisión humana sin auto-merge ni despliegue manual.
+- Prioridad2: PR141 (genai2.31.0/dotenv18.0.9) revisada con diff y notas oficiales; CI Core/browser SUCCESS en9cdce2e. PR143 (Actionsv7) revisada contra cambios oficiales de ESM/checkout/autenticación y configuración actual; Core, evaluador sin claves, invariantes Edge, worker y navegador SUCCESS enadaf8c3. No se ejecutó evaluación real con claves, subida real de artefacto de evaluación ni conjunto combinado de dependencias. Revalidar después de integrar cualquier PR.
+- Prioridad3: completar evaluación real reproducible de consultas y revisión administrativa autorizada. No habilitar modelos, nuevos envíos ni campañas por estas actualizaciones.
+
+6. Bloqueos:
+- Las publicaciones, migraciones remotas y activaciones sensibles siguen requiriendo autorización específica. PR141/143 permanecen separadas; no se fusionó ninguna PR. Trabajo local anterior y automatización6h conservados.
+
+7. Verificación:
+- npm run verify con Node24.15.0:354/354, cero omitidas, tipos y ambos builds aprobados; HTML/assets, secret scan y diffcheck correctos. Esta rama no incluye las ocho regresiones de monitor de PR144.
+- YAML de workflow/Dependabot parseado y lockfile cotejado. Rango npm comprobado: permite24.19.2/24.20.0, bloquea25.0.0/26.6.5. Herramientas de parsing instaladas solo en TEMP, sin dependencias añadidas a la aplicación.
+- Home desktop/mobile, imágenes, enlaces y ausencia de errores visibles no revalidados en navegador local; sin cambios visuales. Producto/carrito/checkout editable siguen fuera del alcance. Cierre de CI/preview y SHA final se registra en https://github.com/Victoriosas/autopilot/pull/142.
+
+Fuentes primarias: https://github.com/DefinitelyTyped/DefinitelyTyped#how-do-definitely-typed-package-versions-relate-to-versions-of-the-corresponding-library y https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#versions-ignore. Releases consultadas: googleapis/js-genai2.31.0, motdotla/dotenv18.0.9, actions/checkout7.0.1, actions/setup-node7.1.0 y actions/upload-artifact7.0.2.

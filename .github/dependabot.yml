@@ -8,6 +8,10 @@ updates:
       time: "09:00"
       timezone: America/Montevideo
     open-pull-requests-limit: 2
+    # Match engines.node (24.x); review this range when changing the runtime.
+    ignore:
+      - dependency-name: "@types/node"
+        versions: [">=25.0.0"]
     groups:
       npm-minor-patch:
         applies-to: version-updates
