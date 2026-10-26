@@ -750,3 +750,44 @@ Fecha/hora: 2026-10-26 12:48 America/Montevideo. Ciclo: continuación manual, si
 - Home desktop/mobile, imágenes, enlaces y ausencia de errores visibles no revalidados en navegador local; sin cambios visuales. Producto/carrito/checkout editable siguen fuera del alcance. Cierre de CI/preview y SHA final se registra en https://github.com/Victoriosas/autopilot/pull/142.
 
 Fuentes primarias: https://github.com/DefinitelyTyped/DefinitelyTyped#how-do-definitely-typed-package-versions-relate-to-versions-of-the-corresponding-library y https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#versions-ignore. Releases consultadas: googleapis/js-genai2.31.0, motdotla/dotenv18.0.9, actions/checkout7.0.1, actions/setup-node7.1.0 y actions/upload-artifact7.0.2.
+
+
+## 2026-10-26 - Sincronización operativa y monitor de consultas
+
+VICTORIOSA AUTOPILOT — REPORTE CICLO
+
+Fecha/hora: 2026-10-26 12:34 America/Montevideo. Ciclo: sincronización manual, sin numeración histórica verificable. Modo: auditoría en lectura y mejora en rama aislada. Este checkpoint actualiza los pendientes históricos anteriores.
+
+1. Estado general:
+- Main y dominio oficial: `27b95a5c5ff4fd845ac7b318e0c1a55b25aaa44b`, Vercel `dpl_HiAcPg5a1CAsH47K7DpEkLujN76H` READY production; `/api/health` confirma ese SHA. Core [40174693043](https://github.com/Victoriosas/autopilot/actions/runs/40174693043): validate/postgres SUCCESS.
+- Ya fusionado: inteligencia supervisada #132, control de seis agentes, informes agregados #137, monitor público #138, worker persistente #139 y perfiles ECC #140. No rehacer esas integraciones. Las PR #126/#129/#130/#131 conservan solapamientos; no se cierran ni fusionan por inferencia.
+- Home/servicios/editorial/privacidad/consultas HTTP200; tienda/checkout/tratamientos retirados HTTP410, borradores HTTP404. Catálogo y solicitudes Beauty anteriores, checkout y Mercado Pago continúan cerrados.
+- Consultas privadas: `/api/beauty/inquiries/config` devuelve enabled=true, privacyVersion=consultation-v1, retentionDays=30; bandeja anónima HTTP401. Disponibilidad anunciada y control anónimo observados, sin probar recepción humana.
+- Supabase primario ACTIVE_HEALTHY. Cola `six-%`: cinco tareas infrastructure completadas con evidencia y cinco eventos de cada tipo claim/completion; última finalización 2026-10-26 13:18:08 UTC. RLS de tareas/auditoría y runs de inteligencia activa; un run de inteligencia contado sin leer contenido.
+- EJECUTADO: infraestructura en la cola anterior. FUSIONADO/DESPLEGADO: código integrado, con alcance PROBADO según su CI. Esa cola no acredita ejecución de los otros cinco roles. camelRun: cuatro agentes listados, todos loaded=false y toolsConnected=false; definiciones sin ejecución real acreditada.
+- Automatización local `victoriosa-autopilot-6h` ACTIVE y workflows existentes conservados. Monitor público [40330127200](https://github.com/Victoriosas/autopilot/actions/runs/40330127200), infraestructura [40329368721](https://github.com/Victoriosas/autopilot/actions/runs/40329368721) e informe diario [40246047267](https://github.com/Victoriosas/autopilot/actions/runs/40246047267) SUCCESS. Cron best-effort no garantiza servicio permanente.
+
+2. Cambios realizados:
+- `scripts/public-health.mjs`: el monitor existente ahora consulta `/consultanos`, exige disponibilidad/configuración de privacidad y retención esperadas y comprueba HTTP401 en bandeja anónima. Solo GET, sin cuerpo ni envíos. No agrega scheduler.
+- `src/storefront/publicHealth.test.ts`: regresiones de rutas ausentes, config deshabilitada/inválida, privacidad/retención distintas, servicio caído y bandeja accesible sin sesión; fixture verifica GET, redirects manuales y ausencia de cuerpo.
+- Motivo: el monitor previo seguía verde al romperse esas rutas. Ocho regresiones nuevas fallaron antes del arreglo; después 17/17 enfocadas aprobadas. Riesgo bajo, reversible por PR; no modifica formulario ni base. Un cierre deliberado del formulario requerirá actualizar también esta expectativa operativa del monitor.
+
+3. Mejoras comerciales:
+- Conversión/confianza: detectar antes la indisponibilidad del canal de consultas activo. Impacto esperado cualitativo, sin atribuir ventas. Producto/mercados/contenido/SEO: sin cambios comerciales.
+
+4. Métricas:
+- Ventas reales, sesiones, add to cart, checkout iniciado, conversión, ticket promedio y mejoras porcentuales: No hay datos reales suficientes todavía.
+
+5. Próximo plan de 6 horas:
+- Prioridad 1: CI validate/postgres y preview del SHA final de esta rama; mantener PR para revisión sin auto-merge ni despliegue manual.
+- Prioridad 2: revisar las PR de dependencias #141/#142/#143 sin duplicarlas; contrastar tipos Node con runtime24 antes de aceptar la actualización mayor.
+- Prioridad 3: evaluación real reproducible de consultas y panel con sesión autorizada; no tratar un run agregado, fixture o definiciones camelRun como evaluación aprobada. Confirmar recepción humana por circuito autorizado antes de declararla verificada.
+
+6. Bloqueos:
+- Faltan evaluación real reproducible y revisión administrativa autorizada; no se accedió a mensajes ni datos de clientas. Publicación/promoción, migraciones remotas, campañas y nuevos envíos requieren autorización específica.
+- Checkout original y archivos sin seguimiento de `C:\autopilot` preservados. Worktree `operational-sync-20261026/autopilot`, rama `codex/consultation-health-20261026`. Sin cambios de producción, pagos, DNS, credenciales, productos o automatizaciones.
+
+7. Verificación:
+- Monitor ampliado contra dominio real: 18 GET aprobados sobre SHA productivo anterior, incluidas consultas/config/bandeja. NODE_USE_ENV_PROXY=1 solo en el proceso de este equipo; no cambia el runtime desplegado.
+- Home desktop/mobile, imágenes, links y errores visuales: no repetidos en navegador en este ciclo sin cambios de interfaz; HTTP no equivale a QA visual. Producto/carrito/checkout editable: rutas retiradas o gates cerrados, sin recorrido de compra.
+- npm run verify local aprobado: 362/362 pruebas, cero omitidas, tipos y ambos builds; cierre CI se registra a continuación y en la PR. La CI de main no se atribuye al cambio nuevo.
