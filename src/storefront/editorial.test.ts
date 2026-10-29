@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { articles, categories, editorialVersion, getPublishedArticle, getPublishedArticles, type EditorialArticle } from './editorial';
 
 test('editorial drafts are versioned, categorized and never exposed through public helpers', () => {
-  assert.equal(editorialVersion, 1);
+  assert.equal(editorialVersion, 2);
   assert.deepEqual(categories, ['Bienestar', 'Belleza', 'Pequeños rituales', 'Secretos y cuidados']);
-  assert.equal(articles.length, 2);
+  assert.equal(articles.length, 14);
   assert.deepEqual(getPublishedArticles(), []);
   assert.equal(new Set(articles.map(article => article.slug)).size, articles.length);
   for (const article of articles) {

@@ -11,7 +11,7 @@ test('middleware transpiled without bundling imports under native Node ESM, as o
   const directory = mkdtempSync(join(tmpdir(), 'victoriosas-middleware-'));
   try {
     writeFileSync(join(directory, 'package.json'), '{"type":"module"}');
-    for (const source of ['middleware.ts', 'src/storefront/publicRouting.ts', 'src/storefront/editorial.ts']) {
+    for (const source of ['middleware.ts', 'src/storefront/publicRouting.ts', 'src/storefront/editorial.ts', 'src/storefront/clientEditorial.ts']) {
       const destination = join(directory, source.replace(/\.ts$/, '.js'));
       mkdirSync(dirname(destination), {recursive:true});
       writeFileSync(destination, ts.transpileModule(readFileSync(source, 'utf8'), {compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText);
