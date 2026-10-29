@@ -901,3 +901,12 @@ Fecha/hora: 2026-10-26 19:44 America/Montevideo. Ciclo: continuación manual, si
 - Diffcheck con reconocimiento de CRLF aprobado, conservando terminadores de los workflows originales. Los conflictos quedaron resueltos y Git sin entradas no fusionadas.
 - Inventario seco:40 casos,29 críticos,6 controles, máximo teórico2.52USD bajo techo3USD; full_evaluation_passed=false. Es planificación, sin gasto ni evaluación aprobada.
 - Navegador desktop/mobile se comprobará con el smoke de CI del conjunto; no hay auditoría WCAG nueva ni recorrido de compra. Checkout/producto/carrito siguen retirados o cerrados. Cierre de CI y preview del SHA final se registra en la PR de integración.
+
+
+## 2026-10-29 - Cierre técnico y caída alojada comprobada
+
+Main27b95a5 y candidatoPR14871ebf8d revalidados por Git/CI; los seis SHA originales están incorporados y sin hilos pendientes. Rama aislada codex/technical-close-20261029, código537d583: la bandeja conserva aprobación tras consultar historial vacío, bloquea historial incierto/éxito inválido y diferencia aceptación Resend de entrega/recepción/IA. verify final378/378, tipos/ambos builds, worker17/17, HTML/secret-scan y navegador sintético390/1440 aprobados. Regresión Vercel/trace fuente y bundle nativo: health200, checkoutfalse, anon401, 404; DEP0169 no reproducido, issue146 abierta.
+
+Dominio y preview autorizado devuelven402 DEPLOYMENT_DISABLED aunque Vercel registra producciónREADY en27b95a5. Incidente149 documenta monitores fallidos y acción externa de revisar cuenta/uso; no se demostró la causa específica ni se cambió gasto/protección. Supabase primariohealthy, RLS/ACL/agregados verificados, retención145succeeded, consultas10/outboxsent10: aceptación de aplicación no acredita entrega humana. Infraestructura9completadas,2bloqueadas,4queued; otros roles sin tareas alojadas, informeGitHubsíejecutado. GemmaCPU conversa pero guardiánblocked/no_send; Qwenvencechat; ningún modelo remoto ni gasto. WhatsAppentrante pendiente, Resenddominioverificado, precios/borradores cerrados.
+
+Informe y recuperación: docs/TECHNICAL_CLOSE_20261029.md. CI/enlace final enPR del cierre. No publicar, auto-merge, despliegue manual, SQLremoto, envíos, DNS ni duplicación de automatizaciones. Próximo: recuperarhosting con el propietario y luego validar sesiónadministrativa/health porSHA; modelo gratuito capaz y aprobación deVictoria siguen independientes.
