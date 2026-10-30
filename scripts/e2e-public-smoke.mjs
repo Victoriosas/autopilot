@@ -14,13 +14,28 @@ try {
     const body = await page.locator('body').innerText();
     if (!/victoriosas/i.test(body) || !/consultanos/i.test(body)) throw new Error(`Missing visible content at ${width}px`);
     const menu = page.getByRole('button', { name: /men\u00fa|menu/i }).first();
-    if ((await menu.count()) !== 1) throw new Error(`Menu button absent at ${width}px`);
-    await menu.click();
-    if (await menu.getAttribute('aria-expanded') !== 'true') throw new Error(`Menu did not expand at ${width}px`);
+    let navigationCheck;
+    if (width < 1200) {
+      if (!(await menu.isVisible())) throw new Error(`Mobile menu button absent at ${width}px`);
+      await menu.click();
+      if (await menu.getAttribute('aria-expanded') !== 'true') throw new Error(`Menu did not expand at ${width}px`);
+      const mobileNav = page.getByRole('navigation', { name: 'Navegación móvil' });
+      if (!(await mobileNav.getByRole('link', { name: 'Servicios', exact: true }).isVisible())) {
+        throw new Error(`Mobile navigation links absent at ${width}px`);
+      }
+      navigationCheck = 'menu-expanded';
+    } else {
+      const desktopNav = page.getByRole('navigation', { name: 'Principal' });
+      if (!(await desktopNav.isVisible()) || !(await desktopNav.getByRole('link', { name: 'Servicios', exact: true }).isVisible())) {
+        throw new Error(`Desktop navigation absent at ${width}px`);
+      }
+      if (await menu.isVisible()) throw new Error(`Unexpected mobile menu at ${width}px`);
+      navigationCheck = 'desktop-nav-visible';
+    }
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 5);
     if (overflow) throw new Error(`Horizontal overflow at ${width}px`);
     if (errors.length) throw new Error(`JavaScript errors at ${width}px: ${errors.join('; ')}`);
-    console.log(`PASS viewport=${width} http=200 menu-expanded no-overflow js-errors=0`);
+    console.log(`PASS viewport=${width} http=200 ${navigationCheck} no-overflow js-errors=0`);
     await page.close();
   }
 } finally {
