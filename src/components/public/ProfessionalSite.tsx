@@ -1,6 +1,7 @@
 import React from 'react';
 import './professional.css';
 import './discovery.css';
+import './noir.css';
 import { ConsultationForm } from './ConsultationForm';
 import { EditorialPage } from './EditorialPage';
 import { ContactLink, contactEmail } from './ContactLink';
@@ -89,7 +90,7 @@ export function ProfessionalSite() {
   const consultation = path === '/consultanos';
   const known = editorial || privacy || directory || consultation || ['/', '/servicios', '/contacto', '/victoria'].includes(path);
   if (!known) return <div className="professional-site"><main className="beauty-wrap beauty-section"><h1>Esta página ya no está disponible.</h1><p><a href="/">Volver al inicio de Victoriosas</a></p><ContactLink /></main></div>;
-  return <div className="professional-site">
+  return <div className={"professional-site beauty-noir" + (!editorial && !privacy && !directory && !consultation ? " beauty-home" : "")}>
     <a className="beauty-skip" href="#contenido">Saltar al contenido</a>
     <header className="beauty-header beauty-wrap"><Brand /><PublicNavigation /><a className="beauty-button beauty-button-outline" href="/consultanos">Consultanos</a></header>
     <main id="contenido" className={editorial || privacy || consultation ? 'beauty-editorial-main beauty-wrap' : undefined}>{consultation ? <><h1 className="beauty-consultation-heading">Consultanos</h1><ConsultationForm /></> : privacy ? <PrivacyPage /> : editorial ? <EditorialPage /> : directory ? <ServicesDirectory /> : <Home />}</main>

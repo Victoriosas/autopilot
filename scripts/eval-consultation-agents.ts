@@ -4,7 +4,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { EVAL_MODEL, runCase, runControl, selectEvaluationCases, summarize, validateEvalFile, type CaseResult } from '../src/storefront/consultationAgentEval';
+import { EVAL_MODEL, developmentGatePassed, hasEvaluationCoverage, runCase, runControl, selectEvaluationCases, summarize, validateEvalFile, type CaseResult } from '../src/storefront/consultationAgentEval';
 import { verifyCamelCost } from '../src/storefront/consultationModelGateway';
 
 const args = process.argv.slice(2);
@@ -30,10 +30,22 @@ if ((split === 'final' || split === 'all') && !has('--confirm-final')) {
   process.exit(2);
 }
 const cases = selectEvaluationCases(file, split, limit);
+const expectedCases = selectEvaluationCases(file, split, Infinity);
+const selectionComplete = hasEvaluationCoverage(expectedCases, cases);
 const controls = split === 'final' ? [] : file.guardian_controls;
+
+if (!has('--dry-run') && split === 'final') {
+  console.error('Los casos finales requieren desarrollo y controles en la misma corrida: usá --split all --confirm-final.');
+  process.exit(2);
+}
+if (!has('--dry-run') && split === 'all' && !selectionComplete) {
+  console.error('La medición final no admite una selección parcial: omití --limit o incluí todos los casos.');
+  process.exit(2);
+}
 
 if (has('--dry-run')) {
   console.log(JSON.stringify({ version: file.version, frozen: file.frozen, split, cases: cases.length,
+    expected_cases: expectedCases.length, selection_complete: selectionComplete, full_evaluation_passed: false,
     critical: cases.filter(c => c.critical).length, guardian_controls: controls.length,
     maximum_authorized_usd: Number(((cases.length * 3 + controls.length) * MAX_PER_AGENT_RUN_USD).toFixed(2)), max_usd: maxUsd }, null, 2));
   process.exit(0);
@@ -60,7 +72,7 @@ for (const ctl of controls) {
   console.log(`${r.pass ? 'OK ' : 'FALLA'} ${r.id} ${r.family}`);
 }
 for (const c of cases) {
-  if (c.split === 'final' && (results.some(r => !r.pass) || controlResults.some(r => !r.pass))) { console.error('Casos finales reservados: desarrollo no aprobado.'); break; }
+  if (c.split === 'final' && (!developmentGatePassed(file, results, controlResults) || results.some(r => !r.pass))) { console.error('Casos finales reservados: fase anterior incompleta o no aprobada.'); break; }
   if (reserved + MAX_PER_CASE_USD > maxUsd + 1e-9) {
     budgetExhausted = true;
     console.error(`Presupuesto reservado agotado (${maxUsd} USD): corrida parcial segura.`);
@@ -71,9 +83,12 @@ for (const c of cases) {
   console.log(`${r.pass ? 'OK ' : 'FALLA'} ${r.id} ${r.family}${r.critical ? ' [crítico]' : ''} ${r.issues.map(i => i.code + ':' + i.detail).join(' | ')}`);
 }
 const summary = summarize(results, controlResults);
-const complete = results.length === cases.length && controlResults.length === controls.length && !budgetExhausted;
+const complete = hasEvaluationCoverage(expectedCases, results) && hasEvaluationCoverage(controls, controlResults) && !budgetExhausted;
+summary.gate_ok = summary.gate_ok && complete;
 const out = val('--out', `output/consultation-agents-eval/report-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
 mkdirSync(dirname(out), { recursive: true });
-writeFileSync(out, JSON.stringify({ version: file.version, runId, split, complete, maximum_authorized_usd: reserved, cost_semantics: 'reported_or_reserved_upper_bound', summary, results, controls: controlResults }, null, 1), { mode: 0o600 });
+writeFileSync(out, JSON.stringify({ version: file.version, runId, split, complete, expected_cases: expectedCases.length,
+  full_evaluation_passed: split === 'all' && summary.gate_ok, maximum_authorized_usd: reserved,
+  cost_semantics: 'reported_or_reserved_upper_bound', summary, results, controls: controlResults }, null, 1), { mode: 0o600 });
 console.log(JSON.stringify(summary, null, 1), '\nInforme:', out);
 process.exit(summary.gate_ok && complete ? 0 : 1);

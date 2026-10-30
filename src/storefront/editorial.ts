@@ -1,3 +1,4 @@
+import { clientEditorial } from './clientEditorial.js';
 export const categories = ['Bienestar', 'Belleza', 'Pequeños rituales', 'Secretos y cuidados'] as const;
 export type EditorialCategory = typeof categories[number];
 export type EditorialSource = { title: string; url: string; checkedAt: string | null };
@@ -9,12 +10,15 @@ export type EditorialArticle = {
   image: string;
   imageAlt: string;
   paragraphs: readonly string[];
+  sections?: readonly { title: string; paragraphs: readonly string[] }[];
+  serviceNames?: readonly string[];
   sources: readonly EditorialSource[];
   relatedSlugs: readonly string[];
   status: 'draft' | 'published';
 };
-export const editorialVersion = 1;
+export const editorialVersion = 2;
 export const articles: readonly EditorialArticle[] = [
+  ...clientEditorial,
   {
     slug: 'una-pausa-tranquila-para-vos',
     title: 'Una pausa tranquila para vos',

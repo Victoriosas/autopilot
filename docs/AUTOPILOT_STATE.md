@@ -714,3 +714,211 @@ Validacion: 10 pruebas nuevas y 275 de 275 en npm test, tsc limpio. Corrida real
 Worktree aislado consultation-integration, rama codex/consultation-integration-20261024 desde main a8daca9. Reutiliza #129/#130/#131 y trabajo previo en sombra sin modificar los originales de Claude. Producción y Supabase auditados: consultas, consentimiento y retención ya operativos; las entradas antiguas de captura cerrada son históricas. Nueva inteligencia mantiene no_send y proveedor determinista; el correo existente conserva su circuito.
 
 Gateway común, consentimiento antes de modelos, extracción de evidencia vigente, tres etapas aisladas, validación JSON, presupuesto preventivo y panel de revisión persistente. Contrato camelRun corregido contra OpenAPI: spendLimit es objeto y corte entre solicitudes; además se acotan tokens/respuestas y se verifica precio vivo. Ver docs/CODEX_PROGRESS.md para inventario, evidencia, recuperación y pendientes. verify local 337/337 y builds OK; PG18 aislado 10/10. CI del conjunto, Auth/PostgREST, preview, evaluación sintética real y migración alojada aún pendientes. No afirmar activación remota ni recepción humana.
+
+## 2026-10-26 - Dependencias y alineación con Node 24
+
+VICTORIOSA AUTOPILOT — REPORTE CICLO
+
+Fecha/hora: 2026-10-26 12:48 America/Montevideo. Ciclo: continuación manual, sin numeración histórica verificable. Modo: revisión técnica en rama de PR existente.
+
+1. Estado general:
+- Main y health del dominio siguen en 27b95a5c5ff4fd845ac7b318e0c1a55b25aaa44b; checkoutEnabled=false y checkoutRequested=false. Home/producto/carrito/mobile/SEO/catálogo sin cambios de interfaz ni QA visual nuevo. Riesgo técnico bajo, sin publicación.
+- PR144 conserva 7770296 y CI validate/postgres, CodeQL, navegador y preview aprobados. No está integrada y no se copia su monitor a esta rama. Su evidencia final queda en https://github.com/Victoriosas/autopilot/pull/144.
+
+2. Cambios realizados:
+- Se reutiliza PR142 y su rama remota Dependabot, sin abrir otra PR. La propuesta original llevaba @types/node26 para una aplicación engines.node24.x.
+- package.json/package-lock.json ahora usan @types/node24.19.2; dependencias de ejecución preservadas. ECC Browser Smoke pasa de Node22 a24, coherente con Core/Vercel. Dependabot excluye solo @types/node>=25, conservando las actualizaciones24; revisar esa regla junto con cualquier futura migración de runtime.
+- Impacto esperado: validar con la misma serie de Node que ejecuta el servidor y evitar desalineaciones automáticas de tipos. No demuestra incompatibilidad efectiva de una llamada de aplicación bajo Node26 ni cambia el runtime productivo.
+
+3. Mejoras comerciales:
+- Conversión/confianza: mantenimiento preventivo, sin estimación de ingresos. Producto/mercado/contenido/SEO sin cambios comerciales.
+
+4. Métricas:
+- Ventas reales, sesiones, add to cart, checkout iniciado, conversión, ticket promedio y mejoras porcentuales: No hay datos reales suficientes todavía.
+
+5. Próximo plan de 6 horas:
+- Prioridad1: CI validate/postgres y smoke de navegador del SHA final corregido de PR142; conservar revisión humana sin auto-merge ni despliegue manual.
+- Prioridad2: PR141 (genai2.31.0/dotenv18.0.9) revisada con diff y notas oficiales; CI Core/browser SUCCESS en9cdce2e. PR143 (Actionsv7) revisada contra cambios oficiales de ESM/checkout/autenticación y configuración actual; Core, evaluador sin claves, invariantes Edge, worker y navegador SUCCESS enadaf8c3. No se ejecutó evaluación real con claves, subida real de artefacto de evaluación ni conjunto combinado de dependencias. Revalidar después de integrar cualquier PR.
+- Prioridad3: completar evaluación real reproducible de consultas y revisión administrativa autorizada. No habilitar modelos, nuevos envíos ni campañas por estas actualizaciones.
+
+6. Bloqueos:
+- Las publicaciones, migraciones remotas y activaciones sensibles siguen requiriendo autorización específica. PR141/143 permanecen separadas; no se fusionó ninguna PR. Trabajo local anterior y automatización6h conservados.
+
+7. Verificación:
+- npm run verify con Node24.15.0:354/354, cero omitidas, tipos y ambos builds aprobados; HTML/assets, secret scan y diffcheck correctos. Esta rama no incluye las ocho regresiones de monitor de PR144.
+- YAML de workflow/Dependabot parseado y lockfile cotejado. Rango npm comprobado: permite24.19.2/24.20.0, bloquea25.0.0/26.6.5. Herramientas de parsing instaladas solo en TEMP, sin dependencias añadidas a la aplicación.
+- Home desktop/mobile, imágenes, enlaces y ausencia de errores visibles no revalidados en navegador local; sin cambios visuales. Producto/carrito/checkout editable siguen fuera del alcance. Cierre de CI/preview y SHA final se registra en https://github.com/Victoriosas/autopilot/pull/142.
+
+Fuentes primarias: https://github.com/DefinitelyTyped/DefinitelyTyped#how-do-definitely-typed-package-versions-relate-to-versions-of-the-corresponding-library y https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#versions-ignore. Releases consultadas: googleapis/js-genai2.31.0, motdotla/dotenv18.0.9, actions/checkout7.0.1, actions/setup-node7.1.0 y actions/upload-artifact7.0.2.
+
+
+## 2026-10-26 - Sincronización operativa y monitor de consultas
+
+VICTORIOSA AUTOPILOT — REPORTE CICLO
+
+Fecha/hora: 2026-10-26 12:34 America/Montevideo. Ciclo: sincronización manual, sin numeración histórica verificable. Modo: auditoría en lectura y mejora en rama aislada. Este checkpoint actualiza los pendientes históricos anteriores.
+
+1. Estado general:
+- Main y dominio oficial: `27b95a5c5ff4fd845ac7b318e0c1a55b25aaa44b`, Vercel `dpl_HiAcPg5a1CAsH47K7DpEkLujN76H` READY production; `/api/health` confirma ese SHA. Core [40174693043](https://github.com/Victoriosas/autopilot/actions/runs/40174693043): validate/postgres SUCCESS.
+- Ya fusionado: inteligencia supervisada #132, control de seis agentes, informes agregados #137, monitor público #138, worker persistente #139 y perfiles ECC #140. No rehacer esas integraciones. Las PR #126/#129/#130/#131 conservan solapamientos; no se cierran ni fusionan por inferencia.
+- Home/servicios/editorial/privacidad/consultas HTTP200; tienda/checkout/tratamientos retirados HTTP410, borradores HTTP404. Catálogo y solicitudes Beauty anteriores, checkout y Mercado Pago continúan cerrados.
+- Consultas privadas: `/api/beauty/inquiries/config` devuelve enabled=true, privacyVersion=consultation-v1, retentionDays=30; bandeja anónima HTTP401. Disponibilidad anunciada y control anónimo observados, sin probar recepción humana.
+- Supabase primario ACTIVE_HEALTHY. Cola `six-%`: cinco tareas infrastructure completadas con evidencia y cinco eventos de cada tipo claim/completion; última finalización 2026-10-26 13:18:08 UTC. RLS de tareas/auditoría y runs de inteligencia activa; un run de inteligencia contado sin leer contenido.
+- EJECUTADO: infraestructura en la cola anterior. FUSIONADO/DESPLEGADO: código integrado, con alcance PROBADO según su CI. Esa cola no acredita ejecución de los otros cinco roles. camelRun: cuatro agentes listados, todos loaded=false y toolsConnected=false; definiciones sin ejecución real acreditada.
+- Automatización local `victoriosa-autopilot-6h` ACTIVE y workflows existentes conservados. Monitor público [40330127200](https://github.com/Victoriosas/autopilot/actions/runs/40330127200), infraestructura [40329368721](https://github.com/Victoriosas/autopilot/actions/runs/40329368721) e informe diario [40246047267](https://github.com/Victoriosas/autopilot/actions/runs/40246047267) SUCCESS. Cron best-effort no garantiza servicio permanente.
+
+2. Cambios realizados:
+- `scripts/public-health.mjs`: el monitor existente ahora consulta `/consultanos`, exige disponibilidad/configuración de privacidad y retención esperadas y comprueba HTTP401 en bandeja anónima. Solo GET, sin cuerpo ni envíos. No agrega scheduler.
+- `src/storefront/publicHealth.test.ts`: regresiones de rutas ausentes, config deshabilitada/inválida, privacidad/retención distintas, servicio caído y bandeja accesible sin sesión; fixture verifica GET, redirects manuales y ausencia de cuerpo.
+- Motivo: el monitor previo seguía verde al romperse esas rutas. Ocho regresiones nuevas fallaron antes del arreglo; después 17/17 enfocadas aprobadas. Riesgo bajo, reversible por PR; no modifica formulario ni base. Un cierre deliberado del formulario requerirá actualizar también esta expectativa operativa del monitor.
+
+3. Mejoras comerciales:
+- Conversión/confianza: detectar antes la indisponibilidad del canal de consultas activo. Impacto esperado cualitativo, sin atribuir ventas. Producto/mercados/contenido/SEO: sin cambios comerciales.
+
+4. Métricas:
+- Ventas reales, sesiones, add to cart, checkout iniciado, conversión, ticket promedio y mejoras porcentuales: No hay datos reales suficientes todavía.
+
+5. Próximo plan de 6 horas:
+- Prioridad 1: CI validate/postgres y preview del SHA final de esta rama; mantener PR para revisión sin auto-merge ni despliegue manual.
+- Prioridad 2: revisar las PR de dependencias #141/#142/#143 sin duplicarlas; contrastar tipos Node con runtime24 antes de aceptar la actualización mayor.
+- Prioridad 3: evaluación real reproducible de consultas y panel con sesión autorizada; no tratar un run agregado, fixture o definiciones camelRun como evaluación aprobada. Confirmar recepción humana por circuito autorizado antes de declararla verificada.
+
+6. Bloqueos:
+- Faltan evaluación real reproducible y revisión administrativa autorizada; no se accedió a mensajes ni datos de clientas. Publicación/promoción, migraciones remotas, campañas y nuevos envíos requieren autorización específica.
+- Checkout original y archivos sin seguimiento de `C:\autopilot` preservados. Worktree `operational-sync-20261026/autopilot`, rama `codex/consultation-health-20261026`. Sin cambios de producción, pagos, DNS, credenciales, productos o automatizaciones.
+
+7. Verificación:
+- Monitor ampliado contra dominio real: 18 GET aprobados sobre SHA productivo anterior, incluidas consultas/config/bandeja. NODE_USE_ENV_PROXY=1 solo en el proceso de este equipo; no cambia el runtime desplegado.
+- Home desktop/mobile, imágenes, links y errores visuales: no repetidos en navegador en este ciclo sin cambios de interfaz; HTTP no equivale a QA visual. Producto/carrito/checkout editable: rutas retiradas o gates cerrados, sin recorrido de compra.
+- npm run verify local aprobado: 362/362 pruebas, cero omitidas, tipos y ambos builds; cierre CI se registra a continuación y en la PR. La CI de main no se atribuye al cambio nuevo.
+
+
+## 2026-10-26 - Diagnóstico real del modelo local, sin habilitación
+
+VICTORIOSA AUTOPILOT — REPORTE CICLO
+
+Fecha/hora: 2026-10-26 13:15 America/Montevideo. Ciclo: continuación manual, sin numeración histórica verificable. Modo: prueba local con datos sintéticos y cambio acotado en rama codex/local-model-preflight-20261026.
+
+1. Estado general:
+- Main sigue en27b95a5; PR142 (77ffba6) y PR144 (7770296) permanecen separadas y sin fusionar, con sus checks finales aprobados. No se incluyen sus cambios en esta rama.
+- Home/producto/carrito/mobile/SEO/catálogo sin cambios visibles ni nuevo recorrido de compra. Riesgo técnico bajo por herramienta diagnóstica aislada; riesgo semántico observado mantiene bloqueada la habilitación del modelo.
+
+2. Cambios realizados:
+- Comando npm check:consultation-local-model y helper consultationLocalModelCheck: verifica versión, modelo instalado, chat JSON exacto y un caso sintético por el adaptador real de tres etapas. Solo loopback, sin DB, credenciales, descargas, fallback ni envío. No modifica process.env ni flags de Vercel.
+- Cinco regresiones cubren ruta y modelo local, inventario ausente/remoto, fallo semántico aunque chat responda, conservación de no_send, minimización de datos, errores sanitizados y ausencia de reintentos. Informe siempre synthetic_smoke_only/fullEvaluation=false.
+- El CLI devuelve0 solo si el guardián aprueba las tres etapas;1 para fallo/bloqueo y2 para uso incorrecto. La documentación distingue prueba básica, análisis semántico y evaluación completa.
+
+3. Mejoras comerciales:
+- Conversión/confianza: impedir que una respuesta básica del modelo se presente como capacidad operativa de consultas. Impacto cualitativo; producto/mercado/contenido/SEO sin cambios comerciales.
+
+4. Métricas:
+- Ventas reales, sesiones, add to cart, checkout iniciado, conversión, ticket promedio y mejoras porcentuales: No hay datos reales suficientes todavía.
+
+5. Próximo plan de 6 horas:
+- Prioridad1: comprobar Core validate/postgres, navegador y preview del SHA final de esta rama, conservar PR en borrador sin auto-merge ni despliegue manual.
+- Prioridad2: resolver viabilidad del modelo/capacidad local antes de evaluación completa. No ajustar prompts con casos finales, ampliar límites de producción ni activar fallback remoto para pasar una prueba.
+- Prioridad3: completar evaluación reproducible de32 casos de desarrollo y revisión administrativa autorizada; los ocho finales siguen reservados. Recepción humana no verificada en este ciclo.
+
+6. Bloqueos:
+- Ollama estaba instalado pero sin servicio. Al iniciarlo temporalmente, la GPU falló por PTX/toolchain incompatible. Con CPU explícita y nube deshabilitada, gemma3:270m respondió el JSON; qwen3:4b superó30s en esa prueba básica.
+- El diagnóstico real completo con gemma llegó a tres llamadas y bloqueó por MODEL_DISAGREEMENT_REVIEW y MODEL_REVIEW_NOT_APPROVED, conservando no_send. No hay evaluación completa aprobada ni autorización de habilitación derivada de esta prueba.
+- Proceso creado para el test detenido, cero modelos cargados antes del cierre y listener ausente después. No se tocaron drivers, variables persistentes, Vercel/Supabase, DNS, credenciales, pagos, campañas o correos. No hubo inferencia remota ni gasto de API. No se crearon automatizaciones.
+
+7. Verificación:
+- Prueba real documentada en docs/CONSULTATION_AGENTS_EVAL_20261024.md; reportes solo de estado/códigos, sin textos ni datos de clientas. Node ejecutado sin proxy para el loopback.
+- npm run verify local:359/359, cero omitidas, tipos y ambos builds aprobados; HTML/assets, secret scan y diffcheck correctos. Cinco regresiones enfocadas aprobadas. CI final se registra en la PR. QA visual local no repetido por ausencia de cambios de interfaz; no afirmar revisión de imágenes/links/carrito/checkout a partir de este diagnóstico.
+
+
+## 2026-10-26 - Cierre de acceso prematuro a casos finales
+
+VICTORIOSA AUTOPILOT — REPORTE CICLO
+
+Fecha/hora: 2026-10-26 19:29 America/Montevideo. Ciclo: continuación manual, sin numeración histórica verificable. Modo: corrección local del evaluador en rama codex/evaluation-final-gates-20261026.
+
+1. Estado general:
+- Main y health del dominio siguen en27b95a5, checkout cerrado. PR142/144/145 continúan separadas y sin fusionar. El modelo local sigue sin evaluación completa aprobada; este cambio no corrige ni oculta su discrepancia semántica.
+- Home/producto/carrito/mobile/SEO/catálogo sin cambios de interfaz; QA visual y recorrido de compra no repetidos. Riesgo técnico bajo: evaluador offline, sin activación productiva.
+
+2. Cambios realizados:
+- scripts/eval-consultation-agents.ts y consultationAgentEval.ts: se rechaza ejecutar final por separado antes de leer claves/precios. La medición real exige all y confirmación explícita, con desarrollo y controles completos aprobados en la misma corrida.
+- Cobertura por identificadores únicos: casos o controles faltantes, duplicados o desconocidos no pueden completar la fase. Se conserva el corte ante cualquier fallo previo, incluidos finales anteriores.
+- Una muestra de desarrollo queda complete=false y gate_ok=false, con código1. Una selección all parcial se rechaza antes de llamadas. Los informes distinguen expected_cases, selection_complete en inventario y full_evaluation_passed; esta última solo acredita el conjunto completo aprobado.
+- Documentación de uso actualizada; no se modificaron prompts, casos congelados ni criterios semánticos para aprobar el modelo.
+
+3. Mejoras comerciales:
+- Conversión/confianza: evitar habilitaciones basadas en evaluaciones parciales o casos finales ejecutados sin prerrequisitos. Impacto cualitativo; producto/mercado/contenido/SEO sin cambios comerciales.
+
+4. Métricas:
+- Ventas reales, sesiones, add to cart, checkout iniciado, conversión, ticket promedio y mejoras porcentuales: No hay datos reales suficientes todavía.
+
+5. Próximo plan de 6 horas:
+- Prioridad1: CI validate/postgres, evaluación seca, navegador y preview del SHA final; conservar PR en borrador sin auto-merge ni despliegue manual.
+- Prioridad2: disponer de modelo/capacidad que supere desarrollo y controles dentro de los límites existentes. Recién entonces medir los ocho finales sin ajustar prompts con sus resultados.
+- Prioridad3: revisión administrativa y recepción humana por circuito autorizado; no habilitar modelos, envíos o campañas por esta corrección del evaluador.
+
+6. Bloqueos:
+- Evaluación real completa pendiente. No se inició Ollama, consumió API remota, usaron datos de clientas ni modificó Supabase/Vercel, DNS, pagos, credenciales, límites o automatizaciones en este ciclo.
+
+7. Verificación:
+- Siete regresiones nuevas, incluidas pruebas del CLI real con fetch interceptado antes de importarlo. No hay solicitudes externas ni claves reales: la simulación demuestra que desarrollo fallido no ejecuta finales y que una muestra no se reporta completa.
+- Inventario seco:40 casos,29 críticos,6 controles, máximo teórico2.52USD frente a techo3USD; full_evaluation_passed=false. Esto es planificación sintética, no costo real ni evaluación aprobada.
+- Suite local361/361, cero omitidas; builds, análisis estático y CI final se registran en la PR. La evidencia de ramas anteriores no se atribuye al nuevo SHA. No se hizo QA visual local por ausencia de cambios de interfaz.
+
+## 2026-10-26 - Candidato conjunto de seis mejoras técnicas
+
+VICTORIOSA AUTOPILOT — REPORTE CICLO
+
+Fecha/hora: 2026-10-26 19:44 America/Montevideo. Ciclo: continuación manual, sin numeración histórica verificable. Modo: integración local en rama codex/validated-integration-20261026, sin fusionar PRs a main.
+
+1. Estado general:
+- Main y health del dominio permanecen27b95a5; consultas enabled=true con privacidad v1/retención30d y checkout cerrado. No se publicó este candidato. Home/producto/carrito/mobile/SEO/catálogo sin cambios de interfaz nuevos en la integración.
+- Se incorporan los commits originales de PR141/142/143/144/145/147 en una propuesta conjunta para revisar compatibilidad; las seis PR de origen siguen abiertas y sin conversaciones pendientes. Riesgo acotado por validación conjunta; el modelo local sigue sin evaluación completa aprobada.
+
+2. Cambios realizados:
+- PR141 9cdce2e: genai2.31.0/dotenv18.0.9. PR142 77ffba6: tipos24.19.2, política de Dependabot y navegador Node24. PR143 adaf8c3: Actionsv7. PR144 7770296: monitor de consultas. PR145 00f0f6c: diagnóstico local. PR147 7ab05ca: prerrequisitos y cobertura de evaluación final.
+- Solo hubo conflictos de apéndices en este archivo: se conservaron todos los checkpoints con el prefijo original intacto. YAML/browser conserva Actionsv7 y Node24. La guía de evaluación conserva el diagnóstico local y las reglas finales corregidas.
+- Verificada ascendencia de los seis SHA y contenido idéntico al original en los ocho archivos de lógica/pruebas incorporados de PR144/145/147. Sin cambios en SQL, server.ts, vercel.json, gateway de modelos, motor de inteligencia ni .env.example respecto de main.
+- Motivo: las verificaciones individuales no acreditaban compatibilidad del conjunto. No se crearon funciones duplicadas ni automatizaciones nuevas.
+
+3. Mejoras comerciales:
+- Conversión/confianza: mantenimiento y monitorización del canal de consultas. Producto/mercado/contenido/SEO sin nuevas publicaciones comerciales. Impacto esperado cualitativo, sin atribución de ventas.
+
+4. Métricas:
+- Ventas reales, sesiones, add to cart, checkout iniciado, conversión, ticket promedio y mejoras porcentuales: No hay datos reales suficientes todavía.
+
+5. Próximo plan de 6 horas:
+- Prioridad1: CI validate/postgres, evaluador seco, worker/Edge, navegador y preview del SHA final conjunto; entregar una propuesta única revisable sin auto-merge ni despliegue manual.
+- Prioridad2: revisión humana del candidato antes de cualquier publicación. Los seis originales permanecen abiertos hasta decisión de integración.
+- Prioridad3: modelo/capacidad local y evaluación real aprobada antes de medir casos finales o habilitar IA. Esta integración no convierte el diagnóstico fallido de Gemma ni el timeout de Qwen en operación verificada.
+
+6. Bloqueos:
+- Evaluación real de IA, sesión administrativa y recepción humana siguen pendientes. Sin cambios de producción, DNS, credenciales, pagos, compras, SQL remoto, campañas, envíos o presupuestos. No se inició Ollama ni ejecutaron evaluaciones de pago.
+- El monitor Node local tuvo un timeout de conexión a victoriosas.online; se conserva ese resultado fallido. PowerShell verificó independientemente health/config HTTP200. El último monitor GitHub observado fue SUCCESS a las13:23UTC; no se infiere puntualidad futura ni se duplica scheduler.
+
+7. Verificación:
+- npm ci y npm run verify conjuntos:374/374, cero omitidas, tipos y ambos builds aprobados. No se atribuye al candidato la CI individual de los originales.
+- YAML de todos los workflows parseado, manifiesto/lockfile/versiones contrastados, secret scan y HTML/assets aprobados. npm audit --omit=dev:0 vulnerabilidades reportadas, alcance limitado a dependencias de ejecución y catálogo observado.
+- Diffcheck con reconocimiento de CRLF aprobado, conservando terminadores de los workflows originales. Los conflictos quedaron resueltos y Git sin entradas no fusionadas.
+- Inventario seco:40 casos,29 críticos,6 controles, máximo teórico2.52USD bajo techo3USD; full_evaluation_passed=false. Es planificación, sin gasto ni evaluación aprobada.
+- Navegador desktop/mobile se comprobará con el smoke de CI del conjunto; no hay auditoría WCAG nueva ni recorrido de compra. Checkout/producto/carrito siguen retirados o cerrados. Cierre de CI y preview del SHA final se registra en la PR de integración.
+
+
+## 2026-10-29 - Cierre técnico y caída alojada comprobada
+
+Main27b95a5 y candidatoPR14871ebf8d revalidados por Git/CI; los seis SHA originales están incorporados y sin hilos pendientes. Rama aislada codex/technical-close-20261029, código537d583: la bandeja conserva aprobación tras consultar historial vacío, bloquea historial incierto/éxito inválido y diferencia aceptación Resend de entrega/recepción/IA. verify final378/378, tipos/ambos builds, worker17/17, HTML/secret-scan y navegador sintético390/1440 aprobados. Regresión Vercel/trace fuente y bundle nativo: health200, checkoutfalse, anon401, 404; DEP0169 no reproducido, issue146 abierta.
+
+Dominio y preview autorizado devuelven402 DEPLOYMENT_DISABLED aunque Vercel registra producciónREADY en27b95a5. Incidente149 documenta monitores fallidos y acción externa de revisar cuenta/uso; no se demostró la causa específica ni se cambió gasto/protección. Supabase primariohealthy, RLS/ACL/agregados verificados, retención145succeeded, consultas10/outboxsent10: aceptación de aplicación no acredita entrega humana. Infraestructura9completadas,2bloqueadas,4queued; otros roles sin tareas alojadas, informeGitHubsíejecutado. GemmaCPU conversa pero guardiánblocked/no_send; Qwenvencechat; ningún modelo remoto ni gasto. WhatsAppentrante pendiente, Resenddominioverificado, precios/borradores cerrados.
+
+Informe y recuperación: docs/TECHNICAL_CLOSE_20261029.md. CI/enlace final enPR del cierre. No publicar, auto-merge, despliegue manual, SQLremoto, envíos, DNS ni duplicación de automatizaciones. Próximo: recuperarhosting con el propietario y luego validar sesiónadministrativa/health porSHA; modelo gratuito capaz y aprobación deVictoria siguen independientes.
+## 2026-10-29 · Biblioteca editorial y preguntas desde la perspectiva de una clienta
+
+Rama codex/client-content-20261029 desde main27b95a5, independiente de PR148 y otros borradores. El dominio mostró Deployment Paused; propietario confirma falta de pago. Sin cambios Vercel ni gastos. Revisión del código: 17 fichas ya completas y dos artículos draft. Se agregan 12 artículos desarrollados (14 totales), 34 FAQ específicas y seis FAQ iniciales en modo de revisión; secciones con encabezados, servicios/lecturas relacionadas y WhatsApp contextual al artículo. Búsqueda reconoce «limpieza de cutis». Todos los artículos nuevos draft/date:null; rutas públicas y buscador siguen excluyéndolos. Sin autoría o revisión profesional atribuida a Victoria. Referencias AAD/NCCIH/NHS documentadas; no nuevos protocolos, precios ni datos profesionales inventados.
+
+Validación local Node24.22.1: npm ci --ignore-scripts; npm run verify exit0 (356 aprobadas, cero fallidas y una omitida preexistente de preparación offline, 357 totales), tipos y ambos builds. Suite de directorio fuera del glob principal:3/3. SSR de revisión:17 bloques FAQ, encabezados del artículo, enlace a servicio y contexto de contacto correctos. check-route-html, secret-scan y git diff --check aprobados. Una primera corrida detectó dependencia ESM nueva ausente en fixture nativo; se agregó .js y la copia de la dependencia. Otra encontró la expectativa antigua de dos borradores en búsqueda; se conservó el contrato público17 y se actualizó solo el inventario de revisión. Sin nueva prueba visual de navegador local, WCAG, DB alojada, recepción humana ni producción; no confundir SSR con E2E.
+
+Informe y pendientes agrupados de validación profesional: docs/CLIENT_CONTENT_20261029.md. Publicación pendiente de aprobación de Victoria y fecha real. La reactivación del alojamiento queda a cargo del propietario; después comprobar experiencia pública. No se fusiona ni despliega manualmente, no SQL, envíos, pagos, DNS, secretos ni agentes modificados. Siguiente: observar CI del SHA remoto final y mantener PR en borrador.
+
+
+## 2026-10-29 - Integracion para prueba local autorizada
+
+El propietario pide integrar cambios, sincronizar la PC y levantar servidor local. Rama codex/integration-local-20261029 en C:/autopilot-worktrees/integracion-local-20261029 combina PR148/151 y PR150. Solo conflicto de apendices de continuidad, ambos conservados. verify conjunto381/381 sin omisiones, tipos/builds; directorio3/3, HTML y secret-scan aprobados. Servidor full-stack activo en127.0.0.1:3000, proceso sin archivos env ni credenciales de servicios externos, captura/mail/IA/pagos cerrados. Chrome local verifico portada, menu,14lecturas, articulo limpieza, enlace al servicio y17bloquesFAQ; sin overflow/imagenes rotas/erroresJS en la vista observada. No se enviaron consultas ni mensajes. Guia y arranque: docs/LOCAL_REVIEW_20261029.md y scripts/start-local-review.ps1. Sin merge a main, publicacion editorial o cambios Vercel; integracion local para probar, no operacion alojada. Conservar los worktrees previos.
