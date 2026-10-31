@@ -9,6 +9,10 @@ const editorial = read('seo/editorial.html');
 const fallback = read('seo/fallback.html');
 const privacy = read('seo/privacy.html');
 const services = read('seo/services.html');
+const technology = read('seo/technology.html');
+assert.match(technology, /<title>Tecnología estética · Victoriosas<\/title>/);
+assert.match(technology, /rel="canonical" href="https:\/\/victoriosas.online\/tecnologia"/);
+for (const route of ['/tecnologia', '/tecnologia/']) assert.equal(config.rewrites.find(rule => rule.source === route)?.destination, '/seo/technology.html');
 const consultation = read('seo/consultation.html');
 assert.match(consultation, /<title>Consultanos · Victoriosas<\/title>/);
 assert.match(consultation, /rel="canonical" href="https:\/\/victoriosas.online\/consultanos"/);
@@ -36,7 +40,7 @@ for (const [, cssPath] of home.matchAll(/<link[^>]+href="(\/assets\/[^\"]+\.css)
     assert.ok(existsSync(`dist${url}`), `Missing stylesheet asset: ${url}`);
   }
 }
-for (const html of [home, editorial, fallback, privacy, services, consultation]) {
+for (const html of [home, editorial, fallback, privacy, services, consultation, technology]) {
   const script = html.match(/<script[^>]+src="([^"]+)"/)[1];
   assert.ok(existsSync(`dist${script}`), `Missing entry asset: ${script}`);
 }
@@ -48,6 +52,7 @@ for (const route of ['/nuestros-servicios', '/nuestros-servicios/']) {
   assert.equal(config.rewrites.find(rule => rule.source === route)?.destination, '/seo/services.html');
 }
 assert.match(read('sitemap.xml'), /https:\/\/victoriosas.online\/nuestros-servicios<\/loc>/);
+assert.match(read('sitemap.xml'), /https:\/\/victoriosas.online\/tecnologia<\/loc>/);
 assert.match(read('sitemap.xml'), /https:\/\/victoriosas.online\/de-mi-para-ti<\/loc>/);
 assert.doesNotMatch(read('sitemap.xml'), /admin|beauty-professional|checkout|tratamientos/);
 console.log('Built route HTML, assets, sitemap and Vercel destinations: PASS');

@@ -23,6 +23,15 @@ test('contact privacy information has its own initial metadata', () => {
   assert.match(html, /rel="canonical" href="https:\/\/victoriosas.online\/privacidad"/);
   assert.match(html, /name="twitter:title" content="Contacto y privacidad · Victoriosas"/);
 });
+test('technology has dedicated title, canonical, and preview noindex metadata', () => {
+  const html = routeHtml(source, 'technology', false);
+  assert.match(html, /<title>Tecnología estética · Victoriosas<\/title>/);
+  assert.match(html, /rel="canonical" href="https:\/\/victoriosas.online\/tecnologia"/);
+  assert.match(html, /property="og:url" content="https:\/\/victoriosas.online\/tecnologia"/);
+  assert.match(html, /Punta de diamante|punta de diamante/);
+  assert.match(routeHtml(source, 'technology', true), /name="robots" content="noindex,nofollow"/);
+});
+
 test('private, unknown and draft fallback HTML cannot advertise the home canonical or be indexed', () => {
   const html = routeHtml(source, 'fallback', false);
   assert.match(html, /name="robots" content="noindex,nofollow"/);

@@ -56,6 +56,14 @@
       "destination": "/seo/services.html"
     },
     {
+      "source": "/tecnologia",
+      "destination": "/seo/technology.html"
+    },
+    {
+      "source": "/tecnologia/",
+      "destination": "/seo/technology.html"
+    },
+    {
       "source": "/privacidad",
       "destination": "/seo/privacy.html"
     },
