@@ -1,0 +1,14 @@
+{
+  "name": "victoriosas-opencode-workstation",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node scripts/verify.mjs && node scripts/verify-economy.mjs && node scripts/verify-remote-read.mjs"
+  },
+  "dependencies": {
+    "@playwright/mcp": "0.0.83",
+    "typescript-language-server": "6.0.2",
+    "typescript": "6.0.2"
+  }
+}
