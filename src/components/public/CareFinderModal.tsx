@@ -14,9 +14,10 @@ export function CareFinderModal({ onClose }: { onClose: () => void }) {
   const message = careMessage(area, goal, start);
   return <ConsultationDialog title="Encontrá tu punto de partida" onClose={onClose}>
     <p>Elegí qué te gustaría conversar. Este orientador prepara tus preferencias; la evaluación personal define qué cuidado corresponde.</p>
-    <p role="status">{step < 3 ? `Paso ${step + 1} de 3` : 'Listo para revisar'}</p>
+    <div className="beauty-finder-progress" aria-label="Progreso del orientador"><span style={{ width: `${Math.min(step + 1, 3) / 3 * 100}%` }} /></div>
+    <p className="beauty-finder-step" role="status">{step < 3 ? `Paso ${step + 1} de 3 · Sin diagnóstico automático` : 'Listo para revisar · Orientación no médica'}</p>
     <h3 ref={heading} tabIndex={-1}>{questions[step]}</h3>
-    <div className="beauty-discovery-options">
+    <div className="beauty-discovery-options beauty-finder-options">
       {step === 0 && Object.entries(careAreas).map(([value, label]) => <button type="button" key={value} onClick={() => { setArea(value as keyof typeof careAreas); setGoal(careGoalOptions(value as keyof typeof careAreas)[0]); setStep(1); }}>{label}</button>)}
       {step === 1 && careGoalOptions(area).map(value => <button type="button" key={value} onClick={() => { setGoal(value); setStep(2); }}>{value}</button>)}
       {step === 2 && careStarts.map(value => <button type="button" key={value} onClick={() => { setStart(value); setStep(3); }}>{value}</button>)}

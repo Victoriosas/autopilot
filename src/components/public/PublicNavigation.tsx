@@ -21,7 +21,7 @@ export function PublicNavigation() {
   }, []);
 
   const primary = [
-    ['/', 'Inicio'], ['/victoria', 'Victoria'], ['/nuestros-servicios', 'Tratamientos'],
+    ['/', 'Inicio'], ['/victoria', 'Victoria'], ['/nuestros-servicios', 'Tratamientos'], ['/tecnologia', 'Tecnología'],
     ['/de-mi-para-ti', 'De mí para ti'], ['/consultanos', 'Consultanos'],
   ];
   const secondary = [
