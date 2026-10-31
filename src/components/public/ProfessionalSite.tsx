@@ -3,6 +3,7 @@ import { publicPageLocation } from '../../storefront/publicPageLocation';
 import './professional.css';
 import './discovery.css';
 import './noir.css';
+import './depth.css';
 import { ConsultationForm } from './ConsultationForm';
 import { EditorialPage } from './EditorialPage';
 import { ContactLink, contactEmail } from './ContactLink';
@@ -33,13 +34,18 @@ function Brand() {
 export function Home() {
   return <>
     <section className="beauty-hero beauty-wrap">
-      <div className="beauty-welcome"><p className="beauty-eyebrow">Tu bienestar, a tu manera</p><h1>Para sentirte<br />segura y<br /><em>victoriosa.</em></h1>
+      <div className="beauty-welcome"><span className="beauty-tech-kicker">Precisión estética · cuidado personal</span><p className="beauty-eyebrow">Tu bienestar, a tu manera</p><h1>Para sentirte<br />segura y<br /><em>victoriosa.</em></h1>
         <p className="beauty-intro">Estética facial, corporal y masajes. Un espacio de cuidado para escucharte, acompañarte y empezar por lo que necesitas hoy.</p>
         <div className="beauty-home-actions"><a className="beauty-button" href="https://wa.me/59897045305" target="_blank" rel="noopener noreferrer">Conversemos</a><a className="beauty-button beauty-button-outline" href="/nuestros-servicios">Explorar tratamientos</a></div><p className="beauty-small">Empezamos con una evaluación inicial remota.</p>
       </div>
       <figure className="beauty-hero-art"><img className="beauty-hero-image" src={asset + 'eafbd.png'} alt="Imagen evocadora de un momento de cuidado facial" width="600" height="648" fetchPriority="high" />
         <figcaption>Un momento para ti.</figcaption>
       </figure>
+      <aside className="beauty-tech-panel" aria-label="Nuestro proceso de atención">
+        <p className="beauty-tech-panel-label">Nuestra forma de acompañarte</p>
+        <p className="beauty-tech-panel-title">Tecnología y cercanía.</p>
+        <ol><li><span>01</span> Primer contacto personal</li><li><span>02</span> Evaluación inicial remota</li><li><span>03</span> Tratamiento acordado contigo</li></ol>
+      </aside>
     </section>
   </>;
 }
