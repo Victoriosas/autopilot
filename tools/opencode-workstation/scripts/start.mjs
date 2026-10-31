@@ -1,10 +1,13 @@
 import fs from 'node:fs';
+import { enableCamelRunReadOnly } from '../lib/remote-read-profile.mjs';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawn, spawnSync } from 'node:child_process';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
+const camelRunMode=argv.includes('--camelrun');
+if(camelRunMode)argv.splice(argv.indexOf('--camelrun'),1);
 const freeMode=argv.includes('--free');
 if(freeMode)argv.splice(argv.indexOf('--free'),1);
 const deepMode=argv.includes('--deep');
@@ -36,6 +39,7 @@ if(isVictoriosas){
   profile.instructions.push(fs.existsSync(local)?'docs/OPENCODE_DIRECTIVES.md':path.join(root,'VICTORIOSAS.md'));
   env.OPENCODE_CREDENTIAL_ROOT='C:/autopilot';
 }else delete env.OPENCODE_CREDENTIAL_ROOT;
+if(camelRunMode)enableCamelRunReadOnly(profile,{isVictoriosas,agent:selectedAgent});
 profile.default_agent=selectedAgent;
 if(selectedAgent==='consulta')for(const server of Object.values(profile.mcp))server.enabled=false;
 env.OPENCODE_CONFIG_CONTENT=JSON.stringify(profile);

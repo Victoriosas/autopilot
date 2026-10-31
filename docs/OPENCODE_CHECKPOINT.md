@@ -1,10 +1,8 @@
-# Índice de continuidad OpenCode
-
-Objetivo: motor técnico local de Victoriosas con ahorro de tokens obligatorio.
-Base de esta ampliación: 2bb43ce; comprobar HEAD y diff antes de actuar.
-Configuración: tools/opencode-workstation; política TOKEN_POLICY.md; directivas docs/OPENCODE_DIRECTIVES.md.
-Verificado: npm test; respuesta y telemetría reales; estado repetido con cero llamadas a modelos y caché; corrección de código con prueba inicial fallida y final aprobada.
-Consumo del ensayo de ingeniería: entrada4867, salida496, razonamiento34, caché leída22784, según OpenCode. No es facturación ni un porcentaje de ahorro.
-Siguiente: comprobar CI de PR155 sobre el commit final. No releer todo el historial; localizar solo el tramo necesario en docs/AUTOPILOT_STATE.md.
-Accesos pendientes: OAuth de Supabase MCP y claves locales de Resend/camelRun. Cuenta Vercel bloqueada.
-Límites vigentes: sin producción, SQL alojado, DNS, pagos ni envíos a clientas. No hay scheduler nuevo. Mantener checkpoint <=1500 caracteres.
+# Continuidad OpenCode · 31/10/2026
+Objetivo: motor local de Victoriosas con economía de tokens obligatoria.
+Código: tools/opencode-workstation; política TOKEN_POLICY.md; directivas docs/OPENCODE_DIRECTIVES.md.
+Base previa8d7e3c3; comprobar HEAD/diff y CI actual. No releer todo el historial.
+OAuth camelRun autenticado y MCP conectado; ensayo nativo exit0: camelrun_list_agents devolvió4, sin ejecutar agentes remotos. Flag --camelrun exige repositorio Victoriosas y perfil operaciones; solo inventario permitido y carga bajo demanda. Evidencia camelrun-smoke.json.
+Resend desactivado/no autenticado: auto-review bloqueó callback Full access por alcance leer/crear/eliminar. Requiere consentimiento específico antes de retomar; no eludir por CLI u otro navegador. Detalles CONEXIONES_PENDIENTES.md.
+Pruebas npm test incluyen límites de rol/repositorio/permiso; instalación actualizada con backup. Config por defecto mantiene MCP opcionales apagados.
+PR156 web independiente:382/382, builds y navegador comprobados; consultar CI final. Sin producción, SQL alojado, DNS, pagos ni envíos. Cuenta Vercel bloqueada. Sin scheduler nuevo.

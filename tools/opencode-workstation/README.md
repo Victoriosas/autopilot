@@ -47,3 +47,7 @@ Las salidas recortadas indican qué se omitió y retienen inicio y final; pedir 
 Para recuperar configuración anterior, cerrar OpenCode y restaurar los archivos de la carpeta más reciente en `~/.local/state/opencode-autopilot/backups`. No restaurar claves desde un repositorio. Deshabilitar un MCP con `enabled:false` o quitar el plugin instalado en `~/.config/opencode/plugins` si es necesario.
 
 Documentación oficial consultada: https://opencode.ai/docs/config/ , https://opencode.ai/docs/agents/ , https://opencode.ai/docs/skills/ , https://opencode.ai/docs/plugins/ , https://opencode.ai/docs/mcp-servers/ .
+
+### Inventario camelRun bajo demanda
+
+OAuth verificado, sin copiar API keys. Para inventario desde el repositorio Victoriosas: `autopilot-code --project C:\autopilot-worktrees\opencode-workstation-20261031 --agent operaciones --camelrun`. Solo se permite `camelrun_list_agents`; las demás herramientas siguen bloqueadas. En sesiones normales no se conecta este MCP. Otros proyectos/roles se rechazan. Resend permanece desactivado: ver CONEXIONES_PENDIENTES.md.
