@@ -926,3 +926,32 @@ El propietario pide integrar cambios, sincronizar la PC y levantar servidor loca
 ## 2026-10-31 · Navegación por páginas autorizada
 Rama independiente codex/clinical-navigation-20261031 desde c9c350d, según prompt docs/OPENCODE_REDESIGN_BRIEF.md y referencia del propietario. Inicio corto; Victoria, Tratamientos/categoría/ficha, editorial y consultas se sustituyen con cabecera persistente, historial y foco. Mantiene17servicios, regalo en contacto, formularios, privacidad, textos aprobados y borradores cerrados en producción. Anclas heredadas se resuelven a páginas. Metadatos propios para Victoria y Cómo empezar; API rewrite conserva primera prioridad. Mockup ImageGen es propuesta; implementación reutiliza activos aprobados.
 OpenCode produjo el cambio inicial y se detuvo por presupuesto; se completó aquí sin ampliar límites ni acceso Temp. verify final385/385 sin omitidas, tipos/ambos builds; directorio3/3, HTML/secret-scan/diffcheck. Navegador escritorio: Victoria sin hero, categorías y ficha individual, Atrás/Adelante/recarga; móvil/WCAG completos pendientes. Capturas/informe docs/CLINICAL_NAVIGATION_20261031.md. Preview estático127.0.0.1:3005, sin backend/secretos. Sin merge, despliegue, DNS/SQL/pagos/envíos. Vercel bloqueado. No combinar automáticamente PR156 (enfoque anterior de portada) con esta estructura.
+
+
+## 2026-10-31 — Puesto OpenCode profesional y directivas
+
+Rama codex/opencode-workstation-20261031 desde origin/main c9c350d. Configuración global instalada con respaldo local y lanzadores de Victoriosas, nuevos proyectos y alternativa Groq. Se reutilizó OAuth nativo ya existente de OpenCode; GPT-6.1 Sol respondió y pasó el ensayo sintético de lectura/corrección/prueba. Groq/Qwen también pasó con límites reales de cuota. Director delegó correctamente una revisión al subagente revisor.
+
+Diez perfiles, seis skills, seis comandos, dos plugins y servidor LSP TypeScript. MCP FreeLLMAPI, Context7, navegador aislado y operaciones conectados; GitHub en lectura y navegación de la web local verificados. Vercel CLI identifica elmica858-3199, sin acreditar proyecto productivo. Supabase Auth health HTTP 200. Evidencia y reproducción: tools/opencode-workstation/VALIDACION.md y sus informes JSON.
+
+Supabase MCP preparado en solo lectura, pendiente OAuth propio. Resend/camelRun sin claves locales detectadas, pendientes de acceso. No exportar sesiones de ChatGPT ni copiar claves de producción al modelo. Cerebras deshabilitado. No se modificó la aplicación, no hay agentes permanentes nuevos, envíos automáticos, SQL alojado, DNS, pagos ni despliegues. Los perfiles comerciales antiguos quedan deshabilitados y las directivas vigentes priorizan servicios, Victoria y evaluación remota.
+
+Siguiente acción: revisar CI de la PR de configuración y completar únicamente los accesos locales faltantes mediante sus flujos oficiales. Mantener las restricciones de publicación y los datos de clientas fuera del modelo.
+
+
+## 2026-10-31 — Motor local complementario y economía de tokens
+
+Se amplía la PR155 sin modificar la aplicación publicada. TOKEN_POLICY.md queda como instrucción obligatoria: contexto mínimo, evitar lecturas/pruebas/comités repetidos, skills a demanda y checkpoint corto. El lanzador evita duplicados de AGENTS/directivas y activa descripciones compactas normalmente. Plugin nuevo con lectura inicial100/máximo160 líneas, salidas explícitamente acotadas, respuesta según rol, máximo3 delegaciones y presupuesto observado por sesión; modo profundo explícito.
+
+Control determinista instalado: autopilot-control status/tokens no requieren modelo; snapshot con fecha, caché60s e invalidación por cambios. mission arranca una unidad de trabajo del director con contexto compacto y tiempo acotado. No se crea scheduler ni se amplían permisos productivos.
+
+Evidencia: economy-smoke.json acredita respuesta real, telemetría de OpenCode y dos consultas de estado con cero llamadas a modelos (segunda cacheHit). Regresión de ingeniería aprobada con las nuevas políticas: prueba inicial fallida, corrección y prueba final aprobada, exit0. Telemetría de ese ensayo: entrada4867, salida496, razonamiento34 y caché leída22784, en los campos reportados por OpenCode; no equivale a facturación ni demuestra un porcentaje de ahorro. npm test aprueba límites, deduplicación y caché. Consultar tools/opencode-workstation/VALIDACION.md.
+
+Continuidad: retomar mediante objetivo, commit, archivos, prueba, bloqueo y siguiente acción; no releer toda la historia. Permanecen los accesos externos pendientes ya identificados y el bloqueo de cuenta Vercel. Verificar CI del SHA final de esta ampliación antes de integrar.
+
+## 2026-10-31 · Conexiones oficiales y estudio competitivo acotado
+PR155: conectores OAuth oficiales Resend/camelRun instalados desactivados y herramientas denegadas; falta consentimiento de acceso específico. Panel Resend sin API keys, dominio verificado; camelRun cuatro agentes dormidos/sin herramientas y saldo no gratuito. Sin copiar secretos, crear claves, ejecutar agentes ni enviar correo. Nuevo /competencia limita tres fuentes/una propuesta. Generador LF explícito corrige frontmatter Windows; npm test aprobado y configuración global reinstalada con backup. Detalles tools/opencode-workstation/CONEXIONES_PENDIENTES.md. Mejoras web en rama independiente codex/service-discovery-20261031, no incluidas en esta PR. Sin merge, producción, DNS, SQL o gasto.
+
+## 2026-10-31 · OAuth camelRun y límite de Resend
+Usuario autoriza conexiones OAuth. Cliente OpenCode confirma camelRun autenticado/conectado; ensayo con proceso Node exit0 invoca únicamente camelrun_list_agents y responde4. Primer intento shell registró exit1 por stderr nativo de PowerShell; captura directa Node aprobada, evidencia tools/opencode-workstation/camelrun-smoke.json. Sin inferencia remota camelRun, creación ni envíos. Nuevo flag --camelrun en wrapper solo repositorio Victoriosas y agente operaciones; permiso únicamente inventario, resto denegado, carga bajo demanda para ahorrar contexto. npm test/instalación aprobados.
+Resend no autenticado y desactivado: OAuth expone Full access o Sending access; auto-review de Browser rechaza callback por alcance de leer/crear/eliminar superior a lectura local. No se elude rechazo ni se copian claves; requiere autorización explícita de Full access del proveedor. No afirmar conexión terminada. Detalles CONEXIONES_PENDIENTES.md y checkpoint corto actualizado. Sin producción/DNS/SQL/gasto o automatizaciones nuevas.

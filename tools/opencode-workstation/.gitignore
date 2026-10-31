@@ -1,0 +1,5 @@
+node_modules/
+*.log
+smoke-output/
+bundle.b64
+.playwright-mcp/

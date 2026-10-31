@@ -1,7 +1,7 @@
 # Victoriosas / Autopilot: guía de trabajo
 
 ## Antes de actuar
-- Leer este archivo, `docs/AUTOPILOT_STATE.md` y `.github/copilot-instructions.md`.
+- Leer este archivo, docs/OPENCODE_CHECKPOINT.md y .github/copilot-instructions.md. Consultar el historial solo en rangos necesarios para la tarea.
 - Las notas de continuidad están fechadas: comprobar código, main, PR abiertas y CI actuales. No tratar entradas históricas como estado vigente.
 - Revisar issues y ramas antes de crear trabajo; conservar cambios ajenos y archivos sin seguimiento.
 - Marca: **Victoriosas**. Web oficial: https://victoriosas.online. Contenido visible en español.
@@ -22,14 +22,17 @@
 - Evaluación estética inicial remota; no inventar credenciales, tarifas, disponibilidad ni resultados garantizados.
 - Mantener borradores editoriales y controles comerciales según configuración vigente.
 
-## Perfiles existentes
-Los archivos de `.opencode/agent/` son instrucciones para un runtime OpenCode, no procesos autónomos de GitHub.
-| Perfil | Uso | Límite |
-| --- | --- | --- |
-| sourcing | Descubrir candidatos de proveedores | No importar ni publicar sin autorización y evidencia |
-| analyzer | Examinar costos, margen y riesgos | No inventar precios, stock o rentabilidad |
-| seo | Preparar metadatos y contenido | Respetar identidad y textos aprobados |
-| monitor | Diagnosticar salud pública e integraciones | No exponer datos ni duplicar el monitor de seis horas |
-| deploy | Revisar build, preview y recuperación | No cambiar DNS ni producción por iniciativa propia |
+## OpenCode: perfiles vigentes
 
-Copilot y Codex utilizan sus propias integraciones. Verificar cuota y permisos; no comprar créditos ni habilitar servicios pagos.
+Leer docs/OPENCODE_DIRECTIVES.md y tools/opencode-workstation/README.md. Los perfiles no son procesos permanentes.
+
+- ingeniero: cambios locales y pruebas.
+- director: planificación y delegación secuencial.
+- arquitecto: arquitectura y nuevos proyectos.
+- revisor, seguridad y datos: revisión en lectura.
+- qa: pruebas y navegador aislado.
+- operaciones: estado de GitHub, Vercel y gateway en lectura.
+- documentacion: documentación oficial y borradores.
+- consulta: conversación sin herramientas.
+
+Los perfiles históricos de dropshipping y ECC quedan deshabilitados en la configuración de OpenCode; no son instrucciones comerciales actuales. Copilot y Codex conservan sus propias integraciones. No comprar cuotas ni habilitar proveedores pagos.
