@@ -23,5 +23,5 @@ const tools=await dispatch({id:1,method:'tools/list'});assert.equal(tools.tools.
 const denied=await dispatch({id:2,method:'tools/call',params:{name:'inspect',arguments:{target:'supabase',action:'delete'}}});assert.equal(denied.isError,true);
 const config=JSON.parse(fs.readFileSync(path.join(root,'profiles/global.json'),'utf8'));
 assert.equal(config.share,'disabled');assert.ok(config.agent.ingeniero.tools.write);assert.ok(config.agent.director.tools.task);assert.equal(config.agent.consulta.tools.write,false);
-for(const d of fs.readdirSync(path.join(root,'skills'))){const text=fs.readFileSync(path.join(root,'skills',d,'SKILL.md'),'utf8');assert.match(text,new RegExp(`^---\\nname: ${d}\\ndescription: .+\\n---`));}
+for(const d of fs.readdirSync(path.join(root,'skills'))){const text=fs.readFileSync(path.join(root,'skills',d,'SKILL.md'),'utf8').replace(/\r\n?/g,'\n');assert.match(text,new RegExp(`^---\\nname: ${d}\\ndescription: .+\\n---`));}
 console.log('PASS: secret-path controls, risky-command controls, unchanged schemas, read-only MCP dispatch, redaction, profiles and skill metadata');

@@ -35,6 +35,8 @@ export default defineConfig(({command}) => {
         const html = String(index.source);
         const preview = process.env.VERCEL_ENV === 'preview';
         index.source = routeHtml(html, 'home', preview);
+        this.emitFile({ type: 'asset', fileName: 'seo/victoria.html', source: routeHtml(html, 'victoria', preview) });
+        this.emitFile({ type: 'asset', fileName: 'seo/starting.html', source: routeHtml(html, 'starting', preview) });
         this.emitFile({ type: 'asset', fileName: 'seo/editorial.html', source: routeHtml(html, 'editorial', preview) });
         this.emitFile({ type: 'asset', fileName: 'seo/privacy.html', source: routeHtml(html, 'privacy', preview) });
         this.emitFile({ type: 'asset', fileName: 'seo/services.html', source: routeHtml(html, 'services', preview) });

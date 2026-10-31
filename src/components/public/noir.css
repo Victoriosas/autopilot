@@ -81,3 +81,49 @@
 /* QA 3: anular el limite de 480px y el margen heredados de la foto movil. */
 .beauty-noir .beauty-hero-art{margin:0!important}
 .beauty-noir .beauty-hero-image{max-height:none}
+
+/* Page-based professional layout. Natural overflow remains available for long content. */
+.beauty-page-shell{min-height:100svh;display:flex;flex-direction:column;padding-top:0!important}
+.beauty-page-shell .beauty-header{position:sticky!important;top:0!important;width:100%!important;max-width:none;margin:0;padding:20px 5%;background:#15120fef;backdrop-filter:blur(16px);z-index:30;gap:22px;border-bottom:1px solid var(--line)}
+.beauty-page-shell .beauty-header .beauty-brand{font-size:27px}
+.beauty-page-shell .beauty-header .beauty-desktop-nav{display:flex;background:#ffffff08;border:1px solid var(--line);border-radius:40px;padding:5px;margin:auto}
+.beauty-page-shell .beauty-nav-dropdown,.beauty-page-shell .beauty-nav-quick-btn{display:none}
+.beauty-page-shell .beauty-desktop-nav>a{font-size:13px;padding:10px 15px;border-radius:28px}
+.beauty-page-shell .beauty-desktop-nav>a[aria-current=page],.beauty-page-shell .beauty-category-nav a[aria-current=page]{background:#c2a778;color:#18140e}
+.beauty-page-shell .beauty-menu-trigger{display:none}
+.beauty-page-shell>main{flex:1;outline:none}
+.beauty-page-shell .beauty-hero{width:100%;margin:0;border:0;border-radius:0;min-height:calc(100svh - 156px);padding:100px 7% 130px}
+.beauty-page-shell .beauty-welcome h1{font-size:clamp(55px,6.5vw,88px);line-height:1.06;margin-top:25px;max-width:650px}
+.beauty-page-shell .beauty-welcome .beauty-intro{position:static;width:auto;max-width:540px;margin-block:24px;font-size:16px}
+.beauty-page-shell .beauty-hero-art figcaption{display:none}
+.beauty-page-shell .beauty-hero-image{object-position:72% center;filter:brightness(.65) saturate(.55)}
+.beauty-page-shell .beauty-hero-art:after{box-shadow:inset 650px 0 450px -100px #100d0bed}
+.beauty-home-actions{display:flex;gap:12px;flex-wrap:wrap}
+.beauty-page-copy{max-width:900px;padding-block:60px}
+.beauty-page-copy h1,.beauty-treatment-index h1{font-size:clamp(38px,5vw,64px);line-height:1.1}
+.beauty-page-copy p{max-width:700px;line-height:1.8}
+.beauty-compact-footer{display:flex;gap:20px;flex-wrap:wrap;justify-content:space-between;padding-block:20px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.beauty-treatment-index{padding-block:40px}
+.beauty-category-nav{display:flex;gap:10px;margin-block:24px}
+.beauty-category-nav a{padding:10px 20px;border:1px solid var(--line);border-radius:25px;text-decoration:none}
+.beauty-treatment-links{list-style:none;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 24px;margin-block:20px 26px}
+.beauty-treatment-links a{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:48px;padding:12px 16px;text-decoration:none;border:1px solid var(--line);border-radius:8px;background:var(--wash)}
+.beauty-treatment-links a:hover{border-color:var(--gold)}
+.beauty-detail-back{padding-top:26px}
+.beauty-page-shell .beauty-directory-list{grid-template-columns:1fr}
+.beauty-page-shell .beauty-services-directory{padding-top:28px}
+@media(max-width:1050px){.beauty-page-shell .beauty-header .beauty-desktop-nav{display:none}.beauty-page-shell .beauty-menu-trigger{display:inline-flex}.beauty-page-shell .beauty-header{padding:16px 5%}.beauty-page-shell .beauty-header>.beauty-button{display:none}}
+@media(max-width:680px){.beauty-page-shell .beauty-hero{padding:55px 24px 80px;min-height:calc(100svh - 170px)}.beauty-page-shell .beauty-welcome h1{font-size:46px}.beauty-page-shell .beauty-welcome .beauty-intro{font-size:14px}.beauty-page-shell .beauty-hero-art:after{box-shadow:inset 300px 0 250px -50px #100d0be0}.beauty-treatment-links{grid-template-columns:1fr}.beauty-compact-footer{justify-content:flex-start;gap:14px}.beauty-page-shell .beauty-header .beauty-brand{font-size:23px}}
+
+.beauty-page-shell .beauty-hero{padding-top:55px;padding-bottom:40px}
+@media(max-width:680px){.beauty-page-shell .beauty-hero{padding-top:40px;padding-bottom:40px}}
+
+/* Filtrado local de tratamientos, integrado en la navegación por páginas. */
+.beauty-page-shell .beauty-directory-search{max-width:640px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-block:28px}
+.beauty-page-shell .beauty-directory-search label{width:100%;font-weight:600}
+.beauty-page-shell .beauty-directory-search input{flex:1;min-width:160px;width:100%;border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--wash);color:var(--ink);font:inherit}
+.beauty-page-shell .beauty-directory-search p{width:100%;margin:0}
+.beauty-page-shell .beauty-directory-search button{min-height:44px}
+.beauty-page-shell .beauty-directory-search :focus-visible{outline:2px solid var(--gold);outline-offset:5px}
+.professional-site.beauty-page-shell .beauty-header{padding:18px 5%;min-height:96px;align-items:center}
+@media(max-width:680px){.professional-site.beauty-page-shell .beauty-header{padding:14px 5%;min-height:76px}.beauty-page-shell .beauty-hero{min-height:calc(100svh - 160px)}}

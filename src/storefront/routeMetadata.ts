@@ -1,5 +1,16 @@
-export type PublicDocument = 'home' | 'editorial' | 'privacy' | 'services' | 'consultation' | 'fallback';
+export type PublicDocument = 'home' | 'editorial' | 'privacy' | 'services' | 'consultation' | 'victoria' | 'starting' | 'fallback';
 export function routeHtml(html: string, route: PublicDocument, preview: boolean): string {
+  if (route === 'victoria' || route === 'starting') {
+    const title = route === 'victoria' ? 'Victoria · Victoriosas' : 'Cómo empezar · Victoriosas';
+    const description = route === 'victoria' ? 'Conocé el enfoque de atención personal de Victoria en Victoriosas.' : 'Evaluación inicial remota y coordinación personal, sin reservas automáticas.';
+    const canonical = 'https://victoriosas.online/' + (route === 'victoria' ? 'victoria' : 'contacto');
+    html = html.replace(/<title>[^<]*<\/title>/, '<title>' + title + '</title>')
+      .replace(/(<meta name="description" content=")[^"]*/, '$1' + description)
+      .replace(/(<meta property="og:title" content=")[^"]*/, '$1' + title)
+      .replace(/(<meta name="twitter:title" content=")[^"]*/, '$1' + title)
+      .replace(/(<link rel="canonical" href=")[^"]*/, '$1' + canonical)
+      .replace(/(<meta property="og:url" content=")[^"]*/, '$1' + canonical);
+  }
   if (route === 'consultation') {
     const title = 'Consultanos · Victoriosas';
     const description = 'Hablemos de tu cuidado. Consultá con Victoriosas y elegí cómo preferís recibir una respuesta personal.';
