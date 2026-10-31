@@ -11,7 +11,9 @@ test('public discovery includes all 19 services, unique destinations and no draf
   assert.equal(items.length, 19);
   assert.equal(new Set(items.map(item => item.href)).size, 19);
   assert.ok(items.every(item => item.href.startsWith('/nuestros-servicios#')));
-  assert.equal(discoveryItems(articles).length, 19);
+  // Explicit editorial input may include previews; public defaults must exclude them.
+  assert.equal(discoveryItems(articles).length, 19 + articles.length);
+  assert.equal(items.filter(item => item.category === 'editorial').length, 0);
 });
 test('discovery combines accent-insensitive words and categories without dead results', () => {
   const items = discoveryItems();
