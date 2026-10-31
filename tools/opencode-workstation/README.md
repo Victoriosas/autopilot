@@ -28,9 +28,21 @@ El perfil `--free` usa Qwen 3.8 27B y permite elegir GPT OSS 20B/120B por FreeLL
 
 Supabase MCP está preparado en el perfil de Victoriosas con proyecto fijo, solo lectura y herramientas de metadatos, pero permanece deshabilitado hasta autenticarlo mediante `opencode mcp auth supabase`. Las consultas SQL y los logs no se autorizan por este perfil. Resend y camelRun requieren credenciales locales que no se encontraron; se informa ese bloqueo y no se copian claves de producción ni sesiones de ChatGPT.
 
-## Verificar y recuperar
+## Ahorro y motor de control
 
-`node scripts/verify.mjs` comprueba las políticas auxiliares, MCP y perfiles sin red. `opencode debug agent ingeniero`, `opencode debug skill` y `opencode mcp list` acreditan carga/conexión. Las pruebas reales de modelo y herramientas se documentan por separado: una configuración válida no demuestra edición ni delegación exitosas.
+`TOKEN_POLICY.md` es una instrucción permanente y breve: buscar antes de leer, cargar skills a demanda, no repetir pruebas sin cambios y dejar checkpoints de hasta 1500 caracteres. El lanzador evita cargar explícitamente AGENTS.md (OpenCode lo descubre) y utiliza una sola copia de las directivas de Victoriosas. Las rutas de reglas globales coinciden con las instaladas para evitar variantes duplicadas. Las descripciones compactas de herramientas son el modo normal; `--deep` conserva el detalle.
+
+El plugin `token-economy` acota lecturas, respuestas solicitadas, tamaño de salidas y delegaciones. Cuenta solicitudes observadas en `chat.params` y telemetría de mensajes terminados, deduplicada por mensaje. Presupuesto normal: 16 solicitudes al hook, 3 delegaciones y volumen conservador reportado de 90000 tokens por sesión. Los límites se aplican a los hooks que invoque el runtime; no son una garantía de facturación ni interceptan peticiones externas al proceso. Los límites de pasos del agente siguen activos. `--deep` amplía conscientemente el presupuesto para casos complejos.
+
+`autopilot-control status --project C:\ruta\repo` inspecciona Git y la salud local **sin modelo**. Reutiliza un snapshot durante 60 segundos si el commit y los archivos no cambiaron; siempre muestra la fecha y `cacheHit`. `--refresh` fuerza una observación. `autopilot-control tokens` informa contadores locales; sin telemetría devuelve desconocido, no cero inventado. No almacena prompts, código, contenido de herramientas ni credenciales.
+
+`autopilot-control mission --project C:\ruta\repo "objetivo concreto"` inicia una unidad de trabajo con el director, snapshot compacto y un límite de tiempo de doce minutos. No genera tareas automáticamente, no repite misiones por su cuenta ni crea un servicio 24/7. Al alcanzar un límite se debe inspeccionar el diff y retomar desde evidencia. El motor puede observar, priorizar, desarrollar localmente y verificar; los permisos productivos y la supervisión comercial siguen vigentes.
+
+Las salidas recortadas indican qué se omitió y retienen inicio y final; pedir rangos adicionales si una validación los necesita. El ahorro medido en caracteres no equivale a un porcentaje exacto de tokens ni a dinero ahorrado. El reporte mantiene entrada, salida, razonamiento y caché separados.
+
+### Comprobaciones
+
+`npm test` comprueba políticas, MCP, perfiles, presupuesto, deduplicación de consumo y caché del control sin red. `opencode debug agent ingeniero`, `opencode debug skill` y `opencode mcp list` acreditan carga/conexión. Las pruebas reales de modelo y herramientas se documentan por separado: una configuración válida no demuestra edición ni delegación exitosas.
 
 Para recuperar configuración anterior, cerrar OpenCode y restaurar los archivos de la carpeta más reciente en `~/.local/state/opencode-autopilot/backups`. No restaurar claves desde un repositorio. Deshabilitar un MCP con `enabled:false` o quitar el plugin instalado en `~/.config/opencode/plugins` si es necesario.
 

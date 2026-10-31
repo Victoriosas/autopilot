@@ -4,7 +4,6 @@
   "small_model": "openai/gpt-5.4-mini",
   "default_agent": "ingeniero",
   "instructions": [
-    "AGENTS.md",
     "docs/OPENCODE_DIRECTIVES.md"
   ],
   "agent": {

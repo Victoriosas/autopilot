@@ -25,4 +25,7 @@ foreach ($entry in $entries) {
 $cli = Join-Path $env:APPDATA 'npm\autopilot-code.cmd'
 $content = '@echo off' + [Environment]::NewLine + '"' + $node + '" "' + $toolRoot + '\scripts\start.mjs" %*' + [Environment]::NewLine
 Set-Content -LiteralPath $cli -Encoding ascii -Value $content
+$control = Join-Path $env:APPDATA 'npm\autopilot-control.cmd'
+$controlContent = '@echo off' + [Environment]::NewLine + '"' + $node + '" "' + $toolRoot + '\scripts\control.mjs" %*' + [Environment]::NewLine
+Set-Content -LiteralPath $control -Encoding ascii -Value $controlContent
 Write-Output 'Three desktop shortcuts and autopilot-code command installed'

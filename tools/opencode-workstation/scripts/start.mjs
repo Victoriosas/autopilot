@@ -7,6 +7,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
 const freeMode=argv.includes('--free');
 if(freeMode)argv.splice(argv.indexOf('--free'),1);
+const deepMode=argv.includes('--deep');
+if(deepMode)argv.splice(argv.indexOf('--deep'),1);
 function take(name, fallback) {const i=argv.indexOf(name);if(i<0)return fallback;const v=argv[i+1];if(!v||v.startsWith('--'))throw new Error(`Missing value for ${name}`);argv.splice(i,2);return v;}
 const project = path.resolve(take('--project',process.cwd()));
 const selectedAgent = take('--agent','ingeniero');
@@ -23,15 +25,15 @@ env.OPENCODE_PROJECT_ROOT=project;
 const origin=spawnSync('git',['remote','get-url','origin'],{cwd:project,encoding:'utf8',windowsHide:true}).stdout?.trim()||'';
 const isVictoriosas=/(?:github\.com[:/])Victoriosas\/autopilot(?:\.git)?$/i.test(origin);
 const profile=JSON.parse(fs.readFileSync(path.join(root,freeMode?'profiles/free.json':'profiles/global.json'),'utf8'));
-if(freeMode)env.OPENCODE_COMPACT_TOOLS='1';else delete env.OPENCODE_COMPACT_TOOLS;
-profile.instructions=[path.join(root,'REGLAS.md')];
+env.OPENCODE_COMPACT_TOOLS=deepMode?'0':'1';
+env.OPENCODE_ECONOMY_MODE=deepMode?'deep':'normal';
+profile.instructions=['~/.config/opencode/REGLAS.md','~/.config/opencode/TOKEN_POLICY.md'];
 if(isVictoriosas){
   const projectProfile=JSON.parse(fs.readFileSync(path.join(root,'profiles/victoriosas.json'),'utf8'));
   profile.agent={...profile.agent,...projectProfile.agent};
   profile.mcp={...profile.mcp,...projectProfile.mcp};
-  profile.instructions.push(path.join(project,'AGENTS.md'),path.join(root,'VICTORIOSAS.md'));
   const local=path.join(project,'docs/OPENCODE_DIRECTIVES.md');
-  if(fs.existsSync(local))profile.instructions.push(local);
+  profile.instructions.push(fs.existsSync(local)?'docs/OPENCODE_DIRECTIVES.md':path.join(root,'VICTORIOSAS.md'));
   env.OPENCODE_CREDENTIAL_ROOT='C:/autopilot';
 }else delete env.OPENCODE_CREDENTIAL_ROOT;
 profile.default_agent=selectedAgent;

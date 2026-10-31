@@ -933,3 +933,14 @@ Diez perfiles, seis skills, seis comandos, dos plugins y servidor LSP TypeScript
 Supabase MCP preparado en solo lectura, pendiente OAuth propio. Resend/camelRun sin claves locales detectadas, pendientes de acceso. No exportar sesiones de ChatGPT ni copiar claves de producción al modelo. Cerebras deshabilitado. No se modificó la aplicación, no hay agentes permanentes nuevos, envíos automáticos, SQL alojado, DNS, pagos ni despliegues. Los perfiles comerciales antiguos quedan deshabilitados y las directivas vigentes priorizan servicios, Victoria y evaluación remota.
 
 Siguiente acción: revisar CI de la PR de configuración y completar únicamente los accesos locales faltantes mediante sus flujos oficiales. Mantener las restricciones de publicación y los datos de clientas fuera del modelo.
+
+
+## 2026-10-31 — Motor local complementario y economía de tokens
+
+Se amplía la PR155 sin modificar la aplicación publicada. TOKEN_POLICY.md queda como instrucción obligatoria: contexto mínimo, evitar lecturas/pruebas/comités repetidos, skills a demanda y checkpoint corto. El lanzador evita duplicados de AGENTS/directivas y activa descripciones compactas normalmente. Plugin nuevo con lectura inicial100/máximo160 líneas, salidas explícitamente acotadas, respuesta según rol, máximo3 delegaciones y presupuesto observado por sesión; modo profundo explícito.
+
+Control determinista instalado: autopilot-control status/tokens no requieren modelo; snapshot con fecha, caché60s e invalidación por cambios. mission arranca una unidad de trabajo del director con contexto compacto y tiempo acotado. No se crea scheduler ni se amplían permisos productivos.
+
+Evidencia: economy-smoke.json acredita respuesta real, telemetría de OpenCode y dos consultas de estado con cero llamadas a modelos (segunda cacheHit). Regresión de ingeniería aprobada con las nuevas políticas: prueba inicial fallida, corrección y prueba final aprobada, exit0. Telemetría de ese ensayo: entrada4867, salida496, razonamiento34 y caché leída22784, en los campos reportados por OpenCode; no equivale a facturación ni demuestra un porcentaje de ahorro. npm test aprueba límites, deduplicación y caché. Consultar tools/opencode-workstation/VALIDACION.md.
+
+Continuidad: retomar mediante objetivo, commit, archivos, prueba, bloqueo y siguiente acción; no releer toda la historia. Permanecen los accesos externos pendientes ya identificados y el bloqueo de cuenta Vercel. Verificar CI del SHA final de esta ampliación antes de integrar.

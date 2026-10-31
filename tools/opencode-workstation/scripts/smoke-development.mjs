@@ -20,7 +20,7 @@ config.instructions=[path.join(root,'REGLAS.md')];
 config.compaction.auto=false;
 const exe=path.join(process.env.APPDATA,'npm/node_modules/opencode-ai/bin/opencode.exe');
 const start=Date.now();
-const run=spawnSync(exe,['run','--format','json','--agent','ingeniero','Lee sum.cjs. Corrige la función para sumar dos números, usando edit. Ejecuta npm test y responde LISTO solo si pasa.'],{cwd,env:{...process.env,FREELLMAPI_API_KEY:key,OPENCODE_COMPACT_TOOLS:freeMode?'1':'0',OPENCODE_WORKSTATION_HOME:root.replaceAll('\\','/'),OPENCODE_CONFIG_CONTENT:JSON.stringify(config)},encoding:'utf8',timeout:170000});
+const run=spawnSync(exe,['run','--format','json','--agent','ingeniero','Lee sum.cjs. Corrige la función para sumar dos números, usando edit. Ejecuta npm test y responde LISTO solo si pasa.'],{cwd,env:{...process.env,FREELLMAPI_API_KEY:key,OPENCODE_COMPACT_TOOLS:'1',OPENCODE_WORKSTATION_HOME:root.replaceAll('\\','/'),OPENCODE_CONFIG_CONTENT:JSON.stringify(config)},encoding:'utf8',timeout:170000});
 const after=spawnSync(process.execPath,['sum.test.cjs'],{cwd,encoding:'utf8'});
 const events=String(run.stdout||'').split(/\r?\n/).flatMap(line=>{try{return [JSON.parse(line)]}catch{return []}});
 const tools=events.filter(e=>e.type==='tool_use').map(e=>({tool:e.part?.tool,status:e.part?.state?.status}));

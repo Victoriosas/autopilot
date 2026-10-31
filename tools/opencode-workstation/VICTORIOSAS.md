@@ -13,3 +13,5 @@ Antes de actuar: leer AGENTS.md, docs/AUTOPILOT_STATE.md, docs/CODEX_PROGRESS.md
 Trabajar en ramas y PR acotadas. Validar npm run verify para cambios de aplicación y las comprobaciones de PostgreSQL/Auth/RLS cuando apliquen. Para documentación/configuración comprobar formato, carga efectiva y recorrido real. No hacer auto-merge, despliegue manual ni SQL alojado por iniciativa propia. No modificar DNS, pagos, campañas o datos de clientes.
 
 Registrar cambios, comandos, pruebas reales, límites y siguiente acción en el checkpoint existente. Otros proyectos deben tener repositorio, marca, datos, credenciales y autorizaciones separados.
+
+Economía de tokens obligatoria: aplicar TOKEN_POLICY.md. Consultar primero `autopilot-control status` y el checkpoint corto; cargar históricos solo si la tarea lo exige. El director es el motor técnico de control complementario: coordina tareas verificables, reutiliza evidencia y evita comités, consultas de estado con IA y pruebas repetidas sin cambios. No altera autorizaciones ni garantiza ejecución permanente.

@@ -11,12 +11,14 @@ function copy(source,dest){fs.mkdirSync(path.dirname(dest),{recursive:true});if(
 function tree(source,dest){for(const item of fs.readdirSync(source,{withFileTypes:true})){const a=path.join(source,item.name),b=path.join(dest,item.name);if(item.isDirectory())tree(a,b);else copy(a,b);}}
 copy(path.join(root,'profiles/global.json'),path.join(target,'opencode.json'));
 copy(path.join(root,'REGLAS.md'),path.join(target,'REGLAS.md'));
+copy(path.join(root,'TOKEN_POLICY.md'),path.join(target,'TOKEN_POLICY.md'));
+tree(path.join(root,'lib'),path.join(target,'lib'));
 tree(path.join(root,'skills'),path.join(target,'skills'));
 tree(path.join(root,'commands'),path.join(target,'commands'));
-for(const name of ['context-budget','project-guard'])copy(path.join(root,`plugins/${name}.mjs`),path.join(target,`plugins/${name}.js`));
+for(const name of ['context-budget','project-guard','token-economy'])copy(path.join(root,`plugins/${name}.mjs`),path.join(target,`plugins/${name}.js`));
 const config=JSON.parse(fs.readFileSync(path.join(target,'opencode.json'),'utf8'));
 config.mcp.ops.command=['node',path.join(root,'scripts/ops-mcp.mjs').replaceAll('\\','/')];
 config.mcp.browser.command[1]=path.join(root,'node_modules/@playwright/mcp/cli.js').replaceAll('\\','/');
 config.lsp.typescript.command[1]=path.join(root,'node_modules/typescript-language-server/lib/cli.mjs').replaceAll('\\','/');
 fs.writeFileSync(path.join(target,'opencode.json'),JSON.stringify(config,null,2)+'\n');
-console.log('Installed global OpenCode profile, 10 agents, 6 skills, 6 commands and 2 local plugins. Previous files backed up locally.');
+console.log('Installed profiles, skills, token policy and 3 local plugins. Previous files backed up locally.');
