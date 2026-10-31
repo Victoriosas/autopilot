@@ -25,7 +25,7 @@ test('unknown pages and editorial drafts are real HTTP404 in production', () => 
   } finally { if(previous === undefined) delete process.env.VERCEL_ENV; else process.env.VERCEL_ENV = previous; }
 });
 test('known pages, private entry points, API, assets and preview drafts retain their existing handlers', () => {
-  for (const path of ['/', '/servicios', '/contacto/', '/victoria', '/privacidad', '/de-mi-para-ti', '/admin', '/beauty-professional', '/api/health', '/assets/app.js', '/brand/fonts/font-1.ttf', '/robots.txt', '/sitemap.xml', '/favicon.svg']) {
+  for (const path of ['/', '/servicios', '/contacto/', '/victoria', '/tecnologia', '/tecnologia/', '/privacidad', '/de-mi-para-ti', '/admin', '/beauty-professional', '/api/health', '/assets/app.js', '/brand/fonts/font-1.ttf', '/robots.txt', '/sitemap.xml', '/favicon.svg']) {
     assert.equal(middleware(new Request('https://victoriosas.online' + path)), undefined, path);
   }
   const previous = process.env.VERCEL_ENV;

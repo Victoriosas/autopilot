@@ -20,6 +20,8 @@ try {
     assert.ok(await page.getByRole('link', { name: /conocé nuestra tecnología/i }).count());
     await page.getByRole('link', { name: /conocé nuestra tecnología/i }).first().click();
     await page.waitForURL('**/tecnologia');
+    const deepLink = await page.reload({ waitUntil: 'networkidle' });
+    assert.equal(deepLink?.status(), 200, 'technology direct reload must not return 404');
     assert.equal(await page.locator('.beauty-equipment-card').count(), 4);
     assert.ok(await page.getByText('Dermapen', { exact: true }).isVisible());
     await noOverflow('technology');
