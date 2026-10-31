@@ -1,7 +1,7 @@
 # Victoriosas / Autopilot: guía de trabajo
 
 ## Antes de actuar
-- Leer este archivo, `docs/AUTOPILOT_STATE.md` y `.github/copilot-instructions.md`.
+- Leer este archivo, docs/OPENCODE_CHECKPOINT.md y .github/copilot-instructions.md. Consultar el historial solo en rangos necesarios para la tarea.
 - Las notas de continuidad están fechadas: comprobar código, main, PR abiertas y CI actuales. No tratar entradas históricas como estado vigente.
 - Revisar issues y ramas antes de crear trabajo; conservar cambios ajenos y archivos sin seguimiento.
 - Marca: **Victoriosas**. Web oficial: https://victoriosas.online. Contenido visible en español.
