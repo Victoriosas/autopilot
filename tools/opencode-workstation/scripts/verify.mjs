@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {secretPath,blockedShell,ProjectGuard} from '../plugins/project-guard.mjs';
+import {ContextBudget,reserveSlot} from '../plugins/context-budget.mjs';
+import {githubArgs,redact,dispatch} from './ops-mcp.mjs';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+for(const p of ['C:\\project\\.env.local','/project/auth.json','/project/.encryption-key','/project/freeapi.db-wal','/project/client.pem']) assert.equal(secretPath(p),true,p);
+for(const p of ['/project/.env.example','/project/src/App.tsx','/project/README.md']) assert.equal(secretPath(p),false,p);
+for(const cmd of ['git push --force','git reset --hard','supabase db push','gh pr merge 153','vercel promote abc','Get-ChildItem Env:']) assert.equal(blockedShell(cmd),true,cmd);
+for(const cmd of ['npm run verify','git status --short','git diff --check']) assert.equal(blockedShell(cmd),false,cmd);
+const guard=await ProjectGuard();
+await assert.rejects(()=>guard['tool.execute.before']({tool:'read'},{args:{filePath:'C:/test/.env.local'}}));
+await guard['tool.execute.before']({tool:'read'},{args:{filePath:'C:/test/README.md'}});
+const budget=await ContextBudget();const schema={type:'object',properties:{path:{type:'string'}}};const out={description:'verbose',parameters:schema};await budget['tool.definition']({toolID:'read'},out);assert.equal(out.parameters,schema);
+assert.equal(reserveSlot(0,100000),100000);assert.equal(reserveSlot(100000,100001),131000);
+assert.throws(()=>githubArgs('merge','Victoriosas/autopilot',1));
+assert.throws(()=>githubArgs('repository','--help',1));
+assert.deepEqual(githubArgs('repository','Victoriosas/autopilot').slice(0,3),['repo','view','Victoriosas/autopilot']);
+assert.equal(redact('Bearer abc123'),'Bearer [REDACTED]');
+const tools=await dispatch({id:1,method:'tools/list'});assert.equal(tools.tools.length,1);assert.equal(tools.tools[0].name,'inspect');
+const denied=await dispatch({id:2,method:'tools/call',params:{name:'inspect',arguments:{target:'supabase',action:'delete'}}});assert.equal(denied.isError,true);
+const config=JSON.parse(fs.readFileSync(path.join(root,'profiles/global.json'),'utf8'));
+assert.equal(config.share,'disabled');assert.ok(config.agent.ingeniero.tools.write);assert.ok(config.agent.director.tools.task);assert.equal(config.agent.consulta.tools.write,false);
+for(const d of fs.readdirSync(path.join(root,'skills'))){const text=fs.readFileSync(path.join(root,'skills',d,'SKILL.md'),'utf8');assert.match(text,new RegExp(`^---\\nname: ${d}\\ndescription: .+\\n---`));}
+console.log('PASS: secret-path controls, risky-command controls, unchanged schemas, read-only MCP dispatch, redaction, profiles and skill metadata');

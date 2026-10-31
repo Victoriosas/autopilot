@@ -922,3 +922,14 @@ Informe y pendientes agrupados de validación profesional: docs/CLIENT_CONTENT_2
 ## 2026-10-29 - Integracion para prueba local autorizada
 
 El propietario pide integrar cambios, sincronizar la PC y levantar servidor local. Rama codex/integration-local-20261029 en C:/autopilot-worktrees/integracion-local-20261029 combina PR148/151 y PR150. Solo conflicto de apendices de continuidad, ambos conservados. verify conjunto381/381 sin omisiones, tipos/builds; directorio3/3, HTML y secret-scan aprobados. Servidor full-stack activo en127.0.0.1:3000, proceso sin archivos env ni credenciales de servicios externos, captura/mail/IA/pagos cerrados. Chrome local verifico portada, menu,14lecturas, articulo limpieza, enlace al servicio y17bloquesFAQ; sin overflow/imagenes rotas/erroresJS en la vista observada. No se enviaron consultas ni mensajes. Guia y arranque: docs/LOCAL_REVIEW_20261029.md y scripts/start-local-review.ps1. Sin merge a main, publicacion editorial o cambios Vercel; integracion local para probar, no operacion alojada. Conservar los worktrees previos.
+
+
+## 2026-10-31 — Puesto OpenCode profesional y directivas
+
+Rama codex/opencode-workstation-20261031 desde origin/main c9c350d. Configuración global instalada con respaldo local y lanzadores de Victoriosas, nuevos proyectos y alternativa Groq. Se reutilizó OAuth nativo ya existente de OpenCode; GPT-6.1 Sol respondió y pasó el ensayo sintético de lectura/corrección/prueba. Groq/Qwen también pasó con límites reales de cuota. Director delegó correctamente una revisión al subagente revisor.
+
+Diez perfiles, seis skills, seis comandos, dos plugins y servidor LSP TypeScript. MCP FreeLLMAPI, Context7, navegador aislado y operaciones conectados; GitHub en lectura y navegación de la web local verificados. Vercel CLI identifica elmica858-3199, sin acreditar proyecto productivo. Supabase Auth health HTTP 200. Evidencia y reproducción: tools/opencode-workstation/VALIDACION.md y sus informes JSON.
+
+Supabase MCP preparado en solo lectura, pendiente OAuth propio. Resend/camelRun sin claves locales detectadas, pendientes de acceso. No exportar sesiones de ChatGPT ni copiar claves de producción al modelo. Cerebras deshabilitado. No se modificó la aplicación, no hay agentes permanentes nuevos, envíos automáticos, SQL alojado, DNS, pagos ni despliegues. Los perfiles comerciales antiguos quedan deshabilitados y las directivas vigentes priorizan servicios, Victoria y evaluación remota.
+
+Siguiente acción: revisar CI de la PR de configuración y completar únicamente los accesos locales faltantes mediante sus flujos oficiales. Mantener las restricciones de publicación y los datos de clientas fuera del modelo.

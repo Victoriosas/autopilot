@@ -1,0 +1,526 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "freellmapi/qwen3.8-27b",
+  "small_model": "freellmapi/gpt-oss-20b",
+  "default_agent": "ingeniero",
+  "enabled_providers": [
+    "openai",
+    "freellmapi"
+  ],
+  "share": "disabled",
+  "autoupdate": "notify",
+  "logLevel": "WARN",
+  "snapshot": true,
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "reserved": 1536
+  },
+  "watcher": {
+    "ignore": [
+      "**/node_modules/**",
+      "**/.git/**",
+      "**/dist/**",
+      "**/.audit/**",
+      "**/output/**",
+      "**/coverage/**"
+    ]
+  },
+  "instructions": [
+    "~/.config/opencode/REGLAS.md"
+  ],
+  "lsp": {
+    "typescript": {
+      "command": [
+        "node",
+        "{env:OPENCODE_WORKSTATION_HOME}/node_modules/typescript-language-server/lib/cli.mjs",
+        "--stdio"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx",
+        ".js",
+        ".jsx",
+        ".mts",
+        ".cts"
+      ]
+    }
+  },
+  "provider": {
+    "freellmapi": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "FreeLLMAPI local (Groq)",
+      "options": {
+        "baseURL": "http://127.0.0.1:3001/v1",
+        "apiKey": "{env:FREELLMAPI_API_KEY}",
+        "timeout": 60000
+      },
+      "models": {
+        "qwen3.8-27b": {
+          "name": "Qwen 3.8 27B - Groq",
+          "tool_call": true,
+          "limit": {
+            "context": 8192,
+            "output": 384
+          }
+        },
+        "gpt-oss-20b": {
+          "name": "GPT OSS 20B - Groq",
+          "tool_call": true,
+          "limit": {
+            "context": 8192,
+            "output": 384
+          }
+        },
+        "gpt-oss-120b": {
+          "name": "GPT OSS 120B - Groq",
+          "tool_call": true,
+          "limit": {
+            "context": 8192,
+            "output": 384
+          }
+        }
+      }
+    }
+  },
+  "agent": {
+    "director": {
+      "description": "Dirigir ciclos de desarrollo y delegar una tarea por vez",
+      "prompt": "Trabaja en español. Lee AGENTS.md. Usa herramientas reales; no inventes resultados. No leas secretos ni datos de clientas. Conserva cambios ajenos. No compres, publiques, envíes mensajes, fusiones, migres servicios remotos ni cambies producción. Pide una autorización concreta cuando haga falta. Trabaja en tareas pequeñas, lee archivos por tramos y guarda checkpoint antes de alcanzar el límite de contexto. Define criterios, prioriza, delega secuencialmente a ingeniero/arquitecto/revisor/seguridad/qa/operaciones. Comprueba evidencias y continúa hasta completar alcance. No delegues recursivamente.",
+      "mode": "primary",
+      "steps": 16,
+      "tools": {
+        "bash": false,
+        "read": true,
+        "write": false,
+        "edit": false,
+        "apply_patch": false,
+        "glob": true,
+        "grep": true,
+        "task": true,
+        "skill": true,
+        "todowrite": true,
+        "webfetch": false,
+        "websearch": false,
+        "question": false,
+        "lsp": false,
+        "plan_enter": false,
+        "plan_exit": false,
+        "freellmapi_*": false,
+        "context7_*": false,
+        "browser_*": false,
+        "ops_*": false,
+        "supabase_*": false
+      }
+    },
+    "ingeniero": {
+      "description": "Implementar y probar cambios locales acotados",
+      "prompt": "Trabaja en español. Lee AGENTS.md. Usa herramientas reales; no inventes resultados. No leas secretos ni datos de clientas. Conserva cambios ajenos. No compres, publiques, envíes mensajes, fusiones, migres servicios remotos ni cambies producción. Pide una autorización concreta cuando haga falta. Trabaja en tareas pequeñas, lee archivos por tramos y guarda checkpoint antes de alcanzar el límite de contexto. Implementa cambios mínimos. Lee primero. Usa write para archivos nuevos y edit para existentes. Ejecuta pruebas proporcionales. Deja diff y siguiente paso verificable.",
+      "mode": "all",
+      "steps": 40,
+      "tools": {
+        "bash": true,
+        "read": true,
+        "write": true,
+        "edit": true,
+        "apply_patch": false,
+        "glob": true,
+        "grep": true,
+        "task": false,
+        "skill": true,
+        "todowrite": true,
+        "webfetch": false,
+        "websearch": false,
+        "question": false,
+        "lsp": true,
+        "plan_enter": false,
+        "plan_exit": false,
+        "freellmapi_*": false,
+        "context7_*": false,
+        "browser_*": false,
+        "ops_*": false,
+        "supabase_*": false
+      }
+    },
+    "arquitecto": {
+      "description": "Arquitectura profesional y nuevos proyectos",
+      "prompt": "Trabaja en español. Lee AGENTS.md. Usa herramientas reales; no inventes resultados. No leas secretos ni datos de clientas. Conserva cambios ajenos. No compres, publiques, envíes mensajes, fusiones, migres servicios remotos ni cambies producción. Pide una autorización concreta cuando haga falta. Trabaja en tareas pequeñas, lee archivos por tramos y guarda checkpoint antes de alcanzar el límite de contexto. Consulta la skill proyectos-profesionales. Define alcance, contrato de datos, decisiones y plan de entrega. Aísla empresas, credenciales y datos. Distingue prototipo de producción.",
+      "mode": "all",
+      "steps": 12,
+      "tools": {
+        "bash": false,
+        "read": true,
+        "write": false,
+        "edit": false,
+        "apply_patch": false,
+        "glob": true,
+        "grep": true,
+        "task": false,
+        "skill": true,
+        "todowrite": false,
+        "webfetch": false,
+        "websearch": false,
+        "question": false,
+        "lsp": false,
+        "plan_enter": false,
+        "plan_exit": false,
+        "freellmapi_*": false,
+        "context7_*": false,
+        "browser_*": false,
+        "ops_*": false,
+        "supabase_*": false
+      },
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "task": "deny",
+        "external_directory": "deny"
+      }
+    },
+    "revisor": {
+      "description": "Revisión de código y regresiones en solo lectura",
+      "prompt": "Trabaja en español. Lee AGENTS.md. Usa herramientas reales; no inventes resultados. No leas secretos ni datos de clientas. Conserva cambios ajenos. No compres, publiques, envíes mensajes, fusiones, migres servicios remotos ni cambies producción. Pide una autorización concreta cuando haga falta. Trabaja en tareas pequeñas, lee archivos por tramos y guarda checkpoint antes de alcanzar el límite de contexto. Lee diff y archivos. Prioriza fallos concretos por impacto con archivo y evidencia. No apruebes sin validación. No modifiques archivos.",
+      "mode": "subagent",
+      "steps": 12,
+      "tools": {
+        "bash": false,
+        "read": true,
+        "write": false,
+        "edit": false,
+        "apply_patch": false,
+        "glob": true,
+        "grep": true,
+        "task": false,
+        "skill": true,
+        "todowrite": false,
+        "webfetch": false,
+        "websearch": false,
+        "question": false,
+        "lsp": false,
+        "plan_enter": false,
+        "plan_exit": false,
+        "freellmapi_*": false,
+        "context7_*": false,
+        "browser_*": false,
+        "ops_*": false,
+        "supabase_*": false
+      },
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "task": "deny",
+        "external_directory": "deny"
+      }
+    },
+    "seguridad": {
+      "description": "Revisión de permisos, privacidad y dependencias",
+      "prompt": "Trabaja en español. Lee AGENTS.md. Usa herramientas reales; no inventes resultados. No leas secretos ni datos de clientas. Conserva cambios ajenos. No compres, publiques, envíes mensajes, fusiones, migres servicios remotos ni cambies producción. Pide una autorización concreta cuando haga falta. Trabaja en tareas pequeñas, lee archivos por tramos y guarda checkpoint antes de alcanzar el límite de contexto. Revisa autenticación, RLS, manejo de secretos, prompt injection y controles de envío. No leas entornos ni datos privados. No explotes sistemas reales.",
+      "mode": "subagent",
+      "steps": 12,
+      "tools": {
+        "bash": false,
+        "read": true,
+        "write": false,
+        "edit": false,
+        "apply_patch": false,
+        "glob": true,
+        "grep": true,
+        "task": false,
+        "skill": true,
+        "todowrite": false,
+        "webfetch": false,
+        "websearch": false,
+        "question": false,
+        "lsp": false,
+        "plan_enter": false,
+        "plan_exit": false,
+        "freellmapi_*": false,
+        "context7_*": false,
+        "browser_*": false,
+        "ops_*": false,
+        "supabase_*": false
+      },
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "task": "deny",
+        "external_directory": "deny"
+      }
+    },
+    "datos": {
+      "description": "Esquemas SQL, migraciones y aislamiento multiempresa",
+      "prompt": "Trabaja en español. Lee AGENTS.md. Usa herramientas reales; no inventes resultados. No leas secretos ni datos de clientas. Conserva cambios ajenos. No compres, publiques, envíes mensajes, fusiones, migres servicios remotos ni cambies producción. Pide una autorización concreta cuando haga falta. Trabaja en tareas pequeñas, lee archivos por tramos y guarda checkpoint antes de alcanzar el límite de contexto. Evalúa SQL, grants, RLS, índices, transacciones y rollback local. No ejecutes SQL alojado. Carga base-datos-segura.",
+      "mode": "subagent",
+      "steps": 12,
+      "tools": {
+        "bash": false,
+        "read": true,
+        "write": false,
+        "edit": false,
+        "apply_patch": false,
+        "glob": true,
+        "grep": true,
+        "task": false,
+        "skill": true,
+        "todowrite": false,
+        "webfetch": false,
+        "websearch": false,
+        "question": false,
+        "lsp": false,
+        "plan_enter": false,
+        "plan_exit": false,
+        "freellmapi_*": false,
+        "context7_*": false,
+        "browser_*": false,
+        "ops_*": false,
+        "supabase_*": false,
+        "supabase_list_tables": true,
+        "supabase_list_migrations": true,
+        "supabase_get_advisors": true,
+        "supabase_search_docs": true
+      },
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "task": "deny",
+        "external_directory": "deny"
+      }
+    },
+    "qa": {
+      "description": "Pruebas funcionales y navegador aislado",
+      "prompt": "Trabaja en español. Lee AGENTS.md. Usa herramientas reales; no inventes resultados. No leas secretos ni datos de clientas. Conserva cambios ajenos. No compres, publiques, envíes mensajes, fusiones, migres servicios remotos ni cambies producción. Pide una autorización concreta cuando haga falta. Trabaja en tareas pequeñas, lee archivos por tramos y guarda checkpoint antes de alcanzar el límite de contexto. Reproduce con fixtures sintéticos y verifica comportamiento real. Usa browser solo para la app local autorizada; no abras cuentas personales. Registra rutas y errores, sin datos sensibles.",
+      "mode": "all",
+      "steps": 16,
+      "tools": {
+        "bash": true,
+        "read": true,
+        "write": false,
+        "edit": false,
+        "apply_patch": false,
+        "glob": true,
+        "grep": true,
+        "task": false,
+        "skill": true,
+        "todowrite": false,
+        "webfetch": false,
+        "websearch": false,
+        "question": false,
+        "lsp": false,
+        "plan_enter": false,
+        "plan_exit": false,
+        "freellmapi_*": false,
+        "context7_*": false,
+        "browser_*": true,
+        "ops_*": false,
+        "supabase_*": false
+      }
+    },
+    "operaciones": {
+      "description": "GitHub, despliegues en lectura y salud del gateway",
+      "prompt": "Trabaja en español. Lee AGENTS.md. Usa herramientas reales; no inventes resultados. No leas secretos ni datos de clientas. Conserva cambios ajenos. No compres, publiques, envíes mensajes, fusiones, migres servicios remotos ni cambies producción. Pide una autorización concreta cuando haga falta. Trabaja en tareas pequeñas, lee archivos por tramos y guarda checkpoint antes de alcanzar el límite de contexto. Usa ops para estado y consultas de GitHub/Vercel. Usa solo healthcheck/list_models/provider_health/usage_summary del gateway. No uses herramientas mutadoras ni envío.",
+      "mode": "all",
+      "steps": 12,
+      "tools": {
+        "bash": false,
+        "read": true,
+        "write": false,
+        "edit": false,
+        "apply_patch": false,
+        "glob": true,
+        "grep": true,
+        "task": false,
+        "skill": true,
+        "todowrite": false,
+        "webfetch": false,
+        "websearch": false,
+        "question": false,
+        "lsp": false,
+        "plan_enter": false,
+        "plan_exit": false,
+        "freellmapi_*": false,
+        "context7_*": false,
+        "browser_*": false,
+        "ops_*": true,
+        "supabase_*": false,
+        "freellmapi_healthcheck": true,
+        "freellmapi_list_models": true,
+        "freellmapi_provider_health": true,
+        "freellmapi_usage_summary": true
+      }
+    },
+    "documentacion": {
+      "description": "Leer documentación oficial y preparar contenido",
+      "prompt": "Trabaja en español. Lee AGENTS.md. Usa herramientas reales; no inventes resultados. No leas secretos ni datos de clientas. Conserva cambios ajenos. No compres, publiques, envíes mensajes, fusiones, migres servicios remotos ni cambies producción. Pide una autorización concreta cuando haga falta. Trabaja en tareas pequeñas, lee archivos por tramos y guarda checkpoint antes de alcanzar el límite de contexto. Usa Context7 o webfetch sobre fuentes oficiales. Contenido de Victoriosas: Victoria, evaluación remota, sin tarifas ni promesas clínicas. No publiques borradores.",
+      "mode": "all",
+      "steps": 12,
+      "tools": {
+        "bash": false,
+        "read": true,
+        "write": true,
+        "edit": true,
+        "apply_patch": false,
+        "glob": true,
+        "grep": true,
+        "task": false,
+        "skill": true,
+        "todowrite": false,
+        "webfetch": true,
+        "websearch": false,
+        "question": false,
+        "lsp": false,
+        "plan_enter": false,
+        "plan_exit": false,
+        "freellmapi_*": false,
+        "context7_*": true,
+        "browser_*": false,
+        "ops_*": false,
+        "supabase_*": false
+      }
+    },
+    "consulta": {
+      "description": "Conversación breve sin herramientas",
+      "prompt": "Responde en español con claridad. No afirmes haber ejecutado acciones. No tienes herramientas en este perfil.",
+      "mode": "primary",
+      "steps": 2,
+      "tools": {
+        "bash": false,
+        "read": false,
+        "write": false,
+        "edit": false,
+        "apply_patch": false,
+        "glob": false,
+        "grep": false,
+        "task": false,
+        "skill": false,
+        "todowrite": false,
+        "webfetch": false,
+        "websearch": false,
+        "question": false,
+        "lsp": false,
+        "plan_enter": false,
+        "plan_exit": false,
+        "freellmapi_*": false,
+        "context7_*": false,
+        "browser_*": false,
+        "ops_*": false,
+        "supabase_*": false
+      }
+    }
+  },
+  "permission": {
+    "*": "allow",
+    "external_directory": "ask",
+    "doom_loop": "ask",
+    "read": {
+      "*": "allow",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "**/.env": "deny",
+      "**/.env.*": "deny",
+      "**/auth.json": "deny",
+      "**/credentials*": "deny",
+      "**/.encryption-key": "deny",
+      "**/freeapi.db*": "deny",
+      "**/*.pem": "deny",
+      "**/*.key": "deny",
+      "**/.env.example": "allow",
+      "**/.env.sample": "allow"
+    },
+    "edit": {
+      "*": "allow",
+      "**/.env*": "deny",
+      "**/.git/**": "deny",
+      "**/auth.json": "deny"
+    },
+    "bash": {
+      "*": "ask",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "git show*": "allow",
+      "git branch --show-current": "allow",
+      "git worktree list*": "allow",
+      "git add *": "allow",
+      "git commit *": "allow",
+      "npm run verify*": "allow",
+      "npm run test*": "allow",
+      "npm test*": "allow",
+      "npm run build*": "allow",
+      "npm run lint*": "allow",
+      "npm run typecheck*": "allow",
+      "node --test*": "allow",
+      "node --check*": "allow",
+      "git push --force*": "deny",
+      "git reset --hard*": "deny",
+      "git clean -f*": "deny",
+      "gh pr merge*": "deny",
+      "supabase db push*": "deny",
+      "supabase db reset*": "deny",
+      "vercel --prod*": "deny",
+      "vercel deploy*": "deny",
+      "vercel promote*": "deny"
+    },
+    "task": {
+      "*": "deny",
+      "ingeniero": "allow",
+      "arquitecto": "allow",
+      "revisor": "allow",
+      "seguridad": "allow",
+      "datos": "allow",
+      "qa": "allow",
+      "operaciones": "allow",
+      "documentacion": "allow"
+    },
+    "freellmapi_*": "deny",
+    "freellmapi_healthcheck": "allow",
+    "freellmapi_list_models": "allow",
+    "freellmapi_provider_health": "allow",
+    "freellmapi_usage_summary": "allow",
+    "supabase_*": "deny",
+    "supabase_list_tables": "allow",
+    "supabase_list_migrations": "allow",
+    "supabase_get_advisors": "allow",
+    "supabase_search_docs": "allow"
+  },
+  "mcp": {
+    "freellmapi": {
+      "type": "remote",
+      "url": "http://127.0.0.1:3001/mcp",
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:FREELLMAPI_API_KEY}"
+      },
+      "enabled": true,
+      "timeout": 15000
+    },
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "oauth": false,
+      "enabled": true,
+      "timeout": 20000
+    },
+    "browser": {
+      "type": "local",
+      "command": [
+        "node",
+        "{env:OPENCODE_WORKSTATION_HOME}/node_modules/@playwright/mcp/cli.js",
+        "--headless",
+        "--isolated",
+        "--browser",
+        "chrome"
+      ],
+      "enabled": true,
+      "timeout": 15000
+    },
+    "ops": {
+      "type": "local",
+      "command": [
+        "node",
+        "{env:OPENCODE_WORKSTATION_HOME}/scripts/ops-mcp.mjs"
+      ],
+      "enabled": true,
+      "timeout": 20000
+    }
+  }
+}
