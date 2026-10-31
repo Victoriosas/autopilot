@@ -81,3 +81,18 @@
 /* QA 3: anular el limite de 480px y el margen heredados de la foto movil. */
 .beauty-noir .beauty-hero-art{margin:0!important}
 .beauty-noir .beauty-hero-image{max-height:none}
+
+/* Direct access to the existing treatment directory, using the noir tokens. */
+.beauty-shortcut-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-block:30px}
+.beauty-shortcut-groups>section{padding:28px;border:1px solid var(--line);border-radius:18px;background:var(--wash)}
+.beauty-shortcut-groups ul{list-style:none;padding:0;margin:18px 0 24px}
+.beauty-shortcut-groups li+li{border-top:1px solid var(--line)}
+.beauty-shortcut-groups li a{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:48px;padding-block:12px;text-decoration:none;color:var(--ink)}
+.beauty-shortcut-groups a:hover{text-decoration:underline;text-underline-offset:5px}
+.beauty-service-shortcuts a:focus-visible,.beauty-directory-search :focus-visible{outline:2px solid var(--gold);outline-offset:5px}
+.beauty-directory-search{max-width:640px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-block:28px}
+.beauty-directory-search label{width:100%;font-weight:600}
+.beauty-directory-search input{flex:1;min-width:160px;width:100%;border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--wash);color:var(--ink);font:inherit}
+.beauty-directory-search p{width:100%;margin:0}
+.beauty-directory-search button{min-height:44px}
+@media(max-width:680px){.beauty-shortcut-groups{grid-template-columns:1fr}.beauty-shortcut-groups>section{padding:22px}}

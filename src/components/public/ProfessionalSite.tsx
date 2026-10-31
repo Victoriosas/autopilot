@@ -5,6 +5,7 @@ import './noir.css';
 import { ConsultationForm } from './ConsultationForm';
 import { EditorialPage } from './EditorialPage';
 import { ContactLink, contactEmail } from './ContactLink';
+import { ServiceShortcuts } from './ServiceShortcuts';
 import { ServiceCatalog } from './ServiceCatalog';
 import { PublicNavigation } from './PublicNavigation';
 import { ServicesDirectory } from './ServicesDirectory';
@@ -60,6 +61,7 @@ function Home() {
       <div className="beauty-start-help"><div><h3>¿Todavía no sabés qué elegir?</h3><p>Podemos empezar por una conversación, a tu ritmo.</p></div><div className="beauty-contact-options"><ContactLink interest="orientacion" className="beauty-button beauty-button-outline" icon={arrow}>Quiero orientación</ContactLink><a href="/consultanos?canal=email#orientacion" className="beauty-text-link">Orientación por email <img className="beauty-icon" src={arrow} alt="" width="17" height="17" /></a></div></div>
       <p className="beauty-small beauty-start-note">Podés consultar por WhatsApp o email. Los enlaces preparan un mensaje para que lo revises y decidas si enviarlo; no confirman una reserva. Tarifas, modalidad, zona y disponibilidad se acuerdan personalmente antes de confirmar.</p>
     </div></section>
+    <ServiceShortcuts />
     {giftOpen && <GiftVoucherModal onClose={() => setGiftOpen(false)} />}
     <section id="nosotras" className="beauty-wrap beauty-section beauty-split">
       <figure className="beauty-essence-image"><img src={asset + '98809.png'} alt="Toallas y cuenco en un espacio de calma, imagen evocadora" width="544" height="520" loading="lazy" /><figcaption>Menos prisa. Más presencia.</figcaption></figure>

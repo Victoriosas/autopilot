@@ -8,7 +8,11 @@ import { serviceGroups } from '../components/public/serviceDirectory';
 const names = serviceGroups.flatMap(group => group.services);
 function destinations() {
   const html = renderToStaticMarkup(React.createElement(ServicesDirectory));
-  assert.doesNotMatch(html, /<form|<input|<textarea/);
+  assert.doesNotMatch(html, /<form|<textarea/);
+  const inputs = html.match(/<input\b[^>]*>/g) || [];
+  assert.equal(inputs.length, 1);
+  assert.match(inputs[0], /type="search"/);
+  assert.match(inputs[0], /id="service-filter"/);
   return [...html.matchAll(/href="([^"]+)"/g)].map(match =>
     new URL(match[1].replace(/&amp;/g, '&'), 'https://victoriosas.online'));
 }
