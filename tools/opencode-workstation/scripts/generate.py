@@ -44,7 +44,7 @@ permissions = {
 config = {
  '$schema':'https://opencode.ai/config.json', 'model':'openai/gpt-6.1-sol',
  'small_model':'openai/gpt-5.4-mini','default_agent':'ingeniero',
- 'enabled_providers':['openai','freellmapi'],
+ 'enabled_providers':['openai','freellmapi','openrouter','opencode'],
  'share':'disabled','autoupdate':'notify','logLevel':'WARN','snapshot':True,
  'compaction': {'auto':True,'prune':True,'reserved':1536},
  'watcher':{'ignore':['**/node_modules/**','**/.git/**','**/dist/**','**/.audit/**','**/output/**','**/coverage/**']},
