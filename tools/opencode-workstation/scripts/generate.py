@@ -6,9 +6,9 @@ root = Path(__file__).resolve().parents[1]
 def write(name, text):
     p = root / name
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(text, encoding='utf-8')
+    p.write_text(text, encoding='utf-8', newline='\n')
 
-base_tools = dict.fromkeys(['bash','read','write','edit','apply_patch','glob','grep','task','skill','todowrite','webfetch','websearch','question','lsp','plan_enter','plan_exit','freellmapi_*','context7_*','browser_*','ops_*','supabase_*'], False)
+base_tools = dict.fromkeys(['bash','read','write','edit','apply_patch','glob','grep','task','skill','todowrite','webfetch','websearch','question','lsp','plan_enter','plan_exit','freellmapi_*','context7_*','browser_*','ops_*','supabase_*','resend_*','camelrun_*'], False)
 def agent(description, prompt, enabled, mode='subagent', steps=12):
     return dict(description=description, prompt=prompt, mode=mode, steps=steps, tools={**base_tools, **dict.fromkeys(enabled, True)})
 
@@ -32,6 +32,7 @@ for name in ['arquitecto','revisor','seguridad','datos']:
     agents[name]['permission']={'edit':'deny','bash':'deny','task':'deny','external_directory':'deny'}
 permissions = {
  '*':'allow',
+ 'resend_*':'deny','camelrun_*':'deny',
  'external_directory':'ask', 'doom_loop':'ask',
  'read': {'*':'allow','*.env':'deny','*.env.*':'deny','**/.env':'deny','**/.env.*':'deny','**/auth.json':'deny','**/credentials*':'deny','**/.encryption-key':'deny','**/freeapi.db*':'deny','**/*.pem':'deny','**/*.key':'deny','**/.env.example':'allow','**/.env.sample':'allow'},
  'edit': {'*':'allow','**/.env*':'deny','**/.git/**':'deny','**/auth.json':'deny'},
@@ -54,6 +55,8 @@ config = {
    'models':{id:{'name':name,'tool_call':True,'limit':{'context':8192,'output':384}} for id,name in [('qwen3.8-27b','Qwen 3.8 27B - Groq'),('gpt-oss-20b','GPT OSS 20B - Groq'),('gpt-oss-120b','GPT OSS 120B - Groq')]} }},
  'agent':agents,'permission':permissions,
  'mcp': {
+  'resend':{'type':'remote','url':'https://mcp.resend.com/mcp','enabled':False,'timeout':20000},
+  'camelrun':{'type':'remote','url':'https://run.camelai.com/mcp','enabled':False,'timeout':20000},
   'freellmapi':{'type':'remote','url':'http://127.0.0.1:3001/mcp','oauth':False,'headers':{'Authorization':'Bearer {env:FREELLMAPI_API_KEY}'},'enabled':True,'timeout':15000},
   'context7':{'type':'remote','url':'https://mcp.context7.com/mcp','oauth':False,'enabled':True,'timeout':20000},
   'browser':{'type':'local','command':['node','{env:OPENCODE_WORKSTATION_HOME}/node_modules/@playwright/mcp/cli.js','--headless','--isolated','--browser','chrome'],'enabled':True,'timeout':15000},
@@ -92,6 +95,7 @@ for name,(desc,body) in skills.items():
     write(f'skills/{name}/SKILL.md',f'---\nname: {name}\ndescription: {desc}\n---\n\n{body}\n')
 
 commands = {
+ 'competencia':('Investigar referentes con contexto acotado','documentacion','Revisa primero la marca y el flujo actual. Investiga hasta tres sitios comparables usando fuentes oficiales. Registra URL, fecha, patron observado y limite de evidencia; no llames exitoso a un negocio sin datos. Propone una mejora verificable sin copiar textos ni imagenes ajenos. No publique contenido ni envie datos privados. Maximo tres paginas y una propuesta por ciclo. $ARGUMENTS'),
  'ciclo':('Ejecutar un ciclo completo','director','Carga ciclo-autopilot. Revisa el checkpoint y ejecuta el siguiente objetivo autorizado con pruebas y evidencia. Objetivo: $ARGUMENTS'),
  'auditar':('Revisar cambios antes de entregar','revisor','Carga calidad-y-seguridad. Revisa el diff actual y los archivos relevantes. Informa fallos reproducibles y validación pendiente. $ARGUMENTS'),
  'estado':('Ver conexiones y pendientes','operaciones','Carga conexiones-y-cuotas. Consulta ops/status y resume conexiones verificadas y pendientes, sin secretos. $ARGUMENTS'),
