@@ -5,7 +5,9 @@
   "default_agent": "ingeniero",
   "enabled_providers": [
     "openai",
-    "freellmapi"
+    "freellmapi",
+    "openrouter",
+    "opencode"
   ],
   "share": "disabled",
   "autoupdate": "notify",

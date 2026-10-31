@@ -51,3 +51,16 @@ Documentación oficial consultada: https://opencode.ai/docs/config/ , https://op
 ### Inventario camelRun bajo demanda
 
 OAuth verificado, sin copiar API keys. Para inventario desde el repositorio Victoriosas: `autopilot-code --project C:\autopilot-worktrees\opencode-workstation-20261031 --agent operaciones --camelrun`. Solo se permite `camelrun_list_agents`; las demás herramientas siguen bloqueadas. En sesiones normales no se conecta este MCP. Otros proyectos/roles se rechazan. Resend autenticado: --resend activa solo resend_list-domains bajo las mismas restricciones. El equipo devuelve0dominios; conciliar la cuenta antes de configurar correo. Ver CONEXIONES_PENDIENTES.md.
+
+### GLM-5.3 en OpenCode (31/10/2026)
+
+Los perfiles conservan el modelo por defecto existente, pero ahora incluyen en `enabled_providers` tanto `openrouter` como `opencode`, sin cambiar, copiar ni almacenar credenciales. OpenCode detecta las credenciales existentes en su almacén local privado, nunca en Git.
+
+- Catálogo: `opencode models openrouter` y `opencode models opencode`.
+- Modelo completo por OpenRouter: `opencode run --agent consulta -m openrouter/z-ai/glm-5.3 "Hola"`. Requiere saldo o autorización de gastos; no usar para validación gratuita.
+- Modelo completo en OpenCode Zen: `opencode run --agent consulta -m opencode/glm-5.3 "Hola"`. También está sujeto a tarifas y límites de cuenta.
+- Variante gratuita, distinta del modelo completo: `opencode run --agent consulta -m opencode/glm-5.3-flash-free "Respondé PONG"`. La gratuidad y las cuotas pueden cambiar y deben comprobarse en el momento.
+- La inclusión en catálogo demuestra que se puede seleccionar un identificador, no que una cuenta permita inferencia. Validar respuesta real antes de registrar como operativo.
+- Si la cuenta no dispone de saldo, se conserva como opción lista para conectar; no recargar ni comprar créditos desde el instalador.
+
+El instalador copia `profiles/global.json` al perfil global: editar el generador `scripts/generate.py` y regenerar los perfiles para que la habilitación sobreviva a futuras reinstalaciones. Se debe mantener `openai/gpt-6.1-sol` como predeterminado mientras no se acuerde cambiarlo. Fuentes: https://opencode.ai/docs/providers/ , https://opencode.ai/docs/models/ , https://openrouter.ai/z-ai .
