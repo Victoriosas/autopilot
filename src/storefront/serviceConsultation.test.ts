@@ -8,7 +8,9 @@ import { serviceGroups } from '../components/public/serviceDirectory';
 const names = serviceGroups.flatMap(group => group.services);
 function destinations() {
   const html = renderToStaticMarkup(React.createElement(ServicesDirectory));
-  assert.doesNotMatch(html, /<form|<input|<textarea/);
+  // Se permite exclusivamente la búsqueda local, sin formularios de captura ni campos personales.
+  assert.doesNotMatch(html, /<form\b|<textarea\b|<input\b(?![^>]*\btype="search")/i);
+  assert.match(html, /<input\b[^>]*\btype="search"/i);
   return [...html.matchAll(/href="([^"]+)"/g)].map(match =>
     new URL(match[1].replace(/&amp;/g, '&'), 'https://victoriosas.online'));
 }

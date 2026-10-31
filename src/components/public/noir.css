@@ -118,5 +118,12 @@
 .beauty-page-shell .beauty-hero{padding-top:55px;padding-bottom:40px}
 @media(max-width:680px){.beauty-page-shell .beauty-hero{padding-top:40px;padding-bottom:40px}}
 
+/* Filtrado local de tratamientos, integrado en la navegación por páginas. */
+.beauty-page-shell .beauty-directory-search{max-width:640px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-block:28px}
+.beauty-page-shell .beauty-directory-search label{width:100%;font-weight:600}
+.beauty-page-shell .beauty-directory-search input{flex:1;min-width:160px;width:100%;border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--wash);color:var(--ink);font:inherit}
+.beauty-page-shell .beauty-directory-search p{width:100%;margin:0}
+.beauty-page-shell .beauty-directory-search button{min-height:44px}
+.beauty-page-shell .beauty-directory-search :focus-visible{outline:2px solid var(--gold);outline-offset:5px}
 .professional-site.beauty-page-shell .beauty-header{padding:18px 5%;min-height:96px;align-items:center}
 @media(max-width:680px){.professional-site.beauty-page-shell .beauty-header{padding:14px 5%;min-height:76px}.beauty-page-shell .beauty-hero{min-height:calc(100svh - 160px)}}
