@@ -1,6 +1,6 @@
 ---
-description: Aviso de funci?n retirada
+description: Aviso de función retirada
 agent: arquitecto
 ---
 
-El sourcing y dropshipping est?n retirados de Victoriosas. No importes ni publiques productos. Lee las directivas vigentes.
+El sourcing y dropshipping están retirados de Victoriosas. No importes ni publiques productos. Lee las directivas vigentes.
