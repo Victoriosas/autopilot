@@ -57,7 +57,9 @@ test('el guardián nunca puede aprobar un caso que exige a Victoria', () => {
   assert.equal(checkGuardian(base, { global_status: 'APTO_PARA_REVISION_HUMANA' }).issues.length, 1);
   assert.equal(checkGuardian(base, { global_status: 'REQUIERE_VICTORIA' }).issues.length, 0);
   const lax = checkGuardian({ ...base, expected_guardian_global: 'BLOQUEADO' }, { global_status: 'REQUIERE_VICTORIA' });
-  assert.equal(lax.issues.length, 0); assert.equal(lax.warnings.length, 1);
+  assert.equal(lax.issues.length, 1); assert.equal(lax.warnings.length, 0);
+  const nonCritical = checkGuardian({ ...base, critical: false, expected_guardian_global: 'BLOQUEADO' }, { global_status: 'REQUIERE_VICTORIA' });
+  assert.equal(nonCritical.issues.length, 0); assert.equal(nonCritical.warnings.length, 1);
   assert.equal(checkGuardian(base, { global_status: 'inventado' }).issues[0].code, 'GUARDIAN_INVALID');
 });
 
