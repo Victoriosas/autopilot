@@ -1,18 +1,13 @@
 # Conexiones OAuth · 31/10/2026
 
-## camelRun
-Autenticación OAuth confirmada por OpenCode y conexión MCP verificada con el cliente nativo. Inventario mediante camelrun_list_agents: cuatro agentes. No se llamó run_agent, no se crearon agentes, claves, tareas ni horarios y no se ejecutó inferencia en camelRun.
+camelRun y Resend autenticados en OpenCode. Las concesiones OAuth del proveedor pueden ser más amplias que los permisos locales; los bloqueos de OpenCode no reducen el alcance del token. No se copiaron secretos al chat ni a Git.
 
-Disponible bajo demanda: autopilot-code --project C:\autopilot-worktrees\opencode-workstation-20261031 --agent operaciones --camelrun . El flag solo acepta el repositorio Victoriosas/autopilot y el perfil operaciones; otros proyectos/roles fallan antes de activar. Se habilita únicamente camelrun_list_agents; el resto permanece denegado. No se carga el catálogo remoto en sesiones normales, para ahorrar tokens. La concesión OAuth del proveedor es más amplia que estos permisos locales; los bloqueos locales no reducen el alcance del token en el proveedor.
+Disponibles bajo demanda desde el repositorio Victoriosas/autopilot con el agente operaciones: --camelrun habilita únicamente camelrun_list_agents; --resend habilita únicamente resend_list-domains. Cualquier otro repositorio/rol se rechaza. El resto de herramientas de cada proveedor permanece denegado; sin envío, creación, borrado, programación o ejecución de agentes. Configuración por defecto mantiene ambos servidores apagados para ahorrar contexto.
 
-## Resend
-Continúa desactivado y sin autenticación local confirmada. El panel OAuth ofrece Full access (leer, crear y eliminar recursos) o Sending access; no ofrece solo lectura. El control automático de Browser rechazó observar/finalizar el callback de Full access porque consideró ese alcance superior a la autorización de uso en lectura. No se reintentó por otra superficie ni se copió una clave. Hace falta autorización explícita de Full access del proveedor antes de retomar. Cualquier autorización posterior debe conservar envíos y mutaciones bloqueados en OpenCode.
+Prueba camelRun nativa exit0: inventario4. Prueba Resend nativa exit0: dominios0. El equipo/cuenta autorizado en el navegador no muestra el dominio verificado que reportaba el conector ChatGPT anterior; se requiere conciliar cuenta/equipo antes de configurar correo. No crear dominio duplicado ni modificar DNS para ocultar esta diferencia. Sin prueba de entregabilidad.
 
-Dominio victoriosas.online verificado; el panel de claves no mostraba API keys. No se enviaron mensajes ni crearon automatizaciones. El soporte local ops para RESEND_API_KEY se conserva sin credencial nueva.
+Resend inicialmente bloqueado por auto-review al no existir autorización explícita de Full access; el propietario la otorgó después. El flujo OAuth terminó correctamente según cliente nativo. Primer ensayo usó nombre de herramienta con guion bajo y no encontró herramienta; se corrigió al nombre real del catálogo (list-domains) y se repitió. Los archivos resend-smoke.json y camelrun-smoke.json registran el resultado real.
 
-## Operación
-Los cuatro agentes camelRun estaban dormidos y sin herramientas conectadas. Balance observado $4.59: no se supone inferencia gratuita. El comando /competencia mantiene máximo tres fuentes y una propuesta por ciclo. Context7, navegador aislado y ops existentes siguen separados; no se exportan sesiones de ChatGPT.
+npm test incluye pruebas de alcance, permisos y orden deny/allow. Instalación actualizada con backup. No se usaron modelos de camelRun ni se consumió su saldo; el ensayo de OpenCode usa la conexión nativa ya configurada. No se enviaron correos, crearon API keys, automatizaciones o agentes.
 
-Pruebas: npm test incluye control de repositorio/rol, permisos y orden deny/allow; instalación con backup. Evidencia del ensayo nativo en camelrun-smoke.json. No confundir metadatos de conexión con ejecución de agentes o prueba de correo.
-
-Fuentes oficiales: https://camelai.com/docs/camelrun/authentication y https://resend.com/changelog/remote-mcp-server .
+Prompt de rediseño: docs/OPENCODE_REDESIGN_BRIEF.md, navegación real por páginas en rama independiente. /competencia conserva máximo tres fuentes y una propuesta por ciclo.

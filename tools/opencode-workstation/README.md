@@ -50,4 +50,4 @@ Documentación oficial consultada: https://opencode.ai/docs/config/ , https://op
 
 ### Inventario camelRun bajo demanda
 
-OAuth verificado, sin copiar API keys. Para inventario desde el repositorio Victoriosas: `autopilot-code --project C:\autopilot-worktrees\opencode-workstation-20261031 --agent operaciones --camelrun`. Solo se permite `camelrun_list_agents`; las demás herramientas siguen bloqueadas. En sesiones normales no se conecta este MCP. Otros proyectos/roles se rechazan. Resend permanece desactivado: ver CONEXIONES_PENDIENTES.md.
+OAuth verificado, sin copiar API keys. Para inventario desde el repositorio Victoriosas: `autopilot-code --project C:\autopilot-worktrees\opencode-workstation-20261031 --agent operaciones --camelrun`. Solo se permite `camelrun_list_agents`; las demás herramientas siguen bloqueadas. En sesiones normales no se conecta este MCP. Otros proyectos/roles se rechazan. Resend autenticado: --resend activa solo resend_list-domains bajo las mismas restricciones. El equipo devuelve0dominios; conciliar la cuenta antes de configurar correo. Ver CONEXIONES_PENDIENTES.md.
