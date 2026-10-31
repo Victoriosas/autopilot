@@ -4,11 +4,13 @@ import './professional.css';
 import './discovery.css';
 import './noir.css';
 import './depth.css';
+import './experience.css';
 import { ConsultationForm } from './ConsultationForm';
 import { EditorialPage } from './EditorialPage';
 import { ContactLink, contactEmail } from './ContactLink';
 import { PublicNavigation } from './PublicNavigation';
 import { TreatmentsPage } from './TreatmentsPage';
+import { TechnologyPage } from './TechnologyPage';
 import { GiftVoucherModal } from './GiftVoucherModal';
 import { PrivacyPage } from './PrivacyPage';
 
@@ -36,7 +38,7 @@ export function Home() {
     <section className="beauty-hero beauty-wrap">
       <div className="beauty-welcome"><span className="beauty-tech-kicker">Precisión estética · cuidado personal</span><p className="beauty-eyebrow">Tu bienestar, a tu manera</p><h1>Para sentirte<br />segura y<br /><em>victoriosa.</em></h1>
         <p className="beauty-intro">Estética facial, corporal y masajes. Un espacio de cuidado para escucharte, acompañarte y empezar por lo que necesitas hoy.</p>
-        <div className="beauty-home-actions"><a className="beauty-button" href="https://wa.me/59897045305" target="_blank" rel="noopener noreferrer">Conversemos</a><a className="beauty-button beauty-button-outline" href="/nuestros-servicios">Explorar tratamientos</a></div><p className="beauty-small">Empezamos con una evaluación inicial remota.</p>
+        <div className="beauty-home-actions"><a className="beauty-button" href="https://wa.me/59897045305" target="_blank" rel="noopener noreferrer">Conversemos</a><a className="beauty-button beauty-button-outline" href="/nuestros-servicios">Explorar tratamientos</a></div><p className="beauty-small">Empezamos con una evaluación inicial remota. <a className="beauty-home-technology-link" href="/tecnologia">Conocé nuestra tecnología ↗</a></p>
       </div>
       <figure className="beauty-hero-art"><img className="beauty-hero-image" src={asset + 'eafbd.png'} alt="Imagen evocadora de un momento de cuidado facial" width="600" height="648" fetchPriority="high" />
         <figcaption>Un momento para ti.</figcaption>
@@ -51,7 +53,7 @@ export function Home() {
 }
 export function Victoria() {
   return <section className="beauty-wrap beauty-section beauty-page-copy">
-      <p className="beauty-eyebrow">La esencia de Victoriosas</p><h1>Detrás de cada cuidado,<br />una conversación.</h1><p>Soy Victoria, responsable de Victoriosas, en Uruguay. Te acompaño personalmente desde el primer mensaje, para entender qué buscas y orientarte con claridad.</p><p>Cada persona llega con una historia distinta. Por eso, antes de definir los próximos pasos, hay tiempo para escucharte, resolver tus dudas y respetar tus decisiones.</p><ul className="beauty-values"><li>Escucha</li><li>Respeto</li><li>Confidencialidad</li></ul><ContactLink className="beauty-text-link" icon={arrow}>Quiero conversar con Victoria</ContactLink><p className="beauty-signature">Victoria</p>
+      <p className="beauty-eyebrow">La esencia de Victoriosas</p><h1>Detrás de cada cuidado,<br />una conversación.</h1><p>Soy Victoria, responsable de Victoriosas, en Uruguay. Te acompaño personalmente desde el primer mensaje, para entender qué buscas y orientarte con claridad.</p><p>Cada persona llega con una historia distinta. Por eso, antes de definir los próximos pasos, hay tiempo para escucharte, resolver tus dudas y respetar tus decisiones.</p><div className="beauty-victoria-process"><span className="beauty-eyebrow">Nuestro recorrido</span><ol><li>Primer contacto y escucha</li><li>Evaluación inicial remota</li><li>Orientación y coordinación personal</li></ol><a className="beauty-text-link" href="/tecnologia">Conocé el equipamiento disponible ↗</a></div><ul className="beauty-values"><li>Escucha</li><li>Respeto</li><li>Confidencialidad</li></ul><ContactLink className="beauty-text-link" icon={arrow}>Quiero conversar con Victoria</ContactLink><p className="beauty-signature">Victoria</p>
     </section>;
 }
 export function ComoEmpezar() {
@@ -82,6 +84,7 @@ export function ProfessionalSite() {
   React.useEffect(() => {
     if (path.startsWith('/de-mi-para-ti')) { document.getElementById('contenido')?.focus({preventScroll:true}); return; }
     if (path === '/victoria') document.title = 'Victoria · Victoriosas';
+    else if (path === '/tecnologia') document.title = 'Tecnología estética · Victoriosas';
     else document.title = (path === '/' ? 'Victoriosas · Estética profesional' : path === '/nuestros-servicios' || path === '/servicios' ? 'Tratamientos · Victoriosas' : path === '/consultanos' ? 'Consultanos · Victoriosas' : path === '/contacto' ? 'Cómo empezar · Victoriosas' : path === '/privacidad' ? 'Contacto y privacidad · Victoriosas' : 'De mí para ti · Victoriosas');
     const canonical = document.querySelector('link[rel=canonical]');
     canonical?.setAttribute('href', 'https://victoriosas.online' + path);
@@ -101,12 +104,12 @@ export function ProfessionalSite() {
   const editorial = path === '/de-mi-para-ti' || path.startsWith('/de-mi-para-ti/');
   const directory = path === '/nuestros-servicios' || path === '/servicios';
   const contact = path === '/consultanos';
-  const known = editorial || directory || contact || ['/', '/victoria', '/contacto', '/privacidad'].includes(path);
+  const known = editorial || directory || contact || ['/', '/victoria', '/tecnologia', '/contacto', '/privacidad'].includes(path);
   return <div onClick={navigate} className={'professional-site beauty-noir beauty-page-shell' + (path === '/' ? ' beauty-home' : '')}>
     <a className="beauty-skip" href="#contenido">Saltar al contenido</a>
     <header className="beauty-header beauty-wrap"><Brand /><PublicNavigation /><ContactLink>Conversemos</ContactLink></header>
     <main id="contenido" tabIndex={-1} key={location} className={editorial || contact ? 'beauty-editorial-main beauty-wrap' : undefined}>
-      {!known ? <section className="beauty-wrap beauty-section"><h1>No encontramos esta página.</h1><a href="/">Volver al inicio</a></section> : path === '/privacidad' ? <PrivacyPage /> : path === '/victoria' ? <Victoria /> : path === '/contacto' ? <ComoEmpezar /> : contact ? <Contacto /> : editorial ? <EditorialPage /> : directory ? <TreatmentsPage /> : <Home />}
+      {!known ? <section className="beauty-wrap beauty-section"><h1>No encontramos esta página.</h1><a href="/">Volver al inicio</a></section> : path === '/privacidad' ? <PrivacyPage /> : path === '/tecnologia' ? <TechnologyPage /> : path === '/victoria' ? <Victoria /> : path === '/contacto' ? <ComoEmpezar /> : contact ? <Contacto /> : editorial ? <EditorialPage /> : directory ? <TreatmentsPage /> : <Home />}
     </main>
     <footer className="beauty-compact-footer beauty-wrap"><span>Victoria · Atención personal · Uruguay</span><a href="/contacto">Cómo empezar</a><a href="/privacidad">Contacto y privacidad</a><a href={'mailto:' + contactEmail}>{contactEmail}</a></footer>
   </div>;
