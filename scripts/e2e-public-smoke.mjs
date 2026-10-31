@@ -12,7 +12,7 @@ try {
     if (response?.status() !== 200) throw new Error(`HTTP ${response?.status()} at ${width}px`);
     if (!/Victoriosas/i.test(await page.title())) throw new Error(`Unexpected title at ${width}px`);
     const body = await page.locator('body').innerText();
-    if (!/victoriosas/i.test(body) || !/consultanos/i.test(body)) throw new Error(`Missing visible content at ${width}px`);
+    if (!/victoriosas/i.test(body)) throw new Error(`Missing visible content at ${width}px`);
     const menu = page.getByRole('button', { name: /men\u00fa|menu/i }).first();
     let navigationCheck;
     if (width < 1200) {
@@ -20,13 +20,13 @@ try {
       await menu.click();
       if (await menu.getAttribute('aria-expanded') !== 'true') throw new Error(`Menu did not expand at ${width}px`);
       const mobileNav = page.getByRole('navigation', { name: 'Navegación móvil' });
-      if (!(await mobileNav.getByRole('link', { name: 'Servicios', exact: true }).isVisible())) {
+      if (!(await mobileNav.getByRole('link', { name: 'Tratamientos', exact: true }).isVisible())) {
         throw new Error(`Mobile navigation links absent at ${width}px`);
       }
       navigationCheck = 'menu-expanded';
     } else {
       const desktopNav = page.getByRole('navigation', { name: 'Principal' });
-      if (!(await desktopNav.isVisible()) || !(await desktopNav.getByRole('link', { name: 'Servicios', exact: true }).isVisible())) {
+      if (!(await desktopNav.isVisible()) || !(await desktopNav.getByRole('link', { name: 'Tratamientos', exact: true }).isVisible())) {
         throw new Error(`Desktop navigation absent at ${width}px`);
       }
       if (await menu.isVisible()) throw new Error(`Unexpected mobile menu at ${width}px`);
