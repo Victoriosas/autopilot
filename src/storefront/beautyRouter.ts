@@ -60,7 +60,7 @@ export function createBeautyRouter(deps:{store?:BeautyStore;auth?:RequestHandler
       if(origin!==allowed) return res.status(403).json({error:'BEAUTY_ORIGIN_INVALID'});
     }
     if(req.get('sec-fetch-site')==='cross-site') return res.status(403).json({error:'BEAUTY_ORIGIN_INVALID'});
-    if(Buffer.byteLength(JSON.stringify(req.body||{}))>4096) return res.status(413).json({error:'BEAUTY_INPUT_TOO_LARGE'});
+    if(new TextEncoder().encode(JSON.stringify(req.body||{})).byteLength>4096) return res.status(413).json({error:'BEAUTY_INPUT_TOO_LARGE'});
     let input:BeautyInput;
     try{input=normalizeBeautyRequest(req.body);}catch{return res.status(400).json({error:'BEAUTY_INPUT_INVALID'});}
     try{

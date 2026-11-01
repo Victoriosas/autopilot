@@ -9,3 +9,6 @@ coverage/
 supabase/.temp/
 
 output/consultation-agents-eval/
+
+# Reproducible temporary Supabase API bundle
+/output/supabase-api/

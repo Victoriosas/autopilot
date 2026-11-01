@@ -111,6 +111,6 @@ export function ProfessionalSite() {
     <main id="contenido" tabIndex={-1} key={location} className={editorial || contact ? 'beauty-editorial-main beauty-wrap' : undefined}>
       {!known ? <section className="beauty-wrap beauty-section"><h1>No encontramos esta página.</h1><a href="/">Volver al inicio</a></section> : path === '/privacidad' ? <PrivacyPage /> : path === '/tecnologia' ? <TechnologyPage /> : path === '/victoria' ? <Victoria /> : path === '/contacto' ? <ComoEmpezar /> : contact ? <Contacto /> : editorial ? <EditorialPage /> : directory ? <TreatmentsPage /> : <Home />}
     </main>
-    <footer className="beauty-compact-footer beauty-wrap"><span>Victoria · Atención personal · Uruguay</span><a href="/contacto">Cómo empezar</a><a href="/privacidad">Contacto y privacidad</a><a href={'mailto:' + contactEmail}>{contactEmail}</a></footer>
+    <footer className="beauty-compact-footer beauty-wrap"><span>Victoria · Atención personal · Uruguay</span><a href="/contacto">Cómo empezar</a><a href="/privacidad">Contacto y privacidad</a><a href="/consultanos?canal=email" aria-label="Consultar por correo usando el formulario">Consultanos por email</a></footer>
   </div>;
 }

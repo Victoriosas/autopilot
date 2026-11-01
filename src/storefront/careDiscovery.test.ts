@@ -41,14 +41,21 @@ test('gift proposals bound user text, preserve accents and cannot represent an i
   assert.match(message, /no es un voucher emitido/);
   assert.ok(giftMessage('a'.repeat(100), 'b'.repeat(300), 'Libre elección').length < 700);
 });
-test('both contact channels encode the complete proposal as text without adding URL parameters', () => {
+test('WhatsApp preserves gift text while email opens the form without personal data in the URL', () => {
   const context = giftMessage('Sofía & Ana', 'Pausa? #1 + cariño &bcc=extra', 'Libre elección');
   for (const channel of ['whatsapp', 'email'] as const) {
     const html = renderToStaticMarkup(React.createElement(ContactLink, { context, channel }));
     const href = html.match(/href="([^"]+)"/)![1].replaceAll('&amp;', '&');
-    const url = new URL(href);
-    assert.ok(url.searchParams.get(channel === 'email' ? 'body' : 'text')?.endsWith(context));
-    assert.deepEqual([...url.searchParams.keys()].sort(), channel === 'email' ? ['body', 'subject'] : ['text']);
+    const url = new URL(href, 'https://victoriosas.online');
+    if (channel === 'email') {
+      assert.equal(url.pathname, '/consultanos');
+      assert.equal(url.searchParams.get('canal'), 'email');
+      assert.doesNotMatch(href, /Sof%C3%ADa|bcc|cari%C3%B1o|Pausa/i);
+      assert.deepEqual([...url.searchParams.keys()], ['canal']);
+    } else {
+      assert.ok(url.searchParams.get('text')?.endsWith(context));
+      assert.deepEqual([...url.searchParams.keys()], ['text']);
+    }
   }
 });
 

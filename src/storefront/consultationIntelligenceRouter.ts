@@ -10,7 +10,7 @@ import { dispatchIntelligenceReply } from './consultationIntelligenceDispatch';
 export type IntelligenceRouterDependencies={enabled?:()=>boolean;store?:IntelligenceStore;provider?:()=>ConsultationModel|undefined;now?:()=>Date};
 /** Adds authenticated, explicit, durable shadow work; never changes the existing delivery path. */
 export function registerConsultationIntelligence(router:Router,auth:RequestHandler,store:ConsultationStore,allowedOrigin:()=>string,deps:IntelligenceRouterDependencies={}){
- const enabled=deps.enabled??(()=>process.env.CONSULTATION_INTELLIGENCE_ENABLED==='true');
+ const enabled=deps.enabled??(()=>process.env.CONSULTATION_INTELLIGENCE_ENABLED==='true' || (process.env.AUTOPILOT_RUNTIME==='supabase-edge' && process.env.CONSULTATION_PRIVACY_APPROVED==='true'));
  const persistence=deps.store??intelligenceStore;
  const guard:RequestHandler=(req,res,next)=>{
   res.set('Cache-Control','no-store');
