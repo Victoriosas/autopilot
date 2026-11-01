@@ -1,3 +1,16 @@
+# Conexión temporal Cloudflare → Supabase · 31/10/2026
+
+- Se prepara una API compartida en api-app.ts: Vercel conserva su adaptador y Supabase agrega un contenedor Express independiente. No se copia ninguna clave privilegiada a Cloudflare ni al cliente.
+- Puente Pages functions/api/[[path]].js: upstream fijo al proyecto jfjzpwlrhzqbcrvqxhzf, sesión Bearer preservada, cookies/IP de proxy eliminadas, no-store, timeout y fallo cerrado. No implementa autenticación paralela: conserva los guards originales.
+- Empaquetador scripts/build-supabase-api.mjs usa versiones exactas de package-lock.json; output reproducible excluido de Git. Health incorpora SHA compilado.
+- En Supabase se fuerza COMMERCE_ATOMIC_CHECKOUT_ENABLED=false y VERCEL=0. No habilita envíos, modelos, cron ni flags de consultas. Los proveedores ausentes siguen fallando cerrados.
+- Verificación local: npm run verify exit0, 390 pruebas: 389 aprobadas y una omitida; TypeScript y builds Node/Vercel correctos. Tres regresiones del puente aprobadas. No acredita pruebas PostgreSQL locales ni IA/proveedor real.
+- Base activa confirmada: 39 tablas públicas con RLS; tareas agregadas: 9 completed, 8 queued, 4 blocked. Dos Edge Functions históricas activas; cron consultation-retention-hourly activo. No se ejecutaron tareas ni se leyeron contenidos de consultas.
+- Auditoría Supabase: advertencias de protección contra contraseñas filtradas y permiso authenticated en beauty_purge_expired_requests; requieren revisión específica, no se alteraron permisos para resolver conectividad.
+- Cloudflare es temporal: conservar Vercel, Supabase y los guards; no cambiar DNS ni credenciales. Estado remoto/PR se debe verificar al retomar, no inferirlo de esta nota.
+
+---
+
 ﻿# Victoriosa â€” continuidad
 
 Actualizado 2026-10-10, America/Montevideo. Verificar Git antes de actuar; no asumir ejecuciÃ³n fuera de la automatizaciÃ³n configurada.

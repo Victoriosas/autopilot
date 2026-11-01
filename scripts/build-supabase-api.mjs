@@ -1,0 +1,10 @@
+import {build} from 'esbuild';
+import {execFileSync} from 'node:child_process';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
+const lock=JSON.parse(readFileSync(new URL('../package-lock.json',import.meta.url),'utf8'));
+const packages=['express','@supabase/supabase-js'];
+const versions=Object.fromEntries(packages.map(name=>[name,lock.packages['node_modules/'+name].version]));
+mkdirSync('output/supabase-api',{recursive:true});
+await build({entryPoints:['supabase/functions/autopilot-api/entry.ts'],bundle:true,platform:'node',format:'esm',packages:'external',define:{'process.env.AUTOPILOT_RUNTIME':JSON.stringify('supabase-edge'),'process.env.VERCEL':JSON.stringify('0'),'process.env.COMMERCE_ATOMIC_CHECKOUT_ENABLED':JSON.stringify('false'),'process.env.AUTOPILOT_BUILD_COMMIT':JSON.stringify(execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim())},outfile:'output/supabase-api/index.js',plugins:[{name:'pinned-deno-imports',setup(builder){builder.onResolve({filter:/^(express|@supabase\/supabase-js)$/},({path})=>({path:'npm:'+path+'@'+versions[path],external:true}));}}]});
+writeFileSync('output/supabase-api/deno.json',JSON.stringify({nodeModulesDir:'auto'}));
+console.log('Supabase API bundle generated with lockfile-pinned dependencies.');
