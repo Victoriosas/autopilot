@@ -1,3 +1,13 @@
+# Actualización vigente · 31/10/2026 · America/Montevideo
+
+Cloudflare es alojamiento TEMPORAL por indicación del propietario; se prevé volver a Vercel. Conservar vercel.json, servidor Node, integraciones y configuración existente. No eliminar el proyecto Vercel ni trasladar bases de datos.
+
+- Pages autopilot: https://autopilot-6z5.pages.dev; último despliegue consultado con etapa deploy success. Web estática comprobada en navegador; API/consultas/administración no migradas ni acreditadas.
+- Zona victoriosas.online pending; Cloudflare observa ns1.vercel-dns.com y ns2.vercel-dns.com. No se cambió DNS ni delegación.
+- Activada caché de build; desactivados previews automáticos y comentarios automáticos de Pages en PRs. Producción sigue main.
+- Esta rama propone public/_headers: protección básica, caché solo en assets con hash, no-store en rutas privadas/API y noindex del hostname temporal. No equivale a autenticación ni implementa API.
+- Retorno: resolver facturación Vercel, desplegar y verificar commit/API/autenticación, registrar DNS anterior y cambiar solo destino web con autorización específica. Preservar correo y Supabase.
+- Sin gastos, nuevas claves, migraciones remotas ni cambios en pagos. Notas históricas debajo no sustituyen este estado.
 # Conexión temporal Cloudflare → Supabase · 31/10/2026
 
 - Se prepara una API compartida en api-app.ts: Vercel conserva su adaptador y Supabase agrega un contenedor Express independiente. No se copia ninguna clave privilegiada a Cloudflare ni al cliente.
