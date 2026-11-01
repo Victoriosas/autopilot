@@ -155,7 +155,7 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; read
     if (!req.is('application/json')) return res.status(415).json({ error: 'CONSULTATION_INPUT_INVALID' });
     return next();
   }, json({ limit: '4kb', strict: true }), async (req, res) => {
-    if (Buffer.byteLength(JSON.stringify(req.body || {})) > 4096) return res.status(413).json({ error: 'CONSULTATION_INPUT_TOO_LARGE' });
+    if (new TextEncoder().encode(JSON.stringify(req.body || {})).byteLength > 4096) return res.status(413).json({ error: 'CONSULTATION_INPUT_TOO_LARGE' });
     let input;
     try { input = normalizeConsultationRequest(req.body); } catch { return res.status(400).json({ error: 'CONSULTATION_INPUT_INVALID' }); }
     try {
