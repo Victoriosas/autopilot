@@ -1,0 +1,534 @@
+/*
+ * Victoriosas | clinical dimension.
+ * Aesthetic-only layer: no commerce, booking or data-flow changes.
+ * Loaded after noir.css to preserve established page navigation.
+ */
+.professional-site.beauty-page-shell {
+  --clinical-gold: #e8c99a;
+  --clinical-glow: rgba(226, 188, 129, .24);
+  --clinical-border: rgba(226, 191, 145, .25);
+  --clinical-shadow: 0 26px 70px rgba(0, 0, 0, .52), 0 5px 18px rgba(0, 0, 0, .30);
+  background: radial-gradient(ellipse 85% 50% at 86% 0%, rgba(131, 99, 62, .16), transparent 70%), #100e0d;
+}
+.beauty-page-shell .beauty-header {
+  background: linear-gradient(115deg, rgba(22, 19, 17, .97), rgba(42, 34, 28, .95) 52%, rgba(17, 15, 14, .98)) !important;
+  border-bottom: 1px solid rgba(232, 201, 154, .23) !important;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, .38), inset 0 1px 0 rgba(255, 255, 255, .065);
+  -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(22px);
+}
+.beauty-page-shell .beauty-header::after {
+  content: "";
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 2%, rgba(235, 199, 140, .62) 49%, transparent 96%);
+  opacity: .62;
+  pointer-events: none;
+}
+.beauty-page-shell .beauty-header .beauty-brand {
+  position: relative;
+  flex: 0 0 auto;
+  color: #fff8ec;
+  text-shadow: 0 2px 18px rgba(224, 177, 109, .16);
+  transition: filter .22s ease;
+}
+.beauty-page-shell .beauty-header .beauty-brand:hover { filter: brightness(1.14); }
+.beauty-page-shell .beauty-header .beauty-brand span { letter-spacing: .21em; color: var(--clinical-gold); }
+.beauty-page-shell .beauty-header .beauty-desktop-nav {
+  border-color: rgba(230, 197, 151, .18);
+  background: linear-gradient(180deg, rgba(255,255,255,.095), rgba(255,255,255,.025));
+  box-shadow: 0 9px 24px rgba(0,0,0,.23), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -1px 0 rgba(0,0,0,.28);
+}
+.beauty-page-shell .beauty-desktop-nav > a {
+  position: relative;
+  transition: background .2s ease, color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.beauty-page-shell .beauty-desktop-nav > a:hover {
+  transform: translateY(-1px);
+  background: rgba(232, 201, 154, .13);
+  color: #fff;
+  text-decoration: none;
+}
+.beauty-page-shell .beauty-desktop-nav > a[aria-current=page],
+.beauty-page-shell .beauty-category-nav a[aria-current=page] {
+  color: #251b12;
+  border-color: #eed2a3;
+  background: linear-gradient(172deg, #fff5dc 0%, #e5c596 43%, #bd9060 100%);
+  box-shadow: 0 5px 17px rgba(236, 182, 100, .26), inset 0 1px 0 #fff8e7, inset 0 -2px 0 rgba(95, 57, 22, .24);
+}
+.beauty-page-shell .beauty-button,
+.beauty-page-shell .beauty-category-nav a,
+.beauty-page-shell .beauty-menu-trigger,
+.beauty-page-shell .beauty-dialog-close,
+.beauty-page-shell .beauty-service-filters button {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 233, 194, .80);
+  background: linear-gradient(165deg, #fff9ec 0%, #e7d0ae 39%, #bf9666 100%);
+  color: #23180f;
+  font-weight: 600;
+  letter-spacing: .015em;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .32), 0 5px 13px rgba(161, 101, 41, .15), inset 0 1px 0 rgba(255,255,255,.90), inset 0 -3px 0 rgba(101,64,29,.28);
+  text-decoration: none;
+  transform: translateY(0);
+  transition: transform .24s cubic-bezier(.2,.8,.2,1), box-shadow .24s ease, filter .24s ease, border-color .24s ease, background .24s ease;
+}
+.beauty-page-shell .beauty-button::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: -1;
+  inset: 1px 1px 55% 1px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,.43), transparent);
+}
+.beauty-page-shell .beauty-button:hover,
+.beauty-page-shell .beauty-category-nav a:hover,
+.beauty-page-shell .beauty-menu-trigger:hover,
+.beauty-page-shell .beauty-service-filters button:hover {
+  color: #1c120a;
+  transform: translateY(-3px);
+  filter: brightness(1.08);
+  box-shadow: 0 21px 38px rgba(0,0,0,.43), 0 7px 22px rgba(211,158,88,.22), inset 0 1px 0 #fff7e7, inset 0 -3px 0 rgba(94,58,26,.26);
+}
+.beauty-page-shell .beauty-button:active,
+.beauty-page-shell .beauty-category-nav a:active,
+.beauty-page-shell .beauty-menu-trigger:active {
+  transform: translateY(1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.28), inset 0 2px 4px rgba(62,37,17,.22);
+}
+.beauty-page-shell .beauty-button-outline,
+.beauty-page-shell .beauty-category-nav a,
+.beauty-page-shell .beauty-service-filters button:not([aria-pressed=true]) {
+  color: #f5e9d9;
+  border: 1px solid rgba(239, 211, 171, .34);
+  background: linear-gradient(145deg, rgba(77, 62, 49, .92), rgba(32, 28, 25, .92) 58%, rgba(25, 23, 22, .96));
+  box-shadow: 0 12px 26px rgba(0,0,0,.30), inset 0 1px 0 rgba(255, 241, 214, .16), inset 0 -2px 0 rgba(0,0,0,.25);
+}
+.beauty-page-shell .beauty-button-outline:hover,
+.beauty-page-shell .beauty-category-nav a:hover,
+.beauty-page-shell .beauty-service-filters button:not([aria-pressed=true]):hover {
+  color: #fff9ed;
+  background: linear-gradient(155deg, #584736, #28221c 70%);
+  border-color: rgba(238, 203, 148, .65);
+}
+.beauty-page-shell .beauty-button:focus-visible,
+.beauty-page-shell .beauty-category-nav a:focus-visible,
+.beauty-page-shell .beauty-desktop-nav a:focus-visible { outline: 3px solid #f3dba8; outline-offset: 4px; }
+
+/* Cinematic clinical welcome, kept within a single primary viewport. */
+.beauty-page-shell .beauty-hero {
+  position: relative;
+  min-height: min(820px, calc(100svh - 150px));
+  padding-top: clamp(48px, 6vw, 90px);
+  padding-bottom: clamp(65px, 8vw, 115px);
+  overflow: hidden;
+  background: #1c1815;
+}
+.beauty-page-shell .beauty-hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: -15%;
+  top: -35%;
+  width: min(900px, 82vw);
+  height: min(900px, 82vw);
+  border: 1px solid rgba(225, 195, 147, .27);
+  border-radius: 50%;
+  box-shadow: 0 0 0 70px rgba(225, 195, 147, .025), 0 0 0 150px rgba(225, 195, 147, .015);
+  pointer-events: none;
+}
+.beauty-page-shell .beauty-hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: radial-gradient(ellipse 32% 56% at 72% 60%, transparent, rgba(17,13,11,.16) 90%),
+              linear-gradient(0deg, rgba(11, 9, 8, .72), transparent 28%);
+  pointer-events: none;
+}
+.beauty-page-shell .beauty-hero-image {
+  object-position: 73% 47%;
+  filter: saturate(.75) contrast(1.05) brightness(.78);
+}
+.beauty-page-shell .beauty-hero-art:after {
+  background: linear-gradient(90deg, rgba(14, 11, 9, .96) 0%, rgba(19, 15, 13, .79) 36%, rgba(20, 15, 13, .30) 69%, rgba(13, 10, 9, .38) 100%);
+  box-shadow: inset 0 -160px 125px -110px rgba(8, 7, 6, .80);
+}
+.beauty-page-shell .beauty-welcome { position: relative; z-index: 2; max-width: 720px; }
+.beauty-page-shell .beauty-welcome h1 {
+  max-width: 680px;
+  font-size: clamp(58px, 6.5vw, 95px);
+  font-weight: 600;
+  letter-spacing: -.035em;
+  line-height: 1.01;
+  text-shadow: 0 10px 32px rgba(0,0,0,.45);
+}
+.beauty-page-shell .beauty-welcome h1 em {
+  font-style: italic;
+  color: #f4dab0;
+  text-shadow: 0 0 45px rgba(235,193,129,.24);
+}
+.beauty-page-shell .beauty-welcome .beauty-intro {
+  max-width: 525px;
+  color: #e8ded1;
+  font-size: clamp(15px, 1.3vw, 18px);
+  line-height: 1.75;
+  text-shadow: 0 3px 16px rgba(0,0,0,.38);
+}
+.beauty-page-shell .beauty-welcome > .beauty-small { color: #e0cfb8; letter-spacing: .02em; }
+.beauty-page-shell .beauty-home-actions { gap: 15px; align-items: center; margin: 27px 0 14px; }
+.beauty-page-shell .beauty-home-actions .beauty-button { min-width: 180px; }
+.beauty-tech-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  width: max-content;
+  max-width: 100%;
+  padding: 9px 15px;
+  color: #f3e1c6;
+  background: linear-gradient(90deg, rgba(218, 176, 107, .14), rgba(40, 33, 29, .50));
+  border: 1px solid rgba(245, 217, 169, .36);
+  border-radius: 999px;
+  font: 600 10px/1.5 Inter, sans-serif;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 10px 28px rgba(0,0,0,.22);
+}
+.beauty-tech-kicker::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: #e4c48d;
+  box-shadow: 0 0 0 4px rgba(223,188,131,.11), 0 0 15px rgba(230,196,138,.45);
+}
+.beauty-tech-panel {
+  position: absolute;
+  z-index: 3;
+  right: clamp(20px, 4.5vw, 72px);
+  bottom: clamp(20px, 4.2vw, 70px);
+  width: clamp(240px, 23vw, 316px);
+  padding: 22px 22px 21px;
+  overflow: hidden;
+  color: #f3e9da;
+  background: linear-gradient(145deg, rgba(58, 49, 43, .87), rgba(22, 20, 18, .88) 70%);
+  border: 1px solid rgba(244, 218, 176, .35);
+  border-radius: 20px;
+  box-shadow: 0 25px 65px rgba(0,0,0,.52), inset 0 1px 0 rgba(255,255,255,.22), inset 0 -1px 0 rgba(0,0,0,.4);
+  -webkit-backdrop-filter: blur(25px);
+  backdrop-filter: blur(25px);
+}
+.beauty-tech-panel::after {
+  content: "";
+  position: absolute;
+  right: -45px;
+  top: -45px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 1px solid rgba(244, 218, 176, .20);
+  box-shadow: 0 0 0 25px rgba(244, 218, 176, .04), 0 0 0 50px rgba(244, 218, 176, .025);
+  pointer-events: none;
+}
+.beauty-tech-panel .beauty-tech-panel-label {
+  font: 700 10px/1.5 Inter, sans-serif;
+  color: #eed0a1;
+  letter-spacing: .20em;
+  text-transform: uppercase;
+  margin: 0 0 13px;
+}
+.beauty-tech-panel .beauty-tech-panel-title {
+  font: 500 26px/1.06 'Cormorant Garamond', Georgia, serif;
+  color: #fff8ef;
+  margin: 0 0 15px;
+}
+.beauty-tech-panel ol { margin: 0; padding: 0; list-style: none; }
+.beauty-tech-panel li {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  border-top: 1px solid rgba(248, 233, 212, .14);
+  padding: 10px 0;
+  color: #e6d9c9;
+  font-size: 12px;
+}
+.beauty-tech-panel li:last-child { padding-bottom: 0; }
+.beauty-tech-panel li span {
+  flex: none;
+  color: #e7c391;
+  font: 600 11px/1.3 Inter, sans-serif;
+}
+
+/* Layered treatment directory, articles and contact surfaces. */
+.beauty-page-shell > main:not(:has(.beauty-hero)) {
+  background: radial-gradient(ellipse 65% 32% at 94% 6%, rgba(188, 142, 83, .09), transparent 74%),
+              linear-gradient(165deg, rgba(31,25,22,.52), transparent 35%);
+}
+.beauty-page-shell .beauty-treatment-index { padding-top: clamp(44px, 6vw, 78px); }
+.beauty-page-shell .beauty-treatment-index > .beauty-eyebrow,
+.beauty-page-shell .beauty-page-copy > .beauty-eyebrow,
+.beauty-page-shell .beauty-services-directory > .beauty-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  letter-spacing: .18em;
+}
+.beauty-page-shell .beauty-treatment-index > .beauty-eyebrow::before,
+.beauty-page-shell .beauty-page-copy > .beauty-eyebrow::before,
+.beauty-page-shell .beauty-services-directory > .beauty-eyebrow::before {
+  content: "";
+  width: 28px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--clinical-gold), transparent);
+  box-shadow: 0 0 12px rgba(220,180,114,.44);
+}
+.beauty-page-shell .beauty-treatment-index h1,
+.beauty-page-shell .beauty-page-copy h1,
+.beauty-page-shell .beauty-services-directory h1,
+.beauty-page-shell .beauty-editorial-main h1 {
+  color: #fff6e9;
+  text-shadow: 0 7px 24px rgba(0,0,0,.28);
+}
+.beauty-page-shell .beauty-treatment-index > p:not(.beauty-eyebrow) {
+  max-width: 740px;
+  color: #cfc0b1;
+  line-height: 1.8;
+}
+.beauty-page-shell .beauty-category-nav { gap: 14px; flex-wrap: wrap; margin: 32px 0 39px; }
+.beauty-page-shell .beauty-category-nav a {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border-radius: 13px;
+  font-size: 13px;
+}
+.beauty-page-shell .beauty-treatment-links {
+  gap: 15px 18px;
+  margin: 25px 0 32px;
+}
+.beauty-page-shell .beauty-treatment-links a {
+  position: relative;
+  min-height: 78px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(67, 55, 46, .96), rgba(34, 29, 26, .97) 58%, rgba(24, 22, 20, .98));
+  color: #f7ebda;
+  border: 1px solid rgba(227, 189, 141, .24);
+  border-radius: 16px;
+  box-shadow: 0 13px 29px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.085), inset 0 -2px 0 rgba(0,0,0,.28);
+  overflow: hidden;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease;
+}
+.beauty-page-shell .beauty-treatment-links a::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, transparent, rgba(247,215,171,.80), transparent);
+  opacity: .55;
+  pointer-events: none;
+}
+.beauty-page-shell .beauty-treatment-links a span {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+  flex: none;
+  background: rgba(226,185,132,.13);
+  border: 1px solid rgba(239,204,157,.20);
+  color: #e7c597;
+  transition: transform .22s ease, background .22s ease;
+}
+.beauty-page-shell .beauty-treatment-links a:hover {
+  transform: translateY(-4px);
+  border-color: rgba(231, 194, 144, .65);
+  background: linear-gradient(135deg, rgba(92,72,55,.98), rgba(38,31,26,.97));
+  box-shadow: 0 23px 38px rgba(0,0,0,.42), 0 0 24px rgba(219,175,119,.08), inset 0 1px 0 rgba(255,255,255,.13);
+  text-decoration: none;
+}
+.beauty-page-shell .beauty-treatment-links a:hover span {
+  background: rgba(232,197,149,.23);
+  transform: translateX(3px);
+}
+.beauty-page-shell .beauty-directory-list > li,
+.beauty-page-shell .editorial-card,
+.beauty-page-shell .beauty-service-home-tip,
+.beauty-page-shell .beauty-about,
+.beauty-page-shell .editorial-review {
+  position: relative;
+  background: linear-gradient(145deg, rgba(63, 52, 44, .88), rgba(33, 28, 24, .94) 66%, rgba(28, 25, 22, .98));
+  border: 1px solid rgba(230,190,142,.25);
+  border-radius: 19px;
+  box-shadow: var(--clinical-shadow), inset 0 1px 0 rgba(255,255,255,.095), inset 0 -1px 0 rgba(0,0,0,.26);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.beauty-page-shell .beauty-directory-list > li:hover,
+.beauty-page-shell .editorial-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(238,198,150,.55);
+  box-shadow: 0 34px 65px rgba(0,0,0,.54), 0 0 24px rgba(237, 190, 133, .09), inset 0 1px 0 rgba(255,255,255,.13);
+}
+.beauty-page-shell .beauty-directory-list > li::before {
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(226,188,137,.28);
+  border-radius: 12px;
+  width: 40px;
+  height: 38px;
+  background: linear-gradient(140deg, rgba(218,183,132,.19), rgba(0,0,0,.16));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+}
+.beauty-page-shell .beauty-directory-list h3 { color: #f9efe1; }
+.beauty-page-shell .beauty-directory-list .beauty-service-expand {
+  border-top-color: rgba(245,219,183,.17);
+}
+.beauty-page-shell .beauty-directory-list .beauty-service-expand summary {
+  color: #edcb99;
+}
+.beauty-page-shell .beauty-directory-search {
+  padding: 19px 23px;
+  background: linear-gradient(150deg, rgba(65,53,43,.70), rgba(26,23,21,.75));
+  border: 1px solid rgba(240,210,167,.24);
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 16px 35px rgba(0,0,0,.26);
+}
+.beauty-page-shell .beauty-directory-search input {
+  background: rgba(19,17,16,.85);
+  border: 1px solid rgba(235,202,154,.35);
+  border-radius: 12px;
+  box-shadow: inset 0 4px 8px rgba(0,0,0,.20), 0 1px 0 rgba(255,255,255,.07);
+}
+.beauty-page-shell .beauty-directory-search input:focus-visible { outline: 3px solid #edcb93; outline-offset: 3px; }
+.beauty-page-shell .beauty-page-copy {
+  max-width: 940px;
+  margin-block: clamp(30px,4vw,65px);
+  padding-block: clamp(36px,5vw,68px);
+  background: linear-gradient(135deg, rgba(60,48,41,.74), rgba(23,20,18,.75));
+  border: 1px solid rgba(229,188,142,.23);
+  border-radius: 24px;
+  box-shadow: var(--clinical-shadow), inset 0 1px 0 rgba(255,255,255,.07);
+}
+.beauty-page-shell .beauty-values li {
+  border: 1px solid rgba(231,191,145,.28);
+  border-radius: 12px;
+  padding: 10px 15px;
+  background: linear-gradient(145deg, rgba(230,191,138,.13), rgba(14,12,11,.30));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+}
+.beauty-page-shell .beauty-consultation,
+.beauty-page-shell .beauty-dialog,
+.beauty-page-shell .beauty-newsletter,
+.beauty-page-shell .beauty-finder-result {
+  background: linear-gradient(145deg, #393029, #211c19 65%, #1a1715);
+  border: 1px solid rgba(235,200,154,.30);
+  border-radius: 22px;
+  box-shadow: var(--clinical-shadow), inset 0 1px 0 rgba(255,255,255,.09);
+}
+.beauty-page-shell .beauty-consultation input:not([type=radio]):not([type=checkbox]),
+.beauty-page-shell .beauty-consultation select,
+.beauty-page-shell .beauty-consultation textarea {
+  color: #f9f1e8;
+  background: linear-gradient(180deg, #1a1715, #25201d);
+  border: 1px solid rgba(221,191,153,.33);
+  border-radius: 12px;
+  box-shadow: inset 0 3px 9px rgba(0,0,0,.29), 0 1px 0 rgba(255,255,255,.06);
+}
+.beauty-page-shell .beauty-consultation input::placeholder,
+.beauty-page-shell .beauty-consultation textarea::placeholder { color: #c4b7a8; }
+.beauty-page-shell .beauty-compact-footer {
+  background: linear-gradient(90deg, transparent, rgba(241,209,163,.055) 50%, transparent);
+  border-top: 1px solid rgba(238,201,146,.21);
+  color: #d5c4b3;
+}
+.beauty-page-shell .beauty-compact-footer a:hover { color: #f8dcae; }
+
+/* Mobile: favor clarity, usable controls and image crop over decorative layers. */
+@media (max-width: 1200px) {
+  .beauty-tech-panel { right: 25px; bottom: 24px; width: 245px; padding: 18px; }
+  .beauty-page-shell .beauty-hero-art:after {
+    background: linear-gradient(90deg, rgba(14, 11, 9, .92), rgba(14, 11, 9, .48) 68%, rgba(13, 10, 9, .29));
+  }
+}
+@media (max-width: 1050px) {
+  .beauty-tech-panel { display: none; }
+  .beauty-page-shell .beauty-menu-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    padding: 10px 18px;
+    font-size: 13px;
+  }
+  .beauty-page-shell .beauty-header .beauty-desktop-nav { display: none; }
+  .beauty-page-shell .beauty-header > .beauty-button { display: none; }
+}
+@media (max-width: 680px) {
+  .professional-site.beauty-page-shell .beauty-header { min-height: 76px; }
+  .beauty-page-shell .beauty-hero {
+    min-height: calc(100svh - 138px);
+    padding: clamp(38px, 8vh, 80px) 7% 55px;
+    overflow: hidden;
+  }
+  .beauty-page-shell .beauty-hero-art:after {
+    background: linear-gradient(90deg, rgba(14,11,9,.85), rgba(13,10,9,.62)), linear-gradient(0deg, rgba(10,8,7,.64), transparent 50%);
+    box-shadow: inset 0 -110px 130px -75px rgba(6,5,4,.80);
+  }
+  .beauty-page-shell .beauty-hero-image { object-position: 70% center; filter: saturate(.63) brightness(.67); }
+  .beauty-page-shell .beauty-welcome h1 { font-size: clamp(43px, 10.5vw, 60px); line-height: 1.06; }
+  .beauty-page-shell .beauty-welcome .beauty-intro { max-width: 440px; font-size: 14px; line-height: 1.7; }
+  .beauty-page-shell .beauty-home-actions { flex-direction: column; align-items: stretch; max-width: 350px; gap: 12px; }
+  .beauty-page-shell .beauty-home-actions .beauty-button { width: 100%; }
+  .beauty-tech-kicker { font-size: 9px; letter-spacing: .09em; }
+  .beauty-page-shell .beauty-treatment-links { grid-template-columns: 1fr; }
+  .beauty-page-shell .beauty-treatment-links a { min-height: 65px; padding: 16px 18px; }
+  .beauty-page-shell .beauty-treatment-index { padding-block: 40px; }
+  .beauty-page-shell .beauty-page-copy { border-radius: 0; margin-top: 0; border-left: 0; border-right: 0; }
+  .beauty-page-shell .beauty-directory-search { padding: 17px; }
+  .beauty-page-shell .beauty-category-nav a { flex: 1; }
+  .beauty-page-shell .beauty-compact-footer { padding-block: 24px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .beauty-page-shell .beauty-tech-kicker,
+  .beauty-page-shell .beauty-welcome h1,
+  .beauty-page-shell .beauty-welcome .beauty-intro,
+  .beauty-page-shell .beauty-home-actions {
+    animation: beauty-reveal .65s both cubic-bezier(.22,1,.36,1);
+  }
+  .beauty-page-shell .beauty-welcome h1 { animation-delay: .07s; }
+  .beauty-page-shell .beauty-welcome .beauty-intro { animation-delay: .15s; }
+  .beauty-page-shell .beauty-home-actions { animation-delay: .22s; }
+  .beauty-page-shell .beauty-tech-panel { animation: beauty-panel-in .7s .24s both cubic-bezier(.22,1,.36,1); }
+  @keyframes beauty-reveal {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes beauty-panel-in {
+    from { opacity: 0; transform: translate(12px, 10px); }
+    to { opacity: 1; transform: translate(0,0); }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .beauty-page-shell *, .beauty-page-shell *::before, .beauty-page-shell *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media print {
+  .beauty-page-shell .beauty-tech-panel { display: none; }
+  .beauty-page-shell .beauty-button, .beauty-page-shell .beauty-treatment-links a, .beauty-page-shell .beauty-directory-list > li {
+    box-shadow: none !important;
+    background: transparent !important;
+    color: #000 !important;
+  }
+}

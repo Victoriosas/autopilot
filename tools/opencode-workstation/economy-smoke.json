@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-31T14:23:49.217Z",
+  "modelExit": 0,
+  "replyCorrect": true,
+  "telemetry": {
+    "sessions": 1,
+    "observedSessions": 1,
+    "usageSource": "opencode-reported",
+    "reported": {
+      "input": 2329,
+      "output": 9,
+      "reasoning": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "hookCalls": 2,
+    "omittedToolCharacters": 0,
+    "note": "Not billing. Sessions with no usage telemetry remain unknown; character reduction is not exact token savings."
+  },
+  "control": {
+    "llmCalls": 0,
+    "secondCacheHit": true
+  }
+}

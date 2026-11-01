@@ -1,17 +1,18 @@
 import React from 'react';
+import { publicPageLocation } from '../../storefront/publicPageLocation';
 import './professional.css';
 import './discovery.css';
+import './noir.css';
+import './depth.css';
+import './experience.css';
 import { ConsultationForm } from './ConsultationForm';
 import { EditorialPage } from './EditorialPage';
 import { ContactLink, contactEmail } from './ContactLink';
-import { ServiceCatalog } from './ServiceCatalog';
 import { PublicNavigation } from './PublicNavigation';
-import { ServicesDirectory } from './ServicesDirectory';
-import { visibleCareServices } from '../../storefront/careCatalog';
-import { PrivacyPage } from './PrivacyPage';
+import { TreatmentsPage } from './TreatmentsPage';
+import { TechnologyPage } from './TechnologyPage';
 import { GiftVoucherModal } from './GiftVoucherModal';
-import { NewsletterSubscribe } from './NewsletterSubscribe';
-import { CopyMessageButton } from './CopyMessageButton';
+import { PrivacyPage } from './PrivacyPage';
 
 const asset = '/brand/figma-gold/';
 const arrow = asset + 'e3eb3.svg';
@@ -20,11 +21,6 @@ const steps = [
   ['Nos escribes', 'Cuéntame qué te gustaría cuidar y qué dudas tienes. No necesitas tener todo claro para comenzar.', 'Primer contacto por WhatsApp'],
   ['Te escucho y te oriento', 'Coordinamos una evaluación inicial remota para conocer tus necesidades y conversar sobre las opciones.', 'Evaluación a distancia'],
   ['Definimos juntas', 'Te comunico la propuesta, las tarifas y la disponibilidad. Cada atención se acuerda y confirma personalmente.', 'Sin reservas automáticas'],
-];
-const rituals = [
-  ['Una pausa sin pendientes', 'Deja el teléfono a un lado unos minutos. Respira y date permiso para no estar disponible para todo.'],
-  ['Un gesto que disfrutes', 'Haz de tu rutina un momento amable: una textura que te guste, una toalla suave, un poco de calma.'],
-  ['Una mirada más amable', 'Escucha cómo te sientes hoy. El cuidado no es una exigencia más, es una forma de acompañarte.'],
 ];
 const faqs = [
   ['¿Cómo es la evaluación inicial remota?', 'El primer contacto es por WhatsApp. Victoria coordina contigo una evaluación a distancia para escuchar tus necesidades, orientarte y definir los siguientes pasos de forma personal.'],
@@ -37,62 +33,84 @@ const faqs = [
 function Brand() {
   return <a href="/" className="beauty-brand">VICTORIOSAS<span>Estética profesional</span></a>;
 }
-function Home() {
-  const [giftOpen, setGiftOpen] = React.useState(false);
+export function Home() {
   return <>
     <section className="beauty-hero beauty-wrap">
-      <div className="beauty-welcome"><p className="beauty-eyebrow">Tu bienestar, a tu manera</p><h1>Para sentirte<br />segura y<br /><em>victoriosa.</em></h1>
+      <div className="beauty-welcome"><span className="beauty-tech-kicker">Precisión estética · cuidado personal</span><p className="beauty-eyebrow">Tu bienestar, a tu manera</p><h1>Para sentirte<br />segura y<br /><em>victoriosa.</em></h1>
         <p className="beauty-intro">Estética facial, corporal y masajes. Un espacio de cuidado para escucharte, acompañarte y empezar por lo que necesitas hoy.</p>
-        <ContactLink icon={whiteArrow}>Conversemos por WhatsApp</ContactLink><p className="beauty-small">Empezamos con una evaluación inicial remota.</p>
-        <div className="beauty-hero-tools"><button type="button" className="beauty-button beauty-button-outline" onClick={() => window.dispatchEvent(new CustomEvent('open-care-finder'))}>Orientador de cuidado</button><button type="button" className="beauty-hero-search-link" onClick={() => window.dispatchEvent(new CustomEvent('open-quick-search'))}>Buscar en el catálogo</button></div>
-        <a className="beauty-discover" href="#servicios"><img src={asset + 'd7cd8.svg'} alt="" width="15" height="15" />Conocer los cuidados</a>
+        <div className="beauty-home-actions"><a className="beauty-button" href="https://wa.me/59897045305" target="_blank" rel="noopener noreferrer">Conversemos</a><a className="beauty-button beauty-button-outline" href="/nuestros-servicios">Explorar tratamientos</a></div><p className="beauty-small">Empezamos con una evaluación inicial remota. <a className="beauty-home-technology-link" href="/tecnologia">Conocé nuestra tecnología ↗</a></p>
       </div>
       <figure className="beauty-hero-art"><img className="beauty-hero-image" src={asset + 'eafbd.png'} alt="Imagen evocadora de un momento de cuidado facial" width="600" height="648" fetchPriority="high" />
-        <div className="beauty-ritual-detail"><img src={asset + '3fc72.png'} alt="Toalla y detalle de un ritual de cuidado" width="184" height="198" /></div><figcaption>Un momento para ti.</figcaption>
+        <figcaption>Un momento para ti.</figcaption>
       </figure>
+      <aside className="beauty-tech-panel" aria-label="Nuestro proceso de atención">
+        <p className="beauty-tech-panel-label">Nuestra forma de acompañarte</p>
+        <p className="beauty-tech-panel-title">Tecnología y cercanía.</p>
+        <ol><li><span>01</span> Primer contacto personal</li><li><span>02</span> Evaluación inicial remota</li><li><span>03</span> Tratamiento acordado contigo</li></ol>
+      </aside>
     </section>
-    <section className="beauty-philosophy beauty-wrap"><span aria-hidden="true" /><h2>No se trata de cambiar quién eres.<br />Se trata de hacerte un lugar.</h2><p>Sin comparaciones ni exigencias. En Victoriosas, el cuidado empieza por reconocer tu propio ritmo y lo que te hace sentir bien.</p></section>
-    <section id="servicios" className="beauty-band"><div className="beauty-wrap beauty-section">
-      <div className="beauty-section-heading"><div><p className="beauty-eyebrow">Tu cuidado empieza aquí.</p><h2>Encontrá tu punto de partida.</h2></div><p>Tres formas de volver a ti.<br />Elegí qué te gustaría conversar. No necesitás tenerlo todo claro.</p></div>
-      <ServiceCatalog review={__SERVICE_REVIEW__} />
-      <div className="beauty-gift-card"><figure className="beauty-gift-card-media"><img src="/brand/ai-studio/regalo-cuidado.jpg" alt="Detalle evocador de una experiencia de regalo y autocuidado" width="340" height="255" loading="lazy" /></figure><div className="beauty-gift-card-content"><p className="beauty-eyebrow">Para agasajar</p><h3>¿Querés regalar un momento de cuidado?</h3><p>Prepará una propuesta personalizada para conversar con Victoria. Las condiciones y la disponibilidad se confirman personalmente.</p><button type="button" className="beauty-button" onClick={() => setGiftOpen(true)}>Diseñar una propuesta de regalo</button></div></div>
-      <div className="beauty-start-help"><div><h3>¿Todavía no sabés qué elegir?</h3><p>Podemos empezar por una conversación, a tu ritmo.</p></div><div className="beauty-contact-options"><ContactLink interest="orientacion" className="beauty-button beauty-button-outline" icon={arrow}>Quiero orientación</ContactLink><a href="/consultanos?canal=email#orientacion" className="beauty-text-link">Orientación por email <img className="beauty-icon" src={arrow} alt="" width="17" height="17" /></a></div></div>
-      <p className="beauty-small beauty-start-note">Podés consultar por WhatsApp o email. Los enlaces preparan un mensaje para que lo revises y decidas si enviarlo; no confirman una reserva. Tarifas, modalidad, zona y disponibilidad se acuerdan personalmente antes de confirmar.</p>
-    </div></section>
-    {giftOpen && <GiftVoucherModal onClose={() => setGiftOpen(false)} />}
-    <section id="nosotras" className="beauty-wrap beauty-section beauty-split">
-      <figure className="beauty-essence-image"><img src={asset + '98809.png'} alt="Toallas y cuenco en un espacio de calma, imagen evocadora" width="544" height="520" loading="lazy" /><figcaption>Menos prisa. Más presencia.</figcaption></figure>
-      <div><p className="beauty-eyebrow">La esencia de Victoriosas</p><h2>Detrás de cada cuidado,<br />una conversación.</h2><p>Soy Victoria, responsable de Victoriosas, en Uruguay. Te acompaño personalmente desde el primer mensaje, para entender qué buscas y orientarte con claridad.</p><p>Cada persona llega con una historia distinta. Por eso, antes de definir los próximos pasos, hay tiempo para escucharte, resolver tus dudas y respetar tus decisiones.</p><ul className="beauty-values"><li>Escucha</li><li>Respeto</li><li>Confidencialidad</li></ul><ContactLink className="beauty-text-link" icon={arrow}>Quiero conversar con Victoria</ContactLink><p className="beauty-signature">Victoria</p></div>
-    </section>
-    <section id="como-empezar" className="beauty-band"><div className="beauty-wrap beauty-section">
-      <div className="beauty-section-heading"><div><p className="beauty-eyebrow">Un primer paso sencillo</p><h2>Todo empieza por escucharte.</h2></div><p>Una conversación personal.<br />Sin apuro y sin compromiso de reservar.</p></div>
-      <ol className="beauty-steps">{steps.map(([title, description, detail], i) => <li key={title}><div className="beauty-step-number"><span>0{i + 1}</span><span /></div><h3>{title}</h3><p>{description}</p><p className="beauty-step-detail">{detail}</p></li>)}</ol>
-      <p className="beauty-orientation"><img src={asset + '18cc8.svg'} alt="" width="18" height="18" />La evaluación es orientativa y no sustituye una valoración médica cuando corresponde. Tu bienestar guía cada decisión.</p>
-    </div></section>
-    <section id="de-mi-para-ti" className="beauty-wrap beauty-section beauty-split">
-      <figure className="beauty-everyday-image"><img src={asset + 'b7846.png'} alt="Un rincón tranquilo con luz natural y pequeños detalles de cuidado" width="544" height="610" loading="lazy" /><figcaption>Lo pequeño también es cuidado.</figcaption></figure>
-      <div><p className="beauty-eyebrow"><a href="/de-mi-para-ti">De mí para ti</a></p><h2>La belleza también está<br />en lo cotidiano.</h2><p>El bienestar no ocurre solo durante una atención. También vive en esos pequeños rituales que te devuelven a ti.</p><div className="beauty-rituals">{rituals.map(([title, text]) => <section key={title}><h3>{title}</h3><p>{text}</p></section>)}</div></div>
-    </section>
-    <div className="beauty-wrap"><NewsletterSubscribe /></div>
-    <section id="preguntas" className="beauty-band"><div className="beauty-wrap beauty-section beauty-faq"><div><p className="beauty-eyebrow">Con tranquilidad</p><h2>Tus dudas también<br />tienen su espacio.</h2><p>Si hay algo más que quieras saber, puedes preguntarme directamente. Estoy aquí para orientarte.</p><ContactLink className="beauty-text-link" icon={arrow}>Hacer otra consulta</ContactLink></div>
-      <div>{faqs.map(([question, answer], i) => <details key={question} open={i < 2}><summary>{question}<img className="beauty-faq-plus" src={asset + 'e4e2b.svg'} alt="" width="18" height="18" /><img className="beauty-faq-minus" src={asset + '78bc1.svg'} alt="" width="18" height="18" /></summary><p>{answer}</p></details>)}</div>
-    </div></section>
-    <div className="beauty-wrap beauty-section"><a className="beauty-button beauty-button-outline" href="/consultanos">Hablemos de tu cuidado</a></div>
-    <section id="contacto" className="beauty-wrap beauty-section beauty-final"><div><p className="beauty-eyebrow">Cuando tú quieras</p><h2>Tu momento puede<br />empezar con <em>un hola.</em></h2><p>Escríbeme y encontramos juntas el primer paso.<br />A tu ritmo, con confianza y sin juicios.</p></div><div className="beauty-contact-card"><p className="beauty-eyebrow"><img src={asset + 'fcd40.svg'} alt="" width="23" height="23" />Directamente con Victoria</p><p className="beauty-small">Si quieres, puedes empezar así:</p><blockquote>“Hola, quisiera consultar por una evaluación inicial remota con Victoria.”</blockquote><CopyMessageButton text="Hola, quisiera consultar por una evaluación inicial remota con Victoria." /><ContactLink icon={whiteArrow}>Escribir a Victoria</ContactLink><p className="beauty-small">WhatsApp · +598 97 045 305</p><div className="beauty-email-block"><p className="beauty-eyebrow">¿Preferís enviarnos una consulta?</p><a href="/consultanos" className="beauty-button beauty-button-outline">Consultanos <img className="beauty-icon" src={arrow} alt="" width="17" height="17" /></a><p className="beauty-small"><a className="beauty-email-address" href={'mailto:' + contactEmail}>{contactEmail}</a></p><p className="beauty-small">El botón abre nuestro formulario de consultas. También podés escribir directamente a la dirección de correo indicada; para ello necesitás una aplicación de correo configurada.</p></div></div></section>
   </>;
 }
+export function Victoria() {
+  return <section className="beauty-wrap beauty-section beauty-page-copy">
+      <p className="beauty-eyebrow">La esencia de Victoriosas</p><h1>Detrás de cada cuidado,<br />una conversación.</h1><p>Soy Victoria, responsable de Victoriosas, en Uruguay. Te acompaño personalmente desde el primer mensaje, para entender qué buscas y orientarte con claridad.</p><p>Cada persona llega con una historia distinta. Por eso, antes de definir los próximos pasos, hay tiempo para escucharte, resolver tus dudas y respetar tus decisiones.</p><div className="beauty-victoria-process"><span className="beauty-eyebrow">Nuestro recorrido</span><ol><li>Primer contacto y escucha</li><li>Evaluación inicial remota</li><li>Orientación y coordinación personal</li></ol><a className="beauty-text-link" href="/tecnologia">Conocé el equipamiento disponible ↗</a></div><ul className="beauty-values"><li>Escucha</li><li>Respeto</li><li>Confidencialidad</li></ul><ContactLink className="beauty-text-link" icon={arrow}>Quiero conversar con Victoria</ContactLink><p className="beauty-signature">Victoria</p>
+    </section>;
+}
+export function ComoEmpezar() {
+  return <>
+    <section className="beauty-band"><div className="beauty-wrap beauty-section">
+      <div className="beauty-section-heading"><div><p className="beauty-eyebrow">Un primer paso sencillo</p><h1>Todo empieza por escucharte.</h1></div><p>Una conversación personal.<br />Sin apuro y sin compromiso de reservar.</p></div>
+      <ol className="beauty-steps">{steps.map(([title, description, detail], i) => <li key={title}><div className="beauty-step-number"><span>0{i + 1}</span><span /></div><h2>{title}</h2><p>{description}</p><p className="beauty-step-detail">{detail}</p></li>)}</ol>
+      <p className="beauty-orientation"><img src={asset + '18cc8.svg'} alt="" width="18" height="18" />La evaluación es orientativa y no sustituye una valoración médica cuando corresponde. Tu bienestar guía cada decisión.</p>
+      <a className="beauty-button" href="/consultanos">Conversemos</a>
+    </div></section>
+    <section className="beauty-wrap beauty-section beauty-faq"><div><h2>Tus dudas también tienen su espacio.</h2></div><div>{faqs.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div></section>
+  </>;
+}
+export function Contacto() {
+  const [giftOpen, setGiftOpen] = React.useState(false);
+  return <><h1 className="beauty-consultation-heading">Consultanos</h1><p>Empezamos con una evaluación inicial remota. Cada atención se confirma de forma personal, sin reservas automáticas.</p><p><a href="/contacto">Cómo empezar y preguntas frecuentes</a></p><ConsultationForm /><p><button type="button" className="beauty-button beauty-button-outline" onClick={() => setGiftOpen(true)}>Diseñar una propuesta de regalo</button></p>{giftOpen && <GiftVoucherModal onClose={() => setGiftOpen(false)} />}</>;
+}
 export function ProfessionalSite() {
-  const path = window.location.pathname.replace(/\/$/, '') || '/';
+  const [location, setLocation] = React.useState(() => publicPageLocation(window.location.pathname, window.location.search, window.location.hash));
+  const path = location.split(/[?#]/)[0].replace(/\/$/, '') || '/';
+  React.useEffect(() => {
+    const normalized = publicPageLocation(window.location.pathname, window.location.search, window.location.hash);
+    if (normalized !== window.location.pathname + window.location.search + window.location.hash) window.history.replaceState(null, '', normalized);
+    const restore = () => setLocation(window.location.pathname + window.location.search + window.location.hash);
+    window.addEventListener('popstate', restore);
+    return () => window.removeEventListener('popstate', restore);
+  }, []);
+  React.useEffect(() => {
+    if (path.startsWith('/de-mi-para-ti')) { document.getElementById('contenido')?.focus({preventScroll:true}); return; }
+    if (path === '/victoria') document.title = 'Victoria · Victoriosas';
+    else if (path === '/tecnologia') document.title = 'Tecnología estética · Victoriosas';
+    else document.title = (path === '/' ? 'Victoriosas · Estética profesional' : path === '/nuestros-servicios' || path === '/servicios' ? 'Tratamientos · Victoriosas' : path === '/consultanos' ? 'Consultanos · Victoriosas' : path === '/contacto' ? 'Cómo empezar · Victoriosas' : path === '/privacidad' ? 'Contacto y privacidad · Victoriosas' : 'De mí para ti · Victoriosas');
+    const canonical = document.querySelector('link[rel=canonical]');
+    canonical?.setAttribute('href', 'https://victoriosas.online' + path);
+    document.getElementById('contenido')?.focus({preventScroll:true});
+  }, [location, path]);
+  const navigate = (event: React.MouseEvent<HTMLDivElement>) => {
+    const link = (event.target as Element).closest('a');
+    if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.target || link.hasAttribute('download')) return;
+    const url = new URL(link.href);
+    if (url.origin !== window.location.origin || ['/admin', '/beauty-professional'].some(route => url.pathname.startsWith(route)) || url.hash === '#contenido') return;
+    event.preventDefault();
+    const next = publicPageLocation(url.pathname, url.search, url.hash);
+    window.history.pushState(null, '', next);
+    setLocation(next);
+    window.scrollTo({top:0,behavior:'instant'});
+  };
   const editorial = path === '/de-mi-para-ti' || path.startsWith('/de-mi-para-ti/');
-  const privacy = path === '/privacidad';
-  const directory = path === '/nuestros-servicios';
-  const consultation = path === '/consultanos';
-  const known = editorial || privacy || directory || consultation || ['/', '/servicios', '/contacto', '/victoria'].includes(path);
-  if (!known) return <div className="professional-site"><main className="beauty-wrap beauty-section"><h1>Esta página ya no está disponible.</h1><p><a href="/">Volver al inicio de Victoriosas</a></p><ContactLink /></main></div>;
-  return <div className="professional-site">
+  const directory = path === '/nuestros-servicios' || path === '/servicios';
+  const contact = path === '/consultanos';
+  const known = editorial || directory || contact || ['/', '/victoria', '/tecnologia', '/contacto', '/privacidad'].includes(path);
+  return <div onClick={navigate} className={'professional-site beauty-noir beauty-page-shell' + (path === '/' ? ' beauty-home' : '')}>
     <a className="beauty-skip" href="#contenido">Saltar al contenido</a>
-    <header className="beauty-header beauty-wrap"><Brand /><PublicNavigation /><a className="beauty-button beauty-button-outline" href="/consultanos">Consultanos</a></header>
-    <main id="contenido" className={editorial || privacy || consultation ? 'beauty-editorial-main beauty-wrap' : undefined}>{consultation ? <><h1 className="beauty-consultation-heading">Consultanos</h1><ConsultationForm /></> : privacy ? <PrivacyPage /> : editorial ? <EditorialPage /> : directory ? <ServicesDirectory /> : <Home />}</main>
-    <footer className="beauty-footer"><div className="beauty-wrap"><div className="beauty-footer-grid"><div><Brand /><p className="beauty-footer-promise">Para sentirte segura y victoriosa.</p></div><div><h2>Cuidados</h2>{visibleCareServices().map(care => <a key={care.id} href="/#servicios">{care.name}</a>)}</div><div><h2>Victoriosas</h2><a href="/#nosotras">Atención personal</a><a href="/#como-empezar">Cómo empezar</a><a href="/de-mi-para-ti">De mí para ti</a><a href="/#preguntas">Preguntas frecuentes</a></div><div><h2>Conversemos</h2><a href="https://wa.me/59897045305" target="_blank" rel="noopener noreferrer">+598 97 045 305 ↗</a><a className="beauty-email-address" href={'mailto:' + contactEmail}>{contactEmail}</a><p>Uruguay</p><p>Atención coordinada<br />personalmente con Victoria.</p></div></div><div className="beauty-footer-bottom"><p>© Victoriosas · Estética profesional</p><p>Cuidado personal. Respeto por tu historia. Confidencialidad.</p><a href="/privacidad">Contacto y privacidad</a><a href="#contenido">Volver arriba ↑</a></div></div></footer>
+    <header className="beauty-header beauty-wrap"><Brand /><PublicNavigation /><ContactLink>Conversemos</ContactLink></header>
+    <main id="contenido" tabIndex={-1} key={location} className={editorial || contact ? 'beauty-editorial-main beauty-wrap' : undefined}>
+      {!known ? <section className="beauty-wrap beauty-section"><h1>No encontramos esta página.</h1><a href="/">Volver al inicio</a></section> : path === '/privacidad' ? <PrivacyPage /> : path === '/tecnologia' ? <TechnologyPage /> : path === '/victoria' ? <Victoria /> : path === '/contacto' ? <ComoEmpezar /> : contact ? <Contacto /> : editorial ? <EditorialPage /> : directory ? <TreatmentsPage /> : <Home />}
+    </main>
+    <footer className="beauty-compact-footer beauty-wrap"><span>Victoria · Atención personal · Uruguay</span><a href="/contacto">Cómo empezar</a><a href="/privacidad">Contacto y privacidad</a><a href="/consultanos?canal=email" aria-label="Consultar por correo usando el formulario">Consultanos por email</a></footer>
   </div>;
 }

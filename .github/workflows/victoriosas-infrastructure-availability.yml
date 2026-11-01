@@ -1,0 +1,29 @@
+name: Victoriosas infrastructure availability
+on:
+  schedule:
+    # Four checks per day; best-effort scheduling, no daemon.
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: victoriosas-infrastructure-availability
+  cancel-in-progress: false
+jobs:
+  public-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Test public health guards
+        run: node --test scripts/infrastructure-health.test.mjs
+      - name: Test queued worker guards
+        run: node --test scripts/agent-health-queue.test.mjs
+      - name: Execute persisted infrastructure task
+        run: node scripts/agent-health-queue.mjs

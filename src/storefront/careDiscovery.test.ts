@@ -11,7 +11,7 @@ test('public discovery includes all 17 existing services, unique destinations an
   assert.equal(items.length, 17);
   assert.equal(new Set(items.map(item => item.href)).size, 17);
   assert.ok(items.every(item => item.href.startsWith('/nuestros-servicios#')));
-  assert.equal(discoveryItems(articles).length, 19);
+  assert.equal(discoveryItems(articles).length, 17 + articles.length);
 });
 test('discovery combines accent-insensitive words and categories without dead results', () => {
   const items = discoveryItems();
@@ -41,14 +41,21 @@ test('gift proposals bound user text, preserve accents and cannot represent an i
   assert.match(message, /no es un voucher emitido/);
   assert.ok(giftMessage('a'.repeat(100), 'b'.repeat(300), 'Libre elección').length < 700);
 });
-test('both contact channels encode the complete proposal as text without adding URL parameters', () => {
+test('WhatsApp preserves gift text while email opens the form without personal data in the URL', () => {
   const context = giftMessage('Sofía & Ana', 'Pausa? #1 + cariño &bcc=extra', 'Libre elección');
   for (const channel of ['whatsapp', 'email'] as const) {
     const html = renderToStaticMarkup(React.createElement(ContactLink, { context, channel }));
     const href = html.match(/href="([^"]+)"/)![1].replaceAll('&amp;', '&');
-    const url = new URL(href);
-    assert.ok(url.searchParams.get(channel === 'email' ? 'body' : 'text')?.endsWith(context));
-    assert.deepEqual([...url.searchParams.keys()].sort(), channel === 'email' ? ['body', 'subject'] : ['text']);
+    const url = new URL(href, 'https://victoriosas.online');
+    if (channel === 'email') {
+      assert.equal(url.pathname, '/consultanos');
+      assert.equal(url.searchParams.get('canal'), 'email');
+      assert.doesNotMatch(href, /Sof%C3%ADa|bcc|cari%C3%B1o|Pausa/i);
+      assert.deepEqual([...url.searchParams.keys()], ['canal']);
+    } else {
+      assert.ok(url.searchParams.get('text')?.endsWith(context));
+      assert.deepEqual([...url.searchParams.keys()], ['text']);
+    }
   }
 });
 
@@ -68,3 +75,9 @@ test('gift proposals preserve the optional sender and bound every user field', (
   assert.doesNotMatch(giftMessage('Ana', '', 'Libre elección'), /De parte de:/);
   assert.ok(giftMessage('a'.repeat(100), 'b'.repeat(300), 'Libre elección', 'c'.repeat(100)).length < 800);
 });
+
+ test('limpieza de cutis encuentra servicios sin exponer los borradores editoriales', () => {
+  const results = searchCare(discoveryItems(), 'limpieza de cutis', 'todos');
+  assert.ok(results.some(item => item.title === 'Higiene y limpieza facial'));
+  assert.ok(results.every(item => !item.href.startsWith('/de-mi-para-ti/')));
+ });

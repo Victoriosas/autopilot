@@ -20,7 +20,7 @@ export function discoveryItems(editorial: readonly EditorialArticle[] = getPubli
 }
 
 export function searchCare(items: readonly DiscoveryItem[], query: string, category: DiscoveryCategory): DiscoveryItem[] {
-  const words = normalize(query.slice(0, 120)).trim().split(/\s+/).filter(Boolean);
+  const words = normalize(query.slice(0, 120)).trim().split(/\s+/).filter(word => word && word !== 'de').map(word => word === 'cutis' ? 'facial' : word);
   return items.filter(item => (category === 'todos' || (category === 'masajes' ? item.massage : item.category === category))
     && words.every(word => normalize(`${item.title} ${item.description} ${item.category}`).includes(word)));
 }

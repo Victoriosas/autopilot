@@ -1,0 +1,8 @@
+import test from 'node:test'; import assert from 'node:assert/strict';
+import {claimPersistedTask,completePersistedTask,failPersistedTask} from './sixAgentPersistence';
+function mock(result:any){const calls:any[]=[];return {calls, client:{rpc:async (name:string,args:any)=>{calls.push({name,args});return result}} as any}}
+test('claim uses atomic stored procedure and returns token',async()=>{const m=mock({data:[{task_id:'a',claim_token:'token',task_payload:{}}],error:null});assert.equal((await claimPersistedTask(m.client,'director'))?.task_id,'a');assert.equal(m.calls[0].name,'six_agent_claim')});
+test('empty queue has no work',async()=>assert.equal(await claimPersistedTask(mock({data:[],error:null}).client,'director'),null));
+test('database failures fail closed',async()=>assert.rejects(()=>claimPersistedTask(mock({error:{message:'offline'},data:null}).client,'director'),/claim_failed/));
+test('completion requires evidence and exact claim',async()=>{const task={task_id:'a',claim_token:'token',task_payload:{}};await assert.rejects(()=>completePersistedTask(mock({data:true,error:null}).client,task,''),/evidence_required/);await assert.rejects(()=>completePersistedTask(mock({data:false,error:null}).client,task,'verified'),/completion_rejected/)});
+test('failure records reason codes only',async()=>{const task={task_id:'a',claim_token:'token',task_payload:{}};await assert.rejects(()=>failPersistedTask(mock({data:true,error:null}).client,task,'client message contains PII'),/reason_code_required/);const m=mock({data:true,error:null});await failPersistedTask(m.client,task,'provider_unavailable');assert.equal(m.calls[0].args.p_reason,'provider_unavailable')});

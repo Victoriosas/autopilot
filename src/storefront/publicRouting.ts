@@ -1,6 +1,6 @@
 import { articles, getPublishedArticle } from './editorial.js';
 
-const active = new Set(['/', '/index.html', '/servicios', '/nuestros-servicios', '/consultanos', '/contacto', '/victoria', '/privacidad', '/de-mi-para-ti', '/admin', '/beauty-professional', '/servicios-sofia.html', '/robots.txt', '/sitemap.xml', '/favicon.svg']);
+const active = new Set(['/', '/index.html', '/servicios', '/nuestros-servicios', '/tecnologia', '/consultanos', '/contacto', '/victoria', '/privacidad', '/de-mi-para-ti', '/admin', '/beauty-professional', '/servicios-sofia.html', '/robots.txt', '/sitemap.xml', '/favicon.svg']);
 const retired = new Set(['/tienda', '/checkout', '/tratamientos']);
 
 export function publicRouteResponse(request: Request, preview = false): Response | undefined {

@@ -52,7 +52,7 @@ export function createBeautyManagementRouter(deps:{store?:BeautyManagementStore;
   try{return res.json({evaluation:await store.evaluation(token(req),String(req.query.requestId))});}catch{return res.status(503).json({error:'BEAUTY_EVALUATION_UNAVAILABLE'});}
  });
  const saveEvaluation=(editing:boolean):RequestHandler=>async(req,res)=>{
-  if(Buffer.byteLength(JSON.stringify(req.body||{}))>20000)return res.status(413).json({error:'BEAUTY_INPUT_TOO_LARGE'});
+  if(new TextEncoder().encode(JSON.stringify(req.body||{})).byteLength>20000)return res.status(413).json({error:'BEAUTY_INPUT_TOO_LARGE'});
   const {version:expected,...fields}=req.body||{};let input:BeautyEvaluationInput;
   try{if(editing&&(!version(expected)||!BEAUTY_UUID.test(String(req.params.id)))||!editing&&expected!==undefined)throw new Error();input=normalizeBeautyEvaluation(fields);if(!editing&&input.status!=='draft')throw new Error();}catch{return res.status(400).json({error:'BEAUTY_EVALUATION_INVALID'});}
   try{const row=await store.saveEvaluation(token(req),input,res.locals.beautyPractitionerId,editing?String(req.params.id):undefined,editing?expected:undefined);return res.status(row?(editing?200:201):409).json(row?{evaluation:row}:{error:'BEAUTY_VERSION_CONFLICT'});}catch{return res.status(409).json({error:'BEAUTY_EVALUATION_SAVE_REJECTED'});}

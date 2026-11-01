@@ -1,0 +1,7 @@
+{
+  "date": "2026-10-31T15:21:42.722Z",
+  "exitCode": 0,
+  "error": null,
+  "inventoryToolObserved": true,
+  "output": "Dominios: 0. Estado de verificación: no aplica; no se encontraron dominios.\r\n\r\n> operaciones · gpt-6.1-sol\r\n\r\n⚙ resend_list-domains {\"context\":\"Consultar la configuración de dominios de una cuenta para informar cuántos aparecen y cuál es su estado de verificación actual.\",\"llm_model\":\"openai/gpt-6.1-sol\"}"
+}

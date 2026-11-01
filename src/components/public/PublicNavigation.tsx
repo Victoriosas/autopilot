@@ -21,15 +21,12 @@ export function PublicNavigation() {
   }, []);
 
   const primary = [
-    ['/#servicios', 'Servicios'],
-    ['/#nosotras', 'Victoria'],
-    ['/#como-empezar', 'Cómo empezar'],
-    ['/de-mi-para-ti', 'De mí para ti'],
-    ['/consultanos', 'Consultanos'],
+    ['/', 'Inicio'], ['/victoria', 'Victoria'], ['/nuestros-servicios', 'Tratamientos'], ['/tecnologia', 'Tecnología'],
+    ['/de-mi-para-ti', 'De mí para ti'], ['/consultanos', 'Consultanos'],
   ];
   const secondary = [
-    ['/#preguntas', 'Preguntas frecuentes'],
-    ['/#contacto', 'Contacto'],
+    ['/contacto', 'Preguntas frecuentes'],
+    ['/consultanos', 'Contacto'],
     ['/privacidad', 'Privacidad'],
   ];
 
@@ -55,7 +52,7 @@ export function PublicNavigation() {
     <>
       <nav className="beauty-desktop-nav" aria-label="Principal">
         {primary.map(([href, label]) => (
-          <a key={href} href={href}>
+          <a key={href} href={href} aria-current={typeof window !== "undefined" && window.location.pathname === href ? "page" : undefined}>
             {label}
           </a>
         ))}

@@ -1,15 +1,31 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { serviceGroups, serviceSlug } from './serviceDirectory';
-import { ContactLink } from './ContactLink';
+import { ContactLink, contactEmail } from './ContactLink';
 import { normalizeConsultationRequest } from '../../storefront/consultationRequest';
 
 const endpoint = '/api/beauty/inquiries';
 const choices = [{ id: 'orientacion', name: 'Quiero orientación' }, ...serviceGroups.flatMap(group => group.services.map(name => ({ id: serviceSlug(name), name })))];
+const emailInterestPrompts: Record<string, string> = {
+  facial: 'Hola, quisiera recibir orientación sobre cuidado facial y una evaluación inicial remota.',
+  corporal: 'Hola, quisiera recibir orientación sobre cuidado corporal y una evaluación inicial remota.',
+  relajacion: 'Hola, quisiera consultar sobre masajes de relajación y una evaluación inicial remota.',
+  orientacion: 'Hola, todavía no sé qué cuidado elegir y quisiera orientación inicial remota.',
+  online: 'Hola, quisiera información sobre la asesoría de cuidado facial online y una evaluación inicial remota.',
+};
+function consultationContext() {
+  const params = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search);
+  const service = choices.find(choice => choice.id === params.get('servicio'));
+  return {
+    channel: params.get('canal') === 'email' ? 'email' : 'whatsapp',
+    service: service?.id || 'orientacion',
+    message: service ? `Hola, quisiera consultar sobre ${service.name.toLowerCase()} y una evaluación inicial remota.` : emailInterestPrompts[params.get('interes') || ''] || '',
+  };
+}
 
 export function ConsultationForm() {
   const [ready, setReady] = useState(false);
-  const [channel, setChannel] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('canal') === 'email' ? 'email' : 'whatsapp');
-  const [service, setService] = useState('orientacion');
+  const [channel, setChannel] = useState(() => consultationContext().channel);
+  const [service, setService] = useState(() => consultationContext().service);
   const [pending, setPending] = useState(false);
   const [sent, setSent] = useState(false);
   const [result, setResult] = useState('');
@@ -74,7 +90,7 @@ export function ConsultationForm() {
           </div>
           <p id="consultation-phone-help" className="beauty-small">Celular de 8 a 15 dígitos. Podés incluir el código de país.</p>
           <label>Servicio que te interesa<select value={service} onChange={event => setService(event.target.value)}>{choices.map(choice => <option key={choice.id} value={choice.id}>{choice.name}</option>)}</select></label>
-          <label>¿Qué te gustaría consultar? *<textarea name="message" required rows={4} maxLength={600} /></label>
+          <label>¿Qué te gustaría consultar? *<textarea name="message" required rows={4} maxLength={600} defaultValue={consultationContext().message} /></label>
           <fieldset><legend>¿Cómo preferís que te contactemos?</legend>{([['whatsapp', 'WhatsApp'], ['email', 'Correo electrónico'], ['phone', 'Llamada']] as const).map(([value, label]) => <label className="beauty-consultation-radio" key={value}><input type="radio" name="channel" value={value} checked={channel === value} onChange={() => setChannel(value)} />{label}</label>)}</fieldset>
           <label className="beauty-consultation-consent"><input name="consent" type="checkbox" value="yes" required /><span>Acepto que Victoriosas use estos datos para responder esta consulta, según la <a href="/privacidad">política de privacidad</a>. No me suscribe a campañas. La atención humana está disponible aunque no autorices IA.</span></label>
           <label className="beauty-consultation-consent"><input name="aiConsent" type="checkbox" value="yes" /><span>Opcional: autorizo que el motivo de consulta y servicio seleccionado se procesen mediante camelRun para preparar borradores de IA que Victoria revisará. No se envían nombre ni datos de contacto al proveedor. Puedo consultar o revocar este permiso escribiendo al correo de contacto. <a href="/privacidad">Más información</a>.</span></label>
@@ -84,7 +100,7 @@ export function ConsultationForm() {
         {result && <p role="status">{result}</p>}
       </form>
     </>}
-    <div className="beauty-contact-options"><ContactLink /><ContactLink channel="email" /></div>
+    <div className="beauty-contact-options"><ContactLink />{!ready ? <a className="beauty-button" href={'mailto:' + contactEmail}>Escribir por correo externo</a> : !sent ? <a className="beauty-button" href="/consultanos?canal=email">Usar el formulario con respuesta por correo ↗</a> : null}</div>
     <p className="beauty-small">victoriosas.online@gmail.com</p>
   </section>;
 }

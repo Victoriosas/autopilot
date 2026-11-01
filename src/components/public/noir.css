@@ -1,0 +1,129 @@
+/* Adaptacion de la referencia sovic: fotografia amplia, marco oscuro y navegacion capsula. */
+.professional-site.beauty-noir{--paper:#110e0c;--ink:#f7f0e7;--muted:#c3b7a9;--gold:#dec49c;--gold-light:#e8d5b6;--gold-dark:#c5a373;--line:#51453b;--wash:#1d1814;--wash-deep:#251e19;--velvet-shadow:0 12px 34px #0003;--velvet-shadow-lg:0 24px 64px #0005;--velvet-glow:inset 0 1px 0 #ffffff0d;background:var(--paper);color:var(--ink)}
+.beauty-noir ::selection{background:#dec49c;color:#110e0c}
+.beauty-noir .beauty-header{min-height:110px;border-bottom-color:var(--line);position:relative;z-index:20;gap:20px}
+.beauty-noir .beauty-brand{font-size:30px;color:#fff;text-align:left;letter-spacing:.025em}
+.beauty-noir .beauty-brand span{color:#e0c9a6;font-size:8px;letter-spacing:.18em}
+.beauty-noir .beauty-button{background:#faf7f2;border-color:#faf7f2;color:#17120e;box-shadow:none;min-height:48px;padding:12px 25px}
+.beauty-noir .beauty-button:hover{background:#e9d8bd;border-color:#e9d8bd;color:#17120e;box-shadow:none}
+.beauty-noir .beauty-button-outline{background:#ffffff08;border-color:#8c7861;color:var(--ink);box-shadow:none}
+.beauty-noir .beauty-button-outline:hover{background:#ffffff12;color:#fff;border-color:#d8bf9d}
+.beauty-noir .beauty-button:not(.beauty-button-outline) .beauty-icon{filter:brightness(0)}
+.beauty-noir .beauty-text-link .beauty-icon,.beauty-noir .beauty-discover img,.beauty-noir .beauty-faq summary img,.beauty-noir .beauty-orientation img{filter:brightness(0) invert(1);opacity:.85}
+.beauty-noir .beauty-header .beauty-desktop-nav{display:flex;gap:0;align-items:center;flex-wrap:nowrap;border:1px solid #ffffff21;border-radius:99px;padding:4px 9px;background:#ffffff12;backdrop-filter:blur(18px);font-size:12px}
+.beauty-noir .beauty-desktop-nav>a,.beauty-noir .beauty-nav-dropdown>summary{min-height:42px;padding:8px 12px;white-space:nowrap;border-radius:99px;color:#f7f0e7;font-size:12px}
+.beauty-noir .beauty-desktop-nav>a:hover{background:#ffffff15;text-decoration:none}
+.beauty-noir .beauty-nav-dropdown{padding:0;border:0;position:relative}
+.beauty-noir .beauty-nav-dropdown:last-child{border:0}
+.beauty-noir .beauty-nav-quick-btn{background:transparent;color:#f7f0e7;box-shadow:none;border:0;border-radius:99px;padding:8px 10px;font-size:11px}
+.beauty-noir .beauty-nav-quick-btn:hover{background:#ffffff15}
+.beauty-noir .beauty-services-submenu{background:#211a15;color:#f7f0e7;border:1px solid var(--line);box-shadow:0 18px 60px #0008;z-index:30}
+.beauty-noir .beauty-menu-trigger{display:none;color:#f7f0e7;border-color:#80715e;background:#ffffff0a;box-shadow:none}
+.beauty-noir.beauty-home{padding-top:32px}
+.beauty-noir.beauty-home .beauty-header{position:absolute;left:0;right:0;top:52px;width:calc(100% - 112px);max-width:1520px;margin:auto;padding:0 24px;min-height:74px;border:0}
+.beauty-noir .beauty-hero{position:relative;isolation:isolate;display:block;width:calc(100% - 64px);max-width:1600px;margin:0 auto;min-height:calc(100svh - 64px);padding:clamp(180px,19vh,235px) clamp(36px,5vw,80px) 100px;border:7px solid #ffffff1f;border-radius:24px;background:#17110d;overflow:hidden}
+.beauty-noir .beauty-hero-art{position:absolute;inset:0;z-index:-2;padding:0;width:100%;height:100%;background:#17110d}
+.beauty-noir .beauty-hero-image{width:100%;height:100%;aspect-ratio:auto;border-radius:0;object-fit:cover;object-position:68% 53%;filter:brightness(.52) saturate(.65);box-shadow:none}
+.beauty-noir .beauty-hero-art:after{content:'';position:absolute;inset:0;background:#130d0738;pointer-events:none}
+.beauty-noir .beauty-ritual-detail{display:none}
+.beauty-noir .beauty-hero-art figcaption{position:absolute;right:5.5%;bottom:190px;width:285px;margin:0;z-index:1;text-align:left;color:#fff;font:500 14px/1.5 Inter,sans-serif}
+.beauty-noir .beauty-welcome{max-width:720px}
+.beauty-noir .beauty-welcome>.beauty-eyebrow{color:#f0dfc6;font-size:11px;letter-spacing:.18em;margin-bottom:30px}
+.beauty-noir .beauty-welcome h1{font-size:clamp(76px,8.2vw,142px);line-height:.88;letter-spacing:-.035em;color:#fff;margin:0 0 38px;text-shadow:0 2px 22px #0003}
+.beauty-noir .beauty-welcome h1 em{color:#fff;text-shadow:none}
+.beauty-noir .beauty-welcome .beauty-intro{position:absolute;right:5.5%;bottom:65px;width:285px;max-width:285px;font-size:13px;line-height:1.75;margin:0;color:#f3ede5}
+.beauty-noir .beauty-welcome>.beauty-small{color:#eee0cc;margin:16px 0 22px;max-width:280px}
+.beauty-noir .beauty-hero-tools{gap:18px;margin-bottom:14px}
+.beauty-noir .beauty-hero-tools .beauty-button{font-size:12px;min-height:44px;padding:10px 18px;background:#160f0a80;border-color:#cbb38e;color:#fff}
+.beauty-noir .beauty-hero-search-link,.beauty-noir .beauty-discover{color:#f7f0e7;font-size:12px}
+.beauty-noir .beauty-band{background:var(--wash)}
+.beauty-noir .beauty-philosophy{padding-block:100px}
+.beauty-noir .beauty-philosophy>span{background:var(--gold);opacity:.6}
+.beauty-noir .beauty-care-image,.beauty-noir .beauty-essence-image img,.beauty-noir .beauty-everyday-image img{border-radius:14px;filter:saturate(.7);box-shadow:none}
+.beauty-noir .beauty-contact-card,.beauty-noir .beauty-gift-card,.beauty-noir .beauty-zone-note,.beauty-noir .beauty-newsletter,.beauty-noir .beauty-gift-preview{background:#241c16;border:1px solid var(--line);border-radius:18px;box-shadow:none}
+.beauty-noir .beauty-contact-card blockquote{color:#f7f0e7}
+.beauty-noir .beauty-about,.beauty-noir .editorial-review{background:var(--wash);color:var(--ink);border-color:var(--line)}
+.beauty-noir .beauty-footer{background:#0b0908;border-color:var(--line)}
+.beauty-noir .beauty-footer-bottom{border-color:var(--line)}
+.beauty-noir .beauty-footer .beauty-brand{font-size:42px}
+.beauty-noir .beauty-dialog{background:#1b1511;color:var(--ink);border-color:var(--line);box-shadow:0 30px 100px #0008}
+.beauty-noir .beauty-dialog::backdrop{background:#080604b8;backdrop-filter:blur(8px)}
+.beauty-noir .beauty-dialog-heading{background:#1b1511;border-color:var(--line)}
+.beauty-noir .beauty-dialog-close{color:var(--ink);border-color:var(--line);background:transparent}
+.beauty-noir .beauty-discovery-input,.beauty-noir .beauty-discovery-options button,.beauty-noir .beauty-discovery-actions button,.beauty-noir .editorial-print-action{background:#211a15;color:var(--ink);border-color:var(--line);box-shadow:none}
+.beauty-noir .beauty-discovery-actions button[aria-pressed=true]{background:#4a3928;border-color:var(--gold)}
+.beauty-noir .beauty-finder-result{background:#241c16;color:var(--ink);box-shadow:none}
+.beauty-noir .beauty-finder-result .beauty-eyebrow,.beauty-noir .beauty-finder-result .beauty-text-link,.beauty-noir .beauty-consultation .beauty-eyebrow{color:var(--gold)!important}
+.beauty-noir .beauty-consultation{background:var(--wash)}
+.beauty-noir .beauty-consultation input:not([type=radio]):not([type=checkbox]),.beauty-noir .beauty-consultation textarea,.beauty-noir .beauty-consultation select{background:#110e0c;color:var(--ink);border-color:#8b7862}
+.beauty-noir .beauty-printable-content{background:#faf7f2;color:#26201b}
+@media(min-width:1200px) and (max-width:1450px){.beauty-noir .beauty-header .beauty-desktop-nav{font-size:11px}.beauty-noir .beauty-desktop-nav>a,.beauty-noir .beauty-nav-dropdown>summary{padding-inline:8px;font-size:11px}.beauty-noir .beauty-nav-quick-btn{padding-inline:7px;font-size:10px}.beauty-noir .beauty-brand{font-size:25px}.beauty-noir .beauty-header{gap:12px}}
+@media(max-width:1199px){.beauty-noir .beauty-header .beauty-desktop-nav{display:none}.beauty-noir .beauty-menu-trigger{display:inline-flex}.beauty-noir .beauty-hero{padding-top:190px}.beauty-noir .beauty-welcome h1{font-size:clamp(74px,10vw,118px)}.beauty-noir .beauty-welcome .beauty-intro{width:240px}.beauty-noir .beauty-hero-art figcaption{width:240px;bottom:185px}}
+@media(max-width:760px){.beauty-noir.beauty-home{padding-top:14px}.beauty-noir.beauty-home .beauty-header{top:30px;width:calc(100% - 56px);padding:0;gap:10px;flex-wrap:nowrap}.beauty-noir .beauty-header .beauty-brand{flex-basis:auto;margin-right:auto;font-size:23px}.beauty-noir .beauty-header .beauty-brand span{font-size:7px}.beauty-noir .beauty-header>.beauty-button{min-height:42px;padding:10px 15px;font-size:11px;margin:0}.beauty-noir .beauty-menu-trigger{font-size:11px;min-height:42px;padding:9px 13px}.beauty-noir .beauty-hero{width:calc(100% - 28px);min-height:850px;border-width:4px;border-radius:20px;padding:155px 28px 225px}.beauty-noir .beauty-welcome h1{font-size:clamp(67px,12vw,92px);line-height:.94;margin-bottom:30px}.beauty-noir .beauty-welcome>.beauty-eyebrow{font-size:9px;letter-spacing:.14em;max-width:220px}.beauty-noir .beauty-welcome .beauty-intro{left:28px;right:28px;bottom:44px;width:auto;max-width:330px;font-size:13px}.beauty-noir .beauty-hero-art figcaption{left:28px;right:auto;bottom:160px;width:270px;font-size:13px}.beauty-noir .beauty-hero-image{object-position:62% center;filter:brightness(.4) saturate(.7)}.beauty-noir .beauty-hero-tools{gap:8px}.beauty-noir .beauty-welcome>.beauty-button{font-size:12px}.beauty-noir .beauty-header:not(.beauty-home .beauty-header){padding-inline:22px}.beauty-noir .beauty-philosophy{padding-block:70px}.beauty-noir .beauty-footer .beauty-brand{font-size:34px}}
+@media(max-width:380px){.beauty-noir .beauty-header>.beauty-button{display:none}.beauty-noir .beauty-hero{padding-inline:22px}.beauty-noir .beauty-welcome h1{font-size:63px}.beauty-noir .beauty-welcome .beauty-intro{left:22px;right:22px}.beauty-noir .beauty-hero-art figcaption{left:22px}}
+@media(prefers-reduced-motion:reduce){.beauty-noir *, .beauty-noir *:before,.beauty-noir *:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+@media print{.professional-site.beauty-noir{background:#fff!important;color:#000!important;--ink:#000;--muted:#333;--gold:#333;--paper:#fff;--wash:#fff;--line:#aaa;padding:0}.beauty-noir .beauty-hero{border:0;margin:0;width:100%}.beauty-noir .beauty-hero-art{display:none}}
+
+/* QA 1: reforzar el negro de la referencia y dejar aire fuera del marco. */
+@media(min-width:1200px){.beauty-noir.beauty-home{padding-top:64px}.beauty-noir.beauty-home .beauty-header{top:86px;width:calc(100% - 184px)}.beauty-noir .beauty-hero{width:calc(100% - 96px);min-height:calc(100svh - 128px);padding-top:180px}}
+.beauty-noir .beauty-hero-art:after{box-shadow:inset 440px 0 300px -90px #080503d9,inset 0 -130px 140px -80px #080503}
+.beauty-noir .beauty-header>.beauty-button{background:#faf7f2;color:#17120e;border-color:#faf7f2}
+
+.beauty-noir .editorial-card,.beauty-noir .beauty-directory-list>li{background:#211a15;box-shadow:none}
+.beauty-noir .beauty-service-filters button,.beauty-noir .beauty-service-detail{background:#211a15;color:var(--ink);box-shadow:none}
+.beauty-noir .beauty-service-filters button[aria-pressed=true]{background:#4a3928;border-color:var(--gold);color:#fff}
+.beauty-noir .beauty-service-home-tip{background:#17110e;box-shadow:none}
+
+/* QA 2: CTA de cabecera dentro del menu en movil, sin cortar su etiqueta. */
+@media(max-width:760px){.beauty-noir .beauty-header>.beauty-button{display:none}.beauty-noir .beauty-header .beauty-brand{font-size:25px}.beauty-noir .beauty-welcome h1{font-size:clamp(48px,13.8vw,62px);line-height:1.02}.beauty-noir .beauty-hero-art:after{background:#130d0738;box-shadow:inset 0 -160px 100px -90px #080503}.beauty-noir .beauty-hero-image{filter:brightness(.55) saturate(.7)}.beauty-noir .beauty-hero-art figcaption{bottom:164px}.beauty-noir .beauty-hero-tools{align-items:flex-start;flex-direction:column}}
+@media(max-width:380px){.beauty-noir .beauty-welcome h1{font-size:46px}.beauty-noir .beauty-header .beauty-brand{font-size:23px}}
+
+/* QA 3: anular el limite de 480px y el margen heredados de la foto movil. */
+.beauty-noir .beauty-hero-art{margin:0!important}
+.beauty-noir .beauty-hero-image{max-height:none}
+
+/* Page-based professional layout. Natural overflow remains available for long content. */
+.beauty-page-shell{min-height:100svh;display:flex;flex-direction:column;padding-top:0!important}
+.beauty-page-shell .beauty-header{position:sticky!important;top:0!important;width:100%!important;max-width:none;margin:0;padding:20px 5%;background:#15120fef;backdrop-filter:blur(16px);z-index:30;gap:22px;border-bottom:1px solid var(--line)}
+.beauty-page-shell .beauty-header .beauty-brand{font-size:27px}
+.beauty-page-shell .beauty-header .beauty-desktop-nav{display:flex;background:#ffffff08;border:1px solid var(--line);border-radius:40px;padding:5px;margin:auto}
+.beauty-page-shell .beauty-nav-dropdown,.beauty-page-shell .beauty-nav-quick-btn{display:none}
+.beauty-page-shell .beauty-desktop-nav>a{font-size:13px;padding:10px 15px;border-radius:28px}
+.beauty-page-shell .beauty-desktop-nav>a[aria-current=page],.beauty-page-shell .beauty-category-nav a[aria-current=page]{background:#c2a778;color:#18140e}
+.beauty-page-shell .beauty-menu-trigger{display:none}
+.beauty-page-shell>main{flex:1;outline:none}
+.beauty-page-shell .beauty-hero{width:100%;margin:0;border:0;border-radius:0;min-height:calc(100svh - 156px);padding:100px 7% 130px}
+.beauty-page-shell .beauty-welcome h1{font-size:clamp(55px,6.5vw,88px);line-height:1.06;margin-top:25px;max-width:650px}
+.beauty-page-shell .beauty-welcome .beauty-intro{position:static;width:auto;max-width:540px;margin-block:24px;font-size:16px}
+.beauty-page-shell .beauty-hero-art figcaption{display:none}
+.beauty-page-shell .beauty-hero-image{object-position:72% center;filter:brightness(.65) saturate(.55)}
+.beauty-page-shell .beauty-hero-art:after{box-shadow:inset 650px 0 450px -100px #100d0bed}
+.beauty-home-actions{display:flex;gap:12px;flex-wrap:wrap}
+.beauty-page-copy{max-width:900px;padding-block:60px}
+.beauty-page-copy h1,.beauty-treatment-index h1{font-size:clamp(38px,5vw,64px);line-height:1.1}
+.beauty-page-copy p{max-width:700px;line-height:1.8}
+.beauty-compact-footer{display:flex;gap:20px;flex-wrap:wrap;justify-content:space-between;padding-block:20px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.beauty-treatment-index{padding-block:40px}
+.beauty-category-nav{display:flex;gap:10px;margin-block:24px}
+.beauty-category-nav a{padding:10px 20px;border:1px solid var(--line);border-radius:25px;text-decoration:none}
+.beauty-treatment-links{list-style:none;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 24px;margin-block:20px 26px}
+.beauty-treatment-links a{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:48px;padding:12px 16px;text-decoration:none;border:1px solid var(--line);border-radius:8px;background:var(--wash)}
+.beauty-treatment-links a:hover{border-color:var(--gold)}
+.beauty-detail-back{padding-top:26px}
+.beauty-page-shell .beauty-directory-list{grid-template-columns:1fr}
+.beauty-page-shell .beauty-services-directory{padding-top:28px}
+@media(max-width:1050px){.beauty-page-shell .beauty-header .beauty-desktop-nav{display:none}.beauty-page-shell .beauty-menu-trigger{display:inline-flex}.beauty-page-shell .beauty-header{padding:16px 5%}.beauty-page-shell .beauty-header>.beauty-button{display:none}}
+@media(max-width:680px){.beauty-page-shell .beauty-hero{padding:55px 24px 80px;min-height:calc(100svh - 170px)}.beauty-page-shell .beauty-welcome h1{font-size:46px}.beauty-page-shell .beauty-welcome .beauty-intro{font-size:14px}.beauty-page-shell .beauty-hero-art:after{box-shadow:inset 300px 0 250px -50px #100d0be0}.beauty-treatment-links{grid-template-columns:1fr}.beauty-compact-footer{justify-content:flex-start;gap:14px}.beauty-page-shell .beauty-header .beauty-brand{font-size:23px}}
+
+.beauty-page-shell .beauty-hero{padding-top:55px;padding-bottom:40px}
+@media(max-width:680px){.beauty-page-shell .beauty-hero{padding-top:40px;padding-bottom:40px}}
+
+/* Filtrado local de tratamientos, integrado en la navegación por páginas. */
+.beauty-page-shell .beauty-directory-search{max-width:640px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-block:28px}
+.beauty-page-shell .beauty-directory-search label{width:100%;font-weight:600}
+.beauty-page-shell .beauty-directory-search input{flex:1;min-width:160px;width:100%;border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--wash);color:var(--ink);font:inherit}
+.beauty-page-shell .beauty-directory-search p{width:100%;margin:0}
+.beauty-page-shell .beauty-directory-search button{min-height:44px}
+.beauty-page-shell .beauty-directory-search :focus-visible{outline:2px solid var(--gold);outline-offset:5px}
+.professional-site.beauty-page-shell .beauty-header{padding:18px 5%;min-height:96px;align-items:center}
+@media(max-width:680px){.professional-site.beauty-page-shell .beauty-header{padding:14px 5%;min-height:76px}.beauty-page-shell .beauty-hero{min-height:calc(100svh - 160px)}}
