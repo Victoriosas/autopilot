@@ -467,4 +467,513 @@ Siguiente prompt encadenado: verificar exclusión y que el remoto siga en `b136b
 - Defecto accionable reproducible: el email y el selector de interés tienen etiquetas visuales, pero `WaitlistSection.tsx` no usa pares `htmlFor`/`id`; el árbol accesible dejó el email sin nombre. El input honeypot también aparece sin nombre en el chequeo heurístico, pero está correctamente excluido con `aria-hidden` y `tabIndex=-1`. No se envió el formulario ni se transmitió dato alguno.
 - Próxima corrección, después de restaurar el push: prueba RED que exija nombres accesibles únicos para ambos controles, cambio mínimo con `id`/`htmlFor`, GREEN focal y `npm run verify`. Revisar aparte el tamaño/espaciado de enlaces compactos antes de afirmar WCAG 2.2 AA; esta auditoría automática no sustituye navegación completa por teclado ni lector de pantalla.
 
-Siguiente prompt encadenado: primero verificar que el remoto permanezca en `b136b31` y renovar/usar una autenticación Git válida para publicar únicamente por fast-forward `983891f`, `17c4cd2`, `6d132be` y este checkpoint. Confirmar CI exacta y preview del SHA publicado sin promover producción. Luego aplicar ECC TDD/accessibility al formulario de lista prioritaria: exigir y añadir asociación `htmlFor`/`id` para email e interés, sin enviar formularios ni alterar el contrato backend; repetir prueba focal, TypeScript y suite completa. Revalidar `victoriosa.click` sólo lectura. No crear commits remotos alternativos, reescribi
+Siguiente prompt encadenado: primero verificar que el remoto permanezca en `b136b31` y renovar/usar una autenticación Git válida para publicar únicamente por fast-forward `983891f`, `17c4cd2`, `6d132be` y este checkpoint. Confirmar CI exacta y preview del SHA publicado sin promover producción. Luego aplicar ECC TDD/accessibility al formulario de lista prioritaria: exigir y añadir asociación `htmlFor`/`id` para email e interés, sin enviar formularios ni alterar el contrato backend; repetir prueba focal, TypeScript y suite completa. Revalidar `victoriosa.click` sólo lectura. No crear commits remotos alternativos, reescribir historia, migrar SQL, habilitar pagos, publicar productos/campañas ni tocar DNS. Al terminar la tarea, verificar el resultado, generar el siguiente prompt con la acción pendiente de mayor impacto e incluir esta misma regla; ejecutarlo inmediatamente mientras exista trabajo seguro y recursos, y ante límite guardar checkpoint sin crear automatizaciones duplicadas ni solapar ediciones.
+
+
+## Checkpoint 2026-10-12 14:17 America/Montevideo — etiquetas accesibles cerradas localmente
+
+- Exclusión confirmada: no había otro proceso sobre `C:\autopilot`. El remoto continúa en `b136b31a359b76c4bacb46e0c94fc8bde62d14e9`; PR #66 sigue abierta, borrador, mergeable y no fusionada. GitHub confirma para ese SHA el workflow Core v4 `38213383590` en `success`. La autenticación Git local sigue fallando con `Invalid username or token`, por lo que esta evidencia remota no acredita los commits locales pendientes.
+- ECC Autopilot Core, Autopilot Safety, TDD y accessibility aplicados. RED `c42193f1d13533d4efea80ef9d02b2c62d032f16`: render estático real de `WaitlistSection`, fallo exacto `Missing <label> with for="waitlist-email"`.
+- GREEN `5202520dd5620145672562adf5ab2c90497dd738`: email e interés tienen IDs estables, nombres de formulario y etiquetas `htmlFor` asociadas. No cambió el payload, endpoint ni comportamiento de envío. El primer intento GREEN descubrió y corrigió una aserción defectuosa que sólo capturaba la apertura de `label`; no se contó como éxito.
+- Evidencia ejecutada: prueba focal 1/1; `npm run verify` con TypeScript, Node 144/144, build servidor y build Vercel exitosos; `git diff --check` sin errores. La advertencia de chunk Vite permanece preexistente. No hay script de cobertura configurado, por lo que no se inventa un porcentaje.
+- Estado público read-only a las 14:16: `victoriosa.click` continúa HTTP 402 con `x-vercel-error: DEPLOYMENT_DISABLED`; `victoriosas.online` responde HTTP 200. No se tocó DNS, hosting ni facturación.
+- Rama local seis commits delante del remoto antes de este checkpoint: FAQ TDD/SEO, dos checkpoints de continuidad y etiquetas accesibles RED/GREEN. No existe CI ni preview de esos commits. Los artefactos ajenos `.audit/`, `.playwright-cli/` y `test-*.ts` se preservaron.
+
+Bloqueo principal: `BLOCKED_EXTERNAL_CREDENTIALS` para publicar. Intervención mínima: renovar la autenticación Git/GitHub del checkout con permiso de escritura; nunca pegar el token en el repositorio o la conversación.
+
+Siguiente prompt encadenado: verificar exclusión y que el remoto siga en `b136b31`. Si Git está autenticado, publicar por fast-forward todos los commits locales hasta este checkpoint y verificar PR #66, CI exacta y preview del SHA nuevo; inspeccionar en el preview el `FAQPage` y los nombres accesibles del email/interés, sin promover producción ni enviar el formulario. Si sigue bloqueado, no crear commits alternativos por API ni reescribir historia: ejecutar sólo una auditoría local/read-only de foco visible, navegación por teclado y tamaños de objetivo de la home, y crear TDD únicamente ante un defecto concreto. Revalidar `victoriosa.click` sólo lectura. No tocar SQL remoto, pagos, compras, campañas, productos, DNS o credenciales. Al terminar la tarea, verificar el resultado, generar el siguiente prompt con la acción pendiente de mayor impacto e incluir esta misma regla; ejecutarlo inmediatamente mientras exista trabajo seguro y recursos, y ante límite guardar checkpoint sin crear automatizaciones duplicadas ni solapar ediciones.
+
+
+## Checkpoint 2026-10-12 14:22 America/Montevideo — recorrido de teclado público verificado
+
+- Se ejecutó en `https://victoriosas.online/` un recorrido read-only de 54 pulsaciones Tab, sin enviar formularios ni activar checkout, cuenta o compras. El orden llegó de cabecera y filtros a contenido, cinco `summary` de FAQ, lista prioritaria y pie, y luego volvió al inicio; no se observó trampa de teclado.
+- Los controles inspeccionados mostraron un indicador perceptible de foco: outline nativo en enlaces, botones, FAQ y checkbox; búsqueda con ring; email y selector cambian el borde completo de `rgb(221, 206, 197)` a `rgb(123, 89, 76)`. Esto es evidencia del viewport/navegador observado, no una auditoría WCAG completa ni validación con lector de pantalla.
+- Producción todavía expone email y selector sin `id`, `name` ni etiquetas programáticamente asociadas, coherente con que el GREEN local `5202520` no está publicado. El checkbox sí conserva una etiqueta accesible. No apareció un segundo defecto concreto de foco que justifique otro cambio TDD en este lote.
+- No se modificó código ni producción durante la auditoría. El HEAD funcional local sigue siendo `5202520`; este checkpoint documental deja la rama siete commits por delante del remoto antes de su propio commit. Continúa `BLOCKED_EXTERNAL_CREDENTIALS`; la CI remota `38213383590` sólo acredita `b136b31`.
+
+Siguiente prompt encadenado: verificar exclusión, autenticación y que el remoto permanezca en `b136b31`. Si la autenticación Git fue restaurada, publicar exclusivamente por fast-forward la cadena local completa, confirmar el SHA remoto, PR #66 y CI exacta, y auditar el preview sin enviar datos: `FAQPage`, nombres accesibles de email/interés y recorrido básico de teclado. Si la autenticación continúa inválida, no duplicar commits por API ni reescribir historia; mantener el bloqueo registrado y avanzar una tarea local independiente de seguridad/compatibilidad sólo si surge de evidencia reproducible con TDD. Revalidar `victoriosa.click` únicamente en lectura. Mantener prohibidos SQL remoto, pagos reales, compras, campañas, publicación de productos, promoción, DNS y credenciales. Al terminar la tarea, verificar el resultado, generar el siguiente prompt con la acción pendiente de mayor impacto e incluir esta misma regla; ejecutarlo inmediatamente mientras exista trabajo seguro y recursos, y ante límite guardar checkpoint sin crear automatizaciones duplicadas ni solapar ediciones.
+
+## Checkpoint 2026-10-17 00:40 America/Montevideo - validacion de redireccion de pago
+
+- PR #66 fusionada por el propietario: main eb34034d9e702ca2ccb4a0dd7106d4c69a739707. Core run 38999405673 y Supabase aislado 38999405697 success. Trabajo nuevo en C:\autopilot-payment-review, rama codex/payment-handoff-validation-20261017 desde origin/main; el checkout C:\autopilot y sus cambios concurrentes quedaron intactos.
+- Defecto RED reproducido: el adaptador aceptaba id vacio y checkout_url arbitraria siempre que ambos fueran strings. Nueva regresion fallo con Missing expected rejection para id vacio. Se comprobo tambien que no habia validacion de referencia/importe/moneda en la respuesta de creacion.
+- GREEN: antes de devolver el enlace se exige id valido, tipo online/modo manual, estado created, referencia exacta, importe decimal positivo igual a la reserva y moneda UYU sin alias contradictorio. El destino exige HTTPS, hostname exacto de Mercado Pago Uruguay, ruta /checkout/v1/redirect, un solo order_id que coincide con el id recibido y ausencia de credenciales, puerto alternativo o fragmento. Es una politica local restrictiva para esta tienda UYU; cualquier cambio del contrato requiere revision. Una respuesta de replay ya processed se conserva como incierta para recuperacion, no se ofrece para pagar otra vez.
+- Fuente consultada: https://www.mercadopago.com.uy/developers/es/reference/online-payments/checkout-pro/create-order/post y https://www.mercadopago.com.uy/developers/es/docs/checkout-pro-orders/create-order. La referencia describe type, processing_mode, status, external_reference, total_amount, currency y checkout_url. La allowlist es una decision defensiva local, no una garantia del proveedor.
+- La regresion cubre respuestas malformadas, dominios similares, userinfo, HTTP, puerto, ruta, pedido repetido/conflictivo y discrepancias financieras. Una prueba del flujo real createAtomicCheckout con gateway y HTTP simulado comprueba que un destino invalido solo alcanza reserve/begin_provider: no bind, reject ni liberacion de stock incierto.
+- Validacion local: 148/148 pruebas, cero omitidas; npm run verify OK (TypeScript y ambos builds incluidos), secret scan y diff check OK. Tras agregar la prueba adicional se repitio la suite completa; los cambios productivos no variaron. Persiste advertencia Vite de chunk grande. No se hicieron llamadas de pago reales ni sandbox del proveedor, SQL alojado, merge o cambios de configuracion. Credenciales MP de prueba siguen pendientes.
+
+Siguiente prompt: publicar esta rama como PR en borrador y comprobar CI Core y Supabase aislado del SHA exacto, junto con health/config del preview y checkout apagado. No fusionar automaticamente. Luego retomar autenticacion MCP y usuarios/credenciales sandbox de Mercado Pago mediante canal seguro; no confundir HTTP simulado con validacion de proveedor. Mantener pendiente reconciliacion de historial alojado y fulfillment. Al terminar la tarea, generar el siguiente prompt y ejecutarlo mientras haya trabajo seguro y recursos; ante dependencia externa conservar checkpoint sin duplicar automatizaciones.
+
+
+## Checkpoint 2026-10-17 01:25 America/Montevideo - preseleccion comercial sin publicar
+
+- Instruccion vigente: omitir Mercado Pago; avanzar proveedores, catalogo y preparacion de pedidos. Main actual a85a59b incluye PR #67 fusionada. Worktree independiente C:\autopilot-catalog-review en codex/catalog-launch-review-20261017; cambios concurrentes de C:\autopilot intactos.
+- Consulta alojada read-only products (columnas comerciales, sin datos personales), limite 1000: cero filas. CJ_API_KEY presente localmente, pero autenticacion por cliente fallo CJ_HTTP_401; se detuvo el intento sin reintentos de busqueda. El cliente traduce errores de negocio de autenticacion a 401: no atribuirlo a un status HTTP real ni declarar token vencido sin diagnostico del proveedor. No se ejecutaron scripts legacy de importacion/publicacion.
+- La busqueda de plugins DSers/CJ no devolvio alternativas conectables en esta sesion. No se revalido DSers ni se invento estado de tiendas.
+- Preparadas cinco fichas ES con URL y SKU publicos: cepillo capilar E4E9B804-6EC0-483F-BA9A-FE4FC7D88331, vincha 2407240524011608500, neceser plegable 1484810775192276992, transparente 1845665393068101632 y apertura amplia 1546430072087916544. Son preselecciones DRAFT_RESEARCH_ONLY en docs/catalog/launch-shortlist-20261017.json y LAUNCH_SHORTLIST_20261017.md; cero filas insertadas, cero publicaciones/compras.
+- Fuentes primarias CJ abiertas el 17/10: referencias publicas de producto, sin stock autenticado ni flete UY. Inventario aparece -- y el 0.00 de envio requiere login: no acredita envio gratis. Precio de la quinta ficha ambiguo, guardado null. Todas las variantes, stock, costos de importacion, tipo de cambio, precio de venta y margen quedan null hasta evidencia. Copy elimina claims medicos y explicita revision de composicion/muestra. Estuche voluminoso excluido y dos kits conceptuales sin precio.
+- Limite: no hay cinco productos aprobados ni rentabilidad demostrada. Bloqueo del acceso a CJ para stock/cotizacion; falta completar costos y condiciones. Mercado Pago permanece fuera del lote por instruccion del propietario. Preparacion del catalogo es documental; ninguna modificacion de storefront, base, pagos o produccion.
+
+Siguiente prompt: validar integridad de ambos archivos y que ningun borrador tenga publicationAllowed=true o campos comerciales inventados; publicar rama y PR de revision. Con acceso CJ valido en canal seguro, revalidar por VID los primeros tres candidatos, obtener stock por almacen y cotizacion real a UY; completar costos y comparar mercado antes de aprobar o importar borradores. No usar scripts legacy, publicar, comprar, modificar pagos ni adivinar aduana/FX/margen. Al terminar, generar el siguiente prompt y ejecutarlo mientras exista trabajo seguro y recursos; ante bloqueo externo conservar checkpoint.
+
+## Checkpoint 2026-10-17 - Victoriosas Beauty requests
+
+Rama codex/beauty-requests-20261017 basada en a38ff01. Inventario en docs/BEAUTY_SERVICES_OPERATIONS.md. Implementados API opt-in /api/beauty, consulta comercial minima, referencia opaca de WhatsApp, bandeja admin con Auth existente, migracion local de RLS y estados. Sin SQL alojado ni produccion. Pruebas PostgreSQL aislado 7/7 y suite local 175/175, tipos/builds correctos; QA desktop/mobile con datos sinteticos y registro deshabilitado comprobado. CI Supabase Beauty preparada, validar SHA remoto antes de afirmar Auth/PostgREST. Coordinador acotado ejecuta una tarea permitida por llamada; dos tareas verificadas; scheduler 6h existente preservado.
+
+Siguiente instruccion: publicar rama revisable sin promover, comprobar CI aislada real Beauty y corregir fallos; despues completar retencion fisica y catalogo administrable antes de solicitar aprobacion concreta de migracion/despliegue. No usar datos reales, cuentas del empleador ni activar pagos. Preservar cambios concurrentes previos de este archivo: no incluirlos completos en commit propio.
+
+## Verificación Beauty 2026-10-17 - CI integrada y paquete offline
+
+PR #73 en borrador: https://github.com/Victoriosas/autopilot/pull/73. Core f58ba9c success (39068578819/39068582833); Beauty Supabase fc6115a success (39068457508), Auth/PostgREST reales 5/5 en stack desechable. PostgreSQL Beauty local 8/8. Paquete de dos SQL preparado offline con hashes y requisitos, sin backup creado ni aprobación. Producción sigue a85a59b y checkout false. Ver docs/BEAUTY_SERVICES_QA.md. Catálogo administrable, operación de retención y aprobación específica de migración/despliegue siguen pendientes. Siguiente: preparar catálogo y revisión comercial sin publicar, preservar cambios ajenos y no duplicar scheduler.
+
+
+## 2026-10-17 — Beauty: catálogo administrable y evaluación privada
+
+- Rama `codex/beauty-requests-20261017`; PR #73 draft sobre la rama de #72. #72 continúa OPEN/draft en a38ff01. No se fusionó ni rebasó ninguna.
+- Código fd67115: catálogo con precios pendientes, duración/condiciones/disponibilidad y estados; consulta existente integrada por identificador y snapshot histórico generado en base; CRM conserva los términos elegidos.
+- Módulo `/beauty-professional` separado del CRM, membresía explícita, RLS por profesional, consentimiento escrito referenciado, borrador y finalización de solo lectura. Cambio de sesión limpia los paneles. No diagnósticos ni envío de información sensible.
+- Publicación owner-only en base, cerrada por defecto, más gate del servidor. Cuatro fichas seed en borrador sin precio. Tres migraciones Beauty preparadas, no aplicadas alojadas.
+- Revisión independiente corrigió bypass de publicación directa, disponibilidad pública, permisos PATCH, inicio/finalización de borradores, sesión privada y contexto histórico en CRM.
+- Core push 39070276526 y PR 39070280042 success: 180/181 Node; una prueba de Windows omitida en Linux; builds, secretos e inventario/replay aprobados. `npm run verify` local exit 0.
+- Supabase desechable real 39070276676 success: suites 5/5 + 6/6 con Auth, PostgREST, perfiles separados, snapshot, consentimiento y RLS; stack apagado. PostgreSQL local catálogo 9/9 y solicitudes 8/8; ambos clusters detenidos.
+- Navegador: recorrido público y evaluación completa con datos sintéticos, móvil 390px sin overflow. Fixture visual simula permisos; la evidencia de autorización real procede de CI. Capturas `.audit/beauty-evaluation-mobile.png` y `.audit/beauty-request-mobile.png`.
+- Coordinador completó tres tareas acotadas con evidencias, sin scheduler nuevo ni bucle. Siguiente instrucción generada y ejecutada: paquete comercial offline de cuatro fichas con precios nulos y paquete SQL de tres migraciones con hashes. Ver docs/BEAUTY_SERVICES_NEXT_PROMPT.md.
+- Pendiente antes de lanzamiento: tarifas/alcance y consentimiento aprobados por Sofía, identidad profesional, privacidad/retención, respaldo/restauración, autorización específica de SQL y despliegue. Sin producción, pagos, mensajes, datos reales ni permisos alojados. Sin métricas reales de ventas para este módulo.
+- Cambios concurrentes ajenos conservados: estado previo de este documento, archivos .audit/.playwright-cli y scripts exploratorios no incorporados a la entrega.
+
+## 2026-10-17 - Auditoria funcional Victoriosas
+
+Worktree diseno, rama codex/victoriosas-functional-audit-20261017 sobre main 1d647a2. Nueva entrada publica sin comercio ni formularios, contacto neutral WhatsApp; identidad Victoria/Sofia pendiente. Rutas privadas conservan Auth/RLS. Supabase remoto confirma Beauty aplicado con versiones distintas a locales, RLS en cinco tablas y cuatro servicios draft; requests/catalog/publication apagados. Sin SQL remoto de escritura. Eliminado fallback de tarifas y cerrada waitlist por defecto. Lockfile parcheado compatible, audit prod cero avisos. Evidencia, limites y siguiente prompt en docs/VICTORIOSAS_FUNCTIONAL_AUDIT.md. Verificar CI y preview del SHA final antes de promover.
+
+## 2026-10-17 - Revision visual/editorial PR79, sin produccion
+
+Portada con fotografias aprobadas existentes, descriptor Estetica profesional y evaluacion inicial remota. De mi para ti implementado con dos borradores y cuatro categorias; revision solo en dev/preview, build productivo sin borradores. verify185/185, Playwright cuatro anchos y recorrido editorial, sin escrituras al navegar. Informe docs/VICTORIOSAS_VISUAL_EDITORIAL_REVIEW.md y calendario docs/DE_MI_PARA_TI_EDITORIAL.md. Prohibido merge/promocion hasta revision y aprobacion del propietario. Registrar CI/preview exactos en PR79.
+
+## 2026-10-18 - Validacion a16cc9a / copy aprobado PR80
+
+CI original push/PR SUCCESS. Arbol Git identico a PR80; textos conservados. Ver docs/VICTORIOSAS_PR79_FINAL_VALIDATION.md. Nuevas pruebas fijan copy aprobado, FAQ actual, separacion de validacion Vercel toolbar y guard de ambos borradores. verify local186/186; axe seis vistas sin infracciones; LCP movil laboratorio mediano1028ms con cache off/red1.6Mbps/CPU4x. Sin INP de campo ni login administrativo real. Produccion sigue1d647a2, sin merge/promocion. Antes de publicar: aprobacion, CI/preview head definitivo y rebuild production; nunca promover artefacto Preview. Siguiente etapa interna preparada en docs/EDITORIAL_LAUNCH_READINESS.md sin programacion/envios.
+
+## 2026-10-19 - Alineacion GitHub y SEO por ruta (#84 / PR85)
+
+- C:\autopilot actualizado a codex/seo-route-metadata-oct19 desde origin; main remoto 7d85198 incluye PR79/80 fusionados. Las notas anteriores son historicas, no estado productivo actual.
+- Documento local pendiente conservado en stash e4576a84eaacae49ecb9d175ca92c3a617bffd61 (backup local continuity before alignment 2026-10-19). No aplicar todo el stash sobre esta rama: revisar diferencias antes de recuperar notas. Archivos sin seguimiento preservados.
+- RED eca30de: tres pruebas ejecutadas fallan por canonical/editorial compartidos e indexacion de fallback. GREEN: Vite genera HTML inicial editorial con title/description/canonical/OG propios y fallback noindex sin canonical de home. Rewrites Vercel separan editorial, aliases de home y fallback; API preservada. Sitemap incorpora solo indice editorial; no publica articulos.
+- npm run verify: 189/189, tipos y ambos builds OK. Primera corrida fallo en prueba Windows existente: Get-FileHash ausente del PSModulePath heredado. Segunda corrida completa pasa agregando ruta de modulos Windows al entorno del proceso; ninguna configuracion del sistema modificada.
+- scripts/check-route-html.mjs comprueba HTML emitido, assets existentes, sitemap y destinos Vercel. Builds production y preview verificados; los tres documentos preview contienen noindex,nofollow. Playwright/Edge local: home 1440/768/390 sin overflow, CTA de evaluacion remota con WhatsApp correcto; indice editorial con titulo/H1/canonical propios. No mensajes enviados. Vite preview no emula rewrites de Vercel: HTML inicial comprobado en artefactos; falta smoke HTTP del hosting exacto.
+- No merge ni promocion, SQL, pagos o publicaciones. PR83 (#82) sigue separado: esta entrega no corrige aun HTTP410/301 de rutas retiradas.
+- Siguiente: comprobar CI/preview exactos del PR85 y respuestas HTTP iniciales; despues implementar #82 en su rama, conservando estas reglas y sin duplicar trabajo. Mantener campana y articulos como borradores.
+
+## 2026-10-19 - Home Figma dorado por seleccion del propietario
+
+Nueva prioridad explicita: todos los textos del frame Figma 2011:1869, composicion equivalente y dorados. Rama codex/figma-gold-home-20261019 sobre PR85; archivo Figma intacto. Copy PR80 de home reemplazado por la nueva seleccion; fixture historico conservado. Siete fotos y ocho SVG locales originales, fuentes locales con OFL, responsive sin overflow a 1440/768/390/320px. Cotejo DOM105/105; axe tres anchos sin infracciones. verify189/189, tipos y builds OK; final build/check-route-html/secret-scan/diff-check OK. Evidencia y limites en docs/FIGMA_GOLD_REVIEW_20261019.md. Sin produccion, merge, pagos, formularios ni envios. PR85 tiene preview Vercel validado en e7dfd18; Core GitHub sigue queued al revisar, no aprobado. Siguiente: comprobar preview/CI del nuevo PR exacto, presentar capturas para revision; despues retomar #82 sin duplicacion.
+
+
+## 2026-10-19 - Cierre completo de web publica, PR86
+
+Implementacion terminada bajo el alcance Figma dorado y contacto remoto. Agregados /privacidad, pieza OG/Twitter1200x630, favicon dorado, anclas/tactil y fuentes WOFF2 locales (453344 bytes frente a1523892). Rutas retiradas /tienda,/checkout,/tratamientos410; desconocidas404; APIs y acceso privado conservados. Preview de borradores permitido, produccion404. Regresion de empaquetado nativo detecto error ESM real de Vercel; corregido con imports.js y probado sin tsx/bundler. GREEN funcional50ab3e0ceb977cb2b759f3a31907e086addda6c8; npm run verify194/194, tipos/builds/secret-scan/diff/check-route-html OK. Cobertura focalizada publicRouting/routeMetadata100%, no global.
+
+Preview READY dpl_RHhb89pPPXM1dTezyAY3xWBUFUig https://autopilot-mxljpitvn-autopilot12.vercel.app: HTTP200 home/editorial/privacidad,410 retiradas,404 desconocidas; health confirma SHA exacto y checkoutfalse, beautyrequestsfalse, MPconfiguredfalse. Produccion comprobada en7d85198, sin cambio. Playwright cuatro anchos sin overflow/imagenes rotas; axe15vistas sin infracciones, tecladoFAQ/skiplink OK. Laboratorio local coldcache1.6Mbps/150ms/CPU4x: LCP1060/1032/896ms, mediana1032; CLS0.0062, sin metricas de conversion ni INPcampo.
+
+Informe final: docs/INFORME_WEB_COMPLETA_20261019.md. Capturas .audit/web-final-*.png. PR86 depende de PR85; #82 implementado aqui, PR83 es plan historico y no debe duplicarse. GitHub Core50ab3e0 validate/postgres QUEUED, Supabase Preview SKIPPED; no asumir aprobacion remota/hosted. Sin merge, promocion, mensajes, SQL, cobros o campanas. Siguiente: comprobar cola/CI, revision de derechos de imagen/operacion humana y aprobacion productiva; despues nuevo build production sin borradores, dominio/SHA/smoke. No cambiar automatizaciones ni repetir pruebas de codigo sin cambios.
+
+
+## 2026-10-19 14:02 - CI aprobada y navegador remoto validado
+
+Core39283180459 y39283173812 SUCCESS para0e67bc02482b7053977011290b2c53a4b03b8374: validate193/194 en Linux (solo omite prueba Windows, local194/194), PG desechable17+1+13+1+1 sin fallos/omitidas. PR85 tambien green. Sustituye el bloqueo historico de cola; Supabase Preview sigue SKIPPED y no acredita hosted.
+
+Preview0e67bc0 READY https://autopilot-qn52bdvuo-autopilot12.vercel.app revisado en Edge real a1440/768/390/320: sin overflow, imagenes rotas, errores JS, recursos HTTP fallidos ni infracciones axe del contenido app. FAQ teclado y navegacion real a privacidad correctas. Pieza socialHTTP200 PNG1200x630. Health SHA exacto checkoutfalse, retiradas410/desconocidas404. Evidencia .audit/web-remote-review-results.json y web-remote-*.png. Informe final actualizado; sin cambios funcionales, produccion, merges, mensajes o permisos permanentes. Siguiente: revision humana y publicacion autorizada con rebuildproduction, derechos del material y operacion WhatsApp; no ampliar alcance ni repetir suites aprobadas sin cambios.
+
+
+## 2026-10-19 14:19 - Publicacion autorizada y verificada
+
+El propietario concedio autorizacion expresa de publicacion. PR86 fusionado en rama85 y PR85 despues enmain; sin version visual intermedia. Candidato bc16a1c CIgreen y arbol identico al revisado. Nuevo build production en ec17f621ce12c30c9a087a1571214078fd8ef795, deployment dpl_FJ7jh7dLNsfYBBNBMfdZaJRHj88z READY, dominio victoriosas.online. No se promovio Preview. Coremain39293070726 SUCCESS.
+
+Verificacion HTTP del dominio: home/editorial/privacidad200 indexables, retiradas410 GET+HEAD, inexistentes y ambos borradores404. Health confirma SHA ec17f62 y checkoutfalse; Beautyrequests/catalogfalse, MPconfiguredfalse. Edge real1440/768/390/320 sin overflow, imagenes rotas, erroresJS ni recursos fallidos; axe cuatro vistas sin infracciones; FAQteclado/privacidadOK; cero formularios y borradores invisibles. Issue82 completado y PR83 cerrado por sustituido, ramas conservadas. Reporte: docs/INFORME_PUBLICACION_20261019.md. Deploymentanterior8fanqrM2uy1DzHPXzUSDmj6Xfq4V queda como referencia reversible; no rollback.
+
+Sin DNS, credenciales, pagos, SQLhosted, datos reales, compras, mensajes o campanas. Notas documentales posteriores no cambian funcionalidad; verificar siempreSHA actual enhealth. No reabrir bloqueo historico de autorizacion web ya ejecutada. Articulos, campañas, captacion y pagos siguen sin activacion; siguiente prioridad es vigilancia publica y operacion humana, sin inventar ventas o disponibilidad.
+
+
+## 2026-10-19 - Auditoria y refuerzo de tareas programadas
+
+Usuario solicita revisar todas las tareas y continuar; menciona AWS pendiente de aclaracion. Automatizacion victoriosa-autopilot-6h actualizada ACTIVE sin duplicar cadencia/hilo, con estado publicado y prioridades81/84. Metricool confirma dos borradores2nov10h/5nov15h draft=true autoPublish=false; sin envios. No CLI/config/credentials/conector AWS identificado; no inventar cuenta o migracion.
+
+Monitor publico pasa de diario a6h; GET unicamente, HTTP200/410/404, SHA valido y cierre estricto checkout/Beauty/catalog/MP. RED5e408d7 modulo ausente, GREEN8/8 y smoke real2a2c118 correctos; verify202/202, tipos y ambos buildsOK. Informe docs/REPORTE_AUTOMATIZACIONES_20261019.md. Sin cambios visuales, pagos, SQL, secretos o DNS. Siguiente: comprobar CI del PR e integrar monitor autorizado, ejecutar workflow real; luego continuar81/84 con activos revisables sin publicar ni duplicar borradores. AWS solo tras identificar alcance/conexion; si no hay respuesta seguir tarea web independiente.
+
+
+## 2026-10-19 - Punto de partida y operacion de consultas
+
+Propietario aprueba propuesta de convertir visitas en consultas. Se reutilizan tres tarjetas existentes con heading Encontrá tu punto de partida y opcion de orientacion; ContactLink genera mensajes especificos con origen web, sin captacion/analytics ni envio automatico. Estilo dorado conservado y targets44px. Datos de identidad Victoria/Sofia, modalidad y zonas solicitados, pendientes; no asignar funciones o tarifas por inferencia.
+
+RED45f8889 cuatro intereses fallan; GREEN5/5, verify207/207 Windows y ambos buildsOK. Edge1440/768/390/320 y axe sin errores/overflow/imagenes rotas/infracciones; cuatro destinos wa.me interceptados, no recepcion humana. Documentacion y tres piezas sociales propuestas en docs/CONSULTAS_Y_LANZAMIENTO_20261019.md; plantilla vacia sin PII en docs/consultas-metricas-template.csv. No duplicar Metricool ni enviar campañas.
+
+Siguiente: CI y preview exactos, integrar mejora web autorizada y comprobar dominio/SHA y links reales; operacion humana pendiente de confirmar titular/receptor/profesional. Luego revisar las propuestas con el propietario y usar registro privado para consultas reales, sin inventar metricas ni subir datos de clientes a Git.
+
+
+## 2026-10-19 - Email gratuito autorizado para la web
+
+Propietario crea y muestra bandeja Victoriosas@proton.me, rechaza todo pago y pide consultas por correo ademas de WhatsApp. No crear ni anunciar consultas@victoriosas.online. Se agrega channel=email a ContactLink sin cambiar defaultWhatsApp, mensajes por interes, direccion visible/copiar, contacto/footer/privacidad y metadatos coherentes. Sin SMTP, DNS, suscripciones, formularios, cuenta nueva, envio automatico o cambios de seguridad. DesktopCommander vuelveOnline; helperGUI no disponible, no se modifica Proton ni se leen mensajes.
+
+RED293b562 cinco pruebas email fallan; GREEN10/10 y verify212/212 localWindows tipos/buildsOK. Edge1440/768/390/320 sin overflow/imagenes rotas/erroresJS/axe; mailto por teclado interceptado. Direccion confirmada por captura y autorizacion del propietario, no recepcion humana probada. Docs CONSULTAS_Y_LANZAMIENTO actualizados y plantilla privada vacia incorpora canal.
+
+Siguiente: CI y preview exactos, integrar cambio web autorizado y comprobar dominio/SHA/email+WhatsApp; conservar pagos/forms/borradores cerrados. Correo operativo elegido Victoriosas@proton.me, no volver a pedir plan ni registrar dominio de correo. No enviar mensajes de prueba sin solicitud expresa. Roles y modalidad/zona siguen pendientes; no inferirlos. Preservar PR90 documental de perfiles y cambios ajenos.
+
+
+## 2026-10-19 - Gmail oficial reemplaza Proton
+
+Instruccion vigente del propietario: victoriosas.online@gmail.com es el correo oficial; retirar Proton del contacto web. ContactLink central, cinco pruebas email y privacidad actualizados; referencias de Proton ausentes en src. Guia operativa distingue registro historico y contacto vigente. Automatizacion6h actualizada, sin duplicar ni cambiar cadencia. No se borraron cuentas/mensajes, no envio real ni cambios DNS/SMTP/secretos.
+
+verify212/212 Windows, tipos/builds/check-route-html/diffOK. Edge1440/768/390/320: siete mailtoGmail por home, cuatro intereses, WhatsApp conservado, privacidad correcta; sin overflow, imagenes rotas, erroresJS o axe. Teclado interceptado sin enviar. Evidencia output/playwright/official-gmail-*.png y official-gmail-local-results.log.
+
+Siguiente: comprobar CI/preview exactos e integrar contacto autorizado; comprobar dominio/SHA y Gmail sin reintroducir Proton. Conservar WhatsApp y gates comerciales cerrados; no enviar pruebas ni vincular una cuenta Google ajena por inferencia del correo publicado. PR90 documental y cambios ajenos preservados.
+
+
+## 2026-10-19 - Indices Beauty verificados en Supabase
+
+PR102: dos indices aditivos para beauty_evaluations.practitioner_id y beauty_requests.catalog_service_id. Supabase CLI2.121.0 genero el archivo; tras apply_migration se alinea version local con la version alojada20261020020713, mismo SQL. No db push masivo: historial previo conserva versiones divergentes.
+
+CI b8b423255f3b0601e58caa3aeb83faef1d2dc6e8: validate/postgres/CodeQL SUCCESS, Vercel success; Supabase Preview SKIPPED. Regresion PostgreSQL sobre fixture sintetico: reaplicacion, columnas e indices validos, filas/RLS preservadas y claves foraneas activas. Cambio posterior de nombre de archivo y continuidad requiere CI final.
+
+Migracion individual alojada aplicada y verificada: ambos indices indisvalid/indisready=true; advisory unindexed_foreign_keys ya no aparece. Tablas siguen vacias y RLStrue; huella de politicas antes/despues identica. Avisos unused_index aumentan porque no hay trafico; no eliminarlos por ese motivo. Permisos de funciones revisados sin cambios: trigger y mantenimiento con control de administrador; no afirmar ausencia global de vulnerabilidades.
+
+Auth URL principal y redirect raiz oficial alineados a https://victoriosas.online, previews conservadas; cambios persistieron al recargar. Vercel previews/forks protegidos, sourcemaps protegidos, directory listing desactivado. Sin DNS, credenciales, pagos, registros de clientes ni politicas RLS modificados. Siguiente: validar CI final de PR102; integracion requiere autorizacion vigente y verificaciones del SHA, conservar limites comerciales.
+
+
+## 2026-10-23 - Continuidad y preparación del lanzamiento de noviembre
+
+Producción 97fc36e coincide con origin/main; Vercel READY dpl_BEnN4LtbiVcSEq9arR8HDFuzXUgu. PR #79/#80/#85/#86/#97/#102 ya fusionadas; #90 sigue como borrador documental, sin duplicarla. Core main 39358117847 (validate/postgres) y Beauty aislado 39358117691 SUCCESS. Automatización y monitor de seis horas activos, sin scheduler nuevo. Archivos ajenos y worktrees conservados. Rama codex/launch-readiness-20261023; PR borrador https://github.com/Victoriosas/autopilot/pull/103.
+
+Corregidos en rama tres defectos: las 17 consultas perdían el tratamiento (RED 02d2027 / GREEN 57fc2d5); directorio recibía HTML fallback noindex sin canonical (RED d334e7a / GREEN e01a009); monitor omitía directorio (RED a78ca29 / GREEN c0e1762). Ahora hay 17 destinos WhatsApp distintos y 17 Gmail, SEO inicial propio, sitemap/rewrites y GET de servicios en el monitor existente. Enlaces con altura mínima 44px; fichas, precios, identidades y fotos aprobadas conservados.
+
+verify 221/221 sin omisiones, tipos y ambos builds OK. PSModulePath/Get-FileHash resuelto solo en el entorno del proceso, sin cambiar el sistema. Tras espaciado: regresión 5/5 y build Vercel repetido. check-route-html y secret scan OK. Producción y build local: Playwright/axe, 16 vistas cada uno a 1440/768/390/320 sin overflow, imágenes rotas, errores JS/recursos ni infracciones automatizadas. Vite preview no emula rewrites Vercel: SEO comprobado en artefactos; comprobar hosting exacto de la PR.
+
+Supabase en lectura: proyecto correcto ACTIVE_HEALTHY, RLS en cinco tablas Beauty e índices de #102 válidos. Metadato main MIGRATIONS_FAILED de septiembre y advisors documentados, sin mutaciones. Dos consultas finales fallaron por timeout/ECONNREFUSED: recuentos actuales no confirmados. API anónima de consultas 401; profesional 503 disabled. Checkout/MP/Beauty requests/catalog cerrados. Cero SQL mutante, clientes ficticios, envíos, pagos, compras, DNS, campañas o cambios de producción.
+
+Informe y garantías RED/GREEN: docs/LANZAMIENTO_NOVIEMBRE_20261023.md. Evidencia local output/playwright/launch23-*. Tras contacto, el siguiente prompt ejecutó SEO; después ejecutó monitor. Prompt actual: verificar CI validate/postgres del SHA exacto y preview/gates sin envíos, sin fusionar ni promocionar. Luego confirmar operación humana y condiciones profesionales para noviembre, y recuperar lectura Supabase. Sin datos reales suficientes de métricas comerciales. Publicación del nuevo alcance pendiente de autorización; conservar PR90 y borradores históricos de Metricool.
+
+Cierre de verificación: PR #103 borrador MERGEABLE. f491e832566d3133463948545d16ef4d7be2b385: Core push 39894954240 y PR 39894960499 validate/postgres SUCCESS, CodeQL aprobado. Preview READY dpl_9iKQSubYT5hvptbLArvaE8dtEhsS, health SHA exacto y gates cerrados. Servicios HTTP200 con/sin barra y SEO propio, noindex de preview. Navegador remoto cuatro anchos: 17 fichas/34 canales correctos, mínimo 44px, menú y detalles por teclado, ocho contactos interceptados sin envío; axe con fichas desplegadas sin infracciones. Siguiente prompt de CI/preview ejecutado y completado; este cierre cambia solo documentación. Producción sigue 97fc36e. Antes de publicar se requiere autorización para #103; no retomar como pendientes los arreglos ya implementados. Informe enlaza evidencias y límites de Supabase/operación humana.
+
+
+## 2026-10-23 - Consultas web #104 / PR105: implementación y QA
+
+Autorización del propietario: corregir validación y completar pruebas para revisión. PR105 inicial integrada con trabajo local en codex/consultation-form-104, conservando archivos ajenos y PR106/90. CI inicial reproducía import.meta.env sin Vite. RED 542a38e / GREEN 4522425 corrigen Node, captura cerrada y mensajes multilínea; RED fefac87 agrega contratos de outbox; RED 576686d exige bandeja autorizada; RED 6a24266 / GREEN 9b4a47b valida IP confiable de Vercel y corrige título móvil y fixture de roles compartidos.
+
+Nuevo /consultanos con servicio contextual, consentimiento y email/edad opcionales; API única antes del parser global, 4KiB, honeypot, límite durable 5/h, idempotencia y autorización temporal de envío. Notificación sin datos personales, bandeja /admin con Auth/rol/RLS, migración individual offline de retención 30d. Sin importación en cliente de secretos ni persistencia local de datos.
+
+verify 236/236 sin omisiones, tipos y dos builds OK; entorno PSModulePath ajustado solo en proceso. PostgreSQL18 desechable 8/8 y detenido; Auth/PostgREST/RLS reales consultas 5/5 en CI 39981225237 y stack detenido. Playwright/axe ocho vistas de formulario cerrado/fixture a 1440/768/390/320 sin overflow, imágenes rotas, JS o infracciones automatizadas; consentimiento, email y reintento idéntico comprobados sin enviar. Cobertura focalizada 91.85% líneas/80% ramas, no global. HTML estático, secretos y diff aprobados.
+
+Informe: docs/CONSULTATION_FORM_104_QA.md. Antes de integrar: validar validate/postgres/beauty-stack y preview del SHA final de https://github.com/Victoriosas/autopilot/pull/105; conservar PR en borrador mientras estén pendientes configuración/activación. Preview inicial 64cab51 READY y configuración enabled=false confirmada por HTTP. Producción sigue fb1f4f5 saludable y gates comerciales cerrados.
+
+Pendiente operativo: proveedor/remitente autorizados y verificados, recepción real en Gmail, identidad/responsable humano, privacidad y limpieza periódica comprobada. Migración nueva no aplicada alojada; no cron creado, correos reales, pagos, compras, DNS, credenciales ni producción modificados. Gates CONSULTATION_REQUESTS_ENABLED/PRIVACY_APPROVED/RETENTION_READY/MAIL_ENABLED cerrados por defecto. No presentar correo aceptado por proveedor como entrega humana. Próximo: revisar PR y preparación de activación sin publicar ni hacer SQL remoto por inferencia.
+## 2026-10-23 - Adaptacion del ZIP y plan a descubrimiento seguro
+
+Solicitud: usar autopilot (1).zip e implementation_plan.md para mejorar lo implementado. Adjuntos tratados como propuestas, no como autorizacion de sus afirmaciones. Worktree aislado discovery-plan, rama codex/discovery-plan-20261023 desde origin/main fb1f4f5 (#103 integrado). Rama local de consultas, cambios ajenos y PR105 conservados; no se importa ni activa su formulario.
+
+Buscador derivado de 17 servicios con filtros/recuentos reales, tildes y palabras combinadas; editorial respeta published/review. Orientador de tres pasos prepara preferencias sin recomendar procedimientos. Propuesta de regalo personalizable sin emitir ni vender vouchers, datos descartados al cerrar; WhatsApp/Gmail editables sin envio. Impresion de la lectura visible conserva gates de borradores. Dialogos nativos centrados y enlaces de busqueda subrayados. No se importa newsletter localStorage con falso exito, fotos nuevas, consejos clinicos, publicaciones ni promesas de mercados. Informe docs/MEJORAS_PLAN_ADJUNTO_20261023.md incluye hashes y decisiones.
+
+verify final 226/226 local Windows, cero omitidas, tipos y ambos builds aprobados. PSModulePath resuelto solo en proceso. Tras ultimo subrayado CSS, build Vercel repetido; check-route-html/secret scan/diff check aprobados. Playwright/Edge+axe: 28 vistas a1440/768/390/320 sin overflow, imagenes rotas, errores JS o infracciones detectadas. Busqueda/filtros/vacio, teclado/Escape/foco, reinicio, contexto/codificacion por ambos canales y descarte al cerrar comprobados. Evidencia output/playwright/discovery-*. Sin metricas comerciales reales suficientes ni atribucion de ingresos.
+
+Sin merge/promocion, SQL remoto, pagos, envios, DNS, credenciales, publicacion comercial ni automatizacion nueva. Pendientes: CI validate/postgres del SHA definitivo, Preview y revision humana de condiciones de regalos antes de publicar. Mantener gates y trabajo #105 separados.
+
+
+## 2026-10-23 - Integracion AI Studio autorizada para GitHub y Vercel
+
+El propietario cancelo Figma, solicito estudiar la pestana AI Studio y entrego autopilot (2).zip para implementar, subir a GitHub, desplegar en Vercel y revisar Supabase. Rama codex/ai-studio-integration-20261023 combina #105/#106; conserva cambios ajenos. Diseno marfil/dorado, buscador, orientador con tratamiento/modalidad, regalos con remitente y vista previa, copia y guia imprimible adaptados al catalogo actual. Newsletter localStorage con falso exito reemplazada por estado cerrado y consulta editable por email. Informe docs/AI_STUDIO_INTEGRATION_20261023.md.
+
+verify 243/243 sin omisiones, PostgreSQL desechable 8/8 detenido, 44 vistas Playwright/axe a320-1440 sin overflow ni infracciones detectadas; PDF A4 de una pagina y contexto/descarte/foco verificados. Supabase primario ACTIVE_HEALTHY y 33 tablas publicas con RLS; faltan migracion/RPC de consultas y proveedor de correo. Persisten avisos previos de permisos de funciones y contrasenas; no SQL remoto ni credenciales modificadas. Se conserva captura cerrada y WhatsApp/Gmail. Pendientes de comprobar: CI del SHA final, Preview y produccion nueva por Git main; no afirmar desplegado hasta evidencia HTTP.
+
+
+## 2026-10-23 - AI Studio publicado y cierre de contraste
+
+PR107 fusionada por autorizacion explicita de despliegue; #105/#106 quedaron MERGED al incluir sus commits. Produccion por Git main 26e54e98aa7efb0b854c03ef7b5c704ee41c1225, deployment dpl_Gtw8PaTGAxPwmo7tiJ4hcuCErLvB READY production. CI main validate/postgres 40029302622 e integracion Auth/PostgREST/RLS 40029302619 aprobadas. Preview de760c4 y dominio publico aprobaron 20 vistas de dialogos cada uno. HTTP: paginas/consultanos/imagenes200, borradores404, rutas retiradas410, consultas disabled, bandeja anonima401 y comercio cerrado. No promover Preview ni reabrir las PR integradas.
+
+QA ampliada encontro contraste insuficiente del rotulo de consultas cerradas sobre el fondo nuevo; rama codex/ai-studio-release-qa-20261023 usa el dorado oscuro existente. Las 30 vistas locales ampliadas a cinco rutas aprobaron sin overflow, imagenes rotas, JS ni infracciones detectadas. Informe docs/AI_STUDIO_INTEGRATION_20261023.md conserva origen, evidencia, limites y recuperacion; resultados finales de este cierre se registran en su PR y entrega. Supabase sigue sin la migracion de consultas ni proveedor; newsletter y captura permanecen cerradas. No escrituras SQL remotas, pagos, DNS, credenciales ni campanas.
+
+El cierre integra tambien las PR Dependabot108/109 (body-parser1.20.9 y Vite6.4.5), conservando sus commits y el lockfile. No duplicar actualizaciones ni tomar CI anterior como prueba del conjunto; comprobar validate/postgres del SHA de cierre y su despliegue final.
+
+
+## 2026-10-24 - Plan original: lectura persistente de consultas
+
+PR122 fase2 de precios permanece OPEN/DRAFT, SHA0623fbc41b1c0aba0a1c6131698acbdb106fd0e5 con validate/postgres/Beauty aislado/CodeQL aprobados. Su ampliacion no se activa por la instruccion general de continuar. Esta tarea independiente usa origin/main15b6f55, rama codex/consultation-unread-20261024 en el worktree administrado existente; no mezcla ni modifica PR122.
+
+RED091b570: HTTPread-state404, metadatos de lectura ausentes y tabla inexistente en PostgreSQL desechable; siete regresiones SQL anteriores pasan. GREENb763ed5: 13/13 pruebas HTTP/controles y 9/9 SQL con permisos, reversibilidad, exclusion de caducadas y cascada. Refactor28d55f0 aisla campana para QA real; ajuste posterior usa Fragment con key al cambiar identidad. npm run verify final Windows260/260 sin omisiones, TypeScript y builds servidor/Vercel aprobados. HTML inicial/assets, secret scan, inventario de migraciones y diffcheck aprobados. Prueba Auth/PostgREST ampliada para comprobar RBAC, persistencia y agregado real en CI; no atribuirle exito antes de verificar esa ejecucion.
+
+Tabla consultation_read_states sin datos de contacto, RLS y grants solo service_role. Vista consultation_read_metrics security_invoker; servicio recibe exclusivamente SELECT(id,expires_at) del padre, sin acceso a input. Lectura compartida por administracion; acciones explicitas leida/no leida no crean respuestas ni alteran estado administrativo. Contador global excluye caducadas; errores/schema ausente se muestran desconocidos, sin ceros inventados ni marcar filas al abrir. Estados de lectura y campana se actualizan solo tras confirmacion; una escritura incierta exige actualizar. Al cambiar usuario, la campana se reinicia.
+
+Migracion20261024033522_consultation_read_states.sql creada con SupabaseCLI2.121.0 y probada solo en clusterPG18 desechable, ya detenido. No carga historica de lecturas: filas sin marca aparecen sin leer cuando el esquema este disponible. Preparada para revision/aplicacion individual autorizada; no dbpush ni SQLhosted. El fixture CI ahora incorpora todas las migraciones de consultas, sin cambiar el esquema de produccion.
+
+Edge local: componentes reales campana/bandeja con API sintetica, 1440/768/390/320 sin overflow ni infracciones axe, lectura/reversion por teclado, recarga, errores y contador desconocido verificados. Persistencia entre recargas en ese navegador usa memoria del fixture, no acredita hosted; persistencia SQL se acredita separadamente. Evidencia local .audit/unread-browser-qa.cjs y unread-*.png, sin clientas reales. No nuevos envios, pagos, datos personales, scheduler ni cambios productivos.
+
+Siguiente: PR acotada, comprobar validate/postgres/Beauty Auth-PostgREST y Preview del SHA final; revisar conversaciones y conservar borrador. Publicacion y aplicacion alojada de la migracion siguen pendientes de autorizacion especifica. No fusionar ni desplegar manualmente. Continuan pendientes del plan: coherencia de correo publico, WhatsApp integrado y catalogo administrable, con sus controles propios.
+
+Cierre de endurecimiento del modulo: CI del candidato9b65bb5 paso Core validate/postgres, CodeQL y Auth/PostgREST reales; Preview health verificoSHA y checkoutfalse, consultasfalse y metricas anonimas401. La cobertura detecto ramas de fallos pendientes. REDf019bbe y GREEN28800ae incorporan persistencia inyectable solo para pruebas, manteniendo el proveedor predeterminado. Ahora14/14 pruebas enfocadas cubren respuestas invalidas/permisos/fallos al leer, marcar y desmarcar; consultationReading.ts tiene100% lineas, ramas y funciones en esa cobertura focalizada. npm run verify repetido por ese refactor:261/261 sin omisiones, tipos y ambos builds aprobados. Verificar nuevamente CI y Preview del SHA final publicado; la evidencia del candidato anterior no se atribuye al nuevo commit por inferencia. No SQL alojado ni envios. Navegador de prueba cerrado y servidor del fixture detenido.
+
+## 2026-10-24 - Migracion de lectura alojada autorizada y aplicada
+
+El propietario solicita expresamente realizar la migracion de PR123. Proyecto confirmado en lectura: victoriosa-autopilot jfjzpwlrhzqbcrvqxhzf ACTIVE_HEALTHY; el esquema de lectura no existia y la migracion no estaba registrada. Se guardan snapshot de esquema/ACL y recuentos, mas reversion condicionada a tabla nueva vacia, en .audit/consultation-read-migration-*. No son un backup de datos de clientas; no se leyeron filas personales.
+
+apply_migration individual consultation_read_states confirmado success=true. Version alojada20261024040055; archivo local renombrado desde20261024033522 conservando bytes SQL exactamente. No dbpush masivo ni reparacion de historia anterior. Tabla con RLS, FK ON DELETE CASCADE y vista security_invoker confirmadas; anon/authenticated sin acceso a tabla/vista, service_role puede leer soloid/expires_at del padre y sigue sin SELECTinput. Verificacion real bajo SET LOCAL ROLE service_role en transaccion de solo lectura comprueba agregado y ausencia de acceso al contenido. Recuentos de consultas conservados, marcas de lectura0; no marcado historico ni envios.
+
+Advisors antes/despues: advertencias previas de funcion Beauty y proteccion de contrasenas sin cambios. Nuevo INFO RLS Enabled No Policy en tabla de lectura es coherente con acceso exclusivo service_role y clientes sin grants; no crear politicas publicas para silenciarlo. Referencia: https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy. No afirmar ausencia global de avisos de seguridad.
+
+PR123 continua en borrador y la interfaz nueva no se publica por esta autorizacion de migracion. PR122 tampoco se activa. Siguiente: comprobar CI del renombrado y registrar verificacion en PR123; publicacion de la interfaz requiere su autorizacion especifica. No pagos, DNS, credenciales, correos ni cambios de registros personales.
+
+Agentes de consultas, evaluacion aislada (rama codex/consultation-eval-20261024, PR en borrador): prompts versionados en src/storefront/consultationAgentPrompts.ts y evaluador sin estado en src/storefront/consultationAgentEval.ts con script npm run eval:consultation-agents. 40 casos sinteticos congelados con hash (32 desarrollo, 8 finales, 29 criticos) mas 6 controles malos para el guardian en docs/consultation-agents/eval-cases-v1.json. Definiciones camelRun comprension r1, redactor r4 y guardian r1 sincronizadas con esos prompts; el redactor devuelve preguntas como textos para pasar validCamelRunDraft. Politica clinica registrada: indicaciones medicas no se publican ni se dan por chat, Victoria las entrega en hoja impresa.
+
+Validacion: 10 pruebas nuevas y 275 de 275 en npm test, tsc limpio. Corrida real de los 32 casos pendiente: requiere CAMELAI_API_KEY local; sin clave solo funciona --dry-run. No se tocaron adaptador de produccion, flags, variables de Vercel, Supabase ni el worktree consultation-phase2 con cambios sin commitear. Siguiente: corrida real, medicion final con casos finales, evidencia aprobada real y conexion con la rama de inteligencia en sombra tras rebase. Informe: docs/CONSULTATION_AGENTS_EVAL_20261024.md.
+
+
+## 2026-10-24 - Integración técnica autorizada de consultas e IA propia
+
+Worktree aislado consultation-integration, rama codex/consultation-integration-20261024 desde main a8daca9. Reutiliza #129/#130/#131 y trabajo previo en sombra sin modificar los originales de Claude. Producción y Supabase auditados: consultas, consentimiento y retención ya operativos; las entradas antiguas de captura cerrada son históricas. Nueva inteligencia mantiene no_send y proveedor determinista; el correo existente conserva su circuito.
+
+Gateway común, consentimiento antes de modelos, extracción de evidencia vigente, tres etapas aisladas, validación JSON, presupuesto preventivo y panel de revisión persistente. Contrato camelRun corregido contra OpenAPI: spendLimit es objeto y corte entre solicitudes; además se acotan tokens/respuestas y se verifica precio vivo. Ver docs/CODEX_PROGRESS.md para inventario, evidencia, recuperación y pendientes. verify local 337/337 y builds OK; PG18 aislado 10/10. CI del conjunto, Auth/PostgREST, preview, evaluación sintética real y migración alojada aún pendientes. No afirmar activación remota ni recepción humana.
+
+## 2026-10-26 - Dependencias y alineación con Node 24
+
+VICTORIOSA AUTOPILOT — REPORTE CICLO
+
+Fecha/hora: 2026-10-26 12:48 America/Montevideo. Ciclo: continuación manual, sin numeración histórica verificable. Modo: revisión técnica en rama de PR existente.
+
+1. Estado general:
+- Main y health del dominio siguen en 27b95a5c5ff4fd845ac7b318e0c1a55b25aaa44b; checkoutEnabled=false y checkoutRequested=false. Home/producto/carrito/mobile/SEO/catálogo sin cambios de interfaz ni QA visual nuevo. Riesgo técnico bajo, sin publicación.
+- PR144 conserva 7770296 y CI validate/postgres, CodeQL, navegador y preview aprobados. No está integrada y no se copia su monitor a esta rama. Su evidencia final queda en https://github.com/Victoriosas/autopilot/pull/144.
+
+2. Cambios realizados:
+- Se reutiliza PR142 y su rama remota Dependabot, sin abrir otra PR. La propuesta original llevaba @types/node26 para una aplicación engines.node24.x.
+- package.json/package-lock.json ahora usan @types/node24.19.2; dependencias de ejecución preservadas. ECC Browser Smoke pasa de Node22 a24, coherente con Core/Vercel. Dependabot excluye solo @types/node>=25, conservando las actualizaciones24; revisar esa regla junto con cualquier futura migración de runtime.
+- Impacto esperado: validar con la misma serie de Node que ejecuta el servidor y evitar desalineaciones automáticas de tipos. No demuestra incompatibilidad efectiva de una llamada de aplicación bajo Node26 ni cambia el runtime productivo.
+
+3. Mejoras comerciales:
+- Conversión/confianza: mantenimiento preventivo, sin estimación de ingresos. Producto/mercado/contenido/SEO sin cambios comerciales.
+
+4. Métricas:
+- Ventas reales, sesiones, add to cart, checkout iniciado, conversión, ticket promedio y mejoras porcentuales: No hay datos reales suficientes todavía.
+
+5. Próximo plan de 6 horas:
+- Prioridad1: CI validate/postgres y smoke de navegador del SHA final corregido de PR142; conservar revisión humana sin auto-merge ni despliegue manual.
+- Prioridad2: PR141 (genai2.31.0/dotenv18.0.9) revisada con diff y notas oficiales; CI Core/browser SUCCESS en9cdce2e. PR143 (Actionsv7) revisada contra cambios oficiales de ESM/checkout/autenticación y configuración actual; Core, evaluador sin claves, invariantes Edge, worker y navegador SUCCESS enadaf8c3. No se ejecutó evaluación real con claves, subida real de artefacto de evaluación ni conjunto combinado de dependencias. Revalidar después de integrar cualquier PR.
+- Prioridad3: completar evaluación real reproducible de consultas y revisión administrativa autorizada. No habilitar modelos, nuevos envíos ni campañas por estas actualizaciones.
+
+6. Bloqueos:
+- Las publicaciones, migraciones remotas y activaciones sensibles siguen requiriendo autorización específica. PR141/143 permanecen separadas; no se fusionó ninguna PR. Trabajo local anterior y automatización6h conservados.
+
+7. Verificación:
+- npm run verify con Node24.15.0:354/354, cero omitidas, tipos y ambos builds aprobados; HTML/assets, secret scan y diffcheck correctos. Esta rama no incluye las ocho regresiones de monitor de PR144.
+- YAML de workflow/Dependabot parseado y lockfile cotejado. Rango npm comprobado: permite24.19.2/24.20.0, bloquea25.0.0/26.6.5. Herramientas de parsing instaladas solo en TEMP, sin dependencias añadidas a la aplicación.
+- Home desktop/mobile, imágenes, enlaces y ausencia de errores visibles no revalidados en navegador local; sin cambios visuales. Producto/carrito/checkout editable siguen fuera del alcance. Cierre de CI/preview y SHA final se registra en https://github.com/Victoriosas/autopilot/pull/142.
+
+Fuentes primarias: https://github.com/DefinitelyTyped/DefinitelyTyped#how-do-definitely-typed-package-versions-relate-to-versions-of-the-corresponding-library y https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#versions-ignore. Releases consultadas: googleapis/js-genai2.31.0, motdotla/dotenv18.0.9, actions/checkout7.0.1, actions/setup-node7.1.0 y actions/upload-artifact7.0.2.
+
+
+## 2026-10-26 - Sincronización operativa y monitor de consultas
+
+VICTORIOSA AUTOPILOT — REPORTE CICLO
+
+Fecha/hora: 2026-10-26 12:34 America/Montevideo. Ciclo: sincronización manual, sin numeración histórica verificable. Modo: auditoría en lectura y mejora en rama aislada. Este checkpoint actualiza los pendientes históricos anteriores.
+
+1. Estado general:
+- Main y dominio oficial: `27b95a5c5ff4fd845ac7b318e0c1a55b25aaa44b`, Vercel `dpl_HiAcPg5a1CAsH47K7DpEkLujN76H` READY production; `/api/health` confirma ese SHA. Core [40174693043](https://github.com/Victoriosas/autopilot/actions/runs/40174693043): validate/postgres SUCCESS.
+- Ya fusionado: inteligencia supervisada #132, control de seis agentes, informes agregados #137, monitor público #138, worker persistente #139 y perfiles ECC #140. No rehacer esas integraciones. Las PR #126/#129/#130/#131 conservan solapamientos; no se cierran ni fusionan por inferencia.
+- Home/servicios/editorial/privacidad/consultas HTTP200; tienda/checkout/tratamientos retirados HTTP410, borradores HTTP404. Catálogo y solicitudes Beauty anteriores, checkout y Mercado Pago continúan cerrados.
+- Consultas privadas: `/api/beauty/inquiries/config` devuelve enabled=true, privacyVersion=consultation-v1, retentionDays=30; bandeja anónima HTTP401. Disponibilidad anunciada y control anónimo observados, sin probar recepción humana.
+- Supabase primario ACTIVE_HEALTHY. Cola `six-%`: cinco tareas infrastructure completadas con evidencia y cinco eventos de cada tipo claim/completion; última finalización 2026-10-26 13:18:08 UTC. RLS de tareas/auditoría y runs de inteligencia activa; un run de inteligencia contado sin leer contenido.
+- EJECUTADO: infraestructura en la cola anterior. FUSIONADO/DESPLEGADO: código integrado, con alcance PROBADO según su CI. Esa cola no acredita ejecución de los otros cinco roles. camelRun: cuatro agentes listados, todos loaded=false y toolsConnected=false; definiciones sin ejecución real acreditada.
+- Automatización local `victoriosa-autopilot-6h` ACTIVE y workflows existentes conservados. Monitor público [40330127200](https://github.com/Victoriosas/autopilot/actions/runs/40330127200), infraestructura [40329368721](https://github.com/Victoriosas/autopilot/actions/runs/40329368721) e informe diario [40246047267](https://github.com/Victoriosas/autopilot/actions/runs/40246047267) SUCCESS. Cron best-effort no garantiza servicio permanente.
+
+2. Cambios realizados:
+- `scripts/public-health.mjs`: el monitor existente ahora consulta `/consultanos`, exige disponibilidad/configuración de privacidad y retención esperadas y comprueba HTTP401 en bandeja anónima. Solo GET, sin cuerpo ni envíos. No agrega scheduler.
+- `src/storefront/publicHealth.test.ts`: regresiones de rutas ausentes, config deshabilitada/inválida, privacidad/retención distintas, servicio caído y bandeja accesible sin sesión; fixture verifica GET, redirects manuales y ausencia de cuerpo.
+- Motivo: el monitor previo seguía verde al romperse esas rutas. Ocho regresiones nuevas fallaron antes del arreglo; después 17/17 enfocadas aprobadas. Riesgo bajo, reversible por PR; no modifica formulario ni base. Un cierre deliberado del formulario requerirá actualizar también esta expectativa operativa del monitor.
+
+3. Mejoras comerciales:
+- Conversión/confianza: detectar antes la indisponibilidad del canal de consultas activo. Impacto esperado cualitativo, sin atribuir ventas. Producto/mercados/contenido/SEO: sin cambios comerciales.
+
+4. Métricas:
+- Ventas reales, sesiones, add to cart, checkout iniciado, conversión, ticket promedio y mejoras porcentuales: No hay datos reales suficientes todavía.
+
+5. Próximo plan de 6 horas:
+- Prioridad 1: CI validate/postgres y preview del SHA final de esta rama; mantener PR para revisión sin auto-merge ni despliegue manual.
+- Prioridad 2: revisar las PR de dependencias #141/#142/#143 sin duplicarlas; contrastar tipos Node con runtime24 antes de aceptar la actualización mayor.
+- Prioridad 3: evaluación real reproducible de consultas y panel con sesión autorizada; no tratar un run agregado, fixture o definiciones camelRun como evaluación aprobada. Confirmar recepción humana por circuito autorizado antes de declararla verificada.
+
+6. Bloqueos:
+- Faltan evaluación real reproducible y revisión administrativa autorizada; no se accedió a mensajes ni datos de clientas. Publicación/promoción, migraciones remotas, campañas y nuevos envíos requieren autorización específica.
+- Checkout original y archivos sin seguimiento de `C:\autopilot` preservados. Worktree `operational-sync-20261026/autopilot`, rama `codex/consultation-health-20261026`. Sin cambios de producción, pagos, DNS, credenciales, productos o automatizaciones.
+
+7. Verificación:
+- Monitor ampliado contra dominio real: 18 GET aprobados sobre SHA productivo anterior, incluidas consultas/config/bandeja. NODE_USE_ENV_PROXY=1 solo en el proceso de este equipo; no cambia el runtime desplegado.
+- Home desktop/mobile, imágenes, links y errores visuales: no repetidos en navegador en este ciclo sin cambios de interfaz; HTTP no equivale a QA visual. Producto/carrito/checkout editable: rutas retiradas o gates cerrados, sin recorrido de compra.
+- npm run verify local aprobado: 362/362 pruebas, cero omitidas, tipos y ambos builds; cierre CI se registra a continuación y en la PR. La CI de main no se atribuye al cambio nuevo.
+
+
+## 2026-10-26 - Diagnóstico real del modelo local, sin habilitación
+
+VICTORIOSA AUTOPILOT — REPORTE CICLO
+
+Fecha/hora: 2026-10-26 13:15 America/Montevideo. Ciclo: continuación manual, sin numeración histórica verificable. Modo: prueba local con datos sintéticos y cambio acotado en rama codex/local-model-preflight-20261026.
+
+1. Estado general:
+- Main sigue en27b95a5; PR142 (77ffba6) y PR144 (7770296) permanecen separadas y sin fusionar, con sus checks finales aprobados. No se incluyen sus cambios en esta rama.
+- Home/producto/carrito/mobile/SEO/catálogo sin cambios visibles ni nuevo recorrido de compra. Riesgo técnico bajo por herramienta diagnóstica aislada; riesgo semántico observado mantiene bloqueada la habilitación del modelo.
+
+2. Cambios realizados:
+- Comando npm check:consultation-local-model y helper consultationLocalModelCheck: verifica versión, modelo instalado, chat JSON exacto y un caso sintético por el adaptador real de tres etapas. Solo loopback, sin DB, credenciales, descargas, fallback ni envío. No modifica process.env ni flags de Vercel.
+- Cinco regresiones cubren ruta y modelo local, inventario ausente/remoto, fallo semántico aunque chat responda, conservación de no_send, minimización de datos, errores sanitizados y ausencia de reintentos. Informe siempre synthetic_smoke_only/fullEvaluation=false.
+- El CLI devuelve0 solo si el guardián aprueba las tres etapas;1 para fallo/bloqueo y2 para uso incorrecto. La documentación distingue prueba básica, análisis semántico y evaluación completa.
+
+3. Mejoras comerciales:
+- Conversión/confianza: impedir que una respuesta básica del modelo se presente como capacidad operativa de consultas. Impacto cualitativo; producto/mercado/contenido/SEO sin cambios comerciales.
+
+4. Métricas:
+- Ventas reales, sesiones, add to cart, checkout iniciado, conversión, ticket promedio y mejoras porcentuales: No hay datos reales suficientes todavía.
+
+5. Próximo plan de 6 horas:
+- Prioridad1: comprobar Core validate/postgres, navegador y preview del SHA final de esta rama, conservar PR en borrador sin auto-merge ni despliegue manual.
+- Prioridad2: resolver viabilidad del modelo/capacidad local antes de evaluación completa. No ajustar prompts con casos finales, ampliar límites de producción ni activar fallback remoto para pasar una prueba.
+- Prioridad3: completar evaluación reproducible de32 casos de desarrollo y revisión administrativa autorizada; los ocho finales siguen reservados. Recepción humana no verificada en este ciclo.
+
+6. Bloqueos:
+- Ollama estaba instalado pero sin servicio. Al iniciarlo temporalmente, la GPU falló por PTX/toolchain incompatible. Con CPU explícita y nube deshabilitada, gemma3:270m respondió el JSON; qwen3:4b superó30s en esa prueba básica.
+- El diagnóstico real completo con gemma llegó a tres llamadas y bloqueó por MODEL_DISAGREEMENT_REVIEW y MODEL_REVIEW_NOT_APPROVED, conservando no_send. No hay evaluación completa aprobada ni autorización de habilitación derivada de esta prueba.
+- Proceso creado para el test detenido, cero modelos cargados antes del cierre y listener ausente después. No se tocaron drivers, variables persistentes, Vercel/Supabase, DNS, credenciales, pagos, campañas o correos. No hubo inferencia remota ni gasto de API. No se crearon automatizaciones.
+
+7. Verificación:
+- Prueba real documentada en docs/CONSULTATION_AGENTS_EVAL_20261024.md; reportes solo de estado/códigos, sin textos ni datos de clientas. Node ejecutado sin proxy para el loopback.
+- npm run verify local:359/359, cero omitidas, tipos y ambos builds aprobados; HTML/assets, secret scan y diffcheck correctos. Cinco regresiones enfocadas aprobadas. CI final se registra en la PR. QA visual local no repetido por ausencia de cambios de interfaz; no afirmar revisión de imágenes/links/carrito/checkout a partir de este diagnóstico.
+
+
+## 2026-10-26 - Cierre de acceso prematuro a casos finales
+
+VICTORIOSA AUTOPILOT — REPORTE CICLO
+
+Fecha/hora: 2026-10-26 19:29 America/Montevideo. Ciclo: continuación manual, sin numeración histórica verificable. Modo: corrección local del evaluador en rama codex/evaluation-final-gates-20261026.
+
+1. Estado general:
+- Main y health del dominio siguen en27b95a5, checkout cerrado. PR142/144/145 continúan separadas y sin fusionar. El modelo local sigue sin evaluación completa aprobada; este cambio no corrige ni oculta su discrepancia semántica.
+- Home/producto/carrito/mobile/SEO/catálogo sin cambios de interfaz; QA visual y recorrido de compra no repetidos. Riesgo técnico bajo: evaluador offline, sin activación productiva.
+
+2. Cambios realizados:
+- scripts/eval-consultation-agents.ts y consultationAgentEval.ts: se rechaza ejecutar final por separado antes de leer claves/precios. La medición real exige all y confirmación explícita, con desarrollo y controles completos aprobados en la misma corrida.
+- Cobertura por identificadores únicos: casos o controles faltantes, duplicados o desconocidos no pueden completar la fase. Se conserva el corte ante cualquier fallo previo, incluidos finales anteriores.
+- Una muestra de desarrollo queda complete=false y gate_ok=false, con código1. Una selección all parcial se rechaza antes de llamadas. Los informes distinguen expected_cases, selection_complete en inventario y full_evaluation_passed; esta última solo acredita el conjunto completo aprobado.
+- Documentación de uso actualizada; no se modificaron prompts, casos congelados ni criterios semánticos para aprobar el modelo.
+
+3. Mejoras comerciales:
+- Conversión/confianza: evitar habilitaciones basadas en evaluaciones parciales o casos finales ejecutados sin prerrequisitos. Impacto cualitativo; producto/mercado/contenido/SEO sin cambios comerciales.
+
+4. Métricas:
+- Ventas reales, sesiones, add to cart, checkout iniciado, conversión, ticket promedio y mejoras porcentuales: No hay datos reales suficientes todavía.
+
+5. Próximo plan de 6 horas:
+- Prioridad1: CI validate/postgres, evaluación seca, navegador y preview del SHA final; conservar PR en borrador sin auto-merge ni despliegue manual.
+- Prioridad2: disponer de modelo/capacidad que supere desarrollo y controles dentro de los límites existentes. Recién entonces medir los ocho finales sin ajustar prompts con sus resultados.
+- Prioridad3: revisión administrativa y recepción humana por circuito autorizado; no habilitar modelos, envíos o campañas por esta corrección del evaluador.
+
+6. Bloqueos:
+- Evaluación real completa pendiente. No se inició Ollama, consumió API remota, usaron datos de clientas ni modificó Supabase/Vercel, DNS, pagos, credenciales, límites o automatizaciones en este ciclo.
+
+7. Verificación:
+- Siete regresiones nuevas, incluidas pruebas del CLI real con fetch interceptado antes de importarlo. No hay solicitudes externas ni claves reales: la simulación demuestra que desarrollo fallido no ejecuta finales y que una muestra no se reporta completa.
+- Inventario seco:40 casos,29 críticos,6 controles, máximo teórico2.52USD frente a techo3USD; full_evaluation_passed=false. Esto es planificación sintética, no costo real ni evaluación aprobada.
+- Suite local361/361, cero omitidas; builds, análisis estático y CI final se registran en la PR. La evidencia de ramas anteriores no se atribuye al nuevo SHA. No se hizo QA visual local por ausencia de cambios de interfaz.
+
+## 2026-10-26 - Candidato conjunto de seis mejoras técnicas
+
+VICTORIOSA AUTOPILOT — REPORTE CICLO
+
+Fecha/hora: 2026-10-26 19:44 America/Montevideo. Ciclo: continuación manual, sin numeración histórica verificable. Modo: integración local en rama codex/validated-integration-20261026, sin fusionar PRs a main.
+
+1. Estado general:
+- Main y health del dominio permanecen27b95a5; consultas enabled=true con privacidad v1/retención30d y checkout cerrado. No se publicó este candidato. Home/producto/carrito/mobile/SEO/catálogo sin cambios de interfaz nuevos en la integración.
+- Se incorporan los commits originales de PR141/142/143/144/145/147 en una propuesta conjunta para revisar compatibilidad; las seis PR de origen siguen abiertas y sin conversaciones pendientes. Riesgo acotado por validación conjunta; el modelo local sigue sin evaluación completa aprobada.
+
+2. Cambios realizados:
+- PR141 9cdce2e: genai2.31.0/dotenv18.0.9. PR142 77ffba6: tipos24.19.2, política de Dependabot y navegador Node24. PR143 adaf8c3: Actionsv7. PR144 7770296: monitor de consultas. PR145 00f0f6c: diagnóstico local. PR147 7ab05ca: prerrequisitos y cobertura de evaluación final.
+- Solo hubo conflictos de apéndices en este archivo: se conservaron todos los checkpoints con el prefijo original intacto. YAML/browser conserva Actionsv7 y Node24. La guía de evaluación conserva el diagnóstico local y las reglas finales corregidas.
+- Verificada ascendencia de los seis SHA y contenido idéntico al original en los ocho archivos de lógica/pruebas incorporados de PR144/145/147. Sin cambios en SQL, server.ts, vercel.json, gateway de modelos, motor de inteligencia ni .env.example respecto de main.
+- Motivo: las verificaciones individuales no acreditaban compatibilidad del conjunto. No se crearon funciones duplicadas ni automatizaciones nuevas.
+
+3. Mejoras comerciales:
+- Conversión/confianza: mantenimiento y monitorización del canal de consultas. Producto/mercado/contenido/SEO sin nuevas publicaciones comerciales. Impacto esperado cualitativo, sin atribución de ventas.
+
+4. Métricas:
+- Ventas reales, sesiones, add to cart, checkout iniciado, conversión, ticket promedio y mejoras porcentuales: No hay datos reales suficientes todavía.
+
+5. Próximo plan de 6 horas:
+- Prioridad1: CI validate/postgres, evaluador seco, worker/Edge, navegador y preview del SHA final conjunto; entregar una propuesta única revisable sin auto-merge ni despliegue manual.
+- Prioridad2: revisión humana del candidato antes de cualquier publicación. Los seis originales permanecen abiertos hasta decisión de integración.
+- Prioridad3: modelo/capacidad local y evaluación real aprobada antes de medir casos finales o habilitar IA. Esta integración no convierte el diagnóstico fallido de Gemma ni el timeout de Qwen en operación verificada.
+
+6. Bloqueos:
+- Evaluación real de IA, sesión administrativa y recepción humana siguen pendientes. Sin cambios de producción, DNS, credenciales, pagos, compras, SQL remoto, campañas, envíos o presupuestos. No se inició Ollama ni ejecutaron evaluaciones de pago.
+- El monitor Node local tuvo un timeout de conexión a victoriosas.online; se conserva ese resultado fallido. PowerShell verificó independientemente health/config HTTP200. El último monitor GitHub observado fue SUCCESS a las13:23UTC; no se infiere puntualidad futura ni se duplica scheduler.
+
+7. Verificación:
+- npm ci y npm run verify conjuntos:374/374, cero omitidas, tipos y ambos builds aprobados. No se atribuye al candidato la CI individual de los originales.
+- YAML de todos los workflows parseado, manifiesto/lockfile/versiones contrastados, secret scan y HTML/assets aprobados. npm audit --omit=dev:0 vulnerabilidades reportadas, alcance limitado a dependencias de ejecución y catálogo observado.
+- Diffcheck con reconocimiento de CRLF aprobado, conservando terminadores de los workflows originales. Los conflictos quedaron resueltos y Git sin entradas no fusionadas.
+- Inventario seco:40 casos,29 críticos,6 controles, máximo teórico2.52USD bajo techo3USD; full_evaluation_passed=false. Es planificación, sin gasto ni evaluación aprobada.
+- Navegador desktop/mobile se comprobará con el smoke de CI del conjunto; no hay auditoría WCAG nueva ni recorrido de compra. Checkout/producto/carrito siguen retirados o cerrados. Cierre de CI y preview del SHA final se registra en la PR de integración.
+
+
+## 2026-10-29 - Cierre técnico y caída alojada comprobada
+
+Main27b95a5 y candidatoPR14871ebf8d revalidados por Git/CI; los seis SHA originales están incorporados y sin hilos pendientes. Rama aislada codex/technical-close-20261029, código537d583: la bandeja conserva aprobación tras consultar historial vacío, bloquea historial incierto/éxito inválido y diferencia aceptación Resend de entrega/recepción/IA. verify final378/378, tipos/ambos builds, worker17/17, HTML/secret-scan y navegador sintético390/1440 aprobados. Regresión Vercel/trace fuente y bundle nativo: health200, checkoutfalse, anon401, 404; DEP0169 no reproducido, issue146 abierta.
+
+Dominio y preview autorizado devuelven402 DEPLOYMENT_DISABLED aunque Vercel registra producciónREADY en27b95a5. Incidente149 documenta monitores fallidos y acción externa de revisar cuenta/uso; no se demostró la causa específica ni se cambió gasto/protección. Supabase primariohealthy, RLS/ACL/agregados verificados, retención145succeeded, consultas10/outboxsent10: aceptación de aplicación no acredita entrega humana. Infraestructura9completadas,2bloqueadas,4queued; otros roles sin tareas alojadas, informeGitHubsíejecutado. GemmaCPU conversa pero guardiánblocked/no_send; Qwenvencechat; ningún modelo remoto ni gasto. WhatsAppentrante pendiente, Resenddominioverificado, precios/borradores cerrados.
+
+Informe y recuperación: docs/TECHNICAL_CLOSE_20261029.md. CI/enlace final enPR del cierre. No publicar, auto-merge, despliegue manual, SQLremoto, envíos, DNS ni duplicación de automatizaciones. Próximo: recuperarhosting con el propietario y luego validar sesiónadministrativa/health porSHA; modelo gratuito capaz y aprobación deVictoria siguen independientes.
+## 2026-10-29 · Biblioteca editorial y preguntas desde la perspectiva de una clienta
+
+Rama codex/client-content-20261029 desde main27b95a5, independiente de PR148 y otros borradores. El dominio mostró Deployment Paused; propietario confirma falta de pago. Sin cambios Vercel ni gastos. Revisión del código: 17 fichas ya completas y dos artículos draft. Se agregan 12 artículos desarrollados (14 totales), 34 FAQ específicas y seis FAQ iniciales en modo de revisión; secciones con encabezados, servicios/lecturas relacionadas y WhatsApp contextual al artículo. Búsqueda reconoce «limpieza de cutis». Todos los artículos nuevos draft/date:null; rutas públicas y buscador siguen excluyéndolos. Sin autoría o revisión profesional atribuida a Victoria. Referencias AAD/NCCIH/NHS documentadas; no nuevos protocolos, precios ni datos profesionales inventados.
+
+Validación local Node24.22.1: npm ci --ignore-scripts; npm run verify exit0 (356 aprobadas, cero fallidas y una omitida preexistente de preparación offline, 357 totales), tipos y ambos builds. Suite de directorio fuera del glob principal:3/3. SSR de revisión:17 bloques FAQ, encabezados del artículo, enlace a servicio y contexto de contacto correctos. check-route-html, secret-scan y git diff --check aprobados. Una primera corrida detectó dependencia ESM nueva ausente en fixture nativo; se agregó .js y la copia de la dependencia. Otra encontró la expectativa antigua de dos borradores en búsqueda; se conservó el contrato público17 y se actualizó solo el inventario de revisión. Sin nueva prueba visual de navegador local, WCAG, DB alojada, recepción humana ni producción; no confundir SSR con E2E.
+
+Informe y pendientes agrupados de validación profesional: docs/CLIENT_CONTENT_20261029.md. Publicación pendiente de aprobación de Victoria y fecha real. La reactivación del alojamiento queda a cargo del propietario; después comprobar experiencia pública. No se fusiona ni despliega manualmente, no SQL, envíos, pagos, DNS, secretos ni agentes modificados. Siguiente: observar CI del SHA remoto final y mantener PR en borrador.
+
+
+## 2026-10-29 - Integracion para prueba local autorizada
+
+El propietario pide integrar cambios, sincronizar la PC y levantar servidor local. Rama codex/integration-local-20261029 en C:/autopilot-worktrees/integracion-local-20261029 combina PR148/151 y PR150. Solo conflicto de apendices de continuidad, ambos conservados. verify conjunto381/381 sin omisiones, tipos/builds; directorio3/3, HTML y secret-scan aprobados. Servidor full-stack activo en127.0.0.1:3000, proceso sin archivos env ni credenciales de servicios externos, captura/mail/IA/pagos cerrados. Chrome local verifico portada, menu,14lecturas, articulo limpieza, enlace al servicio y17bloquesFAQ; sin overflow/imagenes rotas/erroresJS en la vista observada. No se enviaron consultas ni mensajes. Guia y arranque: docs/LOCAL_REVIEW_20261029.md y scripts/start-local-review.ps1. Sin merge a main, publicacion editorial o cambios Vercel; integracion local para probar, no operacion alojada. Conservar los worktrees previos.
+
+## 2026-10-31 · Navegación por páginas autorizada
+Rama independiente codex/clinical-navigation-20261031 desde c9c350d, según prompt docs/OPENCODE_REDESIGN_BRIEF.md y referencia del propietario. Inicio corto; Victoria, Tratamientos/categoría/ficha, editorial y consultas se sustituyen con cabecera persistente, historial y foco. Mantiene17servicios, regalo en contacto, formularios, privacidad, textos aprobados y borradores cerrados en producción. Anclas heredadas se resuelven a páginas. Metadatos propios para Victoria y Cómo empezar; API rewrite conserva primera prioridad. Mockup ImageGen es propuesta; implementación reutiliza activos aprobados.
+OpenCode produjo el cambio inicial y se detuvo por presupuesto; se completó aquí sin ampliar límites ni acceso Temp. verify final385/385 sin omitidas, tipos/ambos builds; directorio3/3, HTML/secret-scan/diffcheck. Navegador escritorio: Victoria sin hero, categorías y ficha individual, Atrás/Adelante/recarga; móvil/WCAG completos pendientes. Capturas/informe docs/CLINICAL_NAVIGATION_20261031.md. Preview estático127.0.0.1:3005, sin backend/secretos. Sin merge, despliegue, DNS/SQL/pagos/envíos. Vercel bloqueado. No combinar automáticamente PR156 (enfoque anterior de portada) con esta estructura.
+
+
+## 2026-10-31 — Puesto OpenCode profesional y directivas
+
+Rama codex/opencode-workstation-20261031 desde origin/main c9c350d. Configuración global instalada con respaldo local y lanzadores de Victoriosas, nuevos proyectos y alternativa Groq. Se reutilizó OAuth nativo ya existente de OpenCode; GPT-6.1 Sol respondió y pasó el ensayo sintético de lectura/corrección/prueba. Groq/Qwen también pasó con límites reales de cuota. Director delegó correctamente una revisión al subagente revisor.
+
+Diez perfiles, seis skills, seis comandos, dos plugins y servidor LSP TypeScript. MCP FreeLLMAPI, Context7, navegador aislado y operaciones conectados; GitHub en lectura y navegación de la web local verificados. Vercel CLI identifica elmica858-3199, sin acreditar proyecto productivo. Supabase Auth health HTTP 200. Evidencia y reproducción: tools/opencode-workstation/VALIDACION.md y sus informes JSON.
+
+Supabase MCP preparado en solo lectura, pendiente OAuth propio. Resend/camelRun sin claves locales detectadas, pendientes de acceso. No exportar sesiones de ChatGPT ni copiar claves de producción al modelo. Cerebras deshabilitado. No se modificó la aplicación, no hay agentes permanentes nuevos, envíos automáticos, SQL alojado, DNS, pagos ni despliegues. Los perfiles comerciales antiguos quedan deshabilitados y las directivas vigentes priorizan servicios, Victoria y evaluación remota.
+
+Siguiente acción: revisar CI de la PR de configuración y completar únicamente los accesos locales faltantes mediante sus flujos oficiales. Mantener las restricciones de publicación y los datos de clientas fuera del modelo.
+
+
+## 2026-10-31 — Motor local complementario y economía de tokens
+
+Se amplía la PR155 sin modificar la aplicación publicada. TOKEN_POLICY.md queda como instrucción obligatoria: contexto mínimo, evitar lecturas/pruebas/comités repetidos, skills a demanda y checkpoint corto. El lanzador evita duplicados de AGENTS/directivas y activa descripciones compactas normalmente. Plugin nuevo con lectura inicial100/máximo160 líneas, salidas explícitamente acotadas, respuesta según rol, máximo3 delegaciones y presupuesto observado por sesión; modo profundo explícito.
+
+Control determinista instalado: autopilot-control status/tokens no requieren modelo; snapshot con fecha, caché60s e invalidación por cambios. mission arranca una unidad de trabajo del director con contexto compacto y tiempo acotado. No se crea scheduler ni se amplían permisos productivos.
+
+Evidencia: economy-smoke.json acredita respuesta real, telemetría de OpenCode y dos consultas de estado con cero llamadas a modelos (segunda cacheHit). Regresión de ingeniería aprobada con las nuevas políticas: prueba inicial fallida, corrección y prueba final aprobada, exit0. Telemetría de ese ensayo: entrada4867, salida496, razonamiento34 y caché leída22784, en los campos reportados por OpenCode; no equivale a facturación ni demuestra un porcentaje de ahorro. npm test aprueba límites, deduplicación y caché. Consultar tools/opencode-workstation/VALIDACION.md.
+
+Continuidad: retomar mediante objetivo, commit, archivos, prueba, bloqueo y siguiente acción; no releer toda la historia. Permanecen los accesos externos pendientes ya identificados y el bloqueo de cuenta Vercel. Verificar CI del SHA final de esta ampliación antes de integrar.
+
+## 2026-10-31 · Conexiones oficiales y estudio competitivo acotado
+PR155: conectores OAuth oficiales Resend/camelRun instalados desactivados y herramientas denegadas; falta consentimiento de acceso específico. Panel Resend sin API keys, dominio verificado; camelRun cuatro agentes dormidos/sin herramientas y saldo no gratuito. Sin copiar secretos, crear claves, ejecutar agentes ni enviar correo. Nuevo /competencia limita tres fuentes/una propuesta. Generador LF explícito corrige frontmatter Windows; npm test aprobado y configuración global reinstalada con backup. Detalles tools/opencode-workstation/CONEXIONES_PENDIENTES.md. Mejoras web en rama independiente codex/service-discovery-20261031, no incluidas en esta PR. Sin merge, producción, DNS, SQL o gasto.
+
+## 2026-10-31 · OAuth camelRun y límite de Resend
+Usuario autoriza conexiones OAuth. Cliente OpenCode confirma camelRun autenticado/conectado; ensayo con proceso Node exit0 invoca únicamente camelrun_list_agents y responde4. Primer intento shell registró exit1 por stderr nativo de PowerShell; captura directa Node aprobada, evidencia tools/opencode-workstation/camelrun-smoke.json. Sin inferencia remota camelRun, creación ni envíos. Nuevo flag --camelrun en wrapper solo repositorio Victoriosas y agente operaciones; permiso únicamente inventario, resto denegado, carga bajo demanda para ahorrar contexto. npm test/instalación aprobados.
+Resend no autenticado y desactivado: OAuth expone Full access o Sending access; auto-review de Browser rechaza callback por alcance de leer/crear/eliminar superior a lectura local. No se elude rechazo ni se copian claves; requiere autorización explícita de Full access del proveedor. No afirmar conexión terminada. Detalles CONEXIONES_PENDIENTES.md y checkpoint corto actualizado. Sin producción/DNS/SQL/gasto o automatizaciones nuevas.
+
+## Actualización pública clínica, 31/10/2026
+
+- La fuente de verdad de la experiencia pública es ahora `ProfessionalSite.tsx`, con navegación por páginas, identidad oscura/dorada y catálogo de 17 tratamientos. Las notas anteriores de comercio son históricas; no reactivar comercio ni pagos.
+- Entrega visual de esta rama: `TreatmentsPage.tsx` incorpora fotos ya existentes en el repositorio, fichas, categorías, búsqueda local y entrada al orientador por pasos. `TechnologyPage.tsx` documenta solamente los equipos disponibles declarados (punta de diamante, radiofrecuencia, electroporación facial y Dermapen). `experience.css` mantiene transiciones reducidas para accesibilidad.
+- Las consultas continúan bajo evaluación remota y coordinación humana, sin tarifas públicas, diagnósticos, agendamiento automático ni activación de envío IA.
+- Evidencia: `npm run verify` 386/386, lint y builds OK. `scripts/e2e-clinical-experience.mjs` probado en Chrome a 390px y 1365px con catálogo 11+6, filtros, orientador, ruta tecnología, detalles, sin errores JS ni desbordamiento.
+- Bloqueo externo verificado 31/10/2026: `https://victoriosas.online/` y `/api/health` ambos HTTP 402; Vercel proyecto `autopilot` marca `live:false` pese a versiones preliminares READY. No intentar despliegue alternativo ni modificar facturación, DNS o cuenta sin resolverlo.
+- Vista local de la rama para revisión: `http://127.0.0.1:4184/`. No es un despliegue público. Capturas de QA permanecen solo en la PC.
