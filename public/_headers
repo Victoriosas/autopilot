@@ -1,0 +1,29 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/admin
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow
+
+/admin/*
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow
+
+/beauty-professional
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow
+
+/api/*
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow
+
+https://autopilot-6z5.pages.dev/*
+  X-Robots-Tag: noindex, nofollow
+
+https://:deployment.autopilot-6z5.pages.dev/*
+  X-Robots-Tag: noindex, nofollow
