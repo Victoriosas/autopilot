@@ -12,6 +12,7 @@ import { approveAndSendConsultationReply } from './consultationReplyDelivery';
 import { beautyServerDatabase } from './beautyDatabase';
 import { consultationReadStore, type ConsultationReadStore } from './consultationReading';
 import { registerConsultationIntelligence,type IntelligenceRouterDependencies } from './consultationIntelligenceRouter';
+import { runConsultationIntelligence } from './consultationIntelligenceStore';
 
 export function consultationAddress(req: { ip?: string; get(name: string): string | undefined }, vercel = process.env.VERCEL === '1'): string {
   // Vercel overwrites this header. Outside its runtime, use only Express's peer IP.
@@ -171,6 +172,16 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; read
         // Only a newly accepted form with confirmed owner notification may trigger auto-acknowledgement.
         // Failure never causes form resubmission or a second automatic send attempt.
         try { await maybeSendAutomaticConsultationReply(input); } catch { /* Fail closed; never retry an uncertain email. */ }
+        // Supabase Edge: consented consultations receive a deterministic, internal shadow analysis.
+        // No remote model, customer reply or notification is triggered. Victoria reviews the draft.
+        if (process.env.AUTOPILOT_RUNTIME === 'supabase-edge' && process.env.CONSULTATION_PRIVACY_APPROVED === 'true' && input.aiConsent === true) {
+          try {
+            const result = await beautyServerDatabase().rpc('consultation_shadow_record', { p_id: input.id });
+            if (!result.error && result.data) {
+              await runConsultationIntelligence(result.data as any, { provider: undefined });
+            }
+          } catch { /* Submission still accepted; an optional shadow failure never duplicates the notice. */ }
+        }
       }
       return res.status(202).json({ id: input.id, status: 'accepted' });
     } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }

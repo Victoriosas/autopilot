@@ -45,10 +45,10 @@ export async function analyzeConsultation(record:ConsultationRecord,options:{now
    let message=record.input.message.replace(/[^\s@]+@[^\s@]+\.[^\s@]+/g,'[correo]').replace(/\+?\d[\d ()-]{6,}\d/g,'[numero]');
    for(const value of [record.input.fullName,record.input.email,record.input.phone])if(value)message=message.replace(new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),'[dato de contacto]');
    const invoke=async(stage:'understand'|'draft'|'review',payload:unknown)=>{
-    if(++calls>intelligencePolicy.maxCalls||Buffer.byteLength(JSON.stringify(payload))>intelligencePolicy.maxInputBytes)throw Error('MODEL_LIMIT');
+    if(++calls>intelligencePolicy.maxCalls||new TextEncoder().encode(JSON.stringify(payload)).byteLength>intelligencePolicy.maxInputBytes)throw Error('MODEL_LIMIT');
     const signal=AbortSignal.timeout(intelligencePolicy.timeoutMs);
     const value=await Promise.race([provider.complete(stage,payload,intelligenceSchemas[stage],signal),new Promise<never>((_,reject)=>{signal.addEventListener('abort',()=>reject(Error('MODEL_TIMEOUT')),{once:true});})]);
-    if(Buffer.byteLength(JSON.stringify(value)??'')>intelligencePolicy.maxOutputBytes)throw Error('MODEL_OUTPUT_INVALID');
+    if(new TextEncoder().encode(JSON.stringify(value)??'').byteLength>intelligencePolicy.maxOutputBytes)throw Error('MODEL_OUTPUT_INVALID');
     return value;
    };
    const interpreted=validateModelUnderstanding(await invoke('understand',{untrustedMessage:message,serviceCandidates:understanding.serviceCandidates}));

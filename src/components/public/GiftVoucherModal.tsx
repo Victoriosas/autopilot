@@ -30,7 +30,7 @@ export function GiftVoucherModal({ onClose }: { onClose: () => void }) {
       {sender.trim() && <p>De parte de {sender.trim()}</p>}
       <p className="beauty-small">Pendiente de confirmación. No es un voucher emitido ni acredita una compra.</p>
     </section>
-    <p className="beauty-small">Estos datos se usan en esta vista; al abrir WhatsApp o email se incluyen en el mensaje que podés revisar antes de enviar.</p>
+    <p className="beauty-small">En WhatsApp se prepara el mensaje completo. Para consultar por correo se abre nuestro formulario privado; copiá la propuesta con el botón de abajo y pegala en el campo de consulta si querés conservar la dedicatoria. No se incluyen datos personales en el enlace.</p>
     <div className="beauty-discovery-actions"><ContactLink context={context}>Consultar regalo por WhatsApp</ContactLink><ContactLink context={context} channel="email">Consultar regalo por email</ContactLink></div>
     <CopyMessageButton text={context} />
   </ConsultationDialog>;

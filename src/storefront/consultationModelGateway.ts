@@ -23,7 +23,7 @@ export async function boundedModelJSON(res: Response, maxBytes = 64000): Promise
   try { for (;;) { const item = await reader.read(); if (item.done) break; size += item.value.byteLength;
     if (size > maxBytes) throw new Error('MODEL_RESPONSE_INVALID'); chunks.push(item.value); } }
   finally { void reader.cancel().catch(() => {}); }
-  try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new Error('MODEL_RESPONSE_INVALID'); }
+  try { const combined = new Uint8Array(size); let offset = 0; for (const chunk of chunks) { combined.set(chunk, offset); offset += chunk.byteLength; } return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(combined)); } catch { throw new Error('MODEL_RESPONSE_INVALID'); }
 }
 // Live catalog verification before spending. Reserve five bounded responses plus
 // runtime/storage allowance; spendLimit alone is only a between-request cutoff.
@@ -65,7 +65,7 @@ export async function runModelGateway(
     throw new Error('MODEL_REQUEST_INVALID');
   }
   const endpoint = validateModelGatewayConfig(config);
-  if (Buffer.byteLength(JSON.stringify(req.input) ?? '') + Buffer.byteLength(req.systemPrompt) > 12000) throw new Error('MODEL_INPUT_LIMIT');
+  if (new TextEncoder().encode(JSON.stringify(req.input) ?? '').byteLength + new TextEncoder().encode(req.systemPrompt).byteLength > 12000) throw new Error('MODEL_INPUT_LIMIT');
   const path = config.provider === 'ollama' ? '/api/chat' : config.provider === 'camelrun' ? '/v1/runs' : '/v1/chat/completions';
   const messages = [{ role: 'system', content: req.systemPrompt }, { role: 'user', content: JSON.stringify(req.input) }];
   const body = config.provider === 'ollama'
