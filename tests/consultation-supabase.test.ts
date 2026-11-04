@@ -50,6 +50,32 @@ test('consultation actual disposable Auth PostgREST RPC and administrator RLS', 
       const hidden = await actors.customer.db.from('consultation_requests').select('id,input').eq('id', input.id);
       assert.equal(hidden.error, null); assert.deepEqual(hidden.data, []);
     });
+    await t.test('private service knowledge uses real Auth, versions and approval independent of website publication', async () => {
+      const headers = { authorization:'Bearer '+actors.admin.token, origin:'https://victoriosas.online', 'content-type':'application/json', 'x-consultation-lab':'synthetic-v1' };
+      const endpoint = base + '/admin/lab/knowledge';
+      assert.equal((await fetch(endpoint)).status,401);
+      assert.equal((await fetch(endpoint,{headers:{authorization:'Bearer '+actors.customer.token}})).status,403);
+      assert.ok((await anon.rpc('consultation_knowledge_facts')).error);
+      assert.ok((await actors.customer.db.rpc('consultation_knowledge_list')).error);
+      const listed=await (await fetch(endpoint,{headers})).json();
+      assert.equal(listed.services.length,17);
+      const catalog=await actors.admin.db.from('beauty_services').select('id,publication_status').in('id',listed.services.map((s:any)=>s.slug));
+      assert.equal(catalog.error,null);assert.equal(catalog.data!.length,17);assert.ok(catalog.data!.every(s=>s.publication_status==='draft'));
+      const entry={slug:'limpieza-profunda',version:0,description:'Descripción sintética autorizada exclusivamente para esta prueba.',techniques:'',duration:'',conditions:'',faq:'',internalFee:'999 UYU (sintético)',approvedForAI:true,priceApproved:false,validUntil:null};
+      const save=(value:any)=>fetch(endpoint,{method:'POST',headers,body:JSON.stringify(value)});
+      assert.equal((await save(entry)).status,200);
+      assert.equal((await save(entry)).status,409,'stale revisions cannot overwrite an approval');
+      const facts=await service.rpc('consultation_knowledge_facts');assert.equal(facts.error,null);
+      assert.equal(facts.data.length,1);assert.equal(facts.data[0].version,'1');
+      assert.ok(!JSON.stringify(facts.data).includes('999'),'internal fee must not reach the AI projection');
+      const result=await fetch(base+'/admin/lab',{method:'POST',headers,body:JSON.stringify({caseId:'general'})});
+      assert.equal(result.status,200);const lab=await result.json();assert.equal(lab.delivery,'NOT_SENT');assert.equal(lab.analysis.evidence[0].fragment,entry.description);
+      assert.equal((await save({...entry,version:1,description:'Nueva versión sin aprobación.',approvedForAI:false})).status,200);
+      assert.deepEqual((await service.rpc('consultation_knowledge_facts')).data,[],'never fall back to an older approved revision');
+      assert.equal((await save({...entry,version:2,description:'Garantizamos resultados por $999.',approvedForAI:true})).status,200);
+      assert.deepEqual((await service.rpc('consultation_knowledge_facts')).data,[],'deterministic gate overrides an unsafe approved description');
+      assert.equal(deliveries,1,'laboratory never notifies Resend');
+    });
     await t.test('HTTP inbox checks real Auth and profile role then applies caller RLS', async () => {
       assert.equal((await fetch(base + '/admin')).status, 401);
       assert.equal((await fetch(base + '/admin', { headers: { authorization: 'Bearer ' + actors.customer.token } })).status, 403);
