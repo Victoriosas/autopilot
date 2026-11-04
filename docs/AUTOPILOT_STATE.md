@@ -1018,3 +1018,11 @@ Resend no autenticado y desactivado: OAuth expone Full access o Sending access; 
 - Evidencia: `npm run verify` 386/386, lint y builds OK. `scripts/e2e-clinical-experience.mjs` probado en Chrome a 390px y 1365px con catálogo 11+6, filtros, orientador, ruta tecnología, detalles, sin errores JS ni desbordamiento.
 - Bloqueo externo verificado 31/10/2026: `https://victoriosas.online/` y `/api/health` ambos HTTP 402; Vercel proyecto `autopilot` marca `live:false` pese a versiones preliminares READY. No intentar despliegue alternativo ni modificar facturación, DNS o cuenta sin resolverlo.
 - Vista local de la rama para revisión: `http://127.0.0.1:4184/`. No es un despliegue público. Capturas de QA permanecen solo en la PC.
+
+## 2026-11-04 · F2: experiencia privada de revisión, pendiente de CI productiva
+
+Se separó el editor/laboratorio de la bandeja de clientas mediante nueva pestaña `Fichas` en el hub privado, conservando `Consultas`, `Solicitudes`, `Servicios` y `Agentes`. La pantalla muestra el avance real de las 17 fichas privadas sin confundirlas con cuatro registros históricos; indica borradores, aprobación IA, caducidad y aprobación separada de tarifa sin revelar importes, y protege cambios sin guardar. Sigue requiriendo autorización real de Victoria para hechos profesionales. El laboratorio permanece sintético y ocultable, sin invocar proveedores.
+
+Trabajo aislado en `codex/f2-review-progress-20261104` desde `996f33b`, en worktree propio sobre E. Supabase productiva leída: 0 fichas aprobadas, sin mutación. Ver `docs/F2_REVISION_VICTORIA_17_TRATAMIENTOS_20261104.md`. Validación local: TypeScript correcto, 406/406 pruebas generales antes de separar pestañas, 7/7 pruebas focalizadas después, y prueba de Chrome aislado sin JS errors, validando guardado simulado, cambio descartado y cero aprobaciones IA. Revalidar `npm run verify` completo sobre SHA final, los jobs CI y el deploy antes de declarar producción.
+
+Issue #180 reinterpretado el 04/11: `Supabase Preview` en `main` ya es success y enlaza al Supabase principal; en las PR históricas sigue `skipped` con URL del proyecto secundario. Incidencia abierta y documentada, sin ramas preview pagas, DNS ni SQL. No se desactiva ni se da por aprobada la protección de PR.
