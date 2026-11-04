@@ -92,7 +92,11 @@ export function ConsultationForm() {
     <h2 id="consultation-title">Hablemos de tu cuidado</h2>
     <p>Contanos qué te interesa y cómo preferís recibir una respuesta. Al enviarla, nuestra plataforma registra tu consulta para su revisión.</p>
     <div className="beauty-contact-options">
-      <a className="beauty-button" href="/consultanos?canal=email#formulario-consulta">Escribir por nuestro formulario</a>
+      <button type="button" className="beauty-button" onClick={() => {
+        setChannel('email');
+        document.getElementById('formulario-consulta')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('consultation-name')?.focus({ preventScroll: true });
+      }}>Escribir por nuestro formulario</button>
       <ContactLink />
     </div>
     {availability === 'checking' && <p role="status">Verificando la conexión segura para enviar consultas…</p>}
@@ -105,7 +109,7 @@ export function ConsultationForm() {
       <form id="formulario-consulta" onSubmit={submit} aria-busy={pending}>
         <fieldset disabled={pending || locked} className="beauty-consultation-fields"><legend>Tu consulta</legend>
           <div className="beauty-consultation-grid">
-            <label>Nombre y apellido *<input name="fullName" required maxLength={120} autoComplete="name" /></label>
+            <label>Nombre y apellido *<input id="consultation-name" name="fullName" required maxLength={120} autoComplete="name" /></label>
             <label>Celular *<input name="phone" type="tel" required minLength={8} maxLength={25} autoComplete="tel" aria-describedby="consultation-phone-help" /></label>
             <label>Correo electrónico {channel === 'email' ? '*' : '(opcional)'}<input name="email" type="email" required={channel === 'email'} maxLength={254} autoComplete="email" /></label>
             <label>Edad (opcional)<input name="age" type="number" min="0" max="120" step="1" /></label>
