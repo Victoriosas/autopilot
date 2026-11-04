@@ -1,5 +1,11 @@
 # Victoriosas / Autopilot: guía de trabajo
 
+## Dirección y fases del producto
+- **Fuente principal de visión**: `docs/PROJECT_DIRECTION.md`, con roles, límites, fases F0–F8, criterios de salida y prioridad activa; leerla antes de crear trabajo nuevo.
+- **Estado auditado 3–4/11/2026**: `docs/AUDITORIA_DIRECCION_20261104.md`. Confirmar HEAD y servicios: el informe es una foto, no un estado permanente.
+- **PC/GitHub**: `docs/SYNC_PC_GITHUB_SEGURO.md`. Si Desktop Commander está desconectado, no afirmar PC sincronizada.
+- Usar `$victoriosas-control-de-fases` para impedir que tareas laterales desplacen la ruta crítica. Codex, OpenCode y Work comparten el objetivo, pero no comparten necesariamente sesiones, permisos o estado de ejecución.
+
 ## Antes de actuar
 - Leer este archivo, docs/OPENCODE_CHECKPOINT.md y .github/copilot-instructions.md. Consultar el historial solo en rangos necesarios para la tarea.
 - Las notas de continuidad están fechadas: comprobar código, main, PR abiertas y CI actuales. No tratar entradas históricas como estado vigente.
