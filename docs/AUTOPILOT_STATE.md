@@ -1,3 +1,13 @@
+# Continuidad · estabilización 04/11/2026
+
+- Base productiva confirmada por GitHub y Vercel READY: `33f718e3e5894a2a459f5e279d5092be97774320`. Rama `codex/consultation-stabilization-20261104`.
+- Navegador productivo: Cloudflare devuelve 403 HTML/challenge en página y config (192 ms); no hubo POST. No se pudo ejecutar React después del desafío.
+- Incompatibilidad reproducida localmente: `credentials: omit` descarta clearance; cambio mínimo a `same-origin` en config/POST. Navegador real 1280/390 px, consentimiento, origen, bloqueo y reintento aprobados; prueba RED con original y GREEN con cambio. No equivale a reparación ya desplegada.
+- `npm run verify`: 399/399, tipos y ambas compilaciones correctos. CI del SHA final pendiente de PR. Detalles: `docs/CONSULTATION_STABILIZATION_20261104.md`.
+- Resend: dominio verificado; Vercel: metadatos de variables revisados sin descifrar valores. No se probó recepción humana.
+- camelRun cobra runtime/almacenamiento según documentación actual: modelo gratis no demuestra total cero. No se ejecutaron modelos; proveedor remoto sigue bloqueado.
+- Próximo: validar las 17 fichas y corrección de exposición del RPC de limpieza en PostgreSQL desechable; preparar instalación/reversión para autorización específica. Sin producción, SQL remoto de escritura, DNS, pagos o correos.
+
 # Continuidad · laboratorio sintético de consultas
 
 - Base verificada: main `e00680a448508b27946766cd972494c83c7296e0`. Rama `codex/consultation-synthetic-ai-lab`.
