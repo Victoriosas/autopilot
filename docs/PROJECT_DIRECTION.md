@@ -45,6 +45,10 @@ Fases posteriores pueden diseñarse sin activarse; cualquier petición lateral n
 
 Ciclo de trabajo: inventario → elegir la prioridad más temprana bloqueada → rama/PR mínima → tests sintéticos y CI → revisión de seguridad/costo → despliegue aprobado → verificación y registro de resultados → siguiente fase. Informar **DEFINIDO, PROBADO, FUSIONADO, DESPLEGADO, EJECUTADO o BLOQUEADO** de forma independiente.
 
+## Verificación F1 posterior · 04/11/2026
+- El bloqueo global de Cloudflare fue corregido en su configuración; rutas públicas y API de consultas volvieron a HTTP 200, con navegador Chrome desktop/móvil y smoke de solo lectura satisfactorios. Ver `docs/CONSULTATION_F1_RESTORATION_20261104.md`.
+- **F1 no finalizada:** el circuito de envío/persistencia/recepción/revisión de un caso controlado con sesión humana todavía no se probó en producción. Conservar supervisión y no enviar mensajes de prueba a clientas.
+
 ## Incidentes y prioridades al 04/11/2026 (revalidar antes de actuar)
 - Main `aef2ab73b210985e466ed770a9fd5470608cbf28`, Vercel producción READY en ese SHA; no equivale a dominio accesible desde todas las redes.
 - Supabase principal `jfjzpwlrhzqbcrvqxhzf` registra 41 migraciones y 17 tratamientos; `private.consultation_service_knowledge` existe pero tiene cero fichas. Aclarar la diferencia entre filas de catálogo y hechos revisados.
