@@ -6,6 +6,7 @@ import { ConsultationReadControl } from './ConsultationReadControl';
 import { ConsultationIntelligencePanel } from './ConsultationIntelligencePanel';
 import { ConsultationIntelligenceReport } from './ConsultationIntelligenceReport';
 import { consultationReplyStatus } from '../../storefront/consultationReplyStatus';
+import { ConsultationLabPanel } from './ConsultationLabPanel';
 
 const labels = Object.fromEntries(serviceGroups.flatMap(group => group.services.map(name => [serviceSlug(name), name])));
 export function ConsultationInbox() {
@@ -141,6 +142,7 @@ export function ConsultationInbox() {
     </div>
     {source === 'whatsapp' && <div className="rounded-lg border border-neutral-700 bg-neutral-950 p-5" role="status"><h3 className="font-semibold">WhatsApp · Integración pendiente</h3><p>Las consultas recibidas directamente en WhatsApp todavía no se sincronizan aquí. No se muestran mensajes simulados. Las consultas web que eligen WhatsApp como canal permanecen en Web hasta contar con una conexión autorizada.</p></div>}
     {source === 'web' && <>
+      <ConsultationLabPanel/>
       <ConsultationIntelligenceReport enabled={intelligenceEnabled}/>
       <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Estado de respuesta">
         <button type="button" aria-pressed={folder === 'pending'} onClick={() => setFolder('pending')} className={`rounded border px-3 py-2 ${folder === 'pending' ? 'border-amber-500 bg-amber-900/30' : 'border-neutral-600'}`}>Sin aceptación de correo confirmada ({rows.length - sentIds.length})</button>

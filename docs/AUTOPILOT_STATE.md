@@ -1,4 +1,17 @@
-# Actualización vigente · 31/10/2026 · America/Montevideo
+# Continuidad · laboratorio sintético de consultas
+
+- Base verificada: main `e00680a448508b27946766cd972494c83c7296e0`. Rama `codex/consultation-synthetic-ai-lab`.
+- Implementado Probar IA (simulación), reutilizando el analizador sombra. Solo seis casos sintéticos fijados; no accede a consultas reales ni permite envío. Agentes originales sin modificaciones.
+- Conocimiento central privado y versionado vinculado a beauty_services. Migración preparada para 17 nombres, sin descripciones ni tarifas inventadas; aprobaciones de IA, precio y publicación separadas. No aplicada remotamente. Editor para Victoria y filtros deterministas de seguridad.
+- Validación: npm run verify (397 aprobadas, 1 omitida); Supabase local Auth/PostgREST (8 aprobadas); PostgreSQL consultas/retención (12 aprobadas). Navegador: formulario, replay idempotente, ficha privada y borrador simulado; Resend interceptado, cero correos reales. Capturas sintéticas en output/consultation-lab. Detalle reproducible: docs/CONSULTATION_LAB.md.
+- No confundir simulación con camelRun operativo: conexión remota NO implementada/validada. Faltan acceso/API, credencial y contrato verificable por agente con coste total cero. El laboratorio rechaza proveedores remotos; no usar generadores históricos pagos. Coste externo ejecutado US$0; tokens no inventados.
+- Producción: el usuario informa Vercel; no se verificó en vivo por bloqueo de red. Se reprodujo localmente que enabled=true sin privacyVersion/retentionDays no habilita el formulario; causa real pendiente.
+- Bloqueos externos: API GitHub prohibida por política de red; PR/CI requieren ese acceso. Dominios api.github.com, victoriosas.online y run.camelai.com y requisito CAMELAI_API_KEY guardados en borrador del entorno, sin cambiar producción. Verificar estado de rama/PR antes de retomar.
+- Siguiente acción: completar acceso, contrato remoto y pruebas congeladas reales a coste total cero; crear PR en borrador y revisar validate/postgres/beauty-stack del SHA final. Sin merge, despliegue, DNS, envíos ni migraciones alojadas.
+
+Las notas históricas siguientes no sustituyen esta evidencia ni el contexto actual del usuario.
+
+# Actualización histórica · 31/10/2026 · America/Montevideo
 
 Cloudflare es alojamiento TEMPORAL por indicación del propietario; se prevé volver a Vercel. Conservar vercel.json, servidor Node, integraciones y configuración existente. No eliminar el proyecto Vercel ni trasladar bases de datos.
 

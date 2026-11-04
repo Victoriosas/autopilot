@@ -13,6 +13,8 @@ import { beautyServerDatabase } from './beautyDatabase';
 import { consultationReadStore, type ConsultationReadStore } from './consultationReading';
 import { registerConsultationIntelligence,type IntelligenceRouterDependencies } from './consultationIntelligenceRouter';
 import { runConsultationIntelligence } from './consultationIntelligenceStore';
+import { registerConsultationLab } from './consultationLabRouter';
+import type { ServiceKnowledgeStore } from './consultationServiceKnowledge';
 
 export function consultationAddress(req: { ip?: string; get(name: string): string | undefined }, vercel = process.env.VERCEL === '1'): string {
   // Vercel overwrites this header. Outside its runtime, use only Express's peer IP.
@@ -20,7 +22,7 @@ export function consultationAddress(req: { ip?: string; get(name: string): strin
   return address && isIP(address) ? address : req.ip || 'unknown';
 }
 
-export function createConsultationRouter(deps: { store?: ConsultationStore; reads?: ConsultationReadStore; intelligence?:IntelligenceRouterDependencies; delivery?: ConsultationDelivery; enabled?: () => boolean; origin?: () => string | undefined; abuseKey?: () => string | undefined; auth?: RequestHandler } = {}) {
+export function createConsultationRouter(deps: { store?: ConsultationStore; reads?: ConsultationReadStore; knowledge?: ServiceKnowledgeStore; intelligence?:IntelligenceRouterDependencies; delivery?: ConsultationDelivery; enabled?: () => boolean; origin?: () => string | undefined; abuseKey?: () => string | undefined; auth?: RequestHandler } = {}) {
   const router = Router(), store = deps.store || consultationSupabaseStore, delivery = deps.delivery || createConsultationDelivery();
   const reads = deps.reads || consultationReadStore;
   const enabled = deps.enabled || (() => process.env.CONSULTATION_REQUESTS_ENABLED === 'true' && process.env.CONSULTATION_PRIVACY_APPROVED === 'true' && process.env.CONSULTATION_RETENTION_READY === 'true');
@@ -187,6 +189,7 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; read
     } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
   });
   registerConsultationIntelligence(router,deps.auth||requireSupabaseAdminAuth,store,allowedOrigin,deps.intelligence);
+  registerConsultationLab(router,deps.auth||requireSupabaseAdminAuth,allowedOrigin,deps.knowledge);
   const invalidJson: ErrorRequestHandler = (error, _req, res, _next) => res.status(error?.type === 'entity.too.large' ? 413 : 400).json({ error: error?.type === 'entity.too.large' ? 'CONSULTATION_INPUT_TOO_LARGE' : 'CONSULTATION_INPUT_INVALID' });
   router.use(invalidJson);
   return router;
