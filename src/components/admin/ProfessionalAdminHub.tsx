@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Activity, ArrowUpRight, ClipboardList, HeartHandshake, MessageSquareText, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
+import { Activity, ArrowUpRight, BookOpenCheck, ClipboardList, HeartHandshake, MessageSquareText, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
 import { ConsultationBell } from './ConsultationBell';
 import { ConsultationInbox } from './ConsultationInbox';
 import { BeautyRequestsPanel } from './BeautyRequestsPanel';
 import { BeautyCatalogPanel } from './BeautyCatalogPanel';
+import { ConsultationLabPanel } from './ConsultationLabPanel';
 import { SixAgentStatusPanel } from './SixAgentStatusPanel';
 
-type Workspace = 'consultas' | 'solicitudes' | 'servicios' | 'agentes';
+type Workspace = 'consultas' | 'solicitudes' | 'servicios' | 'conocimiento' | 'agentes';
 
 const sections: Record<Workspace, { title: string; description: string }> = {
   consultas: { title: 'Consultas de clientes', description: 'Revisá los mensajes recibidos, prepará respuestas y confirmá cada envío desde la bandeja privada.' },
   solicitudes: { title: 'Solicitudes de atención', description: 'Seguí las solicitudes de evaluación y sus estados. Ningún turno se confirma automáticamente.' },
-  servicios: { title: 'Servicios de Victoriosas', description: 'Administrá las fichas internas. Los cambios no publican precios ni tratamientos sin aprobación.' },
+  servicios: { title: 'Servicios de Victoriosas', description: 'Administrá el catálogo histórico de servicios. No se publican precios ni tratamientos sin aprobación.' },
+  conocimiento: { title: 'Fichas profesionales de Victoria', description: 'Revisá los 17 tratamientos, guardá borradores privados y aprobá datos para IA solo después de una revisión profesional.' },
   agentes: { title: 'Agentes de Autopilot', description: 'Consultá el estado real y las tareas verificadas en Supabase. No se supone actividad sin evidencia.' },
 };
 
@@ -64,13 +66,16 @@ export function ProfessionalAdminHub({ onOpenAccount, sessionKey }: { onOpenAcco
             <ShieldCheck size={15} aria-hidden="true" /> Las respuestas a clientes requieren revisión humana
           </p>
         </div>
-        <nav aria-label="Secciones de Victoriosas Autopilot" className="mb-7 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <nav aria-label="Secciones de Victoriosas Autopilot" className="mb-7 grid grid-cols-2 gap-3 md:grid-cols-5">
           <ConsultationBell selected={active === 'consultas'} onOpen={() => openSection('consultas')} />
           <button type="button" className={tabClass(active === 'solicitudes')} aria-current={active === 'solicitudes' ? 'page' : undefined} onClick={() => openSection('solicitudes')}>
             <ClipboardList size={18} aria-hidden="true" /> Solicitudes
           </button>
           <button type="button" className={tabClass(active === 'servicios')} aria-current={active === 'servicios' ? 'page' : undefined} onClick={() => openSection('servicios')}>
             <Sparkles size={18} aria-hidden="true" /> Servicios
+          </button>
+          <button type="button" className={tabClass(active === 'conocimiento')} aria-current={active === 'conocimiento' ? 'page' : undefined} onClick={() => openSection('conocimiento')}>
+            <BookOpenCheck size={18} aria-hidden="true" /> Fichas
           </button>
           <button type="button" className={tabClass(active === 'agentes')} aria-current={active === 'agentes' ? 'page' : undefined} onClick={() => openSection('agentes')}>
             <Activity size={18} aria-hidden="true" /> Agentes
@@ -87,6 +92,7 @@ export function ProfessionalAdminHub({ onOpenAccount, sessionKey }: { onOpenAcco
           {visited.has('consultas') && <div hidden={active !== 'consultas'}><ConsultationInbox key={'consultas-' + sessionKey} /></div>}
           {visited.has('solicitudes') && <div hidden={active !== 'solicitudes'}><BeautyRequestsPanel key={'solicitudes-' + sessionKey} /></div>}
           {visited.has('servicios') && <div hidden={active !== 'servicios'}><BeautyCatalogPanel key={'servicios-' + sessionKey} /></div>}
+          {visited.has('conocimiento') && <div hidden={active !== 'conocimiento'}><ConsultationLabPanel key={'conocimiento-' + sessionKey} /></div>}
           {visited.has('agentes') && <div hidden={active !== 'agentes'}><SixAgentStatusPanel /></div>}
         </section>
         <p className="mt-6 text-center text-xs text-stone-500">Panel privado de Victoriosas · Sin tienda, pagos ni publicaciones automáticas</p>
