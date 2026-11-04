@@ -38,7 +38,8 @@ try {
   await run('psql', ['-h', '127.0.0.1', '-p', String(port), '-U', 'postgres', '-d', 'postgres', '-c',
     'create role anon nologin; create role authenticated nologin; create role service_role nologin;']);
   await run('createdb', ['-h', '127.0.0.1', '-p', String(port), '-U', 'postgres', 'victoriosa_hosted_replay_test']);
-  const child = execFile(process.execPath, ['--import', 'tsx', '--test', 'tests/hosted-migration-replay.test.ts'], {
+  const testFile = process.argv.includes('--history-only') ? 'tests/preview-history-postgres.test.ts' : 'tests/hosted-migration-replay.test.ts';
+  const child = execFile(process.execPath, ['--import', 'tsx', '--test', testFile], {
     windowsHide: true,
     env: { ...process.env, HOSTED_REPLAY_TEST_DATABASE_URL: `postgresql://postgres@127.0.0.1:${port}/victoriosa_hosted_replay_test`, PSQL_PATH: executable('psql') },
   });

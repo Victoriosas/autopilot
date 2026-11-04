@@ -7,10 +7,10 @@ $sources = @(
     @{ Source = 'tests/commerce-supabase-access.sql'; Target = '20261010000001_synthetic_commerce_access.sql' },
     @{ Source = 'tests/catalog-archive-supabase.sql'; Target = '20261010000002_synthetic_catalog_archive.sql' },
     @{ Source = 'tests/supplier-publication-supabase.sql'; Target = '20261010000003_synthetic_supplier_publication.sql' },
-    @{ Source = 'supabase/migrations/20261011050519_explicit_data_api_grants.sql'; Target = '20261011050519_explicit_data_api_grants.sql' },
-    @{ Source = 'supabase/migrations/20261011114131_revoke_catalog_archive_public_execute.sql'; Target = '20261011114131_revoke_catalog_archive_public_execute.sql' },
-    @{ Source = 'supabase/migrations/20261010010000_atomic_checkout.sql'; Target = '20261010010000_atomic_checkout.sql' },
-    @{ Source = 'supabase/migrations/20261010020000_payment_reference_recovery.sql'; Target = '20261010020000_payment_reference_recovery.sql' }
+    @{ Source = 'supabase/legacy-migrations/20261011050519_explicit_data_api_grants.sql'; Target = '20261011050519_explicit_data_api_grants.sql' },
+    @{ Source = 'supabase/legacy-migrations/20261011114131_revoke_catalog_archive_public_execute.sql'; Target = '20261011114131_revoke_catalog_archive_public_execute.sql' },
+    @{ Source = 'supabase/legacy-migrations/20261010010000_atomic_checkout.sql'; Target = '20261010010000_atomic_checkout.sql' },
+    @{ Source = 'supabase/legacy-migrations/20261010020000_payment_reference_recovery.sql'; Target = '20261010020000_payment_reference_recovery.sql' }
 )
 foreach ($entry in $sources) {
     if (-not (Test-Path -LiteralPath (Join-Path $repository $entry.Source) -PathType Leaf)) {

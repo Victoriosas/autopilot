@@ -1,3 +1,11 @@
+# Continuidad · auditoría de historial 04/11/2026
+
+- Base Git/main productiva contrastada: `81336f2ab3cf4c4ed28ce7c100ad16b7d4355756`. Rama `codex/preview-history-audit-20261104`; sin cambios alojados.
+- Supabase Preview reproduce `Remote migration versions not found in local migrations directory`. Se recuperaron en lectura 41 SQL ejecutados; solo tres versiones coincidían. Directorio activo reconciliado con hashes; originales locales conservados como fixtures en `supabase/legacy-migrations`.
+- CLI real sobre clúster loopback desechable: error original reproducido; con historial recuperado cero pendientes en dry-run, sin cambiar historial/esquema. Replay histórico 2/2, Beauty/PostgreSQL 11/11, verify 399/399 y ambas compilaciones. Replay completo con pg_cron/Vault y Auth/PostgREST pendiente de CI `beauty-stack` del SHA final.
+- No se ejecutó SQL productivo, migration repair, db push real, correos o modelos. Seis propuestas comerciales no aplicadas quedan fuera del directorio activo. Runbook: `docs/SUPABASE_HISTORY_RECONCILIATION_20261104.md`.
+- Siguiente: revisar CI/Supabase Preview de la PR; luego auditar metadatos de consultas/cola y editor de fichas, sin leer expedientes ni repetir envíos reales.
+
 # Continuidad · fichas y permisos 04/11/2026
 
 - Base productiva `33f718e3e5894a2a459f5e279d5092be97774320`; rama `codex/consultation-knowledge-security-20261104`. Solo metadatos remotos: cuatro servicios, esquema privado de conocimiento ausente; RPC de limpieza comprueba administrador.

@@ -1,0 +1,212 @@
+{
+  "capturedOn": "2026-11-04",
+  "projectRef": "jfjzpwlrhzqbcrvqxhzf",
+  "source": "read-only supabase_migrations.schema_migrations",
+  "migrations": [
+    {
+      "version": "20260912033258",
+      "name": "autopilot_core_v4",
+      "sha256": "6ed5746e5b1875bf39ab0d4445884edd2e96cd23ede5578c30b950bafa3cf6e5"
+    },
+    {
+      "version": "20260912033307",
+      "name": "autopilot_model_telemetry",
+      "sha256": "539b8a7e84da0aa5f89ab0e33841c6b30c5494d961a85301e0892c72714684b1"
+    },
+    {
+      "version": "20260912033348",
+      "name": "security_hardening_victoriosa",
+      "sha256": "10607c93e91a1772aceb3c8e7891d6781e50fd515df3687ad1094f4297f755bb"
+    },
+    {
+      "version": "20260912035508",
+      "name": "move_admin_helper_out_of_exposed_schema_v2",
+      "sha256": "259a62491d7f6cdae6b1ec996af231db24d19654ccee02ad9983b0e535173c0d"
+    },
+    {
+      "version": "20260912200514",
+      "name": "autopilot_product_drafts",
+      "sha256": "b0cfba35bdcab0d6e10a178490cf2a06da55f482293f9abbe22387f3bb9729ad"
+    },
+    {
+      "version": "20260912200516",
+      "name": "ai_governor_draft_reviews",
+      "sha256": "5e7dd3a91a91759355cb46e758973196aa79df645fec1eeef0e5dfed98076538"
+    },
+    {
+      "version": "20260912200517",
+      "name": "governed_publication",
+      "sha256": "a05be90252279cc41586213f969f1cc242d491154e7279be2a385cdbb6520cfb"
+    },
+    {
+      "version": "20260912200518",
+      "name": "autopilot_repricing_proposals",
+      "sha256": "612c7252775b8c044c88ef76f44f7a86da41e2814935f820a0868c731fc195e0"
+    },
+    {
+      "version": "20260912200520",
+      "name": "catalog_observation_snapshots",
+      "sha256": "c9c0cf2fe2878fc073e2a02cad8eec8ed7b593c3e9c5f1f84c2837991ba0adba"
+    },
+    {
+      "version": "20260912200521",
+      "name": "release_integrity",
+      "sha256": "cee8387876abb279c1fe1b39d1c6fb8ac6637f5838ef38f04253cc82fb19dd4c"
+    },
+    {
+      "version": "20260912215447",
+      "name": "catalog_archive_and_clear",
+      "sha256": "c2f88df5eb31f40aaa359150a6fe718aa169e8d347fddd82b8351c3b822b13f7"
+    },
+    {
+      "version": "20260914232844",
+      "name": "durable_sourcing_orchestrator",
+      "sha256": "8309b9740557be377bfd88efa5c45efed26c3f5f5da4fd5cf928124f260e3da5"
+    },
+    {
+      "version": "20260914232850",
+      "name": "autopilot_sourcing_fk_indexes",
+      "sha256": "e33f804868357b487243c33d7957b51d156e90f3e512928b64cbfb125e2ef959"
+    },
+    {
+      "version": "20260914233819",
+      "name": "production_shadow_once",
+      "sha256": "89d1751305ad3f943cc0c4ef2464071bc4541335a68871295d099e436a0e4aa3"
+    },
+    {
+      "version": "20260914234304",
+      "name": "shadow_authorization_by_id",
+      "sha256": "6cdcab1e2ce8e02c772f2d12767bab1ee46c69c15a5faa8a6d19510283cb9dca"
+    },
+    {
+      "version": "20260915060822",
+      "name": "owner_safe_defaults",
+      "sha256": "15f33f48a9229094a29447bf6de35b10a2cf5d2234c55f656cc3b7a25c08652e"
+    },
+    {
+      "version": "20260915073800",
+      "name": "release_candidate_lane",
+      "sha256": "7ce05081f552e46ce8b04c0fbcfb2729631fcf6a1fffe12e5a348b93715bc82d"
+    },
+    {
+      "version": "20260915211638",
+      "name": "autopilot_market_observations",
+      "sha256": "07d373c3e7fb2db846d30c26ef40b5b23805a340d217319e0c3c6d39ca28d9ab"
+    },
+    {
+      "version": "20260915214420",
+      "name": "storefront_waitlist",
+      "sha256": "1a8cae35dfd44077bbcddc0a5f82a2a11493644221096d946d59b0306fb2bfe3"
+    },
+    {
+      "version": "20260917035357",
+      "name": "add_private_provider_oauth_tokens",
+      "sha256": "b242fc92356a6c7958766e1ead957b79536fa82da20a0d438b8b2202e8d2e76f"
+    },
+    {
+      "version": "20260917040051",
+      "name": "link_manual_release_to_supplier",
+      "sha256": "494bde03e4e4e018ac03db965477b0635e17fdd3c8eacc0b2da3fd34672cef0d"
+    },
+    {
+      "version": "20261017223014",
+      "name": "beauty_requests",
+      "sha256": "fdeb49ea0d7ca1935b79ceea637f9095934946a06d02feed2da0aad215ef7a21"
+    },
+    {
+      "version": "20261017223016",
+      "name": "beauty_retention",
+      "sha256": "c3b40e36976bb2057a1dae04a560f0652249aca0aff55335cd6a9932cd2147e4"
+    },
+    {
+      "version": "20261017223019",
+      "name": "beauty_catalog_evaluations",
+      "sha256": "9cc7d3c3c1771416a5404c65da458af5816ac4c04a38f3b16bfc27a64ef97297"
+    },
+    {
+      "version": "20261020020713",
+      "name": "beauty_foreign_key_indexes",
+      "sha256": "9c396ef54b452b8159bf807d0def2d75b4f245b2847bb0f0c07638d28ae24ac6"
+    },
+    {
+      "version": "20261023221628",
+      "name": "consultation_private_outbox",
+      "sha256": "80dd646d3d1698a8fb347ad66aa8a81588e9118bb186323a99b41e8aada510d8"
+    },
+    {
+      "version": "20261023221633",
+      "name": "consultation_retention_cron_extension",
+      "sha256": "36e46ce6078ed6e3a29be0d56b74ae67e2de7f8d2a8f1290d3b9d83a11decfb6"
+    },
+    {
+      "version": "20261023225229",
+      "name": "consultation_reply_outbox",
+      "sha256": "4c2f7c913dba6b1f235384a227cc5f9842b5b64f73b453ee41cf907823f29240"
+    },
+    {
+      "version": "20261023232641",
+      "name": "consultation_case_states",
+      "sha256": "777006a72e454fd90f0d8867f868cda580952b360ad353c772d180923c86810b"
+    },
+    {
+      "version": "20261024010253",
+      "name": "consultation_automatic_reply_audit",
+      "sha256": "b3e799c60e7bc2305c929e9ca5ff566476d74f67156d7078da747023aa9c4d60"
+    },
+    {
+      "version": "20261024040055",
+      "name": "consultation_read_states",
+      "sha256": "062f502864abae9fb16586c7be528648fd7e0bfea7b5147050c14543c08812fc"
+    },
+    {
+      "version": "20261024065524",
+      "name": "consultation_optional_ai_consent",
+      "sha256": "3d8fb040d3f2c1852343cab4466c3eff3cc1049dda833f24701c79aa7f1d41bb"
+    },
+    {
+      "version": "20261025024834",
+      "name": "consultation_intelligence_shadow",
+      "sha256": "a0ae44a87908f364f5e98f8d08167da8620ce1b913e71750e7b02cf86bb10e16"
+    },
+    {
+      "version": "20261025025153",
+      "name": "consultation_ai_generation_budget",
+      "sha256": "28c2903d8f9f47ae4afa0f7bcaee6eaa52d8fe35a4cb21f3e817c11a6922da7f"
+    },
+    {
+      "version": "20261025025753",
+      "name": "consultation_ai_refresh_attempts",
+      "sha256": "85821abd077b54f39ebd770976a5816d8b660f25ddfba181a56d9f603e1fc65e"
+    },
+    {
+      "version": "20261025045757",
+      "name": "six_agent_queue_20261025",
+      "sha256": "49d5635191937476234dc52803ab2d3504bdb67fdc8606b99cff29a7ae844d2e"
+    },
+    {
+      "version": "20261025060425",
+      "name": "six_agent_public_health_claim_20261025",
+      "sha256": "7fc6d3fe8bf3b44e79745e7d25b9a74228f5e1cd6702dd60bb35d93e35253331"
+    },
+    {
+      "version": "20261101053706",
+      "name": "consultation_resend_vault",
+      "sha256": "6328db409ba393482565b099c54ef1ae52135ad05208f4468cecfb4872fc73cf"
+    },
+    {
+      "version": "20261101054558",
+      "name": "consultation_shadow_record",
+      "sha256": "f2aa0cdd66447b6b75576121f8731d6ee28ea110fb74979ebf4e521d9b9fa9f6"
+    },
+    {
+      "version": "20261104045138",
+      "name": "consultation_service_knowledge",
+      "sha256": "037ef39e52675b607ab5b6674d7d6c82b41b290095037e8e20bc7689d98178cd"
+    },
+    {
+      "version": "20261104045219",
+      "name": "beauty_retention_private_rpc",
+      "sha256": "761ad13bddc55588da7ad981e850fd76d15c6a9827caa595e14623f94ee48438"
+    }
+  ]
+}

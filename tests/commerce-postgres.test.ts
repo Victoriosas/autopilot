@@ -20,15 +20,15 @@ const quote = (value: unknown) => `'${JSON.stringify(value).replace(/'/g, "''")}
 const command = async (action: string, args: object = {}) => JSON.parse(await sql(`set role service_role; select public.commerce_checkout_command('${action}', ${quote(args)});`));
 const productId = '11111111-1111-4111-8111-111111111111';
 const request = (key = randomUUID(), quantity = 1) => ({ key, provider: 'mercadopago', currency: 'UYU', customer: { email: 'buyer@example.test', name: 'Test' }, items: [{ productId, quantity }], shipping: 0 });
-const migration = 'supabase/migrations/20261010010000_atomic_checkout.sql';
+const migration = 'supabase/legacy-migrations/20261010010000_atomic_checkout.sql';
 
 test('isolated PostgreSQL atomic commerce', { timeout: 120000 }, async t => {
   await sql(readFileSync('tests/commerce-baseline.sql', 'utf8'));
   // During RED, absence of the proposed RPC is the intended missing implementation.
   if (existsSync(migration)) await sql(readFileSync(migration, 'utf8'));
-  const recoveryMigration = 'supabase/migrations/20261010020000_payment_reference_recovery.sql';
+  const recoveryMigration = 'supabase/legacy-migrations/20261010020000_payment_reference_recovery.sql';
   if (existsSync(recoveryMigration)) await sql(readFileSync(recoveryMigration, 'utf8'));
-  const oauthCompatibilityMigration = 'supabase/migrations/20261012010000_provider_oauth_token_ciphertext_compat.sql';
+  const oauthCompatibilityMigration = 'supabase/legacy-migrations/20261012010000_provider_oauth_token_ciphertext_compat.sql';
   await t.test('hosted OAuth token schema upgrades to encrypted columns without silent plaintext conversion', async () => {
     const hostedLegacySchema = `
       drop table if exists public.provider_oauth_tokens;

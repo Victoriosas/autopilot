@@ -10,14 +10,14 @@ const history = [...canonical.matchAll(/^-- BEGIN (\d{14})_([^\r\n]+)$/gm)].map(
 if (history.length !== 21 || new Set(history.map(row=>row.version)).size !== 21) throw Error('CANONICAL_HISTORY_CHANGED');
 const latest = history.at(-1).version;
 const expected = ['20261010010000_atomic_checkout.sql','20261010020000_payment_reference_recovery.sql','20261011005345_product_stock_after_publication.sql','20261011050519_explicit_data_api_grants.sql','20261011114131_revoke_catalog_archive_public_execute.sql','20261012010000_provider_oauth_token_ciphertext_compat.sql'];
-const forward = (await readdir(join(root,'supabase/migrations'))).filter(name=>/^\d{14}_.*\.sql$/.test(name) && name.slice(0,14)>latest).sort();
+const forward = (await readdir(join(root,'supabase/legacy-migrations'))).filter(name=>/^\d{14}_.*\.sql$/.test(name) && name.slice(0,14)>latest).sort();
 if (JSON.stringify(forward)!==JSON.stringify(expected)) throw Error('FORWARD_MIGRATIONS_CHANGED_REVIEW_REQUIRED');
 const directory = await mkdtemp(join(tmpdir(),'autopilot-hosted-review-'));
 const destination = join(directory,'pending-sql');
 await mkdir(destination);
 const files=[];
 for (const name of forward) {
-  const content=await readFile(join(root,'supabase/migrations',name));
+  const content=await readFile(join(root,'supabase/legacy-migrations',name));
   const target=join(destination,name);
   await writeFile(target,content,{flag:'wx'});
   const digest=data=>createHash('sha256').update(data).digest('hex');
