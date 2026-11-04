@@ -41,7 +41,8 @@ export function ConsultationForm() {
     const timer = window.setTimeout(() => abort.abort(), 12000);
     setReady(false);
     setAvailability('checking');
-    fetch(endpoint + '/config', { credentials: 'omit', cache: 'no-store', signal: abort.signal })
+    // Keep same-origin edge clearance cookies; never send credentials cross-origin.
+    fetch(endpoint + '/config', { credentials: 'same-origin', cache: 'no-store', signal: abort.signal })
       .then(async response => {
         const config = response.ok ? await response.json() : null;
         if (!active) return;
@@ -72,7 +73,7 @@ export function ConsultationForm() {
     } catch { setResult('Revisá los campos y el consentimiento. Usá solo texto y un celular de 8 a 15 dígitos.'); return; }
     busy.current = true; setPending(true); setLocked(true); setResult('');
     try {
-      const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'omit', signal: AbortSignal.timeout(20000), body: JSON.stringify(attempt.current) });
+      const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', signal: AbortSignal.timeout(20000), body: JSON.stringify(attempt.current) });
       const receipt = await response.json().catch(() => null);
       if (response.status === 202 && receipt?.id === attempt.current.id && receipt.status === 'accepted') {
         attempt.current = null; setSent(true); setResult('Tu consulta quedó registrada. La atención se coordina personalmente; esto no confirma una reserva.');
