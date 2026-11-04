@@ -34,7 +34,10 @@ jobs:
           cp supabase/migrations/*.sql "$fixture/supabase/migrations/"
       - name: Start real local Auth and PostgREST
         run: |
-          supabase start --workdir "$RUNNER_TEMP/victoriosa-beauty-ci" -x studio,imgproxy,realtime,storage-api,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit > "$RUNNER_TEMP/beauty-start.log" 2>&1
+          if ! supabase start --workdir "$RUNNER_TEMP/victoriosa-beauty-ci" -x studio,imgproxy,realtime,storage-api,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit > "$RUNNER_TEMP/beauty-start.log" 2>&1; then
+            node scripts/print-supabase-start-failure.mjs "$RUNNER_TEMP/beauty-start.log"
+            exit 1
+          fi
           supabase status --workdir "$RUNNER_TEMP/victoriosa-beauty-ci" -o json > "$RUNNER_TEMP/beauty-status.json"
       - name: Test actual Beauty integration
         run: |
