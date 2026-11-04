@@ -1,3 +1,9 @@
+# Continuidad · Formulario y email secundario (PR #178, 04/11/2026)
+
+- Se corrige el contraste del menú de 17 tratamientos del formulario, agrupándolos en faciales y corporales. En escritorio moderno se usa picker oscuro con altura limitada y en otros navegadores un select nativo con esquema oscuro; revisar en Chrome/Windows y móvil antes de publicar.
+- Se conserva la preferencia WhatsApp / llamada / email como dato original. Si la persona proporcionó un correo válido, la administración puede elegir adicionalmente "Aprobar y enviar por correo" tras preparar el borrador y verificar el estado del outbox; sigue prohibido el envío automático o un segundo envío por consulta.
+- El formulario informa que el correo opcional podrá usarse para contestar esa consulta, sin campañas. Sin migraciones ni cambios productivos. La PR está en borrador mientras se validan pruebas visuales, email y CI del SHA final.
+
 # Continuidad · fichas y permisos 04/11/2026
 
 - Base productiva `33f718e3e5894a2a459f5e279d5092be97774320`; rama `codex/consultation-knowledge-security-20261104`. Solo metadatos remotos: cuatro servicios, esquema privado de conocimiento ausente; RPC de limpieza comprueba administrador.
