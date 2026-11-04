@@ -31,6 +31,7 @@ jobs:
           mkdir -p "$fixture/supabase/migrations"
           cp supabase/migration.sql "$fixture/supabase/migrations/20260901000000_legacy_base.sql"
           cp supabase/migration-sourcing.sql "$fixture/supabase/migrations/20260901000001_legacy_sourcing.sql"
+          cp tests/supabase-managed-rls-prerequisite.sql "$fixture/supabase/migrations/20260901000002_managed_rls.sql"
           cp supabase/migrations/*.sql "$fixture/supabase/migrations/"
       - name: Start real local Auth and PostgREST
         run: |

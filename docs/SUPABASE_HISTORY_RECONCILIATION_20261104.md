@@ -21,6 +21,8 @@ Las versiones productivas de conocimiento y permisos son `20261104045138` y `202
 
 El replay histórico anterior conserva sus regresiones. El replay completo de los 41 SQL y Auth/PostgREST depende de `beauty-stack` (pg_cron/Vault son prerrequisitos gestionados de Supabase y no están disponibles en PostgreSQL Windows). No sustituir esa prueba por stubs presentados como integración completa.
 
+El primer replay completo detectó SQLSTATE 42883: CLI 2.120.0 no incluye la función gestionada `public.rls_auto_enable()` a la que una migración histórica revoca EXECUTE. Se recuperó en lectura su cuerpo real como prerrequisito del fixture (`tests/supabase-managed-rls-prerequisite.sql`), sin registrar un event trigger, alterar el SQL histórico ni añadir migraciones productivas. El diagnóstico de arranque ahora imprime únicamente las últimas 65 líneas, redactando posibles claves.
+
 Supabase Preview debe volver a evaluarse en el SHA de la PR. Si la integración omite previews o no los habilita, informar NO VERIFICADO: no crear ramas pagas, borrar/recrear previews, modificar ajustes o reparar historial para forzar un verde.
 
 ## Revisión y recuperación
