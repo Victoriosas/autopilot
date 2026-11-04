@@ -44,6 +44,12 @@ test('agent refuses clinical, urgent, underage, non-email and test inquiries', a
   for (const change of examples) {
     assert.equal(await maybeSendAutomaticConsultationReply({ ...example, ...change } as ConsultationInput, {
       env: enabled, fetch: async () => { throw Error('SHOULD_NOT_SEND'); },
-    }), 'ineligible');
+    }), 'disabled');
   }
+});
+
+test('retired automatic path stays disabled for eligible input even when historical flags are enabled',async()=>{
+ let providerCalls=0;
+ assert.equal(await maybeSendAutomaticConsultationReply(example,{env:enabled,fetch:async()=>{providerCalls++;throw Error('must not send');}}),'disabled');
+ assert.equal(providerCalls,0);
 });

@@ -24,6 +24,7 @@ export async function approveAndSendConsultationReply(
   const approved = deps.claim ? {error:await deps.claim()?null:{code:'23505'}} : await db.from('consultation_reply_outbox').insert({
     request_id: record.id,
     approved_by: adminId,
+    approval_mode: 'human',
     recipient: record.input.email,
     subject: draft.subject,
     body,
