@@ -1,7 +1,5 @@
 import React, { Suspense, lazy, useState } from 'react';
 import { useApp } from './context/AppContext';
-import { apiFetch } from './lib/api';
-import { ConsultationBell } from './components/admin/ConsultationBell';
 
 // Store Components
 import { StoreHeader } from './components/store/StoreHeader';
@@ -17,22 +15,8 @@ import { WaitlistSection } from './components/store/WaitlistSection';
 import { PaymentReturn } from './components/store/PaymentReturn';
 import { readCatalogLocation, writeCatalogLocation } from './storefront/catalogLocation';
 
-// Admin Components
-const AdminHeader = lazy(() => import('./components/admin/AdminHeader').then((module) => ({ default: module.AdminHeader })));
-const AutopilotDashboard = lazy(() => import('./components/admin/AutopilotDashboard').then((module) => ({ default: module.AutopilotDashboard })));
-const SupplierManagement = lazy(() => import('./components/admin/SupplierManagement').then((module) => ({ default: module.SupplierManagement })));
-const FulfillmentOrdersTable = lazy(() => import('./components/admin/FulfillmentOrdersTable').then((module) => ({ default: module.FulfillmentOrdersTable })));
-const CandidateDetailModal = lazy(() => import('./components/admin/CandidateDetailModal').then((module) => ({ default: module.CandidateDetailModal })));
-const AutopilotRunnerModal = lazy(() => import('./components/admin/AutopilotRunnerModal').then((module) => ({ default: module.AutopilotRunnerModal })));
-const AutopilotSettingsModal = lazy(() => import('./components/admin/AutopilotSettingsModal').then((module) => ({ default: module.AutopilotSettingsModal })));
-const AutopilotHistoryModal = lazy(() => import('./components/admin/AutopilotHistoryModal').then((module) => ({ default: module.AutopilotHistoryModal })));
-const ConnectorsDirectoryModal = lazy(() => import('./components/admin/ConnectorsDirectoryModal').then((module) => ({ default: module.ConnectorsDirectoryModal })));
-const GlobalAdminSearchModal = lazy(() => import('./components/admin/GlobalAdminSearchModal').then((module) => ({ default: module.GlobalAdminSearchModal })));
-const ReleaseReadinessCard = lazy(() => import('./components/admin/ReleaseReadinessCard').then((module) => ({ default: module.ReleaseReadinessCard })));
-const BeautyRequestsPanel = lazy(() => import('./components/admin/BeautyRequestsPanel').then((module) => ({ default: module.BeautyRequestsPanel })));
-const ConsultationInbox = lazy(() => import('./components/admin/ConsultationInbox').then((module) => ({ default: module.ConsultationInbox })));
-const BeautyCatalogPanel = lazy(() => import('./components/admin/BeautyCatalogPanel').then((module) => ({ default: module.BeautyCatalogPanel })));
-const BeautyEvaluationPanel = lazy(() => import('./components/admin/BeautyEvaluationPanel').then((module) => ({ default: module.BeautyEvaluationPanel })));
+// Administration dedicated to actual Victoriosas operations; legacy commerce modules remain in the repository.
+const ProfessionalAdminHub = lazy(() => import('./components/admin/ProfessionalAdminHub').then(module => ({ default: module.ProfessionalAdminHub })));
 import { AuthModal } from './components/auth/AuthModal';
 
 import type { Product, Order } from './types';
@@ -44,9 +28,6 @@ export function App() {
     userRole,
     user,
     signOutUser,
-    products,
-    selectedCandidateForReview,
-    setSelectedCandidateForReview,
     toast,
     setToast,
     isAuthModalOpen,
@@ -77,27 +58,6 @@ export function App() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [accountTab, setAccountTab] = useState<'orders' | 'wishlist'>('orders');
-
-  // Admin State & Modals
-  const [adminTab, setAdminTab] = useState<'pipeline' | 'fulfillment' | 'suppliers'>('pipeline');
-  const [adminSection, setAdminSection] = useState<'consultas' | 'operaciones'>('consultas');
-  const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
-  const [isRunnerOpen, setIsRunnerOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [isConnectorsOpen, setIsConnectorsOpen] = useState(false);
-
-  React.useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && effectiveViewMode === 'admin') {
-        event.preventDefault();
-        setIsGlobalSearchOpen((previous) => !previous);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [effectiveViewMode]);
 
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -210,67 +170,12 @@ export function App() {
           )}
         </div>
       ) : (
-        <Suspense fallback={<p role="status" className="p-8">Cargando administración…</p>}><div className="flex-1 flex flex-col bg-neutral-950">
-          <AdminHeader
-            adminTab={adminTab}
-            onSelectAdminTab={setAdminTab}
-            onOpenGlobalSearch={() => setIsGlobalSearchOpen(true)}
-            onOpenDiscovery={() => setIsRunnerOpen(true)}
-            onOpenRunner={() => setIsRunnerOpen(true)}
-            onOpenSettings={() => setIsSettingsOpen(true)}
-            onOpenHistory={() => setIsHistoryOpen(true)}
-            onOpenConnectors={() => setIsConnectorsOpen(true)}
+        <Suspense fallback={<p role="status" className="p-8">Cargando espacio de atención…</p>}>
+          <ProfessionalAdminHub
+            onOpenAccount={() => setIsAuthModalOpen(true)}
+            sessionKey={user?.id || 'signed-out'}
           />
-
-          <nav aria-label="Secciones de administración" className="mx-auto flex w-full max-w-7xl flex-wrap gap-3 px-4 pt-5 sm:px-6">
-            <React.Fragment key={user?.id || 'signed-out'}><ConsultationBell selected={adminSection === 'consultas'} onOpen={() => setAdminSection('consultas')} /></React.Fragment>
-            <button type="button" aria-current={adminSection === 'operaciones' ? 'page' : undefined} className="rounded-lg border border-neutral-700 px-4 py-3" onClick={() => setAdminSection('operaciones')}>Operaciones</button>
-          </nav>
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            {adminSection === 'operaciones' && <><BeautyRequestsPanel key={user?.id||"signed-out"} />
-            <BeautyCatalogPanel key={user?.id||"signed-out"} />
-            <ReleaseReadinessCard />
-            {adminTab === 'pipeline' ? (
-              <AutopilotDashboard
-                onInspectCandidate={(product) => setSelectedCandidateForReview(product)}
-                onOpenDiscovery={() => setIsRunnerOpen(true)}
-                onOpenRunner={() => setIsRunnerOpen(true)}
-              />
-            ) : adminTab === 'fulfillment' ? (
-              <FulfillmentOrdersTable />
-            ) : (
-              <SupplierManagement
-                onOpenProductDetail={(productId) => {
-                  const found = products.find((product) => product.id === productId);
-                  if (found) setSelectedCandidateForReview(found);
-                }}
-              />
-            )}</>}
-            {adminSection === 'consultas' && <ConsultationInbox key={user?.id||"signed-out"} />}
-          </main>
-
-          <GlobalAdminSearchModal
-            isOpen={isGlobalSearchOpen}
-            onClose={() => setIsGlobalSearchOpen(false)}
-            onSelectProduct={(product) => setSelectedCandidateForReview(product)}
-            onSelectSupplier={() => setAdminTab('suppliers')}
-            onSelectRun={() => setIsHistoryOpen(true)}
-            onOpenDiscovery={() => setIsRunnerOpen(true)}
-            onOpenRunner={() => setIsRunnerOpen(true)}
-            onOpenSettings={() => setIsSettingsOpen(true)}
-            onOpenHistory={() => setIsHistoryOpen(true)}
-            onSelectAdminTab={setAdminTab}
-          />
-
-          {selectedCandidateForReview && (
-            <CandidateDetailModal product={selectedCandidateForReview} onClose={() => setSelectedCandidateForReview(null)} />
-          )}
-
-          {isRunnerOpen && <AutopilotRunnerModal onClose={() => setIsRunnerOpen(false)} />}
-          {isSettingsOpen && <AutopilotSettingsModal onClose={() => setIsSettingsOpen(false)} />}
-          {isHistoryOpen && <AutopilotHistoryModal onClose={() => setIsHistoryOpen(false)} />}
-          {isConnectorsOpen && <ConnectorsDirectoryModal onClose={() => setIsConnectorsOpen(false)} />}
-        </div></Suspense>
+        </Suspense>
       )}
 
       <AuthModal
