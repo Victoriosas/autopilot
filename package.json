@@ -17,7 +17,8 @@
     "test:db": "node --import tsx --test tests/sourcing-postgres.test.ts && node --import tsx --test tests/shadow-auth-postgres.test.ts",
     "test:commerce:db": "node scripts/test-commerce-postgres.mjs",
     "test:hosted-replay:db": "node scripts/test-hosted-replay-postgres.mjs",
-    "verify": "npm run lint && npm test && npm run build && npm run build:vercel"
+    "verify": "npm run verify:skills && npm run lint && npm test && npm run build && npm run build:vercel",
+    "verify:skills": "node scripts/check-codex-skills.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.31.0",
