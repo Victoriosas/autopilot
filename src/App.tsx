@@ -17,6 +17,7 @@ import { readCatalogLocation, writeCatalogLocation } from './storefront/catalogL
 
 // Administration dedicated to actual Victoriosas operations; legacy commerce modules remain in the repository.
 const ProfessionalAdminHub = lazy(() => import('./components/admin/ProfessionalAdminHub').then(module => ({ default: module.ProfessionalAdminHub })));
+const BeautyEvaluationPanel = lazy(() => import('./components/admin/BeautyEvaluationPanel').then(module => ({ default: module.BeautyEvaluationPanel })));
 import { AuthModal } from './components/auth/AuthModal';
 
 import type { Product, Order } from './types';
