@@ -45,14 +45,11 @@ Fases posteriores pueden diseñarse sin activarse; cualquier petición lateral n
 
 Ciclo de trabajo: inventario → elegir la prioridad más temprana bloqueada → rama/PR mínima → tests sintéticos y CI → revisión de seguridad/costo → despliegue aprobado → verificación y registro de resultados → siguiente fase. Informar **DEFINIDO, PROBADO, FUSIONADO, DESPLEGADO, EJECUTADO o BLOQUEADO** de forma independiente.
 
-## Evidencia productiva F1 y avance F2 del 04/11/2026
-- **Recepción pública PROBADA:** Chrome presentó un formulario operativo; POST sintético controlado recibió HTTP 202 y repetición idéntica HTTP 202. Supabase conservó un único expediente, outbox privado de aviso aceptado y Resend reportó **delivered** en la notificación operativa. Sin llamada de IA ni respuesta automática. Ver `docs/F1_RECEPCION_PRODUCTIVA_CONTROLADA_20261104.md`.
-- **Respuesta supervisada PENDIENTE:** no existe sesión de administrador disponible en las conexiones actuales para aprobar la respuesta y comprobar entrega al buzón de prueba. La API bloqueó con 401 la acción sin token; no crear usuarios privilegiados ni simular aprobación. F1 no queda cerrada.
-- **F2 PREPARADA:** 17 servicios del directorio + 4 borradores históricos en tabla administrativa; la tabla privada contiene 0 fichas. Ver `docs/F2_REVISION_VICTORIA_17_TRATAMIENTOS_20261104.md`, sin afirmaciones clínicas, precios, aprobación ni publicaciones.
-
-## Verificación F1 posterior · 04/11/2026
-- El bloqueo global de Cloudflare fue corregido en su configuración; rutas públicas y API de consultas volvieron a HTTP 200, con navegador Chrome desktop/móvil y smoke de solo lectura satisfactorios. Ver `docs/CONSULTATION_F1_RESTORATION_20261104.md`.
-- **F1 no finalizada:** el circuito de envío/persistencia/recepción/revisión de un caso controlado con sesión humana todavía no se probó en producción. Conservar supervisión y no enviar mensajes de prueba a clientas.
+## Cierre F1 y preparación F2/F3 · evidencia del 04/11/2026
+- **F1 circuito real PROBADO para un caso controlado:** Chrome en `/consultanos` hizo POST 202 con consentimiento, replay exacto idempotente; Supabase persistió 1 expediente y el outbox interno notificó vía Resend (delivered). La web administrativa autenticada abrió la consulta sintética, preparó el borrador, confirmó su aprobación y registró 1 respuesta `sent`/`human`. Resend la reportó `delivered` y Gmail conectado confirmó el mensaje recibido. Ningún cliente real fue contactado ni se activó IA. Prueba completa: `docs/F1_RECEPCION_PRODUCTIVA_CONTROLADA_20261104.md`.
+- **Criterio de calidad:** F1 canario satisfactoria no garantiza disponibilidad universal ni convierte a los agentes en autónomos. Mantener comprobaciones públicas, protección del panel, retención y deduplicación. Ver incidente Cloudflare en `docs/CONSULTATION_F1_RESTORATION_20261104.md`.
+- **F2 profesional PENDIENTE de Victoria:** 17 servicios canónicos + 4 borradores históricos; privado 0 fichas revisadas. Guía de revisión y control de versiones: `docs/F2_REVISION_VICTORIA_17_TRATAMIENTOS_20261104.md`. No cargar ni aprobar hechos clínicos automáticamente.
+- **F3 laboratorio solo PREFLIGHT:** 40/40 casos congelados, 6 controles y 22/22 regresiones locales aprobadas en dry-run/fixture. No hay evaluación de modelos reales, aprobación del guardián en producción ni certificación de costo total. Seguir sin proveedor remoto ni respuestas automáticas.
 
 ## Incidentes y prioridades al 04/11/2026 (revalidar antes de actuar)
 - Main `aef2ab73b210985e466ed770a9fd5470608cbf28`, Vercel producción READY en ese SHA; no equivale a dominio accesible desde todas las redes.
