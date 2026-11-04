@@ -16,7 +16,7 @@ export function BeautyRequestsPanel(){
   finally{setBusy(false);}
  }
  async function change(row:Row,status:Status){
-  if(status==='confirmed'&&!window.confirm('¿Sofía y la clienta acordaron servicio, presupuesto, traslado, fecha y horario? Este cambio no envía una confirmación al cliente.'))return;
+  if(status==='confirmed'&&!window.confirm('¿Victoria y la clienta acordaron servicio, presupuesto, traslado, fecha y horario? Este cambio no envía una confirmación al cliente.'))return;
   setBusy(true);setError('');
   try{const r=await apiFetch('/api/beauty/admin/requests/'+row.id,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({from:row.status,status})});if(!r.ok)throw new Error();await load();}
   catch{setError('No se guardó el cambio. Recargá antes de intentarlo otra vez.');}finally{setBusy(false);}

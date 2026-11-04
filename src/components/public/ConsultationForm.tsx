@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { serviceGroups, serviceSlug } from './serviceDirectory';
-import { ContactLink, contactEmail } from './ContactLink';
+import { ContactLink } from './ContactLink';
 import { normalizeConsultationRequest } from '../../storefront/consultationRequest';
 
 const endpoint = '/api/beauty/inquiries';
@@ -24,6 +24,8 @@ function consultationContext() {
 
 export function ConsultationForm() {
   const [ready, setReady] = useState(false);
+  const [availability, setAvailability] = useState<'checking' | 'ready' | 'unavailable'>('checking');
+  const [recheck, setRecheck] = useState(0);
   const [channel, setChannel] = useState(() => consultationContext().channel);
   const [service, setService] = useState(() => consultationContext().service);
   const [pending, setPending] = useState(false);
@@ -34,13 +36,23 @@ export function ConsultationForm() {
   const busy = useRef(false);
   const [locked, setLocked] = useState(false);
   useEffect(() => {
+    let active = true;
     const abort = new AbortController();
-    const timer = setTimeout(() => abort.abort(), 8000);
+    const timer = window.setTimeout(() => abort.abort(), 12000);
+    setReady(false);
+    setAvailability('checking');
     fetch(endpoint + '/config', { credentials: 'omit', cache: 'no-store', signal: abort.signal })
-      .then(async response => { if (response.ok) { const config = await response.json(); if (!abort.signal.aborted) setReady(config.enabled === true && config.privacyVersion === 'consultation-v1' && config.retentionDays === 30); } })
-      .catch(() => {}).finally(() => clearTimeout(timer));
-    return () => { clearTimeout(timer); abort.abort(); };
-  }, []);
+      .then(async response => {
+        const config = response.ok ? await response.json() : null;
+        if (!active) return;
+        const available = config?.enabled === true && config.privacyVersion === 'consultation-v1' && config.retentionDays === 30;
+        setReady(available);
+        setAvailability(available ? 'ready' : 'unavailable');
+      })
+      .catch(() => { if (active) { setReady(false); setAvailability('unavailable'); } })
+      .finally(() => window.clearTimeout(timer));
+    return () => { active = false; window.clearTimeout(timer); abort.abort(); };
+  }, [recheck]);
   useEffect(() => {
     const sync = () => { const slug = window.location.hash.slice(1); if (choices.some(choice => choice.id === slug) && !attempt.current) setService(slug); };
     sync(); window.addEventListener('hashchange', sync);
@@ -78,12 +90,26 @@ export function ConsultationForm() {
   return <section className="beauty-consultation" aria-labelledby="consultation-title">
     <p className="beauty-eyebrow">Un primer paso, a tu ritmo</p>
     <h2 id="consultation-title">Hablemos de tu cuidado</h2>
-    {!ready ? <p role="status">Por ahora, consultanos directamente por WhatsApp o email.</p> : sent ? <p role="status">{result}</p> : <>
-      <p>Contanos qué te interesa y cómo preferís una respuesta. No incluyas datos de salud, historia clínica ni fotografías.</p>
-      <form onSubmit={submit} aria-busy={pending}>
+    <p>Contanos qué te interesa y cómo preferís recibir una respuesta. Al enviarla, nuestra plataforma registra tu consulta para su revisión.</p>
+    <div className="beauty-contact-options">
+      <button type="button" className="beauty-button" onClick={() => {
+        setChannel('email');
+        document.getElementById('formulario-consulta')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('consultation-name')?.focus({ preventScroll: true });
+      }}>Escribir por nuestro formulario</button>
+      <ContactLink />
+    </div>
+    {availability === 'checking' && <p role="status">Verificando la conexión segura para enviar consultas…</p>}
+    {availability === 'unavailable' && !sent && <div role="status">
+      <p>El formulario está temporalmente sin conexión. Tus datos todavía no se enviaron.</p>
+      <button type="button" className="beauty-button beauty-button-outline" onClick={() => setRecheck(value => value + 1)}>Reintentar conexión</button>
+    </div>}
+    {sent ? <p role="status">{result}</p> : <>
+      <p>No incluyas datos de salud, historia clínica ni fotografías.</p>
+      <form id="formulario-consulta" onSubmit={submit} aria-busy={pending}>
         <fieldset disabled={pending || locked} className="beauty-consultation-fields"><legend>Tu consulta</legend>
           <div className="beauty-consultation-grid">
-            <label>Nombre y apellido *<input name="fullName" required maxLength={120} autoComplete="name" /></label>
+            <label>Nombre y apellido *<input id="consultation-name" name="fullName" required maxLength={120} autoComplete="name" /></label>
             <label>Celular *<input name="phone" type="tel" required minLength={8} maxLength={25} autoComplete="tel" aria-describedby="consultation-phone-help" /></label>
             <label>Correo electrónico {channel === 'email' ? '*' : '(opcional)'}<input name="email" type="email" required={channel === 'email'} maxLength={254} autoComplete="email" /></label>
             <label>Edad (opcional)<input name="age" type="number" min="0" max="120" step="1" /></label>
@@ -96,11 +122,10 @@ export function ConsultationForm() {
           <label className="beauty-consultation-consent"><input name="aiConsent" type="checkbox" value="yes" /><span>Opcional: autorizo que el motivo de consulta y servicio seleccionado se procesen mediante camelRun para preparar borradores de IA que Victoria revisará. No se envían nombre ni datos de contacto al proveedor. Puedo consultar o revocar este permiso escribiendo al correo de contacto. <a href="/privacidad">Más información</a>.</span></label>
           <div className="beauty-consultation-trap" aria-hidden="true"><label>Sitio web<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
         </fieldset>
-        <button className="beauty-button" type="submit" disabled={pending}>{pending ? 'Enviando…' : locked ? 'Reintentar consulta' : 'Enviar consulta'}</button>
+        <button className="beauty-button" type="submit" disabled={pending || !ready}>{pending ? 'Enviando…' : locked ? 'Reintentar consulta' : 'Enviar consulta'}</button>
         {result && <p role="status">{result}</p>}
       </form>
     </>}
-    <div className="beauty-contact-options"><ContactLink />{!ready ? <a className="beauty-button" href={'mailto:' + contactEmail}>Escribir por correo externo</a> : !sent ? <a className="beauty-button" href="/consultanos?canal=email">Usar el formulario con respuesta por correo ↗</a> : null}</div>
-    <p className="beauty-small">victoriosas.online@gmail.com</p>
+    <p className="beauty-small">El equipo de Victoriosas revisará tu consulta. La atención se coordina personalmente.</p>
   </section>;
 }
