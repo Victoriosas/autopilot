@@ -92,7 +92,7 @@ export function ProfessionalAdminHub({ onOpenAccount, sessionKey }: { onOpenAcco
           {visited.has('consultas') && <div hidden={active !== 'consultas'}><ConsultationInbox key={'consultas-' + sessionKey} /></div>}
           {visited.has('solicitudes') && <div hidden={active !== 'solicitudes'}><BeautyRequestsPanel key={'solicitudes-' + sessionKey} /></div>}
           {visited.has('servicios') && <div hidden={active !== 'servicios'}><BeautyCatalogPanel key={'servicios-' + sessionKey} /></div>}
-          {visited.has('conocimiento') && <div hidden={active !== 'conocimiento'}><ConsultationLabPanel /></div>}
+          {visited.has('conocimiento') && <div hidden={active !== 'conocimiento'}><ConsultationLabPanel key={'conocimiento-' + sessionKey} /></div>}
           {visited.has('agentes') && <div hidden={active !== 'agentes'}><SixAgentStatusPanel /></div>}
         </section>
         <p className="mt-6 text-center text-xs text-stone-500">Panel privado de Victoriosas · Sin tienda, pagos ni publicaciones automáticas</p>
