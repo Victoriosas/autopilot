@@ -1,12 +1,12 @@
-# Continuidad · estabilización 04/11/2026
+# Continuidad · fichas y permisos 04/11/2026
 
-- Base productiva confirmada por GitHub y Vercel READY: `33f718e3e5894a2a459f5e279d5092be97774320`. Rama `codex/consultation-stabilization-20261104`.
-- Navegador productivo: Cloudflare devuelve 403 HTML/challenge en página y config (192 ms); no hubo POST. No se pudo ejecutar React después del desafío.
-- Incompatibilidad reproducida localmente: `credentials: omit` descarta clearance; cambio mínimo a `same-origin` en config/POST. Navegador real 1280/390 px, consentimiento, origen, bloqueo y reintento aprobados; prueba RED con original y GREEN con cambio. No equivale a reparación ya desplegada.
-- `npm run verify`: 399/399, tipos y ambas compilaciones correctos. CI del SHA final pendiente de PR. Detalles: `docs/CONSULTATION_STABILIZATION_20261104.md`.
-- Resend: dominio verificado; Vercel: metadatos de variables revisados sin descifrar valores. No se probó recepción humana.
-- camelRun cobra runtime/almacenamiento según documentación actual: modelo gratis no demuestra total cero. No se ejecutaron modelos; proveedor remoto sigue bloqueado.
-- Próximo: validar las 17 fichas y corrección de exposición del RPC de limpieza en PostgreSQL desechable; preparar instalación/reversión para autorización específica. Sin producción, SQL remoto de escritura, DNS, pagos o correos.
+- Base productiva `33f718e3e5894a2a459f5e279d5092be97774320`; rama `codex/consultation-knowledge-security-20261104`. Solo metadatos remotos: cuatro servicios, esquema privado de conocimiento ausente; RPC de limpieza comprueba administrador.
+- Nueva migración local `20261104041706_beauty_retention_private_rpc.sql`: implementación privilegiada privada, RPC público invoker compatible y RLS del conocimiento. Sin ejecución alojada ni limpieza real.
+- PostgreSQL desechable: 11/11; preserva cuatro servicios y agrega 17 borradores (21 filas), prueba ACL/guardas, aprobación, versiones, vencimiento y ausencia de tarifas en hechos IA. Clúster propio detenido. Inventario de migraciones 1/1. `npm run verify`: 399/399 y ambas compilaciones. CI final pendiente.
+- Runbook de instalación, verificación, contingencia y diseño del pipeline: `docs/CONSULTATION_KNOWLEDGE_INSTALL_20261104.md`. Instalación productiva y recepción humana requieren autorización/prueba independientes.
+- Formulario separado en PR #176. Su CI acreditó Auth/PostgREST; navegador inicialmente bloqueado por Ubuntu 26.04 incompatible con Playwright fijado. Se prepara runner Ubuntu 24.04.
+- camelRun no se ejecutó: la tarifa oficial cobra runtime/almacenamiento, aunque Gemma tenga modelo cero. Simulación y envío bloqueado preservados. Resend verificado por metadatos, sin correo nuevo. Módulos heredados conservados por consumidores activos.
+- Próximo: revisar CI `validate`, `postgres` y `beauty-stack` de los SHAs finales; sin merge ni despliegue manual. Tras aprobación específica, instalar conocimiento y permisos individualmente, reconciliando versiones remotas.
 
 # Continuidad · laboratorio sintético de consultas
 

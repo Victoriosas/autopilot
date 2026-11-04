@@ -48,6 +48,10 @@ test('Beauty real disposable Supabase Auth + HTTP + PostgREST + RLS', {timeout:9
    const hidden=await customer.from('beauty_requests').select('*');assert.equal(hidden.error,null);assert.deepEqual(hidden.data,[]);
    assert.ok((await customer.from('beauty_requests').insert({id:randomUUID()})).error);
    assert.ok((await customer.rpc('beauty_purge_expired_requests')).error);
+   assert.ok((await anon.rpc('beauty_purge_expired_requests')).error);
+   assert.ok((await service.rpc('beauty_purge_expired_requests')).error);
+   assert.ok((await admin.schema('private').rpc('beauty_purge_expired_requests')).error,
+    'the privileged implementation must not be exposed through PostgREST');
    const escalation=await customer.from('profiles').update({role:'admin'}).eq('id',users[0]);assert.ok(escalation.error);
   });
   await t.test('real admin guard lists and reviews, stale transition conflicts',async()=>{
