@@ -16,7 +16,7 @@ Se ejecutó **un solo caso técnico sintético controlado** en `https://victorio
 | Respuesta administrativa supervisada | **1** registro; `state=sent`, `approval_mode=human`, `approved_by` informado y destinatario de prueba exacto |
 | Resend, respuesta aprobada | Envío **delivered** a la cuenta de prueba propia, con proveedor coincidente con el outbox |
 | Gmail, cuenta de prueba | Mensaje nuevo en **INBOX**, asunto correcto y contenido idéntico al borrador revisado |
-| Interfaz administrativa | Expediente exacto identificado, borrador seguro revisado y confirmación explícita del diálogo antes del envío |
+| Interfaz administrativa | Expediente exacto identificado, borrador seguro revisado, confirmación explícita y cierre manual del caso de prueba |
 | Seguridad admin sin sesión | POST `/api/beauty/inquiries/admin/:id/approve-send` denegado con **HTTP 401** |
 | PostgreSQL desechable | `node scripts/test-consultation-postgres.mjs`: **12/12** pruebas aprobadas; clúster temporal detenido |
 | Código / variables / base de datos | Sin modificaciones manuales de esquema, credenciales, permisos, flags o código de aplicación. La creación del caso y envío del aviso sí son efectos esperados del formulario real |
@@ -35,7 +35,7 @@ Verificación independiente de tres sistemas:
 
 ## Límites y siguientes fases
 - Una prueba canario no acredita que todos los visitantes, redes o sesiones no tengan fallos futuros. Mantener el monitor de Cloudflare y controles HTTP públicos.
-- `public.consultation_case_states` no tenía una fila de estado manual para este caso al consultar después del envío; `consultation_reply_outbox.state='sent'` sí acredita la respuesta. Comprobar que el panel muestra correctamente este caso en **Contestadas** antes de automatizar cualquier cambio de estado.
+- El estado administrativo es independiente del estado del correo. Tras comprobar la entrega, se seleccionó manualmente **Cerrada** en el expediente sintético exacto de la bandeja y se verificó con SQL de lectura que `public.consultation_case_states.status='closed'`, con fecha 04/11/2026 21:15 UTC. No se modificaron otras consultas.
 - El correo del aviso al propietario figura entregado por el proveedor, no se comprobó lectura por una persona; la respuesta al buzón de prueba sí se recibió vía Gmail conectado.
 - Nunca enviar mensajes reales automáticamente, no diagnosticar, no inventar resultados de tratamientos ni publicar promociones. La fase F2 exige revisión profesional de las 17 fichas; hoy siguen vacías. F3: inventario congelado de 40 casos/6 controles y 22 pruebas sintéticas aprobadas, **sin** evaluación de modelos remotos ni prueba de coste externo.
 - La garantía de la prueba cubre **correo supervisado**, no WhatsApp entrante, agenda ni autonomía 24/7.
