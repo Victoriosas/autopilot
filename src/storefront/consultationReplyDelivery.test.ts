@@ -24,3 +24,22 @@ test('channel preference is preserved so no WhatsApp contact is silently emailed
   const r = draftConsultationResponse({ ...sample, responseChannel: 'whatsapp' });
   assert.equal(r.channel, 'whatsapp');
 });
+
+test('providing email permits a separate human-approved reply even when WhatsApp or calling is preferred', async () => {
+  const { consultationEmailAvailable } = await import('./consultationRequest');
+  const { approveAndSendConsultationReply } = await import('./consultationReplyDelivery');
+  const expiration = { id: sample.id, created_at: new Date().toISOString(), expires_at: new Date(Date.now() + 86400000).toISOString() };
+  for (const responseChannel of ['email', 'whatsapp', 'phone'] as const) {
+    const input = { ...sample, responseChannel };
+    assert.equal(consultationEmailAvailable(input), true);
+    const record = { ...expiration, input } as import('./consultationSupabase').ConsultationRecord;
+    assert.equal(await approveAndSendConsultationReply(record, 'synthetic-admin', { env: {} }), 'provider_unavailable',
+      'disabled provider must not send, but channel preference must not prohibit email');
+  }
+  const noEmail = { ...sample, responseChannel: 'whatsapp' as const, email: '' };
+  const record = { ...expiration, input: noEmail } as import('./consultationSupabase').ConsultationRecord;
+  assert.equal(consultationEmailAvailable(noEmail), false);
+  assert.equal(consultationEmailAvailable({ email: 'invalid' }), false);
+  assert.equal(await approveAndSendConsultationReply(record, 'synthetic-admin', { env: {} }), 'invalid_channel');
+  assert.equal(draftConsultationResponse({ ...sample, responseChannel: 'whatsapp' }).channel, 'whatsapp');
+});

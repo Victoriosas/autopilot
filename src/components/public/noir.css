@@ -127,3 +127,16 @@
 .beauty-page-shell .beauty-directory-search :focus-visible{outline:2px solid var(--gold);outline-offset:5px}
 .professional-site.beauty-page-shell .beauty-header{padding:18px 5%;min-height:96px;align-items:center}
 @media(max-width:680px){.professional-site.beauty-page-shell .beauty-header{padding:14px 5%;min-height:76px}.beauty-page-shell .beauty-hero{min-height:calc(100svh - 160px)}}
+
+/* Dark native fallback and desktop scrollable picker for the consultation service selector. */
+.beauty-noir .beauty-consultation select{color-scheme:dark}
+.beauty-noir .beauty-consultation select option,.beauty-noir .beauty-consultation select optgroup{background:#211a15;color:#f7f0e7}
+@supports (appearance:base-select){
+ @media (hover:hover) and (pointer:fine){
+  .beauty-noir .beauty-consultation select,.beauty-noir .beauty-consultation select::picker(select){appearance:base-select}
+  .beauty-noir .beauty-consultation select::picker(select){background:#211a15;color:#f7f0e7;border:1px solid #b2946e;border-radius:12px;max-height:min(19rem,55dvh);overflow-y:auto;box-shadow:0 18px 48px #0009;margin-block:6px}
+  .beauty-noir .beauty-consultation select option{min-height:40px;padding:10px 16px;cursor:pointer}
+  .beauty-noir .beauty-consultation select optgroup{padding-block:8px;font-weight:650}
+  .beauty-noir .beauty-consultation select option:checked,.beauty-noir .beauty-consultation select option:hover{background:#58432f;color:#fff}
+ }
+}

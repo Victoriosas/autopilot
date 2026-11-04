@@ -1,6 +1,7 @@
 import { beautyServerDatabase } from './beautyDatabase';
 import { draftConsultationResponse } from './consultationResponseAgents';
 import type { ConsultationRecord } from './consultationSupabase';
+import { consultationEmailAvailable } from './consultationRequest';
 
 export type ReplyOutcome = 'sent' | 'already_processing' | 'invalid_channel' | 'provider_unavailable';
 /** Idempotency is enforced by the unique request_id in consultation_reply_outbox.
@@ -11,7 +12,8 @@ export async function approveAndSendConsultationReply(
   deps: { fetch?: typeof fetch; env?: NodeJS.ProcessEnv; approvedText?:string; claim?:()=>Promise<boolean> } = {},
 ): Promise<ReplyOutcome> {
   const env = deps.env || process.env;
-  if (record.input.responseChannel !== 'email' || !record.input.email) return 'invalid_channel';
+  // A valid email may be used by an administrator after explicit approval, regardless of preferred contact.
+  if (!consultationEmailAvailable(record.input)) return 'invalid_channel';
   if (new Date(record.expires_at).getTime() <= Date.now()) return 'provider_unavailable';
   if (env.CONSULTATION_REPLY_SENDING_ENABLED !== 'true' ||
       env.CONSULTATION_MAIL_PROVIDER !== 'resend' || !env.RESEND_API_KEY ||

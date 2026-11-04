@@ -29,11 +29,11 @@ app.use('/api/beauty/inquiries', createConsultationRouter({ store, enabled: () =
 const vite = await createViteServer({ configFile: false, root: process.cwd(), plugins: [react(), {
   name: 'isolated-form-entry',
   resolveId(id) { if (id === '/__form.js') return '\0form-entry'; },
-  load(id) { if (id === '\0form-entry') return `import React from 'react';import {createRoot} from 'react-dom/client';import {ConsultationForm} from '/src/components/public/ConsultationForm.tsx';createRoot(document.getElementById('root')).render(React.createElement(React.StrictMode,null,React.createElement(ConsultationForm)));`; },
+  load(id) { if (id === '\0form-entry') return `import React from 'react';import {createRoot} from 'react-dom/client';import '/src/components/public/professional.css';import '/src/components/public/noir.css';import {ConsultationForm} from '/src/components/public/ConsultationForm.tsx';createRoot(document.getElementById('root')).render(React.createElement(React.StrictMode,null,React.createElement(ConsultationForm)));`; },
 }], server: { middlewareMode: true, hmr: false }, appType: 'custom' });
 app.get('/__form', async (_req, res) => {
   res.setHeader('Set-Cookie', 'synthetic_clearance=verified; Path=/; HttpOnly; SameSite=Lax');
-  res.type('html').send(await vite.transformIndexHtml('/__form', '<html lang="es"><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="root"></div><script type="module" src="/__form.js"></script></body></html>'));
+  res.type('html').send(await vite.transformIndexHtml('/__form', '<html lang="es"><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body class="professional-site beauty-noir"><div id="root"></div><script type="module" src="/__form.js"></script></body></html>'));
 });
 app.use(vite.middlewares);
 const server = app.listen(0, '127.0.0.1');
@@ -54,6 +54,22 @@ try {
     await page.goto(base + '/__form');
     await page.waitForFunction(() => !(document.querySelector('button[type=submit]') as HTMLButtonElement)?.disabled, undefined, { timeout: 5000 });
     assert.equal(await submit.isEnabled(), true, 'same-origin clearance must survive the configuration request');
+    const selector = page.getByLabel('Servicio que te interesa');
+    assert.equal(await selector.locator('option').count(), 18, 'orientation plus 17 treatments');
+    assert.equal(await selector.locator('optgroup').count(), 2, 'two treatment groups');
+    await selector.selectOption('efecto-lifting');
+    assert.equal(await selector.inputValue(), 'efecto-lifting');
+    const contrast = await selector.evaluate(el => ({
+      scheme: getComputedStyle(el).colorScheme,
+      foreground: getComputedStyle(el.querySelector('option')!).color,
+      background: getComputedStyle(el.querySelector('option')!).backgroundColor,
+    }));
+    assert.equal(contrast.scheme, 'dark');
+    assert.equal(contrast.foreground, 'rgb(247, 240, 231)');
+    assert.equal(contrast.background, 'rgb(33, 26, 21)');
+    await page.locator('[name=email]').fill('consulta@example.com');
+    assert.equal(await page.locator('[name=email]').getAttribute('required'), null, 'email stays optional for WhatsApp preference');
+    assert.equal(await page.getByText('Victoria también podrá responderte por email', { exact: false }).count(), 1);
     await page.locator('[name=fullName]').fill('Caso sintético');
     await page.locator('[name=phone]').fill('00000000');
     await page.locator('[name=message]').fill('Quisiera orientación general.');
