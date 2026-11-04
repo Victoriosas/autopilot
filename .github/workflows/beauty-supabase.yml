@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   beauty-stack:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7.0.1
@@ -36,6 +36,7 @@ jobs:
           cp supabase/migrations/20261017221000_beauty_retention.sql "$fixture/supabase/migrations/"
           cp supabase/migrations/20261017230000_beauty_catalog_evaluations.sql "$fixture/supabase/migrations/"
           cp supabase/migrations/*consultation*.sql "$fixture/supabase/migrations/"
+          cp supabase/migrations/20261104041706_beauty_retention_private_rpc.sql "$fixture/supabase/migrations/"
       - name: Start real local Auth and PostgREST
         run: |
           supabase start --workdir "$RUNNER_TEMP/victoriosa-beauty-ci" -x studio,imgproxy,realtime,storage-api,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit > "$RUNNER_TEMP/beauty-start.log" 2>&1

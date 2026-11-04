@@ -1,3 +1,13 @@
+# Continuidad · fichas y permisos 04/11/2026
+
+- Base productiva `33f718e3e5894a2a459f5e279d5092be97774320`; rama `codex/consultation-knowledge-security-20261104`. Solo metadatos remotos: cuatro servicios, esquema privado de conocimiento ausente; RPC de limpieza comprueba administrador.
+- Nueva migración local `20261104041706_beauty_retention_private_rpc.sql`: implementación privilegiada privada, RPC público invoker compatible y RLS del conocimiento. Sin ejecución alojada ni limpieza real.
+- PostgreSQL desechable: 11/11; preserva cuatro servicios y agrega 17 borradores (21 filas), prueba ACL/guardas, aprobación, versiones, vencimiento y ausencia de tarifas en hechos IA. Clúster propio detenido. Inventario de migraciones 1/1. `npm run verify`: 399/399 y ambas compilaciones. CI final pendiente.
+- Runbook de instalación, verificación, contingencia y diseño del pipeline: `docs/CONSULTATION_KNOWLEDGE_INSTALL_20261104.md`. Instalación productiva y recepción humana requieren autorización/prueba independientes.
+- Formulario separado en PR #176. Su CI acreditó Auth/PostgREST; navegador inicialmente bloqueado por Ubuntu 26.04 incompatible con Playwright fijado. Se prepara runner Ubuntu 24.04.
+- camelRun no se ejecutó: la tarifa oficial cobra runtime/almacenamiento, aunque Gemma tenga modelo cero. Simulación y envío bloqueado preservados. Resend verificado por metadatos, sin correo nuevo. Módulos heredados conservados por consumidores activos.
+- Próximo: revisar CI `validate`, `postgres` y `beauty-stack` de los SHAs finales; sin merge ni despliegue manual. Tras aprobación específica, instalar conocimiento y permisos individualmente, reconciliando versiones remotas.
+
 # Continuidad · laboratorio sintético de consultas
 
 - Base verificada: main `e00680a448508b27946766cd972494c83c7296e0`. Rama `codex/consultation-synthetic-ai-lab`.
