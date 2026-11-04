@@ -39,7 +39,7 @@ test('canonical hosted history accepts forward migrations without losing legacy 
     insert into public.products(id,title,price,status,inventory,supplier_id,traceability)
     values('${productId}','Legacy Product',100,'published',2,'${supplierId}','{"source":"synthetic"}'::jsonb);`);
 
-  for (const migration of newMigrations) await apply(`supabase/migrations/${migration}`);
+  for (const migration of newMigrations) await apply(`supabase/legacy-migrations/${migration}`);
 
   assert.equal(await sql(`select title from public.products where id='${productId}';`), 'Legacy Product');
   assert.equal(await sql(`select supplier_id from public.products where id='${productId}';`), supplierId);
@@ -68,8 +68,8 @@ test('Beauty FK indexes are repeatable and preserve rows, RLS and foreign keys',
     alter table public.beauty_requests enable row level security;
     insert into public.beauty_evaluations values (1,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
     insert into public.beauty_requests values (1,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');`);
-  await apply('supabase/migrations/20261020020713_beauty_foreign_key_indexes.sql');
-  await apply('supabase/migrations/20261020020713_beauty_foreign_key_indexes.sql');
+  await apply('supabase/legacy-migrations/20261020020713_beauty_foreign_key_indexes.sql');
+  await apply('supabase/legacy-migrations/20261020020713_beauty_foreign_key_indexes.sql');
   assert.equal(await sql(`select count(*) from pg_index where indexrelid in (
     'public.beauty_evaluations_practitioner_id_idx'::regclass,
     'public.beauty_requests_catalog_service_id_idx'::regclass)

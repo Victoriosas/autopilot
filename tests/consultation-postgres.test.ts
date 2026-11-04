@@ -22,10 +22,10 @@ const claim = (input: ReturnType<typeof fixture>, fingerprint = hash, address = 
 
 test('private consultation outbox on disposable PostgreSQL', { timeout: 120000 }, async t => {
   await sql(`do $$begin if not exists(select 1 from pg_roles where rolname='anon') then create role anon;end if;if not exists(select 1 from pg_roles where rolname='authenticated') then create role authenticated;end if;if not exists(select 1 from pg_roles where rolname='service_role') then create role service_role bypassrls;end if;end$$;create schema auth;create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to authenticated;grant execute on function auth.uid() to authenticated;create table public.profiles(id uuid primary key,role text);grant select on public.profiles to authenticated;insert into profiles values('11111111-1111-4111-8111-111111111111','admin'),('22222222-2222-4222-8222-222222222222','customer');`);
-  const migration = readFileSync('supabase/migrations/20261023042129_consultation_private_outbox.sql', 'utf8');
+  const migration = readFileSync('supabase/legacy-migrations/20261023042129_consultation_private_outbox.sql', 'utf8');
   await sql(migration);
-  const readingMigration = readdirSync('supabase/migrations').find(name => name.endsWith('_consultation_read_states.sql'));
-  if (readingMigration) await sql(readFileSync('supabase/migrations/' + readingMigration, 'utf8'));
+  const readingMigration = readdirSync('supabase/legacy-migrations').find(name => name.endsWith('_consultation_read_states.sql'));
+  if (readingMigration) await sql(readFileSync('supabase/legacy-migrations/' + readingMigration, 'utf8'));
   await t.test('schema ready only through service role; migration can be reapplied', async () => {
     assert.equal(await sql('set role service_role;select public.consultation_schema_ready()'), 'consultation-v1');
     await sql(migration);
@@ -78,7 +78,7 @@ test('private consultation outbox on disposable PostgreSQL', { timeout: 120000 }
   });
   await t.test('shared read state is private, reversible, expiry-scoped and cascades with consultations', async () => {
     assert.equal(await sql("select to_regclass('public.consultation_read_states')::text"), 'consultation_read_states');
-    await sql(readFileSync('supabase/migrations/' + readingMigration!, 'utf8'));
+    await sql(readFileSync('supabase/legacy-migrations/' + readingMigration!, 'utf8'));
     const current = fixture(), expired = fixture(), admin = '11111111-1111-4111-8111-111111111111';
     const baseline = Number(await sql('set role service_role;select unread_requests from public.consultation_read_metrics'));
     await sql(`insert into public.consultation_requests(id,fingerprint,input,expires_at) values('${current.id}','${hash}',${literal(current)},now()+interval '1 day'),('${expired.id}','${hash}',${literal(expired)},now()-interval '1 day')`);
@@ -101,13 +101,13 @@ test('private consultation outbox on disposable PostgreSQL', { timeout: 120000 }
     assert.equal(await sql(`select count(*) from public.consultation_read_states where request_id='${current.id}'`), '0');
   });
   await t.test('intelligence leases, budgets, approval CAS and retention on real PostgreSQL',async()=>{
-    const file=readdirSync('supabase/migrations').find(name=>name.endsWith('_consultation_intelligence_shadow.sql'))!;
-    await sql(readFileSync('supabase/migrations/20261023224500_consultation_reply_outbox.sql','utf8'));
-    await sql(readFileSync('supabase/migrations/'+file,'utf8'));
-    const generation=readdirSync('supabase/migrations').find(name=>name.endsWith('_consultation_ai_generation_budget.sql'))!;
-    await sql(readFileSync('supabase/migrations/'+generation,'utf8'));
-    const refresh=readdirSync('supabase/migrations').find(name=>name.endsWith('_consultation_ai_refresh_attempts.sql'))!;
-    await sql(readFileSync('supabase/migrations/'+refresh,'utf8'));
+    const file=readdirSync('supabase/legacy-migrations').find(name=>name.endsWith('_consultation_intelligence_shadow.sql'))!;
+    await sql(readFileSync('supabase/legacy-migrations/20261023224500_consultation_reply_outbox.sql','utf8'));
+    await sql(readFileSync('supabase/legacy-migrations/'+file,'utf8'));
+    const generation=readdirSync('supabase/legacy-migrations').find(name=>name.endsWith('_consultation_ai_generation_budget.sql'))!;
+    await sql(readFileSync('supabase/legacy-migrations/'+generation,'utf8'));
+    const refresh=readdirSync('supabase/legacy-migrations').find(name=>name.endsWith('_consultation_ai_refresh_attempts.sql'))!;
+    await sql(readFileSync('supabase/legacy-migrations/'+refresh,'utf8'));
     const current={...fixture(),email:'synthetic@example.test',responseChannel:'email'};await claim(current,hash,'f'.repeat(64));
     const acquire=()=>sql(`set role service_role;select consultation_ai_claim('${current.id}','${hash}','fixture-v1')`).then(JSON.parse);
     const results=await Promise.all(Array.from({length:6},acquire));

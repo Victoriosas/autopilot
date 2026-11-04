@@ -1,11 +1,10 @@
-# Continuidad · Formulario y email secundario (PR #178, 04/11/2026)
+# Continuidad · auditoría de historial 04/11/2026
 
-- Validación adicional desde `a4ddea9e`: picker limitado también con touch, teclado/foco/AX y contraste comprobados; capturas sintéticas abiertas 1280/390 px. Se retira la ruta de acuse automático y la aprobación manual registra modo human explícito.
-- Verify 401/401; PostgreSQL desechable 12/12; focalizadas 19/19; navegador local desktop/móvil emulado aprobado. CI final del recorrido Auth/PostgREST y tres respuestas con Resend simulado pendiente. Detalles y límites: `docs/CONSULTATION_PR178_QA_20261104.md`. Historial aislado en PR #179.
-
-- Se corrige el contraste del menú de 17 tratamientos del formulario, agrupándolos en faciales y corporales. En escritorio moderno se usa picker oscuro con altura limitada y en otros navegadores un select nativo con esquema oscuro; revisar en Chrome/Windows y móvil antes de publicar.
-- Se conserva la preferencia WhatsApp / llamada / email como dato original. Si la persona proporcionó un correo válido, la administración puede elegir adicionalmente "Aprobar y enviar por correo" tras preparar el borrador y verificar el estado del outbox; sigue prohibido el envío automático o un segundo envío por consulta.
-- El formulario informa que el correo opcional podrá usarse para contestar esa consulta, sin campañas. Sin migraciones ni cambios productivos. La PR está en borrador mientras se validan pruebas visuales, email y CI del SHA final.
+- Base Git/main productiva contrastada: `81336f2ab3cf4c4ed28ce7c100ad16b7d4355756`. Rama `codex/preview-history-audit-20261104`; sin cambios alojados.
+- Supabase Preview reproduce `Remote migration versions not found in local migrations directory`. Se recuperaron en lectura 41 SQL ejecutados; solo tres versiones coincidían. Directorio activo reconciliado con hashes; originales locales conservados como fixtures en `supabase/legacy-migrations`.
+- CLI real sobre clúster loopback desechable: error original reproducido; con historial recuperado cero pendientes en dry-run, sin cambiar historial/esquema. Replay histórico 2/2, Beauty/PostgreSQL 11/11, verify 399/399 y ambas compilaciones. Replay completo con pg_cron/Vault y Auth/PostgREST pendiente de CI `beauty-stack` del SHA final.
+- No se ejecutó SQL productivo, migration repair, db push real, correos o modelos. Seis propuestas comerciales no aplicadas quedan fuera del directorio activo. Runbook: `docs/SUPABASE_HISTORY_RECONCILIATION_20261104.md`.
+- Siguiente: revisar CI/Supabase Preview de la PR; luego auditar metadatos de consultas/cola y editor de fichas, sin leer expedientes ni repetir envíos reales.
 
 # Continuidad · fichas y permisos 04/11/2026
 

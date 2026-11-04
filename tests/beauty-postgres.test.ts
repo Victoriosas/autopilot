@@ -14,8 +14,8 @@ const admin='11111111-1111-4111-8111-111111111111',customer='22222222-2222-4222-
 const actor=(uid:string)=>`set role authenticated;set request.jwt.claim.sub='${uid}';`;
 test('Beauty real PostgreSQL privileges, RLS and transitions',{timeout:120000},async t=>{
  await sql(`do $$begin if not exists(select 1 from pg_roles where rolname='anon') then create role anon;end if;if not exists(select 1 from pg_roles where rolname='authenticated') then create role authenticated;end if;if not exists(select 1 from pg_roles where rolname='service_role') then create role service_role bypassrls;end if;end$$;create schema auth;create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to authenticated;grant execute on function auth.uid() to authenticated;create table public.profiles(id uuid primary key,role text);insert into profiles values('${admin}','admin'),('${customer}','customer');grant select on profiles to authenticated;`);
- const migration='supabase/migrations/20261017220000_beauty_requests.sql';if(existsSync(migration)) await sql(readFileSync(migration,'utf8'));
- const retentionMigration='supabase/migrations/20261017221000_beauty_retention.sql';if(existsSync(retentionMigration)) await sql(readFileSync(retentionMigration,'utf8'));
+ const migration='supabase/legacy-migrations/20261017220000_beauty_requests.sql';if(existsSync(migration)) await sql(readFileSync(migration,'utf8'));
+ const retentionMigration='supabase/legacy-migrations/20261017221000_beauty_retention.sql';if(existsSync(retentionMigration)) await sql(readFileSync(retentionMigration,'utf8'));
  const insert=`insert into public.beauty_requests(id,fingerprint,first_name,last_name,contact,zone,service,availability,source,consent_version) values('${id}',repeat('a',64),'Synthetic','Test','test@example.test','Carrasco','facial','Monday','web','beauty-v1')`;
  await t.test('service creates pending record and cannot read via anon',async()=>{await sql(`set role service_role;${insert};`);assert.equal(await sql('set role service_role;select status from beauty_requests;'),'pending');await assert.rejects(sql('set role anon;select * from beauty_requests'),/permission denied/);});
  await t.test('customer cannot read, insert, delete or change contact',async()=>{assert.equal(await sql(`${actor(customer)}select count(*) from beauty_requests;`),'0');for(const query of [insert,'delete from beauty_requests',"update beauty_requests set contact='other'"]) await assert.rejects(sql(actor(customer)+query),/permission denied/);assert.equal(await sql(`${actor(customer)}update beauty_requests set status='reviewing',reviewed_by='${customer}';select count(*) from beauty_requests;`),'0');});
@@ -69,9 +69,9 @@ test('Beauty real PostgreSQL privileges, RLS and transitions',{timeout:120000},a
   assert.equal(await sql(`select id from beauty_requests`),id);
  });
  await t.test('knowledge migration preserves four legacy services and adds exactly the 17 public names as drafts',async()=>{
-  await sql(readFileSync('supabase/migrations/20261017230000_beauty_catalog_evaluations.sql','utf8'));
+  await sql(readFileSync('supabase/legacy-migrations/20261017230000_beauty_catalog_evaluations.sql','utf8'));
   const before=await sql('select json_agg(row_to_json(s) order by id) from beauty_services s');
-  await sql(readFileSync('supabase/migrations/20261104030000_consultation_service_knowledge.sql','utf8'));
+  await sql(readFileSync('supabase/legacy-migrations/20261104030000_consultation_service_knowledge.sql','utf8'));
   const expected=serviceGroups.flatMap(g=>g.services.map(title=>({id:serviceSlug(title),title}))).sort((a,b)=>a.id.localeCompare(b.id));
   const actual=JSON.parse(await sql("select json_agg(json_build_object('id',id,'title',title) order by id) from beauty_services where id not in ('facial','massage','ritual','consultation')"));
   assert.deepEqual(actual.sort((a:any,b:any)=>a.id.localeCompare(b.id)),expected);
@@ -80,7 +80,7 @@ test('Beauty real PostgreSQL privileges, RLS and transitions',{timeout:120000},a
   assert.equal(await sql("select count(*) from beauty_services where publication_status<>'draft' or price_approved or proposed_price_uyu is not null or duration_minutes is not null or available or description<>''"),'0');
  });
  await t.test('public retention RPC is invoker-only and preserves admin-only expired deletion',async()=>{
-  await sql(readFileSync('supabase/migrations/20261104041706_beauty_retention_private_rpc.sql','utf8'));
+  await sql(readFileSync('supabase/legacy-migrations/20261104041706_beauty_retention_private_rpc.sql','utf8'));
   assert.equal(await sql("select prosecdef from pg_proc where oid='public.beauty_purge_expired_requests()'::regprocedure"),'f');
   assert.equal(await sql("select prosecdef from pg_proc where oid='private.beauty_purge_expired_requests()'::regprocedure"),'t');
   for(const role of ['anon','service_role'])for(const schema of ['public','private'])await assert.rejects(sql(`set role ${role};select ${schema}.beauty_purge_expired_requests()`),/permission denied/);

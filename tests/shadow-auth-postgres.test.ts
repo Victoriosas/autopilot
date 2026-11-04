@@ -18,8 +18,8 @@ test('one-time shadow authorization migrations', {skip:!database,timeout:60000},
  assert.equal(target.pathname,'/autopilot_orchestrator_test','Dedicated disposable database required');
 
  await sql("drop function if exists public.consume_autopilot_shadow_run_authorization_id(uuid); drop function if exists public.consume_autopilot_shadow_run_authorization(text); drop table if exists public.autopilot_shadow_run_authorizations cascade;");
- await sql(readFileSync('supabase/migrations/20260914234500_production_shadow_once.sql','utf8'));
- await sql(readFileSync('supabase/migrations/20260914240000_shadow_authorization_by_id.sql','utf8'));
+ await sql(readFileSync('supabase/legacy-migrations/20260914234500_production_shadow_once.sql','utf8'));
+ await sql(readFileSync('supabase/legacy-migrations/20260914240000_shadow_authorization_by_id.sql','utf8'));
 
  const tokenHash='a'.repeat(64);
  await sql(`insert into public.autopilot_shadow_run_authorizations(token_hash,limits,expires_at) values('${tokenHash}','{"maxCandidates":3,"maxAiCalls":2,"durationMs":15000}'::jsonb,now()+interval '5 minutes');`);
