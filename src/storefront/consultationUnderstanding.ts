@@ -23,8 +23,8 @@ export function understandConsultation(input:ConsultationInput){
  if(/embaraz|lactan|amamant|medic|alerg|cirug|herid|infecc|dolor|quem|diagnost|enfermedad|tengo acne|tengo rosacea/.test(message))risks.push('health');
  if(input.age!==null&&input.age<18||/menor|mi hij[oa]|tengo (?:[0-9]|1[0-7]) anos/.test(message))risks.push('minor');
  if(/no puedo respirar|reaccion alergica grave|anafilax|desmayo|sangrado abundante|dolor.*pecho/.test(message))risks.push('urgent');
- if(/efectiv|garantiz|curar|eliminar|sin riesgo/.test(message))risks.push('efficacy');
- if(/ignora|ignorá|system\s*:|instruccion|claves|api.key|otros? clientes|otras clientas|todos los emails|actua como/.test(message))risks.push('injection');
+ if(/efectiv|garanti[cz]|asegur.*result|result.*asegur|curar|eliminar|sin riesgo|guarantee|100\s*%/.test(message))risks.push('efficacy');
+ if(/ignora|ignore|previous instructions|system\s*:|instruccion|claves|api.key|otros? clientes|otras clientas|todos los emails|actua como|sin revision|sin revisi[oó]n/.test(message))risks.push('injection');
  if(found.includes('complaint'))risks.push('complaint');
  const services=candidates.length ? candidates.map(s=>s.slug) : selected ? [selected.slug] : [];
  return {
