@@ -112,11 +112,19 @@ export function ConsultationForm() {
           <div className="beauty-consultation-grid">
             <label>Nombre y apellido *<input id="consultation-name" name="fullName" required maxLength={120} autoComplete="name" /></label>
             <label>Celular *<input name="phone" type="tel" required minLength={8} maxLength={25} autoComplete="tel" aria-describedby="consultation-phone-help" /></label>
-            <label>Correo electrónico {channel === 'email' ? '*' : '(opcional)'}<input name="email" type="email" required={channel === 'email'} maxLength={254} autoComplete="email" /></label>
+            <label>Correo electrónico {channel === 'email' ? '*' : '(opcional)'}<input name="email" type="email" required={channel === 'email'} maxLength={254} autoComplete="email" aria-describedby="consultation-email-help" /></label>
             <label>Edad (opcional)<input name="age" type="number" min="0" max="120" step="1" /></label>
           </div>
           <p id="consultation-phone-help" className="beauty-small">Celular de 8 a 15 dígitos. Podés incluir el código de país.</p>
-          <label>Servicio que te interesa<select value={service} onChange={event => setService(event.target.value)}>{choices.map(choice => <option key={choice.id} value={choice.id}>{choice.name}</option>)}</select></label>
+          <p id="consultation-email-help" className="beauty-small">Si dejás tu correo, Victoria también podrá responderte por email aunque prefieras WhatsApp o llamada. Tu preferencia se conserva. No se utiliza para campañas.</p>
+          <label>Servicio que te interesa
+            <select name="service" value={service} onChange={event => setService(event.target.value)}>
+              <option value="orientacion">Quiero orientación</option>
+              {serviceGroups.map(group => <optgroup key={group.id} label={group.title}>{group.services.map(name =>
+                <option key={serviceSlug(name)} value={serviceSlug(name)}>{name}</option>
+              )}</optgroup>)}
+            </select>
+          </label>
           <label>¿Qué te gustaría consultar? *<textarea name="message" required rows={4} maxLength={600} defaultValue={consultationContext().message} /></label>
           <fieldset><legend>¿Cómo preferís que te contactemos?</legend>{([['whatsapp', 'WhatsApp'], ['email', 'Correo electrónico'], ['phone', 'Llamada']] as const).map(([value, label]) => <label className="beauty-consultation-radio" key={value}><input type="radio" name="channel" value={value} checked={channel === value} onChange={() => setChannel(value)} />{label}</label>)}</fieldset>
           <label className="beauty-consultation-consent"><input name="consent" type="checkbox" value="yes" required /><span>Acepto que Victoriosas use estos datos para responder esta consulta, según la <a href="/privacidad">política de privacidad</a>. No me suscribe a campañas. La atención humana está disponible aunque no autorices IA.</span></label>

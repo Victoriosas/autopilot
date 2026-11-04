@@ -7,7 +7,6 @@ import { consultationSupabaseStore, type ConsultationStore } from './consultatio
 import { createConsultationDelivery, type ConsultationDelivery } from './consultationDelivery';
 import { draftConsultationResponse } from './consultationResponseAgents';
 import { camelRunConsultationDraft } from './consultationCamelRun';
-import { maybeSendAutomaticConsultationReply } from './consultationAutoReply';
 import { approveAndSendConsultationReply } from './consultationReplyDelivery';
 import { beautyServerDatabase } from './beautyDatabase';
 import { consultationReadStore, type ConsultationReadStore } from './consultationReading';
@@ -171,9 +170,7 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; read
         if (claim.state !== 'send' || !claim.lease) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
         const providerId = await delivery.send(input.id);
         if (!await store.finish(input.id, claim.lease, providerId)) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
-        // Only a newly accepted form with confirmed owner notification may trigger auto-acknowledgement.
-        // Failure never causes form resubmission or a second automatic send attempt.
-        try { await maybeSendAutomaticConsultationReply(input); } catch { /* Fail closed; never retry an uncertain email. */ }
+        // Recording a consultation and notifying its owner never authorizes a customer reply.
         // Supabase Edge: consented consultations receive a deterministic, internal shadow analysis.
         // No remote model, customer reply or notification is triggered. Victoria reviews the draft.
         if (process.env.AUTOPILOT_RUNTIME === 'supabase-edge' && process.env.CONSULTATION_PRIVACY_APPROVED === 'true' && input.aiConsent === true) {
