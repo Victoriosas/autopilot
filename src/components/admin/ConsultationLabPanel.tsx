@@ -12,7 +12,7 @@ const empty = (slug: string): ServiceKnowledge => ({ slug, version: 0, descripti
 export function ConsultationLabPanel() {
   const [caseId, setCaseId] = useState<string>('general');
   const [busy, setBusy] = useState(false), lock = useRef(false);
-  const [result, setResult] = useState<Awaited<ReturnType<typeof runConsultationLab>> | null>(null);
+  const [result, setResult] = useState<(Awaited<ReturnType<typeof runConsultationLab>> & { knowledgeUnavailable?: boolean }) | null>(null);
   const [status, setStatus] = useState('');
   const [services, setServices] = useState<{slug: string; name: string}[]>([]);
   const [entries, setEntries] = useState<ServiceKnowledge[]>([]);
@@ -20,7 +20,7 @@ export function ConsultationLabPanel() {
   async function action(work: () => Promise<void>) {
     if (lock.current) return;
     lock.current = true; setBusy(true); setStatus('');
-    try { await work(); } catch { setStatus('No se confirmó la operación. Revisá la sesión y las migraciones del entorno de pruebas. No se envió ningún correo.'); }
+    try { await work(); } catch { setStatus('No se confirmó la operación. Revisá la sesión y las migraciones de Supabase. No se envió ningún correo.'); }
     finally { lock.current = false; setBusy(false); }
   }
   async function loadKnowledge() {
@@ -40,6 +40,7 @@ export function ConsultationLabPanel() {
       if (!r.ok) throw Error(); setResult(await r.json());
     })}>{busy ? 'Procesando…' : 'Probar IA (simulación)'}</button>
     {result && <div className="my-4 grid gap-3">
+      {result.knowledgeUnavailable && <p role="status" className="rounded border border-amber-400 p-3">La base privada de tratamientos no está disponible. Esta prueba usa cero fichas y cero datos de clientes; no valida la conexión con Supabase, camelRun ni Resend. Para editar las fichas hay que verificar primero la migración y sus permisos.</p>}
       <p role="status">Borrador no enviado · Revisión humana obligatoria · Guardián: {result.analysis.guardian.status}</p>
       <p>Controles: {result.analysis.guardian.codes.join(', ') || 'Sin bloqueos adicionales; requiere revisión humana.'}</p>
       <p>Coste: US$0 por simulación local. Tokens: desconocidos/no aplican. Llamadas a proveedores: 0.</p>
