@@ -23,6 +23,11 @@ test('administración se limita a atención, servicios y agentes sin botones com
   assert.match(hub, /<BeautyRequestsPanel/);
   assert.match(hub, /<BeautyCatalogPanel/);
   assert.match(hub, /<SixAgentStatusPanel/);
+  // Avoid unmounting editors with unsaved changes when switching sections.
+  assert.match(hub, /visited\.has\('servicios'\)/);
+  assert.match(hub, /visited\.has\('solicitudes'\)/);
+  assert.match(hub, /hidden=\{active !== 'servicios'\}/);
+  assert.match(hub, /hidden=\{active !== 'solicitudes'\}/);
   assert.doesNotMatch(hub, /Pipeline Productos|FulfillmentOrdersTable|SupplierManagement|AutopilotRunnerModal|Ver Tienda Pública/);
   assert.doesNotMatch(app, /<AdminHeader|<AutopilotDashboard|<FulfillmentOrdersTable/);
 });
