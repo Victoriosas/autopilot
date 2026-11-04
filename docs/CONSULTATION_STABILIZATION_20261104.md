@@ -17,6 +17,8 @@
 
 ## Matriz de seis etapas
 
+CI del primer SHA: `validate` y `postgres` aprobados; Auth/PostgREST real aprobado dentro de `beauty-stack`. La instalación de Playwright falló porque `ubuntu-latest` seleccionó Ubuntu 26.04, no soportado por la versión fijada 1.56.1. Se fija ese job a Ubuntu 24.04 y se requiere repetir el recorrido completo del SHA final; no se actualizan dependencias para ocultar el fallo.
+
 | Etapa | Evidencia de esta misión |
 | --- | --- |
 | Renderizado | Componente real probado localmente; producción bloqueada por desafío |
