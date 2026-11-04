@@ -45,6 +45,11 @@ Fases posteriores pueden diseñarse sin activarse; cualquier petición lateral n
 
 Ciclo de trabajo: inventario → elegir la prioridad más temprana bloqueada → rama/PR mínima → tests sintéticos y CI → revisión de seguridad/costo → despliegue aprobado → verificación y registro de resultados → siguiente fase. Informar **DEFINIDO, PROBADO, FUSIONADO, DESPLEGADO, EJECUTADO o BLOQUEADO** de forma independiente.
 
+## Evidencia productiva F1 y avance F2 del 04/11/2026
+- **Recepción pública PROBADA:** Chrome presentó un formulario operativo; POST sintético controlado recibió HTTP 202 y repetición idéntica HTTP 202. Supabase conservó un único expediente, outbox privado de aviso aceptado y Resend reportó **delivered** en la notificación operativa. Sin llamada de IA ni respuesta automática. Ver `docs/F1_RECEPCION_PRODUCTIVA_CONTROLADA_20261104.md`.
+- **Respuesta supervisada PENDIENTE:** no existe sesión de administrador disponible en las conexiones actuales para aprobar la respuesta y comprobar entrega al buzón de prueba. La API bloqueó con 401 la acción sin token; no crear usuarios privilegiados ni simular aprobación. F1 no queda cerrada.
+- **F2 PREPARADA:** 17 servicios del directorio + 4 borradores históricos en tabla administrativa; la tabla privada contiene 0 fichas. Ver `docs/F2_REVISION_VICTORIA_17_TRATAMIENTOS_20261104.md`, sin afirmaciones clínicas, precios, aprobación ni publicaciones.
+
 ## Verificación F1 posterior · 04/11/2026
 - El bloqueo global de Cloudflare fue corregido en su configuración; rutas públicas y API de consultas volvieron a HTTP 200, con navegador Chrome desktop/móvil y smoke de solo lectura satisfactorios. Ver `docs/CONSULTATION_F1_RESTORATION_20261104.md`.
 - **F1 no finalizada:** el circuito de envío/persistencia/recepción/revisión de un caso controlado con sesión humana todavía no se probó en producción. Conservar supervisión y no enviar mensajes de prueba a clientas.
