@@ -33,7 +33,7 @@
 
 ## Comprobaciones pendientes
 - PC offline impide examinar trabajo Codex no publicado y reconciliar worktrees. Usar `docs/SYNC_PC_GITHUB_SEGURO.md` al volver a conectarse.
-- Navegador externo no logró obtener victorias.online; no hay verificación end-to-end posterior al deployment.
+- Navegador externo no logró obtener victoriosas.online; no hay verificación end-to-end posterior al deployment.
 - No se inspeccionaron cuerpos de correos o PII, no se hicieron POST ni envío de prueba.
 - No se ejecutó CI nueva en esta auditoría; los resultados registrados corresponden a las PR existentes.
 
