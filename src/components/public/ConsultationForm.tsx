@@ -90,7 +90,7 @@ export function ConsultationForm() {
   return <section className="beauty-consultation" aria-labelledby="consultation-title">
     <p className="beauty-eyebrow">Un primer paso, a tu ritmo</p>
     <h2 id="consultation-title">Hablemos de tu cuidado</h2>
-    <p>Contanos qué te interesa y cómo preferís recibir una respuesta. Tu consulta queda registrada en nuestra plataforma.</p>
+    <p>Contanos qué te interesa y cómo preferís recibir una respuesta. Al enviarla, nuestra plataforma registra tu consulta para su revisión.</p>
     <div className="beauty-contact-options">
       <a className="beauty-button" href="/consultanos?canal=email#formulario-consulta">Escribir por nuestro formulario</a>
       <ContactLink />
@@ -122,6 +122,6 @@ export function ConsultationForm() {
         {result && <p role="status">{result}</p>}
       </form>
     </>}
-    <p className="beauty-small">Las notificaciones llegan al equipo de Victoriosas; la respuesta se coordina personalmente.</p>
+    <p className="beauty-small">El equipo de Victoriosas revisará tu consulta. La atención se coordina personalmente.</p>
   </section>;
 }
