@@ -17,6 +17,12 @@ const sections: Record<Workspace, { title: string; description: string }> = {
 
 export function ProfessionalAdminHub({ onOpenAccount, sessionKey }: { onOpenAccount(): void; sessionKey: string }) {
   const [active, setActive] = useState<Workspace>('consultas');
+  // Keep visited sections mounted so unsaved service or evaluation edits survive tab changes.
+  const [visited, setVisited] = useState<Set<Workspace>>(() => new Set(['consultas']));
+  const openSection = (next: Workspace) => {
+    setVisited(previous => new Set([...previous, next]));
+    setActive(next);
+  };
   const section = sections[active];
   const tabClass = (selected: boolean) =>
     'inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 ' +
@@ -59,14 +65,14 @@ export function ProfessionalAdminHub({ onOpenAccount, sessionKey }: { onOpenAcco
           </p>
         </div>
         <nav aria-label="Secciones de Victoriosas Autopilot" className="mb-7 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <ConsultationBell selected={active === 'consultas'} onOpen={() => setActive('consultas')} />
-          <button type="button" className={tabClass(active === 'solicitudes')} aria-current={active === 'solicitudes' ? 'page' : undefined} onClick={() => setActive('solicitudes')}>
+          <ConsultationBell selected={active === 'consultas'} onOpen={() => openSection('consultas')} />
+          <button type="button" className={tabClass(active === 'solicitudes')} aria-current={active === 'solicitudes' ? 'page' : undefined} onClick={() => openSection('solicitudes')}>
             <ClipboardList size={18} aria-hidden="true" /> Solicitudes
           </button>
-          <button type="button" className={tabClass(active === 'servicios')} aria-current={active === 'servicios' ? 'page' : undefined} onClick={() => setActive('servicios')}>
+          <button type="button" className={tabClass(active === 'servicios')} aria-current={active === 'servicios' ? 'page' : undefined} onClick={() => openSection('servicios')}>
             <Sparkles size={18} aria-hidden="true" /> Servicios
           </button>
-          <button type="button" className={tabClass(active === 'agentes')} aria-current={active === 'agentes' ? 'page' : undefined} onClick={() => setActive('agentes')}>
+          <button type="button" className={tabClass(active === 'agentes')} aria-current={active === 'agentes' ? 'page' : undefined} onClick={() => openSection('agentes')}>
             <Activity size={18} aria-hidden="true" /> Agentes
           </button>
         </nav>
@@ -78,10 +84,10 @@ export function ProfessionalAdminHub({ onOpenAccount, sessionKey }: { onOpenAcco
               <p className="mt-1 text-sm leading-6 text-stone-300">{section.description}</p>
             </div>
           </div>
-          {active === 'consultas' && <ConsultationInbox key={'consultas-' + sessionKey} />}
-          {active === 'solicitudes' && <BeautyRequestsPanel key={'solicitudes-' + sessionKey} />}
-          {active === 'servicios' && <BeautyCatalogPanel key={'servicios-' + sessionKey} />}
-          {active === 'agentes' && <SixAgentStatusPanel />}
+          {visited.has('consultas') && <div hidden={active !== 'consultas'}><ConsultationInbox key={'consultas-' + sessionKey} /></div>}
+          {visited.has('solicitudes') && <div hidden={active !== 'solicitudes'}><BeautyRequestsPanel key={'solicitudes-' + sessionKey} /></div>}
+          {visited.has('servicios') && <div hidden={active !== 'servicios'}><BeautyCatalogPanel key={'servicios-' + sessionKey} /></div>}
+          {visited.has('agentes') && <div hidden={active !== 'agentes'}><SixAgentStatusPanel /></div>}
         </section>
         <p className="mt-6 text-center text-xs text-stone-500">Panel privado de Victoriosas · Sin tienda, pagos ni publicaciones automáticas</p>
       </main>
