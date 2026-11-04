@@ -1,5 +1,12 @@
 # Laboratorio de consultas · revisión humana obligatoria
 
+## Actualización: simulación sin esquema privado (4 de noviembre de 2026)
+
+Hasta que se aplique y verifique la migración privada de conocimientos, **Probar IA** conserva la posibilidad de ejecutar únicamente casos sintéticos, con **cero fichas** y sin conectar camelRun. La respuesta incluye `knowledgeUnavailable: true` y el panel advierte expresamente que esta prueba **no valida Supabase, correo, ni agentes remotos**. La ausencia de evidencias debe activar los bloqueos del Guardián; no hay sustitución con datos antiguos ni precios.
+
+**Fichas privadas para Victoria** sigue devolviendo error cuando falta el esquema. No se simula guardado ni se modifica base de producción. Todos los envíos permanecen deshabilitados.
+
+
 Rama inicial: `codex/consultation-synthetic-ai-lab`, desde `e00680a448508b27946766cd972494c83c7296e0`.
 
 ## Alcance y límites

@@ -72,3 +72,47 @@ test('admin lab authenticates, verifies origin and refuses customer payloads wit
     assert.equal(deliveries,0);
   } finally { server.closeAllConnections();await new Promise<void>(r=>server.close(()=>r())); }
 });
+
+test('synthetic lab remains usable with zero facts when the private knowledge schema is unavailable', async () => {
+  let deliveries = 0, knowledgeReads = 0;
+  const app = express();
+  app.use('/inquiries', createConsultationRouter({
+    origin: () => 'https://victoriosas.online',
+    auth: (req, res, next) => req.get('authorization') === 'Bearer synthetic-admin' ? next() : res.sendStatus(401),
+    knowledge: {
+      list: async () => { throw Error('private schema missing'); },
+      save: async () => { throw Error('private schema missing'); },
+      facts: async () => { knowledgeReads++; throw Error('private schema missing'); },
+    },
+    delivery: { ready: () => true, send: async () => { deliveries++; return 'unexpected'; } },
+    store: { ready: async () => true, claim: async () => { throw Error('must not store'); }, finish: async () => false },
+  }));
+  const server = app.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const url = `http://127.0.0.1:${(server.address() as any).port}/inquiries/admin/lab`;
+  const headers = {
+    authorization: 'Bearer synthetic-admin',
+    origin: 'https://victoriosas.online',
+    'content-type': 'application/json',
+    'x-consultation-lab': 'synthetic-v1',
+  };
+  try {
+    const unauthenticated = await fetch(url, { method: 'POST', headers: {...headers, authorization: ''}, body: JSON.stringify({ caseId: 'general' }) });
+    assert.equal(unauthenticated.status, 401);
+    const response = await fetch(url, { method: 'POST', headers, body: JSON.stringify({ caseId: 'general' }) });
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.equal(result.mode, 'simulation');
+    assert.equal(result.knowledgeUnavailable, true);
+    assert.equal(result.remote.available, false);
+    assert.equal(result.delivery, 'NOT_SENT');
+    assert.equal(result.reviewRequired, true);
+    assert.equal(result.analysis.evidence.length, 0);
+    assert.equal(knowledgeReads, 1);
+    assert.equal(deliveries, 0);
+    const editor = await fetch(url + '/knowledge', { headers });
+    assert.equal(editor.status, 503, 'private editor must fail closed until the schema is installed');
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>(resolve => server.close(() => resolve()));
+  }
+});

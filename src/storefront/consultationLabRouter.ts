@@ -13,8 +13,19 @@ export function registerConsultationLab(router: Router, auth: RequestHandler, al
   router.get('/admin/lab', auth, (_req, res) => res.json({ cases: consultationLabCases, remoteAvailable: false, reviewRequired: true, sendsEnabled: false }));
   router.post('/admin/lab', auth, guard, json({ limit: '1kb', strict: true }), async (req, res) => {
     if (!strictObject(req.body, ['caseId']) || typeof req.body.caseId !== 'string' || !consultationLabCases.some(c => c.id === req.body.caseId)) return res.status(400).json({ error: 'LAB_CASE_INVALID' });
-    try { return res.json(await runConsultationLab(req.body.caseId, { facts: await knowledge.facts() })); }
-    catch { return res.status(503).json({ error: 'LAB_KNOWLEDGE_UNAVAILABLE', reviewRequired: true, delivery: 'NOT_SENT' }); }
+    try {
+      // A failed knowledge read must not block isolated, synthetic-only testing.
+      // Fall back to ZERO facts, never to stale or unapproved service content.
+      // The private editor still returns 503 when its schema is unavailable.
+      let facts: Awaited<ReturnType<ServiceKnowledgeStore['facts']>> = [];
+      let knowledgeUnavailable = false;
+      try { facts = await knowledge.facts(); }
+      catch { knowledgeUnavailable = true; }
+      const simulation = await runConsultationLab(req.body.caseId, { facts });
+      return res.json({ ...simulation, knowledgeUnavailable });
+    } catch {
+      return res.status(503).json({ error: 'LAB_SIMULATION_UNAVAILABLE', reviewRequired: true, delivery: 'NOT_SENT' });
+    }
   });
   router.get('/admin/lab/knowledge', auth, async (req, res) => {
     try { const token = req.get('authorization')?.match(/^Bearer (.+)$/i)?.[1]; if (!token) return res.status(401).json({ error: 'ADMIN_AUTH_REQUIRED' });
