@@ -36,3 +36,8 @@ Leer docs/OPENCODE_DIRECTIVES.md y tools/opencode-workstation/README.md. Los per
 - consulta: conversación sin herramientas.
 
 Los perfiles históricos de dropshipping y ECC quedan deshabilitados en la configuración de OpenCode; no son instrucciones comerciales actuales. Copilot y Codex conservan sus propias integraciones. No comprar cuotas ni habilitar proveedores pagos.
+
+## Habilidades de Codex
+
+- Para tareas repetidas usar las habilidades específicas en `.agents/skills/` descritas en `docs/CODEX_SKILLS.md`.
+- Seleccionar una habilidad pertinente y leer sus referencias bajo demanda; no cargar todas ni tomar una skill como autorización para gastar, publicar o desplegar.
