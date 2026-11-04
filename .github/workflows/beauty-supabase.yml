@@ -2,7 +2,7 @@ name: Isolated Beauty Supabase
 on:
   push:
     branches: [main, 'codex/**', 'chatgpt/beauty-contact-form-20261023']
-    paths: ['src/storefront/beauty*', 'src/storefront/consultation*', 'src/components/admin/Consultation*', 'scripts/test-consultation-lab-browser.ts', 'src/security/adminAuth.ts', 'tests/beauty*', 'tests/consultation*', 'supabase/migrations/*beauty*.sql', 'supabase/migrations/*consultation*.sql', 'docs/CONSULTATION_FORM_104_QA.md', '.github/workflows/beauty-supabase.yml']
+    paths: ['src/storefront/beauty*', 'src/storefront/consultation*', 'src/components/admin/Consultation*', 'src/components/public/ConsultationForm.tsx', 'scripts/test-consultation-*-browser.ts', 'src/security/adminAuth.ts', 'tests/beauty*', 'tests/consultation*', 'supabase/migrations/*beauty*.sql', 'supabase/migrations/*consultation*.sql', 'docs/CONSULTATION_FORM_104_QA.md', '.github/workflows/beauty-supabase.yml']
 permissions:
   contents: read
 concurrency:
@@ -59,6 +59,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Synthetic form and laboratory browser journey
         run: |
+          CONSULTATION_PLAYWRIGHT_MODULE="file://$RUNNER_TEMP/consultation-browser/node_modules/playwright/index.mjs" node --import tsx scripts/test-consultation-form-browser.ts
           CONSULTATION_PLAYWRIGHT_MODULE="file://$RUNNER_TEMP/consultation-browser/node_modules/playwright/index.mjs" node --import tsx scripts/test-consultation-lab-browser.ts
         env:
           BEAUTY_SYNTHETIC_SUPABASE: 'true'
