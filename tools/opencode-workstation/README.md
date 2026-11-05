@@ -1,5 +1,7 @@
 # OpenCode Autopilot: configuración local
 
+> **Política vigente (05/11/2026): Codex es la herramienta de desarrollo principal de Victoriosas.** Este entorno OpenCode se conserva exclusivamente como alternativa manual y secundaria. No iniciar agentes, gateway ni misiones de OpenCode en paralelo a tareas de Codex sobre los mismos archivos. Ver `AGENTS.md` y `docs/PROJECT_DIRECTION.md`. La referencia histórica a «perfil principal» más abajo describe únicamente el modelo predeterminado dentro de OpenCode, no la dirección técnica del proyecto.
+
 Configuración del puesto de desarrollo de Victoriosas, reutilizable en otros proyectos. GPT-6.1 Sol por la autenticación OAuth ya existente de OpenCode es el perfil principal, después de verificar una respuesta real. FreeLLMAPI/Groq queda como alternativa explícita. No se copiaron tokens ni se contrató otro servicio. No cambia la aplicación publicada ni transfiere las sesiones o complementos privados de ChatGPT.
 
 ## Instalar y abrir
