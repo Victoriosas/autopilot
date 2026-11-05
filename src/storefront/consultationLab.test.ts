@@ -49,6 +49,54 @@ test('unsafe approved evidence never becomes a draft or a price quote', async ()
     assert.ok(!result.analysis.drafts.some(d=>d.text.includes(fragment)));
   }
 });
+test('approved service disclaimers remain evidence without authorizing prices or promises', async () => {
+  const base = approvedConsultationFacts.find(f => f.service === 'limpieza-profunda')!;
+  const disclaimers = [
+    'No equivale a tratar una enfermedad ni garantiza cerrar poros.',
+    'Los cambios posibles dependen de la evaluación y no equivalen a rejuvenecimiento médico ni resultados garantizados.',
+    'No equivale a cirugía ni garantiza tensado, duración del efecto o cambios estructurales.',
+    'No trata enfermedades oculares ni garantiza eliminar ojeras o bolsas.',
+    'No equivale a toxina botulínica, rellenos ni procedimientos médicos y no garantiza borrar arrugas.',
+    'No es tratamiento para obesidad ni garantiza reducir grasa, peso, centímetros o celulitis.',
+    'Son cambios cicatriciales de la piel; no se garantiza su eliminación ni un porcentaje de mejora.',
+  ];
+  const commercial = 'Técnicas, duración, sesiones, frecuencia, precio y disponibilidad se confirman personalmente.';
+  for (const disclaimer of disclaimers) {
+    const fragment = `Cuidado cosmético sujeto a evaluación. ${disclaimer} ${commercial}`;
+    const result = await runConsultationLab('general', { facts: [{...base, fragment}] });
+    assert.equal(result.analysis.guardian.status, 'approved', disclaimer);
+    assert.equal(result.analysis.evidence[0].fragment, fragment);
+    assert.ok(result.analysis.drafts.every(d => d.text.includes(fragment)));
+    assert.equal(result.delivery, 'NOT_SENT');
+    assert.equal(result.reviewRequired, true);
+    assert.deepEqual(result.stages.map(s => s.stage), ['understand', 'draft', 'review']);
+    for (const attack of [
+      'Cuesta 999 UYU.', 'La tarifa es de mil pesos.', 'Te garantizamos resultados.',
+      'En tu caso te indico peeling.', 'Debes aplicar este producto.', 'Es 100 % seguro.',
+      'No garantiza resultados, pero te garantizamos eliminar las manchas.',
+      commercial.replace('.', ', cuesta 999 UYU.'),
+      disclaimer.replace('.', ', te garantizamos resultados.'),
+    ]) {
+      const blockedFragment = fragment + ' ' + attack;
+      const blocked = await runConsultationLab('general', { facts: [{...base, fragment: blockedFragment}] });
+      assert.ok(blocked.analysis.guardian.codes.includes('EVIDENCE_POLICY_BLOCK'), attack);
+      assert.ok(blocked.analysis.guardian.codes.includes('EVIDENCE_INSUFFICIENT'));
+      assert.ok(blocked.analysis.drafts.every(d => !d.text.includes(blockedFragment)));
+      assert.equal(blocked.delivery, 'NOT_SENT');
+    }
+  }
+  // Approval, freshness and user-risk controls still apply to safe wording.
+  const safe = {...base, fragment: `Cuidado cosmético. ${commercial}`};
+  for (const fact of [{...safe, approval: 'draft' as const}, {...safe, validUntil: '2000-01-01T00:00:00Z'}]) {
+    const blocked = await runConsultationLab('general', {facts: [fact]});
+    assert.ok(blocked.analysis.guardian.codes.includes('EVIDENCE_INSUFFICIENT'));
+  }
+  for (const id of ['price', 'guarantee', 'injection', 'clinical', 'no-consent']) {
+    const blocked = await runConsultationLab(id, {facts: [safe]});
+    assert.equal(blocked.analysis.guardian.status, 'blocked', id);
+    assert.equal(blocked.delivery, 'NOT_SENT');
+  }
+});
 test('admin lab authenticates, verifies origin and refuses customer payloads without touching delivery', async () => {
   let deliveries = 0, reads = 0;
   const app = express();
