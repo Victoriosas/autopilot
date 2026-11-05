@@ -1,3 +1,11 @@
+# Continuidad · falsos positivos de evidencia aprobada 05/11/2026
+
+- F2/F3, base `8f1afe45035358b2accbee735c11061fef45652f`; rama `fix/approved-evidence-disclaimers-20261105`. Chrome autenticado verificó 17 descripciones aprobadas, cero fichas faltantes/borradores/vencidas y cero tarifas aprobadas. El propietario comunicó la conformidad de Victoria y autorizó registrar las aprobaciones. Protocolos, tiempos y tarifas sin confirmar conservan sus límites.
+- La simulación productiva general sigue bloqueada por `EVIDENCE_POLICY_BLOCK` y `EVIDENCE_INSUFFICIENT`. Causa reproducida en código: el filtro considera inseguras menciones a «precio» aunque se confirme personalmente y negaciones explícitas de garantías. No es un fallo de persistencia ni prueba de funcionamiento de un LLM.
+- Corrección propuesta: excepciones únicamente para ocho avisos completos y exactos, conservando intactos los fragmentos citados. No hay reconocimiento amplio de negaciones ni exclusión de frases arbitrarias. Todo el contenido restante mantiene el filtro previo. Política v3 invalida aprobaciones de borrador anteriores; revisión humana y `no_send` preservados.
+- Validación local: 55 pruebas focalizadas; `npm run verify` completo (406 aprobadas, una omitida, cero fallos), tipos y ambas compilaciones; comprobación de rutas/HTML y escáner de secretos aprobados. Dry-run del corpus: 32/32 casos de desarrollo y seis controles enumerados; no es evaluación de modelos reales. Los casos congelados no se modificaron.
+- Sin cambios en Supabase, envíos, modelos remotos, credenciales, DNS o despliegues. CI del SHA final y despliegue siguen pendientes. El asistente productivo figuraba `degraded`, sin ejecuciones verificadas; no acreditar operación 24/7.
+
 # Continuidad · auditoría de historial 04/11/2026
 
 - Base Git/main productiva contrastada: `81336f2ab3cf4c4ed28ce7c100ad16b7d4355756`. Rama `codex/preview-history-audit-20261104`; sin cambios alojados.
