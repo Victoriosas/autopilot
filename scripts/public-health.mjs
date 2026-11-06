@@ -12,8 +12,13 @@ export async function checkPublicHealth(origin, request = fetch) {
       const challenged = response.status === 403 &&
         response.headers?.get?.('cf-mitigated')?.toLowerCase() === 'challenge';
       const diagnosis = challenged ? 'Cloudflare challenge confirmed' : 'cause not confirmed';
+      // Log a Ray ID only when it matches Cloudflare's bounded format; omit colo and free text.
+      const headerRay = response.headers?.get?.('cf-ray')?.trim();
+      const ray = typeof headerRay === 'string' && /^[a-f0-9]{16}(?:-[a-z]{3,5})?$/i.test(headerRay)
+        ? headerRay.slice(0, 16).toLowerCase() : null;
+      const rayEvidence = ray ? `; cf-ray=${ray}` : '';
       assert.equal(response.status, status,
-        `${path}: unexpected HTTP status: HTTP ${response.status} (expected ${status}); ${diagnosis}`);
+        `${path}: unexpected HTTP status: HTTP ${response.status} (expected ${status}); ${diagnosis}${rayEvidence}`);
     }
     console.log(`${path}: HTTP ${response.status}`);
     return response;

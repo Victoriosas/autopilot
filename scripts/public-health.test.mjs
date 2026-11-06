@@ -10,6 +10,7 @@ test('reports a confirmed Cloudflare challenge without exposing headers or body'
       status: 403,
       headers: {
         'cf-mitigated': 'challenge',
+        'cf-ray': 'a5668ad9fa25e2ca-MVD',
         'set-cookie': 'do-not-log-this-cookie',
       },
     });
@@ -19,6 +20,7 @@ test('reports a confirmed Cloudflare challenge without exposing headers or body'
     (error) => {
       assert.match(error.message, /HTTP 403/);
       assert.match(error.message, /Cloudflare challenge confirmed/);
+      assert.match(error.message, /cf-ray=a5668ad9fa25e2ca/);
       assert.doesNotMatch(error.message, /PRIVATE RESPONSE CONTENT|do-not-log-this-cookie/);
       return true;
     },
@@ -51,6 +53,37 @@ test('keeps other unexpected statuses as failures', async () => {
       assert.match(error.message, /HTTP 502/);
       assert.match(error.message, /expected 200/);
       assert.doesNotMatch(error.message, /Cloudflare challenge confirmed|ERROR DETAILS/);
+      return true;
+    },
+  );
+});
+
+test('keeps an unclassified 403 unconfirmed while exposing only a validated Ray ID', async () => {
+  const request = async () => new Response('SECRET RESPONSE', {
+    status: 403,
+    headers: { 'cf-ray': 'a5623f55fe6c2b5b-EZE' },
+  });
+  await assert.rejects(
+    checkPublicHealth('https://victoriosas.online', request),
+    (error) => {
+      assert.match(error.message, /cause not confirmed/);
+      assert.match(error.message, /cf-ray=a5623f55fe6c2b5b/);
+      assert.doesNotMatch(error.message, /SECRET RESPONSE|EZE/);
+      return true;
+    },
+  );
+});
+
+test('never prints malformed or untrusted Ray header values', async () => {
+  const request = async () => new Response('SECRET BODY', {
+    status: 403,
+    headers: { 'cf-mitigated': 'challenge', 'cf-ray': 'fake-ray-with-private-token' },
+  });
+  await assert.rejects(
+    checkPublicHealth('https://victoriosas.online', request),
+    (error) => {
+      assert.match(error.message, /Cloudflare challenge confirmed/);
+      assert.doesNotMatch(error.message, /fake-ray-with-private-token|cf-ray=|SECRET BODY/);
       return true;
     },
   );
