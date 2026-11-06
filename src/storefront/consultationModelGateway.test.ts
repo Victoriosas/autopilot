@@ -50,4 +50,11 @@ test('camelrun terminal status overrides completed state and requires structured
   for(const output of [undefined,null,[], 'bad']) {
     await assert.rejects(runModelGateway(config,req,(async()=>new Response(JSON.stringify({status:'completed',output,text:'{"ok":true}'}))) as any,env),/MODEL_RESPONSE_INVALID/);
   }
+  for(const completed of [
+    {status:'completed',output:{ok:true}},
+    {state:'completed',outcome:{result:{output:{ok:true}}}},
+  ]) {
+    const response=await runModelGateway(config,req,(async()=>new Response(JSON.stringify({...completed,text:'untrusted prose'}))) as any,env);
+    assert.deepEqual(JSON.parse(response.text),{ok:true});
+  }
 });

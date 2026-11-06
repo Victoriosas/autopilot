@@ -6,7 +6,7 @@ const args = process.argv.slice(2);
 const target = 'docs/consultation-agents/camelrun-agent-manifest.json';
 if (args.length === 0 || args.length === 1 && args[0] === '--check') {
   const expected = JSON.stringify(buildConsultationAgentManifest(), null, 2) + '\n';
-  if (readFileSync(target, 'utf8') !== expected) throw Error('AGENT_MANIFEST_DRIFT');
+  if (readFileSync(target, 'utf8').replace(/\r\n/g, '\n') !== expected) throw Error('AGENT_MANIFEST_DRIFT');
   console.log('AGENT_MANIFEST_MATCHES_SOURCE');
 } else if (args.length === 1 && args[0] === '--write') {
   writeFileSync(target, JSON.stringify(buildConsultationAgentManifest(), null, 2) + '\n');

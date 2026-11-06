@@ -4,7 +4,7 @@ import test from 'node:test';
 import { buildConsultationAgentManifest, compareConsultationDefinitions } from './consultationAgentManifest';
 
 test('checked-in manifest exactly reproduces canonical prompts and schemas', () => {
-  assert.equal(readFileSync('docs/consultation-agents/camelrun-agent-manifest.json','utf8'),
+  assert.equal(readFileSync('docs/consultation-agents/camelrun-agent-manifest.json','utf8').replace(/\r\n/g,'\n'),
     JSON.stringify(buildConsultationAgentManifest(), null, 2) + '\n');
 });
 
