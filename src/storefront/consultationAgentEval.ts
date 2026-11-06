@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { validCamelRunDraft } from './consultationCamelRun';
 import { COMPRENSION_PROMPT, GUARDIAN_PROMPT, REDACTOR_PROMPT } from './consultationAgentPrompts';
 import { boundedModelJSON } from './consultationModelGateway';
+import { consultationAgentSchemas } from './consultationAgentSchemas';
 export const EVAL_MODEL = 'anthropic/claude-haiku-5-5';
 
 export type Evidence = { id: string; version: string; vigente: boolean; extracto: string };
@@ -140,6 +141,7 @@ export type RunUsage = { costUsd: number; ms: number };
 // Ejecución aislada y sin estado (POST /v1/runs), igual que el adaptador de producción.
 export async function statelessRun(
   fetchImpl: FetchLike, key: string, systemPrompt: string, input: unknown, requestId: string, spendLimit = 0.02,
+  schema?: Record<string, unknown>,
 ): Promise<{ text: string; usage: RunUsage }> {
   if (!Number.isFinite(spendLimit) || spendLimit <= 0 || spendLimit > 0.02) throw new Error('EVAL_BUDGET_INVALID');
   if (Buffer.byteLength(systemPrompt) + Buffer.byteLength(JSON.stringify(input) ?? '') > 12000) throw new Error('EVAL_INPUT_LIMIT');
@@ -149,12 +151,15 @@ export async function statelessRun(
     headers: { 'content-type': 'application/json', authorization: `Bearer ${key}`, 'Idempotency-Key': `victoriosas-eval-${requestId}` },
     body: JSON.stringify({ systemPrompt, model: EVAL_MODEL, input: JSON.stringify(input), wait: 60, retentionSeconds: 60, spendLimit: { usd: spendLimit },
       maxOutputTokens: 2048, thinkingLevel: 'off', builtins: [], fileTools: false, codeMode: false,
-      runLimits: { maxResponses: 1, maxSeconds: 45, contextTokens: 20000 } }),
+      runLimits: { maxResponses: 1, maxSeconds: 45, contextTokens: 20000 },
+      ...(schema ? {output:{schema}} : {}) }),
   });
   if (!response.ok) throw new Error('CAMELRUN_UNAVAILABLE');
   const run: any = await boundedModelJSON(response as any);
   if (run.status !== 'completed' && run.state !== 'completed') throw new Error('CAMELRUN_PENDING');
-  const text = run.text ?? run.outcome?.result?.reply;
+  const output = run.output ?? run.outcome?.result?.output;
+  if (schema && (!output || typeof output !== 'object' || Array.isArray(output))) throw new Error('CAMELRUN_STRUCTURED_OUTPUT_MISSING');
+  const text = schema ? JSON.stringify(output) : run.text ?? run.outcome?.result?.reply;
   if (typeof text !== 'string' || text.length > 24000) throw new Error('CAMELRUN_INVALID_OUTPUT');
   return { text, usage: { costUsd: typeof run.usage?.costUsd === 'number' && Number.isFinite(run.usage.costUsd) && run.usage.costUsd >= 0 ? run.usage.costUsd : spendLimit, ms: Date.now() - started } };
 }
@@ -168,10 +173,10 @@ export type CaseResult = {
 
 export async function runCase(fetchImpl: FetchLike, key: string, c: EvalCase, runId = 'synthetic'): Promise<CaseResult> {
   const r: CaseResult = { id: c.id, family: c.family, critical: c.critical, pass: false, issues: [], warnings: [], cost_usd: 0, ms: 0 };
-  const step = async (prompt: string, input: unknown, tag: string) => {
+  const step = async (prompt: string, input: unknown, tag: string, schema: Record<string, unknown>) => {
     const started = Date.now();
     try {
-      const result = await statelessRun(fetchImpl, key, prompt, input, `${runId}-${c.id}-${tag}`);
+      const result = await statelessRun(fetchImpl, key, prompt, input, `${runId}-${c.id}-${tag}`, 0.02, schema);
       r.cost_usd += result.usage.costUsd;
       return result.text;
     } catch (error) {
@@ -181,11 +186,11 @@ export async function runCase(fetchImpl: FetchLike, key: string, c: EvalCase, ru
     } finally { r.ms += Date.now() - started; }
   };
   try {
-    const interp = parseStrict(await step(COMPRENSION_PROMPT, { consulta: c.message }, 'a'));
+    const interp = parseStrict(await step(COMPRENSION_PROMPT, { consulta: c.message }, 'a', consultationAgentSchemas.understanding));
     const draft = parseStrict(await step(REDACTOR_PROMPT,
-      { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence }, 'b'));
+      { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence }, 'b', consultationAgentSchemas.draft));
     const guard = parseStrict(await step(GUARDIAN_PROMPT,
-      { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence, borradores: draft?.variants ?? null }, 'c'));
+      { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence, borradores: draft?.variants ?? null }, 'c', consultationAgentSchemas.guardian));
     if (!validInterpretation(interp)) r.issues.push({ code: 'COMPRENSION_INVALID_JSON', detail: 'schema' });
     if (!draft) r.issues.push({ code: 'REDACTOR_INVALID_JSON', detail: '' }); else r.issues.push(...checkDraft(c, draft));
     const cg = checkGuardian(c, guard);
@@ -200,7 +205,7 @@ export async function runCase(fetchImpl: FetchLike, key: string, c: EvalCase, ru
 export async function runControl(fetchImpl: FetchLike, key: string, ctl: GuardianControl, runId = 'synthetic') {
   try {
     const g = await statelessRun(fetchImpl, key, GUARDIAN_PROMPT,
-      { consulta: ctl.message, interpretacion: null, evidencia_aprobada: ctl.evidence, borradores: ctl.drafts }, `${runId}-${ctl.id}`);
+      { consulta: ctl.message, interpretacion: null, evidencia_aprobada: ctl.evidence, borradores: ctl.drafts }, `${runId}-${ctl.id}`, 0.02, consultationAgentSchemas.guardian);
     const parsed = parseStrict(g.text);
     const issues = validGuardian(parsed) ? checkControl(ctl, parsed) : [{ code: 'GUARDIAN_INVALID', detail: 'schema' }];
     return { id: ctl.id, family: ctl.family, pass: issues.length === 0, issues, cost_usd: g.usage.costUsd };

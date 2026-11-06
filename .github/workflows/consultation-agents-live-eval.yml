@@ -1,6 +1,13 @@
 name: Consultation agents manual synthetic evaluation
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Smoke primero; full solo tras aprobar desarrollo'
+        type: choice
+        default: smoke
+        required: true
+        options: [smoke, development, full]
 permissions:
   contents: read
 concurrency:
@@ -24,10 +31,18 @@ jobs:
         run: node --import tsx --test src/storefront/consultationAgentEval.test.ts src/storefront/consultationModelGateway.test.ts
       - name: Validate frozen cases without spending
         run: npm run eval:consultation-agents -- --dry-run --split all --confirm-final --max-usd 3
-      - name: Evaluate synthetic cases once, at most USD 3
-        run: npm run eval:consultation-agents -- --split all --confirm-final --max-usd 3 --out output/consultation-agents-eval/manual.json
+      - name: Evaluate authorized synthetic selection once
         env:
+          EVALUATION_MODE: ${{ inputs.mode }}
           CAMELAI_API_KEY: ${{ secrets.CAMELAI_API_KEY }}
+        run: |
+          case "$EVALUATION_MODE" in
+            smoke) selection=(--split desarrollo --limit 3 --max-usd 0.30) ;;
+            development) selection=(--split desarrollo --max-usd 2.04) ;;
+            full) selection=(--split all --confirm-final --max-usd 2.52) ;;
+            *) echo 'Invalid evaluation mode'; exit 2 ;;
+          esac
+          npm run eval:consultation-agents -- "${selection[@]}" --out output/consultation-agents-eval/manual.json
       - name: Preserve sanitized evaluation report
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
