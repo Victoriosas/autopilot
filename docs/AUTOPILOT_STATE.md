@@ -1071,3 +1071,17 @@ Trabajo aislado en `codex/f2-review-progress-20261104` desde `996f33b`, en workt
 Issue #180 reinterpretado el 04/11: `Supabase Preview` en `main` ya es success y enlaza al Supabase principal; en las PR históricas sigue `skipped` con URL del proyecto secundario. Incidencia abierta y documentada, sin ramas preview pagas, DNS ni SQL. No se desactiva ni se da por aprobada la protección de PR.
 
 Control añadido en revisión de seguridad: la nueva pestaña Fichas utiliza una clave de montaje ligada a `sessionKey`, como la bandeja de consultas, para restablecer datos privados del formulario al cambiar la identidad administrativa. Validación final deberá realizarse sobre el commit posterior a esta corrección.
+
+## 2026-11-06 · Diagnóstico seguro de Public Health con PC reconectada
+
+Fase F1/operación. `micahael-PC` volvió a estar conectada, pero el checkout `C:/autopilot` conserva la rama histórica `agent/ecc-selective-quality-20261025` y numerosos archivos ajenos sin seguimiento. Dos procesos Codex activos y sus worktrees quedaron intactos. Trabajo nuevo aislado en `E:/autopilot-public-health-20261106`, rama `codex/public-health-diagnostics-20261106` desde `origin/main` `908ae4e7a195470266799016a99e06a35d49be27`.
+
+**Disponibilidad observada desde la PC:** `node scripts/public-health.mjs` de main terminó exit 0: portada, servicios, `/consultanos`, privacidad y APIs HTTP 200, administración anónima 401, checkout y rutas comerciales retiradas 410, artículos borrador 404. `/api/health` indicó `908ae4e` y `checkoutEnabled=false`, `checkoutRequested=false`; `/api/beauty/inquiries/config` informó `enabled=true`. Solo GET: sin POST, envíos ni prueba nueva de recepción humana.
+
+**Incidencia independiente:** los runs de GitHub `Victoriosas Public Health` [42280974809](https://github.com/Victoriosas/autopilot/actions/runs/42280974809) y [42178512012](https://github.com/Victoriosas/autopilot/actions/runs/42178512012) fallaron por HTTP 403 en `/` desde Ubuntu runner, mismo SHA `908ae4e`. Los logs no muestran cabeceras para identificar la regla; el workflow de infraestructura aprobó. Un 403 del runner no demuestra caída global; HTTP 200 local tampoco demuestra disponibilidad desde todas las redes.
+
+**Cambio de diagnóstico:** ante HTTP inesperado el monitor continúa fallando cerrado, muestra exclusivamente ruta, estado real/esperado y `Cloudflare challenge confirmed` solo si existe `cf-mitigated: challenge`; de lo contrario usa `cause not confirmed`. No imprime cuerpos de respuesta, cookies ni cabeceras arbitrarias. TDD: 3 regresiones RED antes de editar y 3/3 GREEN después.
+
+**Validación:** Node 24.15.0, `npm ci --ignore-scripts --no-audit --no-fund`, `npm run verify` exit 0 con 412/412 pruebas, TypeScript, ocho skills y builds servidor/Vercel. Smoke público actualizado exit 0. `git diff --check` limpio. Ninguna evaluación IA real, mutación alojada ni operación con datos de clientas.
+
+**Siguiente prompt:** verificar CI `validate`/`postgres` y SHA final de la PR de esta rama, mantener draft sin merge ni despliegue; buscar en lectura los eventos/cabeceras que permitan identificar el 403 del runner sin reducir protecciones WAF. Si sigue sin evidencia, documentar el bloqueo y continuar una prioridad independiente de F1/F2. La revisión profesional de 17 fichas sigue a cargo de Victoria. No alterar producción, DNS, credenciales, SQL remoto, pagos, campañas, IA de envío ni automatizaciones.

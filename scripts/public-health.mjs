@@ -7,7 +7,14 @@ export async function checkPublicHealth(origin, request = fetch) {
     const response = await request(new URL(path, origin).href, {
       method: 'GET', redirect: 'manual', signal: AbortSignal.timeout(20000),
     });
-    assert.equal(response.status, status, `${path}: unexpected HTTP status`);
+    if (response.status !== status) {
+      // Never log response bodies or arbitrary headers: they could contain secrets.
+      const challenged = response.status === 403 &&
+        response.headers?.get?.('cf-mitigated')?.toLowerCase() === 'challenge';
+      const diagnosis = challenged ? 'Cloudflare challenge confirmed' : 'cause not confirmed';
+      assert.equal(response.status, status,
+        `${path}: unexpected HTTP status: HTTP ${response.status} (expected ${status}); ${diagnosis}`);
+    }
     console.log(`${path}: HTTP ${response.status}`);
     return response;
   }
