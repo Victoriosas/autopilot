@@ -173,7 +173,8 @@ export async function statelessRun(
     headers: { 'content-type': 'application/json', authorization: `Bearer ${key}`, 'Idempotency-Key': `victoriosas-eval-${requestId}` },
     body: JSON.stringify({ systemPrompt, model: EVAL_MODEL, input: JSON.stringify(input), wait: 60, retentionSeconds: 60, spendLimit: { usd: spendLimit },
       maxOutputTokens: 2048, thinkingLevel: 'off', builtins: [], fileTools: false, codeMode: false,
-      runLimits: { maxResponses: 1, maxSeconds: 45, contextTokens: 20000 },
+      // One initial response plus one schema repair, within the same spend ceiling.
+      runLimits: { maxResponses: 2, maxSeconds: 45, contextTokens: 20000 },
       ...(schema ? {output:{schema}} : {}) }),
   });
   if (!response.ok) throw new Error('CAMELRUN_UNAVAILABLE');
