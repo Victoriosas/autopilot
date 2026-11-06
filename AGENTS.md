@@ -6,6 +6,12 @@
 - **PC/GitHub**: `docs/SYNC_PC_GITHUB_SEGURO.md`. Si Desktop Commander está desconectado, no afirmar PC sincronizada.
 - Usar `$victoriosas-control-de-fases` para impedir que tareas laterales desplacen la ruta crítica. Codex, OpenCode y Work comparten el objetivo, pero no comparten necesariamente sesiones, permisos o estado de ejecución.
 
+## Herramienta principal: Codex (decisión 2026-11-05)
+- **Codex es el ejecutor técnico principal** de Victoriosas: planificación del cambio, edición, pruebas y preparación de PR. Respetar las fases y aprobaciones de `docs/PROJECT_DIRECTION.md`.
+- OpenCode queda **secundario, opcional y bajo demanda**. No delegarle tareas paralelas a Codex sobre los mismos archivos, no arrancar procesos de OpenCode automáticamente ni utilizarlo como director del proyecto.
+- Si se demuestra interferencia real (procesos simultáneos, sobreescritura de archivos, consumo indebido, conflicto de worktrees o permisos), detener primero la ejecución de OpenCode, preservar su trabajo local y deshabilitar su arranque de forma reversible. Solo desinstalar después de inventariar respaldos y comprobar que Codex no depende de sus herramientas. No borrar worktrees, sesiones, skills ni credenciales por presunción.
+- `.github/workflows/opencode-workstation.yml` valida su configuración solo al cambiar los archivos relevantes o mediante ejecución manual; no equivale a un agente ejecutándose en segundo plano.
+
 ## Antes de actuar
 - Leer este archivo, docs/OPENCODE_CHECKPOINT.md y .github/copilot-instructions.md. Consultar el historial solo en rangos necesarios para la tarea.
 - Las notas de continuidad están fechadas: comprobar código, main, PR abiertas y CI actuales. No tratar entradas históricas como estado vigente.

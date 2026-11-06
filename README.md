@@ -1,101 +1,52 @@
-# Victoriosa Autopilot
+# Victoriosas | Estética profesional + Autopilot
 
-Victoriosa es una tienda ecommerce con un motor de sourcing y evaluación asistido por IA. El storefront público y el panel administrativo comparten Supabase como fuente de verdad. El motor Autopilot V4 trabaja sobre un flujo durable y auditable, con CJ Dropshipping como proveedor de sourcing y evidencia de mercado multi-proveedor.
+Repositorio de [Victoriosas](https://victoriosas.online), sitio público de servicios estéticos profesionales, y de **Autopilot**, su plataforma interna de consultas, conocimiento aprobado y agentes IA supervisados.
 
-## Estado operativo
+> **Dirección vigente:** [docs/PROJECT_DIRECTION.md](docs/PROJECT_DIRECTION.md). Para cualquier intervención, leer primero [AGENTS.md](AGENTS.md). Los documentos y componentes de ecommerce conservados por compatibilidad son históricos, no la estrategia actual.
 
-- **Producción:** https://victoriosas.online
-- **Hosting:** Vercel
-- **Base de datos / Auth / Realtime:** Supabase
-- **Sourcing principal:** CJ Dropshipping, MCP read-only en Shadow con REST como fallback
-- **Market Evidence:** Mercado Libre Uruguay → Gemini Search Grounding → OpenRouter Web Search
-- **Modo Autopilot:** Shadow
-- **Checkout:** deshabilitado por defecto
-- **Compras a proveedor:** bloqueadas
-- **Auto-publicación:** bloqueada
+## Experiencia y operación
 
-Shadow no es una etiqueta visual. Los borradores creados en Shadow quedan marcados de forma permanente como no publicables y deben regenerarse/revalidarse antes de cualquier futura activación comercial.
+- **Sitio público:** servicios faciales y corporales, presentación de Victoria, contenido editorial y consulta inicial remota mediante `/consultanos` o WhatsApp.
+- **Atención:** recepción con consentimiento, expediente privado, bandeja administrativa, borrador y envío supervisado con aprobación humana.
+- **Conocimiento profesional:** 17 tratamientos canónicos. Las fichas privadas deben revisarse y aprobarse expresamente por Victoria antes de utilizarse como evidencia para IA.
+- **IA:** laboratorio de Comprensión → Recuperación → Redactor → Guardián → validaciones deterministas → revisión. No equivale a atención autónoma activa.
+- **Restricciones:** sin atención a domicilio, diagnósticos automatizados, precios públicos, agenda abierta, carrito, checkout, compras, dropshipping ni campañas automáticas.
 
-## Arquitectura Autopilot V4
+## Responsabilidades y herramientas
 
-```text
-CJ Discovery
-  ↓
-normalización + evidencia de variante/stock/flete
-  ↓
-filtro Victoriosa + riesgo/regulación
-  ↓
-Market Evidence
-  ↓
-Pricing Engine
-  ↓
-Commercial Draft
-  ↓
-Approval Council
-  ↓
-Shadow completion / gobernanza de publicación
-```
+**Codex es la herramienta principal de desarrollo y ejecución técnica.** Las habilidades del repositorio residen en [`.agents/skills/`](.agents/skills/) y se enumeran en [docs/CODEX_SKILLS.md](docs/CODEX_SKILLS.md). OpenCode es una alternativa secundaria, manual y opcional; no debe competir con Codex por los mismos archivos o procesos. La existencia de skills, agentes o cron en GitHub no demuestra ejecución continua.
 
-El estado durable de cada run/item vive en PostgreSQL/Supabase. Hay checkpoints, leasing, fencing e idempotencia para poder reanudar una corrida sin repetir efectos laterales.
+Infraestructura relacionada: GitHub Actions, Vercel, Cloudflare, Supabase, Resend y laboratorio camelRun. Su estado productivo se verifica por separado, nunca por la sola existencia de una configuración.
 
 ## Desarrollo local
 
-Requisitos: Node.js 24 y una copia de `.env.example` como `.env.local`.
+Requiere Node.js 24. Las variables se documentan en `.env.example`; los secretos permanecen fuera del control de versiones.
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Validación completa antes de merge:
+Validación de código antes de proponer una PR:
 
 ```bash
-npm run lint
-npm test
-npm run build
-npm run build:vercel
-npm run test:db
+npm run verify
 ```
 
-## Variables críticas
+Para rutas con PostgreSQL, Auth, RLS o correo, ejecutar además los tests específicos y revisar los checks `validate` y `postgres` del SHA final. Una prueba simulada no certifica la integración alojada.
 
-Nunca publiques secretos en issues, commits o chats. Las credenciales viven en el entorno del servidor.
+## Organización del repositorio
 
-Como mínimo para el entorno real se requieren Supabase y CJ. Los proveedores de Market Evidence son opcionales individualmente, pero Autopilot falla cerrado si no consigue evidencia suficiente.
+- `src/components/public/`: sitio público, catálogo y formulario.
+- `src/components/admin/`: administración de consultas y fichas.
+- `src/storefront/consultation*`: lógica de consultas, conocimiento y laboratorio.
+- `supabase/migrations/`: migraciones versionadas; no aplicar remotamente sin autorización específica.
+- `.github/workflows/`: validaciones y tareas de infraestructura.
+- `docs/`: dirección, auditoría, pruebas y continuidad.
+- `src/autopilot/`, `src/payments/`, `src/components/store/`: módulos históricos de comercio mantenidos por seguridad/compatibilidad, no autorizados para reactivar ventas.
 
-Para mantener el sistema seguro hasta un release comercial explícito:
+## Estado verificable y próximas fases
 
-```dotenv
-CHECKOUT_ENABLED=false
-AUTOPILOT_PURCHASE_LIMIT_USD=0
-AUTOPILOT_LEGACY_SOURCING_ENABLED=false
-AUTOPILOT_V4_SOURCING_ENABLED=false
-AUTOPILOT_SHADOW_MODE=true
-CJ_MCP_SHADOW_ENABLED=true
-```
+El código y los documentos del repositorio indican qué está **definido o fusionado**, no necesariamente qué está **desplegado o ejecutado**. Contrastar SHA en GitHub, CI, entorno público, Supabase y proveedores antes de reportar éxitos. La prueba controlada F1 y las pendientes F2/F3 constan en [docs/PROJECT_DIRECTION.md](docs/PROJECT_DIRECTION.md) y [docs/F2_REVISION_VICTORIA_17_TRATAMIENTOS_20261104.md](docs/F2_REVISION_VICTORIA_17_TRATAMIENTOS_20261104.md).
 
-## Reglas de producción
-
-1. No inventar stock, precio, flete, demanda ni evidencia.
-2. `unknown` nunca equivale a cero.
-3. Menos de dos comparables de mercado confiables no habilitan pricing comercial.
-4. Un fallo de proveedor externo debe degradar al siguiente proveedor o fallar cerrado.
-5. Ningún cliente puede activar checkout, compra o publicación pasando flags desde el navegador.
-6. El cron de sourcing permanece apagado hasta autorización explícita de producción.
-7. El storefront muestra únicamente productos persistidos y realmente publicados en Supabase.
-
-## Directorios principales
-
-- `src/autopilot/`: Autopilot V4, evidencia, pricing, Council y gobernanza.
-- `src/services/`: clientes CJ, conectores y servicios de backend.
-- `src/components/store/`: storefront.
-- `src/components/admin/`: panel operativo.
-- `src/payments/`: integraciones de pago, actualmente gobernadas por `CHECKOUT_ENABLED`.
-- `supabase/migrations/`: esquema y barreras de seguridad.
-- `tests/`: pruebas PostgreSQL del orquestador durable.
-
-## Release
-
-`main` es la fuente de verdad. Los cambios se integran por PR con CI. Vercel despliega `main` a producción únicamente después de que typecheck, tests, build, secret scan y guardrails estén verdes.
-
-La activación de comercio real es una decisión separada del despliegue técnico y requiere una revisión explícita de pagos, fulfillment, regulación, catálogo y métricas Shadow.
+Trabajar en ramas y PR revisables; no publicar, fusionar o activar mensajes automáticos por iniciativa propia. Sin secretos ni datos de clientas en Git, CI, logs o capturas.
