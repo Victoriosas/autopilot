@@ -1,10 +1,11 @@
 import { createHash } from 'node:crypto';
 import type { ConsultationRecord } from './consultationSupabase';
 import { approvedConsultationFacts,currentFacts,type ConsultationFact } from './consultationEvidence';
+import { unsafeConsultationFact } from './consultationEvidencePolicy';
 import { understandConsultation } from './consultationUnderstanding';
 import { INTELLIGENCE_VERSION,intelligenceSchemas,strictObject,validateModelUnderstanding,type ConsultationModel } from './consultationIntelligenceContracts';
 
-export const intelligencePolicy=Object.freeze({version:'shadow-policy-v1',level:0,shadow:true,maxCalls:3,timeoutMs:8000,maxInputBytes:12000,maxOutputBytes:16000,approvalTtlMs:15*60000});
+export const intelligencePolicy=Object.freeze({version:'shadow-policy-v3',level:0,shadow:true,maxCalls:3,timeoutMs:8000,maxInputBytes:12000,maxOutputBytes:16000,approvalTtlMs:15*60000});
 const hash=(value:unknown)=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 export const conversationVersion=(record:ConsultationRecord)=>hash({id:record.id,input:record.input,expiresAt:record.expires_at});
 export type GuardianResult={status:'approved'|'requires_changes'|'blocked';codes:string[]};
@@ -23,8 +24,12 @@ export async function analyzeConsultation(record:ConsultationRecord,options:{now
  const understanding=understandConsultation(record.input),codes:string[]=[];
  const current=currentFacts(facts,now),evidence:ConsultationFact[]=[],unanswered:string[]=[];
  if(current.conflicts.length)codes.push('KNOWLEDGE_CONFLICT');
+ // Even a manually approved fragment cannot introduce a fee, promise or
+ // individual clinical instruction through the general-information channel.
+ const unsafeFact=unsafeConsultationFact;
+ if(current.facts.some(unsafeFact))codes.push('EVIDENCE_POLICY_BLOCK');
  for(const question of understanding.questions){
-  const match=current.facts.find(f=>f.topic===question.topic&&(f.topic!=='service'||understanding.serviceCandidates.length===1&&f.service===understanding.serviceCandidates[0]));
+  const match=current.facts.find(f=>!unsafeFact(f)&&f.topic===question.topic&&(f.topic!=='service'||understanding.serviceCandidates.length===1&&f.service===understanding.serviceCandidates[0]));
   if(match&&!evidence.some(f=>f.id===match.id))evidence.push(match);
   if(!match)unanswered.push(question.id);
  }

@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { validCamelRunDraft } from './consultationCamelRun';
 import { COMPRENSION_PROMPT, GUARDIAN_PROMPT, REDACTOR_PROMPT } from './consultationAgentPrompts';
 import { boundedModelJSON } from './consultationModelGateway';
+import { consultationAgentSchemas } from './consultationAgentSchemas';
 export const EVAL_MODEL = 'anthropic/claude-haiku-5-5';
 
 export type Evidence = { id: string; version: string; vigente: boolean; extracto: string };
@@ -137,9 +138,32 @@ export function checkControl(ctl: GuardianControl, g: any): Issue[] {
 type FetchLike = (url: string, init: any) => Promise<{ ok: boolean; json(): Promise<any> }>;
 export type RunUsage = { costUsd: number; ms: number };
 
+// Only fixed diagnostic codes may leave the provider boundary; messages can contain input.
+const RUN_FAILURE_CODES = new Set(['model_key_missing','model_key_invalid','model_error',
+  'output_missing','output_invalid','spend_limit','turn_limit','context_too_large',
+  'end_user_credit','runtime_error','model_stream_stalled','resume_limit','aborted']);
+function safeRunError(error: unknown): string {
+  const message = error instanceof Error ? error.message : '';
+  return /^CAMELRUN_[A-Z_]+$|^EVAL_[A-Z_]+$/.test(message) ? message : 'EVAL_RUN_FAILED';
+}
+function runStatus(run: any): unknown {
+  // state=completed means ended, including failed: status always takes precedence.
+  return run.status ?? run.state;
+}
+function requireCompleted(run: any): void {
+  const status = runStatus(run);
+  if (status === 'failed') {
+    const code = run.error?.code ?? run.outcome?.result?.code ?? run.outcome?.result?.stopped;
+    throw new Error(RUN_FAILURE_CODES.has(code) ? `CAMELRUN_FAILED_${code.toUpperCase()}` : 'CAMELRUN_FAILED');
+  }
+  if (status === 'input_required') throw new Error('CAMELRUN_INPUT_REQUIRED');
+  if (status !== 'completed') throw new Error('CAMELRUN_PENDING');
+}
+
 // Ejecución aislada y sin estado (POST /v1/runs), igual que el adaptador de producción.
 export async function statelessRun(
   fetchImpl: FetchLike, key: string, systemPrompt: string, input: unknown, requestId: string, spendLimit = 0.02,
+  schema?: Record<string, unknown>,
 ): Promise<{ text: string; usage: RunUsage }> {
   if (!Number.isFinite(spendLimit) || spendLimit <= 0 || spendLimit > 0.02) throw new Error('EVAL_BUDGET_INVALID');
   if (Buffer.byteLength(systemPrompt) + Buffer.byteLength(JSON.stringify(input) ?? '') > 12000) throw new Error('EVAL_INPUT_LIMIT');
@@ -149,12 +173,30 @@ export async function statelessRun(
     headers: { 'content-type': 'application/json', authorization: `Bearer ${key}`, 'Idempotency-Key': `victoriosas-eval-${requestId}` },
     body: JSON.stringify({ systemPrompt, model: EVAL_MODEL, input: JSON.stringify(input), wait: 60, retentionSeconds: 60, spendLimit: { usd: spendLimit },
       maxOutputTokens: 2048, thinkingLevel: 'off', builtins: [], fileTools: false, codeMode: false,
-      runLimits: { maxResponses: 1, maxSeconds: 45, contextTokens: 20000 } }),
+      // One initial response plus one schema repair, within the same spend ceiling.
+      runLimits: { maxResponses: 2, maxSeconds: 45, contextTokens: 20000 },
+      ...(schema ? {output:{schema}} : {}) }),
   });
   if (!response.ok) throw new Error('CAMELRUN_UNAVAILABLE');
-  const run: any = await boundedModelJSON(response as any);
-  if (run.status !== 'completed' && run.state !== 'completed') throw new Error('CAMELRUN_PENDING');
-  const text = run.text ?? run.outcome?.result?.reply;
+  let run: any = await boundedModelJSON(response as any);
+  if (runStatus(run) === 'running') {
+    const id = run.id;
+    // Poll only this run, never POST again. Reject IDs that could redirect credentials.
+    if (typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,160}$/.test(id)) throw new Error('CAMELRUN_INVALID_RUN_ID');
+    for (let poll = 0; poll < 2 && runStatus(run) === 'running'; poll++) {
+      const next = await fetchImpl(`https://run.camelai.com/v1/runs/${id}?wait=25`, {
+        method: 'GET', signal: AbortSignal.timeout(35000), redirect: 'error',
+        headers: { authorization: `Bearer ${key}` },
+      });
+      if (!next.ok) throw new Error('CAMELRUN_POLL_UNAVAILABLE');
+      run = await boundedModelJSON(next as any);
+      if (run.id !== undefined && run.id !== id) throw new Error('CAMELRUN_INVALID_RUN_ID');
+    }
+  }
+  requireCompleted(run);
+  const output = run.output ?? run.outcome?.result?.output;
+  if (schema && (!output || typeof output !== 'object' || Array.isArray(output))) throw new Error('CAMELRUN_STRUCTURED_OUTPUT_MISSING');
+  const text = schema ? JSON.stringify(output) : run.text ?? run.outcome?.result?.reply;
   if (typeof text !== 'string' || text.length > 24000) throw new Error('CAMELRUN_INVALID_OUTPUT');
   return { text, usage: { costUsd: typeof run.usage?.costUsd === 'number' && Number.isFinite(run.usage.costUsd) && run.usage.costUsd >= 0 ? run.usage.costUsd : spendLimit, ms: Date.now() - started } };
 }
@@ -168,10 +210,10 @@ export type CaseResult = {
 
 export async function runCase(fetchImpl: FetchLike, key: string, c: EvalCase, runId = 'synthetic'): Promise<CaseResult> {
   const r: CaseResult = { id: c.id, family: c.family, critical: c.critical, pass: false, issues: [], warnings: [], cost_usd: 0, ms: 0 };
-  const step = async (prompt: string, input: unknown, tag: string) => {
+  const step = async (prompt: string, input: unknown, tag: string, schema: Record<string, unknown>) => {
     const started = Date.now();
     try {
-      const result = await statelessRun(fetchImpl, key, prompt, input, `${runId}-${c.id}-${tag}`);
+      const result = await statelessRun(fetchImpl, key, prompt, input, `${runId}-${c.id}-${tag}`, 0.02, schema);
       r.cost_usd += result.usage.costUsd;
       return result.text;
     } catch (error) {
@@ -181,17 +223,17 @@ export async function runCase(fetchImpl: FetchLike, key: string, c: EvalCase, ru
     } finally { r.ms += Date.now() - started; }
   };
   try {
-    const interp = parseStrict(await step(COMPRENSION_PROMPT, { consulta: c.message }, 'a'));
+    const interp = parseStrict(await step(COMPRENSION_PROMPT, { consulta: c.message }, 'a', consultationAgentSchemas.understanding));
     const draft = parseStrict(await step(REDACTOR_PROMPT,
-      { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence }, 'b'));
+      { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence }, 'b', consultationAgentSchemas.draft));
     const guard = parseStrict(await step(GUARDIAN_PROMPT,
-      { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence, borradores: draft?.variants ?? null }, 'c'));
+      { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence, borradores: draft?.variants ?? null }, 'c', consultationAgentSchemas.guardian));
     if (!validInterpretation(interp)) r.issues.push({ code: 'COMPRENSION_INVALID_JSON', detail: 'schema' });
     if (!draft) r.issues.push({ code: 'REDACTOR_INVALID_JSON', detail: '' }); else r.issues.push(...checkDraft(c, draft));
     const cg = checkGuardian(c, guard);
     r.issues.push(...cg.issues); r.warnings.push(...cg.warnings); r.guardian_status = guard?.global_status;
   } catch (e: any) {
-    r.error = /^CAMELRUN_[A-Z_]+$|^EVAL_[A-Z_]+$/.test(e?.message) ? e.message : 'EVAL_RUN_FAILED'; r.issues.push({ code: 'RUN_ERROR', detail: r.error });
+    r.error = safeRunError(e); r.issues.push({ code: 'RUN_ERROR', detail: r.error });
   }
   r.pass = r.issues.length === 0;
   return r;
@@ -200,12 +242,12 @@ export async function runCase(fetchImpl: FetchLike, key: string, c: EvalCase, ru
 export async function runControl(fetchImpl: FetchLike, key: string, ctl: GuardianControl, runId = 'synthetic') {
   try {
     const g = await statelessRun(fetchImpl, key, GUARDIAN_PROMPT,
-      { consulta: ctl.message, interpretacion: null, evidencia_aprobada: ctl.evidence, borradores: ctl.drafts }, `${runId}-${ctl.id}`);
+      { consulta: ctl.message, interpretacion: null, evidencia_aprobada: ctl.evidence, borradores: ctl.drafts }, `${runId}-${ctl.id}`, 0.02, consultationAgentSchemas.guardian);
     const parsed = parseStrict(g.text);
     const issues = validGuardian(parsed) ? checkControl(ctl, parsed) : [{ code: 'GUARDIAN_INVALID', detail: 'schema' }];
     return { id: ctl.id, family: ctl.family, pass: issues.length === 0, issues, cost_usd: g.usage.costUsd };
   } catch (e: any) {
-    return { id: ctl.id, family: ctl.family, pass: false, issues: [{ code: 'RUN_ERROR', detail: 'EVAL_RUN_FAILED' }], cost_usd: 0.02 };
+    return { id: ctl.id, family: ctl.family, pass: false, issues: [{ code: 'RUN_ERROR', detail: safeRunError(e) }], cost_usd: 0.02 };
   }
 }
 

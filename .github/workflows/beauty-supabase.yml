@@ -2,7 +2,7 @@ name: Isolated Beauty Supabase
 on:
   push:
     branches: [main, 'codex/**', 'chatgpt/beauty-contact-form-20261023']
-    paths: ['src/storefront/beauty*', 'src/storefront/consultation*', 'src/security/adminAuth.ts', 'tests/beauty*', 'tests/consultation*', 'supabase/migrations/*beauty*.sql', 'supabase/migrations/*consultation*.sql', 'docs/CONSULTATION_FORM_104_QA.md', '.github/workflows/beauty-supabase.yml']
+    paths: ['src/storefront/beauty*', 'src/storefront/consultation*', 'src/components/admin/Consultation*', 'src/components/public/ConsultationForm.tsx', 'scripts/test-consultation-*-browser.ts', 'src/security/adminAuth.ts', 'tests/beauty*', 'tests/consultation*', 'supabase/migrations/*.sql', 'supabase/legacy-migrations/*beauty*.sql', 'supabase/legacy-migrations/*consultation*.sql', 'docs/CONSULTATION_FORM_104_QA.md', '.github/workflows/beauty-supabase.yml']
 permissions:
   contents: read
 concurrency:
@@ -10,11 +10,11 @@ concurrency:
   cancel-in-progress: true
 jobs:
   beauty-stack:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: 24
           cache: npm
@@ -29,16 +29,16 @@ jobs:
           mkdir -p "$fixture"
           supabase init --workdir "$fixture"
           mkdir -p "$fixture/supabase/migrations"
-          cp tests/commerce-baseline.sql "$fixture/supabase/migrations/20261010000000_baseline.sql"
-          cp tests/commerce-supabase-access.sql "$fixture/supabase/migrations/20261010000001_access.sql"
-          cp supabase/migrations/20261011050519_explicit_data_api_grants.sql "$fixture/supabase/migrations/"
-          cp supabase/migrations/20261017220000_beauty_requests.sql "$fixture/supabase/migrations/"
-          cp supabase/migrations/20261017221000_beauty_retention.sql "$fixture/supabase/migrations/"
-          cp supabase/migrations/20261017230000_beauty_catalog_evaluations.sql "$fixture/supabase/migrations/"
-          cp supabase/migrations/*consultation*.sql "$fixture/supabase/migrations/"
+          cp supabase/migration.sql "$fixture/supabase/migrations/20260901000000_legacy_base.sql"
+          cp supabase/migration-sourcing.sql "$fixture/supabase/migrations/20260901000001_legacy_sourcing.sql"
+          cp tests/supabase-managed-rls-prerequisite.sql "$fixture/supabase/migrations/20260901000002_managed_rls.sql"
+          cp supabase/migrations/*.sql "$fixture/supabase/migrations/"
       - name: Start real local Auth and PostgREST
         run: |
-          supabase start --workdir "$RUNNER_TEMP/victoriosa-beauty-ci" -x studio,imgproxy,realtime,storage-api,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit > "$RUNNER_TEMP/beauty-start.log" 2>&1
+          if ! supabase start --workdir "$RUNNER_TEMP/victoriosa-beauty-ci" -x studio,imgproxy,realtime,storage-api,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit > "$RUNNER_TEMP/beauty-start.log" 2>&1; then
+            node scripts/print-supabase-start-failure.mjs "$RUNNER_TEMP/beauty-start.log"
+            exit 1
+          fi
           supabase status --workdir "$RUNNER_TEMP/victoriosa-beauty-ci" -o json > "$RUNNER_TEMP/beauty-status.json"
       - name: Test actual Beauty integration
         run: |
@@ -50,6 +50,24 @@ jobs:
         env:
           BEAUTY_SYNTHETIC_SUPABASE: 'true'
           SUPABASE_LOCAL_STATUS_FILE: ${{ runner.temp }}/beauty-status.json
+      - name: Install isolated browser runtime
+        run: |
+          mkdir -p "$RUNNER_TEMP/consultation-browser"
+          cd "$RUNNER_TEMP/consultation-browser"
+          npm install playwright@1.56.1 --no-save --no-package-lock --ignore-scripts --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Synthetic form and laboratory browser journey
+        run: |
+          CONSULTATION_PLAYWRIGHT_MODULE="file://$RUNNER_TEMP/consultation-browser/node_modules/playwright/index.mjs" node --import tsx scripts/test-consultation-form-browser.ts
+          CONSULTATION_PLAYWRIGHT_MODULE="file://$RUNNER_TEMP/consultation-browser/node_modules/playwright/index.mjs" node --import tsx scripts/test-consultation-lab-browser.ts
+        env:
+          BEAUTY_SYNTHETIC_SUPABASE: 'true'
+          SUPABASE_LOCAL_STATUS_FILE: ${{ runner.temp }}/beauty-status.json
+      - name: Retain synthetic screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: consultation-lab-synthetic
+          path: output/consultation-lab/*.png
       - name: Stop only disposable stack
         if: always()
         run: supabase stop --workdir "$RUNNER_TEMP/victoriosa-beauty-ci" --no-backup

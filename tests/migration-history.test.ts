@@ -1,57 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 
-const canonical = readFileSync('tests/hosted-migrations-canonical.sql', 'utf8');
-const hosted = [...canonical.matchAll(/^-- BEGIN (\d{14})_([^\r\n]+)$/gm)]
-  .map(([, version, name]) => ({ version, name }));
-const local = readdirSync('supabase/migrations')
-  .filter(file => /^\d{14}_.+\.sql$/.test(file))
-  .map(file => ({ version: file.slice(0, 14), name: file.slice(15, -4) }))
-  .sort((a, b) => a.version.localeCompare(b.version));
-
-test('migration history must be reconciled before any hosted db push', () => {
-  const hostedVersions = new Set(hosted.map(migration => migration.version));
-  const localVersions = new Set(local.map(migration => migration.version));
-  assert.equal(hosted.length, 21, 'The pinned hosted catalog changed; review it before planning a push');
-  assert.equal(local.length, 39, 'The local migration directory changed; review the mapping');
-  assert.equal(hostedVersions.size, hosted.length, 'Hosted versions must be unique');
-  assert.equal(localVersions.size, local.length, 'Local versions must be unique');
-
-  const hostedLatest = hosted.at(-1)!.version;
-  const legacyLocal = local.filter(migration => migration.version <= hostedLatest);
-  const forwardLocal = local.filter(migration => migration.version > hostedLatest);
-  const unmatchedLegacy = legacyLocal.filter(migration => !hostedVersions.has(migration.version));
-  const unmatchedHosted = hosted.filter(migration => !localVersions.has(migration.version));
-
-  assert.equal(legacyLocal.length, 18);
-  assert.equal(unmatchedLegacy.length, 18,
-    'Legacy files with different versions cannot be passed directly to the hosted CLI');
-  assert.equal(unmatchedHosted.length, 21);
-  assert.deepEqual(forwardLocal.map(migration => migration.name), [
-    'atomic_checkout',
-    'payment_reference_recovery',
-    'product_stock_after_publication',
-    'explicit_data_api_grants',
-    'revoke_catalog_archive_public_execute',
-    'provider_oauth_token_ciphertext_compat',
-    'beauty_requests',
-    'beauty_retention',
-    'beauty_catalog_evaluations',
-    'beauty_foreign_key_indexes',
-    'consultation_private_outbox',
-    'consultation_reply_outbox',
-    'consultation_case_states',
-    'consultation_automatic_reply_audit',
-    'consultation_read_states',
-    'consultation_intelligence_shadow',
-    'consultation_optional_ai_consent',
-    'consultation_ai_generation_budget',
-    'consultation_ai_refresh_attempts',
-    'consultation_resend_vault',
-    'consultation_shadow_record',
-  ]);
-  // This inventories a mismatch, not the exact behavior of Supabase CLI against a linked project.
-  // It intentionally provides no operation that repairs history or applies migrations.
+const snapshot = JSON.parse(readFileSync('tests/fixtures/remote-migrations-20261104.json','utf8'));
+const files = readdirSync('supabase/migrations').filter(f => /^\d{14}_.+\.sql$/.test(f)).sort();
+const normalize = (sql: string) => sql.replace(/\r\n/g,'\n');
+test('active history exactly matches the read-only production snapshot, without pending legacy proposals',()=>{
+  assert.equal(snapshot.projectRef,'jfjzpwlrhzqbcrvqxhzf');
+  assert.equal(snapshot.migrations.length,41);
+  assert.deepEqual(files,snapshot.migrations.map((m:any)=>`${m.version}_${m.name}.sql`));
+  assert.equal(new Set(snapshot.migrations.map((m:any)=>m.version)).size,41);
+  for(const m of snapshot.migrations){
+    const actual=normalize(readFileSync(`supabase/migrations/${m.version}_${m.name}.sql`,'utf8'));
+    assert.equal(createHash('sha256').update(actual).digest('hex'),m.sha256,m.name+' must preserve executed SQL');
+  }
 });
-
+test('original local migrations remain intact as isolated regression fixtures, outside deployment discovery',()=>{
+  const legacy=readdirSync('supabase/legacy-migrations').filter(f=>f.endsWith('.sql'));
+  assert.equal(legacy.length,41);
+  assert.ok(legacy.includes('20261010010000_atomic_checkout.sql'));
+  assert.ok(!files.some(f=>f.includes('atomic_checkout')),'unapplied commercial proposals must never become pending production migrations');
+});

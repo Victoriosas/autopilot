@@ -7,12 +7,13 @@ import { consultationSupabaseStore, type ConsultationStore } from './consultatio
 import { createConsultationDelivery, type ConsultationDelivery } from './consultationDelivery';
 import { draftConsultationResponse } from './consultationResponseAgents';
 import { camelRunConsultationDraft } from './consultationCamelRun';
-import { maybeSendAutomaticConsultationReply } from './consultationAutoReply';
 import { approveAndSendConsultationReply } from './consultationReplyDelivery';
 import { beautyServerDatabase } from './beautyDatabase';
 import { consultationReadStore, type ConsultationReadStore } from './consultationReading';
 import { registerConsultationIntelligence,type IntelligenceRouterDependencies } from './consultationIntelligenceRouter';
 import { runConsultationIntelligence } from './consultationIntelligenceStore';
+import { registerConsultationLab } from './consultationLabRouter';
+import type { ServiceKnowledgeStore } from './consultationServiceKnowledge';
 
 export function consultationAddress(req: { ip?: string; get(name: string): string | undefined }, vercel = process.env.VERCEL === '1'): string {
   // Vercel overwrites this header. Outside its runtime, use only Express's peer IP.
@@ -20,7 +21,7 @@ export function consultationAddress(req: { ip?: string; get(name: string): strin
   return address && isIP(address) ? address : req.ip || 'unknown';
 }
 
-export function createConsultationRouter(deps: { store?: ConsultationStore; reads?: ConsultationReadStore; intelligence?:IntelligenceRouterDependencies; delivery?: ConsultationDelivery; enabled?: () => boolean; origin?: () => string | undefined; abuseKey?: () => string | undefined; auth?: RequestHandler } = {}) {
+export function createConsultationRouter(deps: { store?: ConsultationStore; reads?: ConsultationReadStore; knowledge?: ServiceKnowledgeStore; intelligence?:IntelligenceRouterDependencies; delivery?: ConsultationDelivery; enabled?: () => boolean; origin?: () => string | undefined; abuseKey?: () => string | undefined; auth?: RequestHandler } = {}) {
   const router = Router(), store = deps.store || consultationSupabaseStore, delivery = deps.delivery || createConsultationDelivery();
   const reads = deps.reads || consultationReadStore;
   const enabled = deps.enabled || (() => process.env.CONSULTATION_REQUESTS_ENABLED === 'true' && process.env.CONSULTATION_PRIVACY_APPROVED === 'true' && process.env.CONSULTATION_RETENTION_READY === 'true');
@@ -169,9 +170,7 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; read
         if (claim.state !== 'send' || !claim.lease) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
         const providerId = await delivery.send(input.id);
         if (!await store.finish(input.id, claim.lease, providerId)) return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' });
-        // Only a newly accepted form with confirmed owner notification may trigger auto-acknowledgement.
-        // Failure never causes form resubmission or a second automatic send attempt.
-        try { await maybeSendAutomaticConsultationReply(input); } catch { /* Fail closed; never retry an uncertain email. */ }
+        // Recording a consultation and notifying its owner never authorizes a customer reply.
         // Supabase Edge: consented consultations receive a deterministic, internal shadow analysis.
         // No remote model, customer reply or notification is triggered. Victoria reviews the draft.
         if (process.env.AUTOPILOT_RUNTIME === 'supabase-edge' && process.env.CONSULTATION_PRIVACY_APPROVED === 'true' && input.aiConsent === true) {
@@ -187,6 +186,7 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; read
     } catch { return res.status(503).json({ error: 'CONSULTATION_UNAVAILABLE' }); }
   });
   registerConsultationIntelligence(router,deps.auth||requireSupabaseAdminAuth,store,allowedOrigin,deps.intelligence);
+  registerConsultationLab(router,deps.auth||requireSupabaseAdminAuth,allowedOrigin,deps.knowledge);
   const invalidJson: ErrorRequestHandler = (error, _req, res, _next) => res.status(error?.type === 'entity.too.large' ? 413 : 400).json({ error: error?.type === 'entity.too.large' ? 'CONSULTATION_INPUT_TOO_LARGE' : 'CONSULTATION_INPUT_INVALID' });
   router.use(invalidJson);
   return router;

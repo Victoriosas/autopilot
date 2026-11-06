@@ -1,4 +1,71 @@
-# Actualización vigente · 31/10/2026 · America/Montevideo
+# Continuidad · smoke real aprobado 06/11/2026
+
+- F3: PR192 y PR193 FUSIONADAS, main 458146239f383a630d81737cf40602b9b966ae94. verify 411 pasadas, una omitida, cero fallos, tipos/builds correctos; CI validate, postgres, navegador y seguridad aprobados en ambos SHAs de cambio. Sin despliegue manual ni activación de clientes.
+- EJECUTADO: https://github.com/Victoriosas/autopilot/actions/runs/42147359356, modo smoke: 3/3 casos críticos (EV001–003), 6/6 controles, cero warnings y RUN_ERROR. El ajuste de maxResponses=2 permitió completar esta muestra dentro del mismo spendLimit. Artefacto saneado 13470623034.
+- Reserva máxima US$0,30; coste reportado/reservado US$0,0134, no factura total comprobada. La corrida diagnóstica previa 42145898810 (PR192) tuvo 0/3 y 5/6, cuatro TURN_LIMIT y coste reportado/reservado 0,087. Sin recargas.
+- Gate general sigue BLOQUEADO: coverage 3/32, complete=false, gate_ok=false, full_evaluation_passed=false. El exit1 de Actions es intencional por cobertura parcial; no confundirlo con fallo de los nueve ensayos. Ocho casos finales intactos, sin clientes ni correos.
+- Siguiente paso F3: evaluar desarrollo completo (32 + seis controles, reserva máxima US$2,04) y revisar fallos antes de usar los ocho finales. No habilitar atención automática por este smoke. PC no inspeccionada ni declarada sincronizada.
+
+# Continuidad · reparación acotada de esquema 06/11/2026
+
+- F3, PR192 integrada: main 3aea1056da7bcd0f8cb691a414b2f855abd6b27b. Smoke 42145898810: 0/3 casos, 5/6 controles; tres casos fallaron CAMELRUN_FAILED_TURN_LIMIT. Gate false. Reserva US$0,30; coste 0,087 reportado/reservado. Ocho finales intactos; sin producción.
+- El diagnóstico terminal ya distingue errores. La documentación oficial de salida estructurada indica que una llamada final_output inválida requiere otra respuesta para corregirse; maxResponses=1 impedía esa reparación. Se permite una sola respuesta adicional en la MISMA ejecución (maxResponses=2), sin reintentar POST, ampliar maxOutputTokens, maxSeconds ni spendLimit=0,02 por etapa. El preflight de catálogo conserva reserva de cinco respuestas acotadas y margen runtime.
+- No se modifican prompts, validadores ni casos congelados. Repetición smoke pendiente de CI; no realizar full mientras falle desarrollo. Rollback: revertir este ajuste.
+
+# Continuidad · finalización camelRun 06/11/2026
+
+- F3, base main 8f11d673b302fcb2d0e0d96a4a42033a3093f163 (PR191 integrada). Smoke real previo 42144801655: 2/3 casos y 3/6 controles; los cuatro fallos son RUN_ERROR, no evidencia concluyente de fallo semántico. Gate false, ocho finales intactos. Reserva US$0,30; cost_usd 0,0875 reportado o reservado, no factura exacta.
+- Corrección mínima: distinguir status failed de state completed (finalizado no equivale a éxito); registrar solo códigos de fallo de lista cerrada; conservar códigos saneados también en controles. Si running, consultar el mismo id con GET wait=25 hasta dos veces, sin otro POST ni relanzar inferencias; origen fijo, ids validados y redirecciones bloqueadas. Límites de modelo y presupuestos sin ampliación.
+- Pruebas cubren running→running→completed, pendiente persistente, failed con state completed, errores desconocidos/privacidad, IDs maliciosos o cambiados y error de consulta. Corpus congelado y validadores semánticos intactos. Sin cambio de prompts, agentes persistentes ni producción. CI y repetición real acotada pendientes de esta PR.
+
+# Continuidad · contratos camelRun 05/11/2026
+
+- F3, base main `4f14e00522b4874ebe5e8daea75924e63ff87d48`. Evaluación real autorizada con crédito existente: run GitHub Actions `42131213750`, modelo `anthropic/claude-haiku-5-5`: 1/32 desarrollo, 0/24 críticos, 6/6 controles. Ocho finales preservados; gate false. Coste reportado por evaluador US$0,0446 (semántica reported_or_reserved_upper_bound); saldo UI de US$4,59 a US$4,54, sin recargas.
+- Causa parcial comprobada: evaluador pedía JSON en texto y no enviaba output.schema. Nuevo contrato por comprensión/redacción/guardián, lectura de output estructurado (incluido outcome.result.output), rechazo si falta, sin confiar en prosa alternativa. Validadores semánticos y corpus congelado sin modificaciones.
+- Prompts versionados aclaran alternativas/objetos y escalamiento obligatorio al requerirse Victoria o faltar evidencia. No se reduce la revisión humana ni se habilitan mensajes o herramientas de clientes.
+- Workflow manual conserva main y run_attempt=1; añade smoke predeterminado (tres casos + seis controles, reserva US$0,30), development (US$2,04) y full (US$2,52). Smoke parcial no acredita cobertura completa ni abre finales.
+- Validación local: verify 408 aprobadas, una omitida, cero fallos; tipos y builds, rutas/HTML y secretos correctos. CI final y nueva inferencia pendientes. Sin modificación de agentes persistentes, Supabase, DNS, credenciales ni flags productivos.
+
+# Continuidad · falsos positivos de evidencia aprobada 05/11/2026
+
+- F2/F3, base `8f1afe45035358b2accbee735c11061fef45652f`; rama `fix/approved-evidence-disclaimers-20261105`. Chrome autenticado verificó 17 descripciones aprobadas, cero fichas faltantes/borradores/vencidas y cero tarifas aprobadas. El propietario comunicó la conformidad de Victoria y autorizó registrar las aprobaciones. Protocolos, tiempos y tarifas sin confirmar conservan sus límites.
+- La simulación productiva general sigue bloqueada por `EVIDENCE_POLICY_BLOCK` y `EVIDENCE_INSUFFICIENT`. Causa reproducida en código: el filtro considera inseguras menciones a «precio» aunque se confirme personalmente y negaciones explícitas de garantías. No es un fallo de persistencia ni prueba de funcionamiento de un LLM.
+- Corrección propuesta: excepciones únicamente para ocho avisos completos y exactos, conservando intactos los fragmentos citados. No hay reconocimiento amplio de negaciones ni exclusión de frases arbitrarias. Todo el contenido restante mantiene el filtro previo. Política v3 invalida aprobaciones de borrador anteriores; revisión humana y `no_send` preservados.
+- Validación local: 55 pruebas focalizadas; `npm run verify` completo (406 aprobadas, una omitida, cero fallos), tipos y ambas compilaciones; comprobación de rutas/HTML y escáner de secretos aprobados. Dry-run del corpus: 32/32 casos de desarrollo y seis controles enumerados; no es evaluación de modelos reales. Los casos congelados no se modificaron.
+- Sin cambios en Supabase, envíos, modelos remotos, credenciales, DNS o despliegues. CI del SHA final y despliegue siguen pendientes. El asistente productivo figuraba `degraded`, sin ejecuciones verificadas; no acreditar operación 24/7.
+
+# Continuidad · auditoría de historial 04/11/2026
+
+- Base Git/main productiva contrastada: `81336f2ab3cf4c4ed28ce7c100ad16b7d4355756`. Rama `codex/preview-history-audit-20261104`; sin cambios alojados.
+- Supabase Preview reproduce `Remote migration versions not found in local migrations directory`. Se recuperaron en lectura 41 SQL ejecutados; solo tres versiones coincidían. Directorio activo reconciliado con hashes; originales locales conservados como fixtures en `supabase/legacy-migrations`.
+- CLI real sobre clúster loopback desechable: error original reproducido; con historial recuperado cero pendientes en dry-run, sin cambiar historial/esquema. Replay histórico 2/2, Beauty/PostgreSQL 11/11, verify 399/399 y ambas compilaciones. Replay completo con pg_cron/Vault y Auth/PostgREST pendiente de CI `beauty-stack` del SHA final.
+- No se ejecutó SQL productivo, migration repair, db push real, correos o modelos. Seis propuestas comerciales no aplicadas quedan fuera del directorio activo. Runbook: `docs/SUPABASE_HISTORY_RECONCILIATION_20261104.md`.
+- Siguiente: revisar CI/Supabase Preview de la PR; luego auditar metadatos de consultas/cola y editor de fichas, sin leer expedientes ni repetir envíos reales.
+
+# Continuidad · fichas y permisos 04/11/2026
+
+- Base productiva `33f718e3e5894a2a459f5e279d5092be97774320`; rama `codex/consultation-knowledge-security-20261104`. Solo metadatos remotos: cuatro servicios, esquema privado de conocimiento ausente; RPC de limpieza comprueba administrador.
+- Nueva migración local `20261104041706_beauty_retention_private_rpc.sql`: implementación privilegiada privada, RPC público invoker compatible y RLS del conocimiento. Sin ejecución alojada ni limpieza real.
+- PostgreSQL desechable: 11/11; preserva cuatro servicios y agrega 17 borradores (21 filas), prueba ACL/guardas, aprobación, versiones, vencimiento y ausencia de tarifas en hechos IA. Clúster propio detenido. Inventario de migraciones 1/1. `npm run verify`: 399/399 y ambas compilaciones. CI final pendiente.
+- Runbook de instalación, verificación, contingencia y diseño del pipeline: `docs/CONSULTATION_KNOWLEDGE_INSTALL_20261104.md`. Instalación productiva y recepción humana requieren autorización/prueba independientes.
+- Formulario separado en PR #176. Su CI acreditó Auth/PostgREST; navegador inicialmente bloqueado por Ubuntu 26.04 incompatible con Playwright fijado. Se prepara runner Ubuntu 24.04.
+- camelRun no se ejecutó: la tarifa oficial cobra runtime/almacenamiento, aunque Gemma tenga modelo cero. Simulación y envío bloqueado preservados. Resend verificado por metadatos, sin correo nuevo. Módulos heredados conservados por consumidores activos.
+- Próximo: revisar CI `validate`, `postgres` y `beauty-stack` de los SHAs finales; sin merge ni despliegue manual. Tras aprobación específica, instalar conocimiento y permisos individualmente, reconciliando versiones remotas.
+
+# Continuidad · laboratorio sintético de consultas
+
+- Base verificada: main `e00680a448508b27946766cd972494c83c7296e0`. Rama `codex/consultation-synthetic-ai-lab`.
+- Implementado Probar IA (simulación), reutilizando el analizador sombra. Solo seis casos sintéticos fijados; no accede a consultas reales ni permite envío. Agentes originales sin modificaciones.
+- Conocimiento central privado y versionado vinculado a beauty_services. Migración preparada para 17 nombres, sin descripciones ni tarifas inventadas; aprobaciones de IA, precio y publicación separadas. No aplicada remotamente. Editor para Victoria y filtros deterministas de seguridad.
+- Validación: npm run verify (397 aprobadas, 1 omitida); Supabase local Auth/PostgREST (8 aprobadas); PostgreSQL consultas/retención (12 aprobadas). Navegador: formulario, replay idempotente, ficha privada y borrador simulado; Resend interceptado, cero correos reales. Capturas sintéticas en output/consultation-lab. Detalle reproducible: docs/CONSULTATION_LAB.md.
+- No confundir simulación con camelRun operativo: conexión remota NO implementada/validada. Faltan acceso/API, credencial y contrato verificable por agente con coste total cero. El laboratorio rechaza proveedores remotos; no usar generadores históricos pagos. Coste externo ejecutado US$0; tokens no inventados.
+- Producción: el usuario informa Vercel; no se verificó en vivo por bloqueo de red. Se reprodujo localmente que enabled=true sin privacyVersion/retentionDays no habilita el formulario; causa real pendiente.
+- Bloqueos externos: API GitHub prohibida por política de red; PR/CI requieren ese acceso. Dominios api.github.com, victoriosas.online y run.camelai.com y requisito CAMELAI_API_KEY guardados en borrador del entorno, sin cambiar producción. Verificar estado de rama/PR antes de retomar.
+- Siguiente acción: completar acceso, contrato remoto y pruebas congeladas reales a coste total cero; crear PR en borrador y revisar validate/postgres/beauty-stack del SHA final. Sin merge, despliegue, DNS, envíos ni migraciones alojadas.
+
+Las notas históricas siguientes no sustituyen esta evidencia ni el contexto actual del usuario.
+
+# Actualización histórica · 31/10/2026 · America/Montevideo
 
 Cloudflare es alojamiento TEMPORAL por indicación del propietario; se prevé volver a Vercel. Conservar vercel.json, servidor Node, integraciones y configuración existente. No eliminar el proyecto Vercel ni trasladar bases de datos.
 
@@ -987,3 +1054,13 @@ Resend no autenticado y desactivado: OAuth expone Full access o Sending access; 
 - Evidencia: `npm run verify` 386/386, lint y builds OK. `scripts/e2e-clinical-experience.mjs` probado en Chrome a 390px y 1365px con catálogo 11+6, filtros, orientador, ruta tecnología, detalles, sin errores JS ni desbordamiento.
 - Bloqueo externo verificado 31/10/2026: `https://victoriosas.online/` y `/api/health` ambos HTTP 402; Vercel proyecto `autopilot` marca `live:false` pese a versiones preliminares READY. No intentar despliegue alternativo ni modificar facturación, DNS o cuenta sin resolverlo.
 - Vista local de la rama para revisión: `http://127.0.0.1:4184/`. No es un despliegue público. Capturas de QA permanecen solo en la PC.
+
+## 2026-11-04 · F2: experiencia privada de revisión, pendiente de CI productiva
+
+Se separó el editor/laboratorio de la bandeja de clientas mediante nueva pestaña `Fichas` en el hub privado, conservando `Consultas`, `Solicitudes`, `Servicios` y `Agentes`. La pantalla muestra el avance real de las 17 fichas privadas sin confundirlas con cuatro registros históricos; indica borradores, aprobación IA, caducidad y aprobación separada de tarifa sin revelar importes, y protege cambios sin guardar. Sigue requiriendo autorización real de Victoria para hechos profesionales. El laboratorio permanece sintético y ocultable, sin invocar proveedores.
+
+Trabajo aislado en `codex/f2-review-progress-20261104` desde `996f33b`, en worktree propio sobre E. Supabase productiva leída: 0 fichas aprobadas, sin mutación. Ver `docs/F2_REVISION_VICTORIA_17_TRATAMIENTOS_20261104.md`. Validación local: TypeScript correcto, 406/406 pruebas generales antes de separar pestañas, 7/7 pruebas focalizadas después, y prueba de Chrome aislado sin JS errors, validando guardado simulado, cambio descartado y cero aprobaciones IA. Revalidar `npm run verify` completo sobre SHA final, los jobs CI y el deploy antes de declarar producción.
+
+Issue #180 reinterpretado el 04/11: `Supabase Preview` en `main` ya es success y enlaza al Supabase principal; en las PR históricas sigue `skipped` con URL del proyecto secundario. Incidencia abierta y documentada, sin ramas preview pagas, DNS ni SQL. No se desactiva ni se da por aprobada la protección de PR.
+
+Control añadido en revisión de seguridad: la nueva pestaña Fichas utiliza una clave de montaje ligada a `sessionKey`, como la bandeja de consultas, para restablecer datos privados del formulario al cambiar la identidad administrativa. Validación final deberá realizarse sobre el commit posterior a esta corrección.

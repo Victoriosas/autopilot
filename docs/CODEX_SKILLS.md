@@ -11,6 +11,7 @@ Estas habilidades viven en `.agents/skills/<nombre>/SKILL.md` y funcionan como i
 | Privacidad, Auth, RLS y guardas | `$victoriosas-privacidad-seguridad` |
 | Ahorro de tokens y trabajo continuo | `$victoriosas-codex-ahorro-tokens` |
 | Auditar seis agentes y sus ejecuciones | `$victoriosas-autopilot-operational-audit` |
+| Mantener el norte, seleccionar la fase y sincronizar PC/cloud sin perder cambios | `$victoriosas-control-de-fases` |
 
 ## Cómo usarlas
 

@@ -6,6 +6,7 @@ import { ConsultationReadControl } from './ConsultationReadControl';
 import { ConsultationIntelligencePanel } from './ConsultationIntelligencePanel';
 import { ConsultationIntelligenceReport } from './ConsultationIntelligenceReport';
 import { consultationReplyStatus } from '../../storefront/consultationReplyStatus';
+import { consultationEmailAvailable } from '../../storefront/consultationRequest';
 
 const labels = Object.fromEntries(serviceGroups.flatMap(group => group.services.map(name => [serviceSlug(name), name])));
 export function ConsultationInbox() {
@@ -117,7 +118,8 @@ export function ConsultationInbox() {
   }
   async function approve(id: string) {
     const draft = drafts[id];
-    if (!draft || draft.channel !== 'email' || !consultationReplyStatus(replyHistory[id]).canApprove) return;
+    const record = rows.find(row => row.id === id);
+    if (!draft || !record || !consultationEmailAvailable(record.input) || !consultationReplyStatus(replyHistory[id]).canApprove) return;
     if (!window.confirm('¿Aprobás enviar esta respuesta por correo? El envío no se puede deshacer.')) return;
     setError(''); setBusy(true);
     try {
@@ -159,7 +161,7 @@ export function ConsultationInbox() {
       <h3 className="text-lg font-semibold">{row.input.fullName} · {labels[row.input.service] || 'Orientación'}</h3>
       <ConsultationReadControl readAt={readStates === null ? undefined : readStates[row.id] ?? null} busy={busy} onChange={read => void saveReading(row.id, read)} />
       <p>Referencia: {row.id}</p><p>Celular: {row.input.phone}</p>
-      {row.input.email && <p>Email: {row.input.email}</p>}
+      {row.input.email && <p>Correo disponible para respuesta supervisada: {row.input.email}</p>}
       {row.input.age !== null && <p>Edad informada: {row.input.age}</p>}
       <p>Preferencia: {({ whatsapp: 'WhatsApp', email: 'Correo electrónico', phone: 'Llamada' })[row.input.responseChannel]}</p>
       <p className="mt-2 whitespace-pre-wrap rounded bg-neutral-800 p-3"><strong>Mensaje recibido:</strong> {row.input.message}</p>
@@ -177,10 +179,15 @@ export function ConsultationInbox() {
         <p>Prioridad: {drafts[row.id].priority} · Canal: {drafts[row.id].channel}</p>
         <p className="font-semibold">{drafts[row.id].subject}</p>
         <p className="whitespace-pre-wrap">{drafts[row.id].text}</p>
-        {drafts[row.id].channel === 'email' ? <button className="mt-3 rounded border border-emerald-600 px-3 py-2" disabled={busy || !consultationReplyStatus(replyHistory[row.id]).canApprove} onClick={() => void approve(row.id)}>Aprobar y enviar por Resend</button> : drafts[row.id].channel === 'whatsapp' ? <div className="mt-3 space-y-2">
-          <p>WhatsApp: respuesta preparada para revisión manual. El envío es manual y no necesita integraciones externas.</p>
+        {drafts[row.id].channel === 'whatsapp' && <div className="mt-3 space-y-2">
+          <p>WhatsApp es el contacto preferido. El envío en ese canal es manual.</p>
           <button className="rounded border border-sky-500 px-3 py-2" disabled={busy} onClick={() => { void navigator.clipboard.writeText(drafts[row.id].text).then(() => setReplyState(previous => ({ ...previous, [row.id]: 'Borrador copiado. Abrí el chat correcto en WhatsApp y revisá el destinatario antes de enviarlo.' }))).catch(() => setReplyState(previous => ({ ...previous, [row.id]: 'No se pudo copiar la respuesta.' }))); }}>Copiar borrador de WhatsApp</button>
-        </div> : <p>La clienta prefiere una llamada. Coordiná el contacto personalmente.</p>}
+        </div>}
+        {drafts[row.id].channel === 'phone' && <p>La persona prefiere una llamada. Coordiná el contacto personalmente.</p>}
+        {consultationEmailAvailable(row.input) ? <div className="mt-3 space-y-2">
+          {row.input.responseChannel !== 'email' && <p>También podés responder por email porque la persona dejó su correo. Su preferencia sigue siendo {row.input.responseChannel === 'whatsapp' ? 'WhatsApp' : 'llamada'}.</p>}
+          <button className="rounded border border-emerald-600 px-3 py-2" disabled={busy || !consultationReplyStatus(replyHistory[row.id]).canApprove} onClick={() => void approve(row.id)}>Aprobar y enviar por correo (Resend)</button>
+        </div> : <p>No se proporcionó un email válido. La respuesta por correo no está disponible.</p>}
       </div>}
       {replyState[row.id] && <p role="status">{replyState[row.id]}</p>}
       <ConsultationIntelligencePanel requestId={row.id} enabled={intelligenceEnabled}/>

@@ -41,7 +41,8 @@ export function ConsultationForm() {
     const timer = window.setTimeout(() => abort.abort(), 12000);
     setReady(false);
     setAvailability('checking');
-    fetch(endpoint + '/config', { credentials: 'omit', cache: 'no-store', signal: abort.signal })
+    // Keep same-origin edge clearance cookies; never send credentials cross-origin.
+    fetch(endpoint + '/config', { credentials: 'same-origin', cache: 'no-store', signal: abort.signal })
       .then(async response => {
         const config = response.ok ? await response.json() : null;
         if (!active) return;
@@ -72,7 +73,7 @@ export function ConsultationForm() {
     } catch { setResult('Revisá los campos y el consentimiento. Usá solo texto y un celular de 8 a 15 dígitos.'); return; }
     busy.current = true; setPending(true); setLocked(true); setResult('');
     try {
-      const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'omit', signal: AbortSignal.timeout(20000), body: JSON.stringify(attempt.current) });
+      const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', signal: AbortSignal.timeout(20000), body: JSON.stringify(attempt.current) });
       const receipt = await response.json().catch(() => null);
       if (response.status === 202 && receipt?.id === attempt.current.id && receipt.status === 'accepted') {
         attempt.current = null; setSent(true); setResult('Tu consulta quedó registrada. La atención se coordina personalmente; esto no confirma una reserva.');
@@ -111,11 +112,19 @@ export function ConsultationForm() {
           <div className="beauty-consultation-grid">
             <label>Nombre y apellido *<input id="consultation-name" name="fullName" required maxLength={120} autoComplete="name" /></label>
             <label>Celular *<input name="phone" type="tel" required minLength={8} maxLength={25} autoComplete="tel" aria-describedby="consultation-phone-help" /></label>
-            <label>Correo electrónico {channel === 'email' ? '*' : '(opcional)'}<input name="email" type="email" required={channel === 'email'} maxLength={254} autoComplete="email" /></label>
+            <label>Correo electrónico {channel === 'email' ? '*' : '(opcional)'}<input name="email" type="email" required={channel === 'email'} maxLength={254} autoComplete="email" aria-describedby="consultation-email-help" /></label>
             <label>Edad (opcional)<input name="age" type="number" min="0" max="120" step="1" /></label>
           </div>
           <p id="consultation-phone-help" className="beauty-small">Celular de 8 a 15 dígitos. Podés incluir el código de país.</p>
-          <label>Servicio que te interesa<select value={service} onChange={event => setService(event.target.value)}>{choices.map(choice => <option key={choice.id} value={choice.id}>{choice.name}</option>)}</select></label>
+          <p id="consultation-email-help" className="beauty-small">Si dejás tu correo, Victoria también podrá responderte por email aunque prefieras WhatsApp o llamada. Tu preferencia se conserva. No se utiliza para campañas.</p>
+          <label>Servicio que te interesa
+            <select name="service" value={service} onChange={event => setService(event.target.value)}>
+              <option value="orientacion">Quiero orientación</option>
+              {serviceGroups.map(group => <optgroup key={group.id} label={group.title}>{group.services.map(name =>
+                <option key={serviceSlug(name)} value={serviceSlug(name)}>{name}</option>
+              )}</optgroup>)}
+            </select>
+          </label>
           <label>¿Qué te gustaría consultar? *<textarea name="message" required rows={4} maxLength={600} defaultValue={consultationContext().message} /></label>
           <fieldset><legend>¿Cómo preferís que te contactemos?</legend>{([['whatsapp', 'WhatsApp'], ['email', 'Correo electrónico'], ['phone', 'Llamada']] as const).map(([value, label]) => <label className="beauty-consultation-radio" key={value}><input type="radio" name="channel" value={value} checked={channel === value} onChange={() => setChannel(value)} />{label}</label>)}</fieldset>
           <label className="beauty-consultation-consent"><input name="consent" type="checkbox" value="yes" required /><span>Acepto que Victoriosas use estos datos para responder esta consulta, según la <a href="/privacidad">política de privacidad</a>. No me suscribe a campañas. La atención humana está disponible aunque no autorices IA.</span></label>

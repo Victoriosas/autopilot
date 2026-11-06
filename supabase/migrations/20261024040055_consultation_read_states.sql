@@ -20,3 +20,4 @@ revoke all on public.consultation_read_metrics from public, anon, authenticated;
 grant select on public.consultation_read_metrics to service_role;
 comment on table public.consultation_read_states is 'Shared read marker set explicitly by verified administrators; deleted with the parent consultation';
 commit;
+

@@ -10,8 +10,8 @@ const admin='11111111-1111-4111-8111-111111111111',practitioner='22222222-2222-4
 const actor=(uid:string)=>`set role authenticated;set request.jwt.claim.sub='${uid}';`;
 test('Beauty catalog and isolated professional evaluations: real PostgreSQL',{timeout:120000},async t=>{
  await sql(`create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to authenticated;grant execute on function auth.uid() to authenticated;create table profiles(id uuid primary key,role text);insert into profiles values('${admin}','admin'),('${practitioner}','customer'),('${other}','customer');grant select on profiles to authenticated;`);
- await sql(readFileSync('supabase/migrations/20261017220000_beauty_requests.sql','utf8'));
- await sql(readFileSync('supabase/migrations/20261017230000_beauty_catalog_evaluations.sql','utf8'));
+ await sql(readFileSync('supabase/legacy-migrations/20261017220000_beauty_requests.sql','utf8'));
+ await sql(readFileSync('supabase/legacy-migrations/20261017230000_beauty_catalog_evaluations.sql','utf8'));
  await t.test('database owner publication gate cannot be bypassed by admin or service role',async()=>{
   await assert.rejects(sql(`${actor(admin)}update beauty_services set publication_status='published',version=2 where id='facial'`),/BEAUTY_PUBLICATION_DISABLED/);
   await assert.rejects(sql(`${actor(admin)}update beauty_publication_control set enabled=true`),/permission denied/);
