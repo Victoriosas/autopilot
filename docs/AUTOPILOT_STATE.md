@@ -1,3 +1,11 @@
+# Continuidad · contratos camelRun 05/11/2026
+
+- F3, base main `4f14e00522b4874ebe5e8daea75924e63ff87d48`. Evaluación real autorizada con crédito existente: run GitHub Actions `42131213750`, modelo `anthropic/claude-haiku-5-5`: 1/32 desarrollo, 0/24 críticos, 6/6 controles. Ocho finales preservados; gate false. Coste reportado por evaluador US$0,0446 (semántica reported_or_reserved_upper_bound); saldo UI de US$4,59 a US$4,54, sin recargas.
+- Causa parcial comprobada: evaluador pedía JSON en texto y no enviaba output.schema. Nuevo contrato por comprensión/redacción/guardián, lectura de output estructurado (incluido outcome.result.output), rechazo si falta, sin confiar en prosa alternativa. Validadores semánticos y corpus congelado sin modificaciones.
+- Prompts versionados aclaran alternativas/objetos y escalamiento obligatorio al requerirse Victoria o faltar evidencia. No se reduce la revisión humana ni se habilitan mensajes o herramientas de clientes.
+- Workflow manual conserva main y run_attempt=1; añade smoke predeterminado (tres casos + seis controles, reserva US$0,30), development (US$2,04) y full (US$2,52). Smoke parcial no acredita cobertura completa ni abre finales.
+- Validación local: verify 408 aprobadas, una omitida, cero fallos; tipos y builds, rutas/HTML y secretos correctos. CI final y nueva inferencia pendientes. Sin modificación de agentes persistentes, Supabase, DNS, credenciales ni flags productivos.
+
 # Continuidad · falsos positivos de evidencia aprobada 05/11/2026
 
 - F2/F3, base `8f1afe45035358b2accbee735c11061fef45652f`; rama `fix/approved-evidence-disclaimers-20261105`. Chrome autenticado verificó 17 descripciones aprobadas, cero fichas faltantes/borradores/vencidas y cero tarifas aprobadas. El propietario comunicó la conformidad de Victoria y autorizó registrar las aprobaciones. Protocolos, tiempos y tarifas sin confirmar conservan sus límites.
