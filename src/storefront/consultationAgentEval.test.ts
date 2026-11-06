@@ -100,7 +100,7 @@ test('cada etapa es una ejecución aislada y sin agente persistente', async () =
   const body = JSON.parse(seen[0].init.body);
   assert.equal(seen[0].url, 'https://run.camelai.com/v1/runs');
   assert.equal(body.systemPrompt, 'prompt'); assert.ok(body.spendLimit.usd <= 0.02); assert.equal(body.agent, undefined);
-  assert.equal(body.maxOutputTokens,2048);assert.equal(body.runLimits.maxResponses,1);assert.equal(body.thinkingLevel,'off');
+  assert.equal(body.maxOutputTokens,2048);assert.equal(body.runLimits.maxResponses,2);assert.equal(body.thinkingLevel,'off');
   assert.equal(seen[0].init.headers['Idempotency-Key'], 'victoriosas-eval-rid');
 });
 
@@ -122,7 +122,7 @@ test('structured output is required and prose cannot replace or override the pro
   assert.equal(body.codeMode, false);
   assert.equal(body.fileTools, false);
   assert.deepEqual(body.builtins, []);
-  assert.equal(body.runLimits.maxResponses, 1);
+  assert.equal(body.runLimits.maxResponses, 2);
   for (const output of [undefined, null, [], 'not an object']) {
     await assert.rejects(statelessRun((async()=>({ok:true,json:async()=>({status:'completed',output,text:JSON.stringify(accepted)})})) as any,
       'fixture','p',{},'missing-output',0.02,schema), /STRUCTURED_OUTPUT_MISSING/);

@@ -1,3 +1,9 @@
+# Continuidad · reparación acotada de esquema 06/11/2026
+
+- F3, PR192 integrada: main 3aea1056da7bcd0f8cb691a414b2f855abd6b27b. Smoke 42145898810: 0/3 casos, 5/6 controles; tres casos fallaron CAMELRUN_FAILED_TURN_LIMIT. Gate false. Reserva US$0,30; coste 0,087 reportado/reservado. Ocho finales intactos; sin producción.
+- El diagnóstico terminal ya distingue errores. La documentación oficial de salida estructurada indica que una llamada final_output inválida requiere otra respuesta para corregirse; maxResponses=1 impedía esa reparación. Se permite una sola respuesta adicional en la MISMA ejecución (maxResponses=2), sin reintentar POST, ampliar maxOutputTokens, maxSeconds ni spendLimit=0,02 por etapa. El preflight de catálogo conserva reserva de cinco respuestas acotadas y margen runtime.
+- No se modifican prompts, validadores ni casos congelados. Repetición smoke pendiente de CI; no realizar full mientras falle desarrollo. Rollback: revertir este ajuste.
+
 # Continuidad · finalización camelRun 06/11/2026
 
 - F3, base main 8f11d673b302fcb2d0e0d96a4a42033a3093f163 (PR191 integrada). Smoke real previo 42144801655: 2/3 casos y 3/6 controles; los cuatro fallos son RUN_ERROR, no evidencia concluyente de fallo semántico. Gate false, ocho finales intactos. Reserva US$0,30; cost_usd 0,0875 reportado o reservado, no factura exacta.
