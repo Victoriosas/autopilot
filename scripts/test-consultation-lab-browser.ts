@@ -100,7 +100,8 @@ try {
   assert.equal(replay.status,202);assert.equal(notifications,1);
   assert.equal(replies,0,'historical automatic flags cannot send a customer reply');
   const persisted=await caller.from('consultation_requests').select('id,input').eq('id',body.id);assert.equal(persisted.data!.length,1);
-  await page.getByText('Fichas privadas para Victoria',{exact:true}).click();
+  // The editor starts expanded; clicking its summary would hide the controls.
+  assert.equal(await page.getByRole('button',{name:'Cargar los 17 tratamientos',exact:true}).isVisible(),true);
   await page.getByRole('button',{name:'Cargar los 17 tratamientos',exact:true}).click();
   await page.getByLabel('Tratamiento',{exact:true}).selectOption('limpieza-profunda');
   const approvedDescription='Ficha sintética: información general revisada exclusivamente para esta prueba.';
@@ -110,7 +111,7 @@ try {
   await page.getByRole('button',{name:'Guardar versión privada',exact:true}).click();
   assert.equal((await knowledgeSaved).status(),200);
   await page.getByText('Nueva versión privada guardada.',{exact:false}).waitFor();
-  await page.getByText('Fichas privadas para Victoria',{exact:true}).click();
+  await page.getByText('Laboratorio de IA (solo simulación)',{exact:true}).click();
   const labButton=page.getByRole('button',{name:'Probar IA (simulación)',exact:true});
   const labResponse=page.waitForResponse((r:any)=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/beauty/inquiries/admin/lab');
   await labButton.click();const labReply=await labResponse;
