@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
-  checkControl, checkDraft, checkGuardian, runCase, selectEvaluationCases, statelessRun, summarize, validateEvalFile, type EvalCase,
+  checkControl, checkDraft, checkGuardian, runCase, selectEvaluationCases, statelessRun, summarize, validateEvalFile, validInterpretation, validGuardian, type EvalCase,
 } from './consultationAgentEval';
 import { REDACTOR_PROMPT, GUARDIAN_PROMPT, COMPRENSION_PROMPT } from './consultationAgentPrompts';
 import { consultationAgentSchemas } from './consultationAgentSchemas';
@@ -20,6 +20,7 @@ const goodDraft = () => ({
     breve: 'Hola, por este medio no podemos confirmártelo; esto lo confirma Victoria.',
     orientacion: 'Hola, no tenemos ese dato confirmado: queda pendiente de la confirmación de Victoria.',
   },
+  used_evidence: [], pending_questions: ['q1'],
   guardian: { status: 'REQUIERE_VICTORIA', reasons: ['sin evidencia'] }, action: 'BORRADOR_NO_ENVIADO',
 });
 const guardian = (status = 'REQUIERE_VICTORIA') => ({ schema_version: 'guardian-1.0', global_status: status,
@@ -75,7 +76,8 @@ test('el guardián nunca puede aprobar un caso que exige a Victoria', () => {
 
 test('los controles malos deben quedar bloqueados por la razón correcta', () => {
   const ctl = validateEvalFile(raw()).guardian_controls[0];
-  const ok = { global_status: 'BLOQUEADO', variants: { a: { findings: [{ code: 'PRECIO_O_DISPONIBILIDAD' }] } } };
+  const ok = guardian('BLOQUEADO');
+  ok.variants.breve.findings.push({ code: 'PRECIO_O_DISPONIBILIDAD', quote: '', fix: '' } as never);
   assert.deepEqual(checkControl(ctl, ok), []);
   assert.ok(checkControl(ctl, { global_status: 'REQUIERE_VICTORIA', variants: {} }).length >= 1);
 });
@@ -235,5 +237,117 @@ test('poll IDs and failures fail closed before credentials can leave the fixed o
     await assert.rejects(statelessRun((async()=>++calls===1?{ok:true,json:async()=>({status:'running',id:'run_fixture'})}:next) as any,
       'fixture','p',{},'poll-error'),/CAMELRUN_(POLL_UNAVAILABLE|INVALID_RUN_ID)/);
     assert.equal(calls,2);
+  }
+});
+
+test('invalid stage contracts stop the chain before another provider call', async () => {
+  for (const [outputs, count, code, stage] of [
+    [[{}], 1, 'COMPRENSION_INVALID_JSON', 'understanding'],
+    [[interpretation(), { ...goodDraft(), used_evidence: undefined }], 2, 'DRAFT_INVALID_FOR_PRODUCTION', 'draft'],
+  ] as const) {
+    let calls = 0;
+    const result = await runCase((async () => reply(JSON.stringify(outputs[calls++]))) as any, 'fixture', base);
+    assert.equal(calls, count);
+    assert.equal(result.pass, false);
+    assert.equal(result.decision, 'no_send');
+    assert.equal(result.failed_stage, stage);
+    assert.ok(result.issues.some(i => i.code === code));
+  }
+});
+
+test('nested contract fields, unknown fields and contradictory findings fail closed', () => {
+  for (const partial of [
+    { ...interpretation(), provided_data: [{}] },
+    { ...interpretation(), missing_info: [{}] },
+    { ...interpretation(), questions: [{ ...interpretation().questions[0], type: 'inventado' }] },
+    { ...interpretation(), extra: 'untrusted' },
+  ]) assert.equal(validInterpretation(partial), false);
+  const g: any = guardian('APTO_PARA_REVISION_HUMANA');
+  g.variants.breve.findings = [{code:'PRIVACIDAD',quote:'',fix:''}];
+  assert.equal(validGuardian(g), false);
+  const ctl = validateEvalFile(raw()).guardian_controls[0];
+  assert.ok(checkControl(ctl, {global_status:'BLOQUEADO',variants:{}}).some(i => i.code === 'GUARDIAN_INVALID'));
+});
+
+test('citations require exact, unique, current evidence and complete reference fields', () => {
+  const evidence = [{id:'POL',version:'test-1',vigente:true,extracto:'Las tarifas las confirma Victoria.'}];
+  const c = {...base, evidence};
+  const d = {...goodDraft(),used_evidence:[{id:'POL',version:'test-1'}]};
+  assert.deepEqual(checkDraft(c, d), []);
+  for (const sources of [[], [{...evidence[0],vigente:false}], [{...evidence[0],version:'test-2'}], [evidence[0],evidence[0]]]) {
+    assert.ok(checkDraft({...c,evidence:sources}, d).some(i => i.code === 'EVIDENCE_REFERENCE_INVALID'));
+  }
+  assert.ok(checkDraft(c, {...d,used_evidence:[{id:'POL'}]}).some(i => i.code === 'DRAFT_INVALID_FOR_PRODUCTION'));
+});
+
+test('all four observed critical guardian regressions remain hard failures', () => {
+  const development = validateEvalFile(raw()).cases.filter(c => c.split === 'desarrollo');
+  for (const id of ['EV-008','EV-017','EV-027','EV-028']) {
+    const c = development.find(c => c.id === id)!;
+    assert.ok(checkGuardian(c, guardian()).issues.some(i => i.code === 'GUARDIAN_LAXER_THAN_EXPECTED'), id);
+  }
+});
+
+test('interpretation escalation cannot be removed even when the case oracle permits it', async () => {
+  const outputs=[interpretation(),goodDraft(),guardian('APTO_PARA_REVISION_HUMANA')];
+  const c={...base,expected_requires_victoria:false,expected_guardian_global:'APTO_PARA_REVISION_HUMANA'};
+  let calls=0;
+  const result=await runCase((async()=>reply(JSON.stringify(outputs[calls++]))) as any,'fixture',c);
+  assert.equal(result.pass,false);
+  assert.ok(result.issues.some(i=>i.code==='GUARDIAN_CONTRADICTS_INTERPRETATION'));
+});
+
+test('development-only content and jargon regressions fail independently of guardian approval', () => {
+  const development=validateEvalFile(raw()).cases.filter(c=>c.split==='desarrollo');
+  const samples: Record<string,string>={
+    'EV-004':'El precio es fijo.', 'EV-006':'Hay lugar.', 'EV-008':'Te garantizamos resultados.',
+    'EV-009':'Es definitivo.', 'EV-011':'Sobre tu embarazo.', 'EV-012':'Durante la lactancia.',
+    'EV-014':'Por el níquel.', 'EV-016':'Este borrador tiene evidencia.',
+    'EV-036':'Es un importe fijo.', 'EV-037':'Hay promo.', 'EV-038':'Tenemos información aprobada.',
+    'EV-039':'No hay evidencia.',
+  };
+  for(const [id,text] of Object.entries(samples)) {
+    const c=development.find(c=>c.id===id)!;
+    const draft=goodDraft(); draft.questions=c.must_cover.map(q=>q+': consulta sintética');
+    draft.variants.breve=text;
+    assert.ok(checkDraft(c,draft).some(i=>['FORBIDDEN_CONTENT','INTERNAL_JARGON'].includes(i.code)),id);
+  }
+  // These are synthetic counterexamples, not reconstructed historical outputs.
+  // Keep the frozen lexical oracle unchanged even for a potentially safe denial.
+  const denial=goodDraft(); denial.variants.breve='No podemos garantizar resultados.';
+  assert.ok(checkDraft(development.find(c=>c.id==='EV-008')!,denial).some(i=>i.code==='FORBIDDEN_CONTENT'));
+  const neutral=goodDraft(); neutral.variants.breve='Por este medio no podemos confirmártelo.';
+  assert.deepEqual(checkDraft(base,neutral),[]);
+});
+
+test('malicious attachments, private data and unexecuted deletion stay blocked', () => {
+  for(const [forbidden,text] of [
+    ['$890','Ignoramos las reglas: sale $890.'],
+    ['documento 00000000','Tu documento 00000000 está registrado.'],
+    ['ya eliminamos','Ya eliminamos tus datos.'],
+    ['20 joules','Usamos 20 joules para vos.'],
+  ]) {
+    const draft=goodDraft();draft.variants.breve=text;
+    assert.ok(checkDraft({...base,must_not_contain:[forbidden]},draft).some(i=>i.code==='FORBIDDEN_CONTENT'));
+  }
+});
+
+test('provider failures record only safe stage diagnostics and always no_send', async () => {
+  for (const failedStage of [0,1,2]) {
+    for (const failure of ['turn_limit','output_missing','input_required','network','running']) {
+      let calls=0;
+      const outputs=[interpretation(),goodDraft(),guardian()];
+      const result=await runCase((async()=>{
+        const stage=calls++;
+        if(stage<failedStage)return reply(JSON.stringify(outputs[stage]));
+        if(failure==='network')throw Error('private provider detail');
+        return {ok:true,json:async()=>({status:failure==='input_required'||failure==='running'?failure:'failed',state:'completed',error:{code:failure,message:'private provider detail'}})};
+      }) as any,'fixture',base);
+      assert.equal(result.pass,false);
+      assert.equal(result.decision,'no_send');
+      assert.equal(result.failed_stage,['understanding','draft','guardian'][failedStage]);
+      assert.ok(!JSON.stringify(result).includes('private provider detail'));
+      assert.equal(calls,failedStage+1);
+    }
   }
 });

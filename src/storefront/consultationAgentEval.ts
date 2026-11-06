@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { validCamelRunDraft } from './consultationCamelRun';
 import { COMPRENSION_PROMPT, GUARDIAN_PROMPT, REDACTOR_PROMPT } from './consultationAgentPrompts';
 import { boundedModelJSON } from './consultationModelGateway';
-import { consultationAgentSchemas } from './consultationAgentSchemas';
+import { consultationAgentSchemas, matchesAgentSchema } from './consultationAgentSchemas';
 export const EVAL_MODEL = 'anthropic/claude-haiku-5-5';
 
 export type Evidence = { id: string; version: string; vigente: boolean; extracto: string };
@@ -69,30 +69,34 @@ export function validateEvalFile(file: any): EvalFile {
   return file as EvalFile;
 }
 
-const strings = (v: unknown): v is string[] => Array.isArray(v) && v.length <= 80 && v.every(s => typeof s === 'string' && s.length <= 4000);
 export function validInterpretation(v: any): boolean {
-  return !!v && v.schema_version === 'comprension-1.0' && ['es','en','otro'].includes(v.language) &&
-    v.intents && typeof v.intents.primary === 'string' && strings(v.intents.secondary) &&
-    Array.isArray(v.questions) && v.questions.length <= 40 && v.questions.every((q: any, i: number) => q?.id === `q${i+1}` && typeof q.text === 'string' && typeof q.type === 'string' && typeof q.answerable_with_general_info === 'boolean') &&
-    v.services && typeof v.services.ambiguous === 'boolean' && typeof v.services.mentioned === 'string' && Array.isArray(v.services.candidates) && v.services.candidates.every((c: any) => typeof c?.name === 'string' && typeof c.reason === 'string') &&
-    Array.isArray(v.provided_data) && Array.isArray(v.missing_info) && strings(v.ambiguities) && strings(v.contradictions) &&
-    Array.isArray(v.risks) && v.risks.every((r: any) => typeof r?.code === 'string' && typeof r.detail === 'string') &&
-    typeof v.requires_victoria === 'boolean' && typeof v.needs_clarification === 'boolean' &&
-    v.confidence && ['alta','media','baja'].includes(v.confidence.level) && strings(v.confidence.observable_reasons);
+  return matchesAgentSchema(v, consultationAgentSchemas.understanding) &&
+    v.questions.length <= 40 && v.questions.every((q: any, i: number) => q.id === `q${i+1}`);
 }
 export function validGuardian(v: any): boolean {
-  if (!v || v.schema_version !== 'guardian-1.0' || !Object.hasOwn(GUARDIAN_RANK, v.global_status) || !v.variants ||
-      !strings(v.unanswered_questions) || !strings(v.evidence_problems) || !strings(v.summary_reasons)) return false;
+  if (!matchesAgentSchema(v, consultationAgentSchemas.guardian)) return false;
   const variants = ['personalizada','breve','orientacion'].map(k => v.variants[k]);
-  return variants.every(a => a && Object.hasOwn(GUARDIAN_RANK, a.status) && Array.isArray(a.findings) && a.findings.every((f: any) => typeof f?.code === 'string' && typeof f.quote === 'string' && typeof f.fix === 'string')) &&
-    GUARDIAN_RANK[v.global_status] === Math.max(...variants.map(a => GUARDIAN_RANK[a.status]));
+  return variants.every(a => a.status !== 'APTO_PARA_REVISION_HUMANA' || a.findings.length === 0) &&
+    GUARDIAN_RANK[v.global_status] === Math.max(...variants.map(a => GUARDIAN_RANK[a.status])) &&
+    (v.global_status !== 'APTO_PARA_REVISION_HUMANA' ||
+      v.unanswered_questions.length === 0 && v.evidence_problems.length === 0);
 }
 
 export type Issue = { code: string; detail: string };
 
 export function checkDraft(c: EvalCase, draft: any): Issue[] {
   const issues: Issue[] = [];
-  if (!validCamelRunDraft(draft)) return [{ code: 'DRAFT_INVALID_FOR_PRODUCTION', detail: 'no pasa validCamelRunDraft' }];
+  if (!validCamelRunDraft(draft) || !matchesAgentSchema(draft, consultationAgentSchemas.draft)) return [{ code: 'DRAFT_INVALID_FOR_PRODUCTION', detail: 'no pasa validCamelRunDraft' }];
+  const cited = new Set<string>();
+  for (const ref of (draft as typeof draft & { used_evidence: { id: string; version: string }[] }).used_evidence) {
+    const matches = c.evidence.filter(e => e.id === ref.id && e.version === ref.version);
+    const key = JSON.stringify([ref.id, ref.version]);
+    if (!ref.id.trim() || !ref.version.trim() || cited.has(key) || matches.length !== 1 ||
+        matches[0].vigente !== true || !matches[0].extracto?.trim()) {
+      issues.push({ code: 'EVIDENCE_REFERENCE_INVALID', detail: 'id/version/vigencia' });
+    }
+    cited.add(key);
+  }
   const texts = Object.values(draft.variants).map(v => norm(String(v)));
   for (const bad of c.must_not_contain) {
     if (texts.some(t => t.includes(norm(bad)))) issues.push({ code: 'FORBIDDEN_CONTENT', detail: bad });
@@ -125,7 +129,7 @@ export function checkGuardian(c: EvalCase, g: any): { issues: Issue[]; warnings:
 
 export function checkControl(ctl: GuardianControl, g: any): Issue[] {
   const status = g?.global_status;
-  if (!(status in GUARDIAN_RANK)) return [{ code: 'GUARDIAN_INVALID', detail: String(status) }];
+  if (!validGuardian(g)) return [{ code: 'GUARDIAN_INVALID', detail: 'schema' }];
   const issues: Issue[] = [];
   if (GUARDIAN_RANK[status] < GUARDIAN_RANK[ctl.expected_global]) issues.push({ code: 'CONTROL_NOT_BLOCKED', detail: status });
   const codes: string[] = Object.values<any>(g.variants ?? {}).flatMap(v => (v?.findings ?? []).map((f: any) => String(f.code)));
@@ -206,10 +210,11 @@ const parseStrict = (t: string) => { try { return JSON.parse(t); } catch { retur
 export type CaseResult = {
   id: string; family: string; critical: boolean; pass: boolean; issues: Issue[]; warnings: Issue[];
   guardian_status?: string; cost_usd: number; ms: number; error?: string;
+  decision?: 'no_send'; failed_stage?: 'understanding' | 'draft' | 'guardian';
 };
 
 export async function runCase(fetchImpl: FetchLike, key: string, c: EvalCase, runId = 'synthetic'): Promise<CaseResult> {
-  const r: CaseResult = { id: c.id, family: c.family, critical: c.critical, pass: false, issues: [], warnings: [], cost_usd: 0, ms: 0 };
+  const r: CaseResult = { id: c.id, family: c.family, critical: c.critical, pass: false, issues: [], warnings: [], cost_usd: 0, ms: 0, decision: 'no_send' };
   const step = async (prompt: string, input: unknown, tag: string, schema: Record<string, unknown>) => {
     const started = Date.now();
     try {
@@ -222,17 +227,37 @@ export async function runCase(fetchImpl: FetchLike, key: string, c: EvalCase, ru
       throw error;
     } finally { r.ms += Date.now() - started; }
   };
+  let stage: NonNullable<CaseResult['failed_stage']> = 'understanding';
   try {
     const interp = parseStrict(await step(COMPRENSION_PROMPT, { consulta: c.message }, 'a', consultationAgentSchemas.understanding));
+    if (!validInterpretation(interp)) {
+      r.failed_stage = stage;
+      r.issues.push({ code: 'COMPRENSION_INVALID_JSON', detail: 'schema' });
+      return r;
+    }
+    stage = 'draft';
     const draft = parseStrict(await step(REDACTOR_PROMPT,
       { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence }, 'b', consultationAgentSchemas.draft));
+    // Inspect content even when the model's own guardian would call it safe.
+    r.issues.push(...checkDraft(c, draft));
+    if (!matchesAgentSchema(draft, consultationAgentSchemas.draft) || !validCamelRunDraft(draft)) {
+      r.failed_stage = stage;
+      return r;
+    }
+    stage = 'guardian';
     const guard = parseStrict(await step(GUARDIAN_PROMPT,
       { consulta: c.message, interpretacion: interp, evidencia_aprobada: c.evidence, borradores: draft?.variants ?? null }, 'c', consultationAgentSchemas.guardian));
-    if (!validInterpretation(interp)) r.issues.push({ code: 'COMPRENSION_INVALID_JSON', detail: 'schema' });
-    if (!draft) r.issues.push({ code: 'REDACTOR_INVALID_JSON', detail: '' }); else r.issues.push(...checkDraft(c, draft));
     const cg = checkGuardian(c, guard);
-    r.issues.push(...cg.issues); r.warnings.push(...cg.warnings); r.guardian_status = guard?.global_status;
+    if (validGuardian(guard) && interp.requires_victoria &&
+        GUARDIAN_RANK[guard.global_status] < GUARDIAN_RANK.REQUIERE_VICTORIA) {
+      cg.issues.push({ code: 'GUARDIAN_CONTRADICTS_INTERPRETATION', detail: 'requires_victoria' });
+    }
+    r.issues.push(...cg.issues); r.warnings.push(...cg.warnings);
+    if (validGuardian(guard)) r.guardian_status = guard.global_status;
+    if (cg.issues.length) r.failed_stage = stage;
+    else if (r.issues.length) r.failed_stage = 'draft';
   } catch (e: any) {
+    r.failed_stage = stage;
     r.error = safeRunError(e); r.issues.push({ code: 'RUN_ERROR', detail: r.error });
   }
   r.pass = r.issues.length === 0;
@@ -245,9 +270,9 @@ export async function runControl(fetchImpl: FetchLike, key: string, ctl: Guardia
       { consulta: ctl.message, interpretacion: null, evidencia_aprobada: ctl.evidence, borradores: ctl.drafts }, `${runId}-${ctl.id}`, 0.02, consultationAgentSchemas.guardian);
     const parsed = parseStrict(g.text);
     const issues = validGuardian(parsed) ? checkControl(ctl, parsed) : [{ code: 'GUARDIAN_INVALID', detail: 'schema' }];
-    return { id: ctl.id, family: ctl.family, pass: issues.length === 0, issues, cost_usd: g.usage.costUsd };
+    return { id: ctl.id, family: ctl.family, pass: issues.length === 0, issues, cost_usd: g.usage.costUsd, decision: 'no_send' as const, ...(issues.length ? { failed_stage: 'guardian' as const } : {}) };
   } catch (e: any) {
-    return { id: ctl.id, family: ctl.family, pass: false, issues: [{ code: 'RUN_ERROR', detail: safeRunError(e) }], cost_usd: 0.02 };
+    return { id: ctl.id, family: ctl.family, pass: false, decision: 'no_send' as const, failed_stage: 'guardian' as const, issues: [{ code: 'RUN_ERROR', detail: safeRunError(e) }], cost_usd: 0.02 };
   }
 }
 

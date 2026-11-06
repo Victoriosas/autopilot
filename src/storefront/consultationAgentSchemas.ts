@@ -1,10 +1,15 @@
 // Provider-enforced output contracts for the isolated synthetic evaluator.
 // Semantic guards remain independent: a valid object does not authorize sending.
+type Schema = {
+  type: string; const?: unknown; enum?: readonly unknown[]; maxLength?: number;
+  maxItems?: number; pattern?: string; items?: Schema;
+  properties?: Record<string, Schema>; required?: readonly string[]; additionalProperties?: boolean;
+};
 const text = { type: 'string', maxLength: 4000 };
 const boolean = { type: 'boolean' };
-const list = (items: object) => ({ type: 'array', items, maxItems: 80 });
+const list = (items: Schema) => ({ type: 'array', items, maxItems: 80 });
 const texts = list(text);
-const object = (properties: Record<string, object>) => ({
+const object = (properties: Record<string, Schema>) => ({
   type: 'object', properties, required: Object.keys(properties), additionalProperties: false,
 });
 const enumeration = (...values: string[]) => ({ type: 'string', enum: values });
@@ -39,3 +44,22 @@ export const consultationAgentSchemas = {
     unanswered_questions:texts,evidence_problems:texts,summary_reasons:texts,
   }),
 } as const;
+
+// Validate the same bounded JSON-schema subset we send to the provider. A
+// provider declaring structured output is not proof that it honored the schema.
+export function matchesAgentSchema(value: unknown, schema: Schema): boolean {
+  if (Object.hasOwn(schema, 'const') && value !== schema.const) return false;
+  if (schema.enum && !schema.enum.includes(value)) return false;
+  if (schema.type === 'string') return typeof value === 'string' &&
+    (schema.maxLength === undefined || value.length <= schema.maxLength) &&
+    (!schema.pattern || new RegExp(schema.pattern).test(value));
+  if (schema.type === 'boolean') return typeof value === 'boolean';
+  if (schema.type === 'array') return Array.isArray(value) && !!schema.items &&
+    (schema.maxItems === undefined || value.length <= schema.maxItems) &&
+    value.every(item => matchesAgentSchema(item, schema.items!));
+  if (schema.type !== 'object' || !value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>, properties = schema.properties ?? {};
+  return (schema.required ?? []).every(key => Object.hasOwn(record, key)) &&
+    Object.keys(record).every(key => Object.hasOwn(properties, key)
+      ? matchesAgentSchema(record[key], properties[key]) : schema.additionalProperties !== false);
+}
