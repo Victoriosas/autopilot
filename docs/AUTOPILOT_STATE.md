@@ -1,3 +1,9 @@
+# Continuidad · finalización camelRun 06/11/2026
+
+- F3, base main 8f11d673b302fcb2d0e0d96a4a42033a3093f163 (PR191 integrada). Smoke real previo 42144801655: 2/3 casos y 3/6 controles; los cuatro fallos son RUN_ERROR, no evidencia concluyente de fallo semántico. Gate false, ocho finales intactos. Reserva US$0,30; cost_usd 0,0875 reportado o reservado, no factura exacta.
+- Corrección mínima: distinguir status failed de state completed (finalizado no equivale a éxito); registrar solo códigos de fallo de lista cerrada; conservar códigos saneados también en controles. Si running, consultar el mismo id con GET wait=25 hasta dos veces, sin otro POST ni relanzar inferencias; origen fijo, ids validados y redirecciones bloqueadas. Límites de modelo y presupuestos sin ampliación.
+- Pruebas cubren running→running→completed, pendiente persistente, failed con state completed, errores desconocidos/privacidad, IDs maliciosos o cambiados y error de consulta. Corpus congelado y validadores semánticos intactos. Sin cambio de prompts, agentes persistentes ni producción. CI y repetición real acotada pendientes de esta PR.
+
 # Continuidad · contratos camelRun 05/11/2026
 
 - F3, base main `4f14e00522b4874ebe5e8daea75924e63ff87d48`. Evaluación real autorizada con crédito existente: run GitHub Actions `42131213750`, modelo `anthropic/claude-haiku-5-5`: 1/32 desarrollo, 0/24 críticos, 6/6 controles. Ocho finales preservados; gate false. Coste reportado por evaluador US$0,0446 (semántica reported_or_reserved_upper_bound); saldo UI de US$4,59 a US$4,54, sin recargas.

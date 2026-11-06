@@ -138,6 +138,28 @@ export function checkControl(ctl: GuardianControl, g: any): Issue[] {
 type FetchLike = (url: string, init: any) => Promise<{ ok: boolean; json(): Promise<any> }>;
 export type RunUsage = { costUsd: number; ms: number };
 
+// Only fixed diagnostic codes may leave the provider boundary; messages can contain input.
+const RUN_FAILURE_CODES = new Set(['model_key_missing','model_key_invalid','model_error',
+  'output_missing','output_invalid','spend_limit','turn_limit','context_too_large',
+  'end_user_credit','runtime_error','model_stream_stalled','resume_limit','aborted']);
+function safeRunError(error: unknown): string {
+  const message = error instanceof Error ? error.message : '';
+  return /^CAMELRUN_[A-Z_]+$|^EVAL_[A-Z_]+$/.test(message) ? message : 'EVAL_RUN_FAILED';
+}
+function runStatus(run: any): unknown {
+  // state=completed means ended, including failed: status always takes precedence.
+  return run.status ?? run.state;
+}
+function requireCompleted(run: any): void {
+  const status = runStatus(run);
+  if (status === 'failed') {
+    const code = run.error?.code ?? run.outcome?.result?.code ?? run.outcome?.result?.stopped;
+    throw new Error(RUN_FAILURE_CODES.has(code) ? `CAMELRUN_FAILED_${code.toUpperCase()}` : 'CAMELRUN_FAILED');
+  }
+  if (status === 'input_required') throw new Error('CAMELRUN_INPUT_REQUIRED');
+  if (status !== 'completed') throw new Error('CAMELRUN_PENDING');
+}
+
 // Ejecución aislada y sin estado (POST /v1/runs), igual que el adaptador de producción.
 export async function statelessRun(
   fetchImpl: FetchLike, key: string, systemPrompt: string, input: unknown, requestId: string, spendLimit = 0.02,
@@ -155,8 +177,22 @@ export async function statelessRun(
       ...(schema ? {output:{schema}} : {}) }),
   });
   if (!response.ok) throw new Error('CAMELRUN_UNAVAILABLE');
-  const run: any = await boundedModelJSON(response as any);
-  if (run.status !== 'completed' && run.state !== 'completed') throw new Error('CAMELRUN_PENDING');
+  let run: any = await boundedModelJSON(response as any);
+  if (runStatus(run) === 'running') {
+    const id = run.id;
+    // Poll only this run, never POST again. Reject IDs that could redirect credentials.
+    if (typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,160}$/.test(id)) throw new Error('CAMELRUN_INVALID_RUN_ID');
+    for (let poll = 0; poll < 2 && runStatus(run) === 'running'; poll++) {
+      const next = await fetchImpl(`https://run.camelai.com/v1/runs/${id}?wait=25`, {
+        method: 'GET', signal: AbortSignal.timeout(35000), redirect: 'error',
+        headers: { authorization: `Bearer ${key}` },
+      });
+      if (!next.ok) throw new Error('CAMELRUN_POLL_UNAVAILABLE');
+      run = await boundedModelJSON(next as any);
+      if (run.id !== undefined && run.id !== id) throw new Error('CAMELRUN_INVALID_RUN_ID');
+    }
+  }
+  requireCompleted(run);
   const output = run.output ?? run.outcome?.result?.output;
   if (schema && (!output || typeof output !== 'object' || Array.isArray(output))) throw new Error('CAMELRUN_STRUCTURED_OUTPUT_MISSING');
   const text = schema ? JSON.stringify(output) : run.text ?? run.outcome?.result?.reply;
@@ -196,7 +232,7 @@ export async function runCase(fetchImpl: FetchLike, key: string, c: EvalCase, ru
     const cg = checkGuardian(c, guard);
     r.issues.push(...cg.issues); r.warnings.push(...cg.warnings); r.guardian_status = guard?.global_status;
   } catch (e: any) {
-    r.error = /^CAMELRUN_[A-Z_]+$|^EVAL_[A-Z_]+$/.test(e?.message) ? e.message : 'EVAL_RUN_FAILED'; r.issues.push({ code: 'RUN_ERROR', detail: r.error });
+    r.error = safeRunError(e); r.issues.push({ code: 'RUN_ERROR', detail: r.error });
   }
   r.pass = r.issues.length === 0;
   return r;
@@ -210,7 +246,7 @@ export async function runControl(fetchImpl: FetchLike, key: string, ctl: Guardia
     const issues = validGuardian(parsed) ? checkControl(ctl, parsed) : [{ code: 'GUARDIAN_INVALID', detail: 'schema' }];
     return { id: ctl.id, family: ctl.family, pass: issues.length === 0, issues, cost_usd: g.usage.costUsd };
   } catch (e: any) {
-    return { id: ctl.id, family: ctl.family, pass: false, issues: [{ code: 'RUN_ERROR', detail: 'EVAL_RUN_FAILED' }], cost_usd: 0.02 };
+    return { id: ctl.id, family: ctl.family, pass: false, issues: [{ code: 'RUN_ERROR', detail: safeRunError(e) }], cost_usd: 0.02 };
   }
 }
 
