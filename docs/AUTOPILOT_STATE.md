@@ -1,3 +1,11 @@
+# Continuidad · smoke real aprobado 06/11/2026
+
+- F3: PR192 y PR193 FUSIONADAS, main 458146239f383a630d81737cf40602b9b966ae94. verify 411 pasadas, una omitida, cero fallos, tipos/builds correctos; CI validate, postgres, navegador y seguridad aprobados en ambos SHAs de cambio. Sin despliegue manual ni activación de clientes.
+- EJECUTADO: https://github.com/Victoriosas/autopilot/actions/runs/42147359356, modo smoke: 3/3 casos críticos (EV001–003), 6/6 controles, cero warnings y RUN_ERROR. El ajuste de maxResponses=2 permitió completar esta muestra dentro del mismo spendLimit. Artefacto saneado 13470623034.
+- Reserva máxima US$0,30; coste reportado/reservado US$0,0134, no factura total comprobada. La corrida diagnóstica previa 42145898810 (PR192) tuvo 0/3 y 5/6, cuatro TURN_LIMIT y coste reportado/reservado 0,087. Sin recargas.
+- Gate general sigue BLOQUEADO: coverage 3/32, complete=false, gate_ok=false, full_evaluation_passed=false. El exit1 de Actions es intencional por cobertura parcial; no confundirlo con fallo de los nueve ensayos. Ocho casos finales intactos, sin clientes ni correos.
+- Siguiente paso F3: evaluar desarrollo completo (32 + seis controles, reserva máxima US$2,04) y revisar fallos antes de usar los ocho finales. No habilitar atención automática por este smoke. PC no inspeccionada ni declarada sincronizada.
+
 # Continuidad · reparación acotada de esquema 06/11/2026
 
 - F3, PR192 integrada: main 3aea1056da7bcd0f8cb691a414b2f855abd6b27b. Smoke 42145898810: 0/3 casos, 5/6 controles; tres casos fallaron CAMELRUN_FAILED_TURN_LIMIT. Gate false. Reserva US$0,30; coste 0,087 reportado/reservado. Ocho finales intactos; sin producción.
