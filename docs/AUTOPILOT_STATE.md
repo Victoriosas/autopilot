@@ -1,3 +1,41 @@
+# Continuidad · alineación Codex y recuperación de CI · 05/11/2026
+
+- Base main y producción HTTP verificadas: `458146239f383a630d81737cf40602b9b966ae94`. Vercel production READY; home/consultanos/config 200, captura habilitada con privacidad v1/30 días, admin anónimo 401, checkout cerrado. Sin POST productivo ni envíos nuevos. Informe: [ALINEACION_CODEX_20261105.md](ALINEACION_CODEX_20261105.md).
+- PC accesible, pero no sincronizada globalmente: C:/autopilot en 2632694, 53 detrás de main, 255 archivos sin seguimiento; main local en 8f1afe4, cuatro detrás. Inventariados worktrees, incluidos cambios ajenos. Todo preservado; trabajo nuevo en worktree aislado codex/alignment-audit-20261105, sin reset/clean/stash ni pull sobre árboles sucios.
+- Supabase principal healthy: 41 migraciones, 21 servicios y 17 últimas fichas privadas; 17 descripciones aprobadas para IA/vigentes/con responsable, cero tarifas aprobadas. RLS activo en consultas/conocimiento. Supera el inventario histórico de cero fichas; no acredita aprobación de protocolos, tiempos, tarifas o publicación. Resend dominio verificado, cero webhooks; Cloudflare activo/no pausado.
+- F1 canario supervisado previo documentado en #184; F4 con IA aún pendiente. F3 artefacto real 42147359356: 3/3 casos de una sola familia y 6/6 controles, coste reportado/reservado US$0,0134, reserva US$0,30, complete/full_evaluation_passed/gate false. Workflow failure por cobertura incompleta. No duplicar la nota propuesta en #194 ni ejecutar nuevas inferencias pagas sin autorización específica. Siete agentes definidos, loaded/toolsConnected false; no prueba de operación continua.
+- Fallo CI main 42147309671 reproducido por logs: el test cierra el editor Fichas abierto por defecto y espera un botón oculto; el laboratorio tiene ahora desplegable independiente. Corrección mínima del recorrido en scripts/test-consultation-lab-browser.ts: verificar botón visible y abrir el laboratorio explícitamente, conservando controles de consentimiento, replay, aprobación y correos interceptados. Sin cambios de aplicación ni migraciones.
+- Validación local: npm run verify, 412/412, cero fallos/omitidas, tipos y builds correctos; HTML/rutas, secretos y diff check aprobados. Dry-run desarrollo: 32 casos/24 críticos/6 controles, reserva US$2,04, evaluación completa false, sin llamadas remotas. Navegador con Auth/PostgREST requiere CI aislada (Docker/Podman ausentes en PC); verificar validate/postgres/beauty-stack del SHA propuesto en la PR. Sin merge ni despliegue manual.
+- Pendientes: CI aislada corregida, revisión de PR abiertas #186–#189/#194 sin fusionarlas automáticamente, issue #180 Preview omitida/segundo proyecto, #175 seguridad y desarrollo completo antes de finales. Sin cambios productivos, credenciales, DNS, pagos, contenido profesional, automatizaciones o modelos reales en esta misión.
+
+# Continuidad · reparación acotada de esquema 06/11/2026
+
+- F3, PR192 integrada: main 3aea1056da7bcd0f8cb691a414b2f855abd6b27b. Smoke 42145898810: 0/3 casos, 5/6 controles; tres casos fallaron CAMELRUN_FAILED_TURN_LIMIT. Gate false. Reserva US$0,30; coste 0,087 reportado/reservado. Ocho finales intactos; sin producción.
+- El diagnóstico terminal ya distingue errores. La documentación oficial de salida estructurada indica que una llamada final_output inválida requiere otra respuesta para corregirse; maxResponses=1 impedía esa reparación. Se permite una sola respuesta adicional en la MISMA ejecución (maxResponses=2), sin reintentar POST, ampliar maxOutputTokens, maxSeconds ni spendLimit=0,02 por etapa. El preflight de catálogo conserva reserva de cinco respuestas acotadas y margen runtime.
+- No se modifican prompts, validadores ni casos congelados. Repetición smoke pendiente de CI; no realizar full mientras falle desarrollo. Rollback: revertir este ajuste.
+
+# Continuidad · finalización camelRun 06/11/2026
+
+- F3, base main 8f11d673b302fcb2d0e0d96a4a42033a3093f163 (PR191 integrada). Smoke real previo 42144801655: 2/3 casos y 3/6 controles; los cuatro fallos son RUN_ERROR, no evidencia concluyente de fallo semántico. Gate false, ocho finales intactos. Reserva US$0,30; cost_usd 0,0875 reportado o reservado, no factura exacta.
+- Corrección mínima: distinguir status failed de state completed (finalizado no equivale a éxito); registrar solo códigos de fallo de lista cerrada; conservar códigos saneados también en controles. Si running, consultar el mismo id con GET wait=25 hasta dos veces, sin otro POST ni relanzar inferencias; origen fijo, ids validados y redirecciones bloqueadas. Límites de modelo y presupuestos sin ampliación.
+- Pruebas cubren running→running→completed, pendiente persistente, failed con state completed, errores desconocidos/privacidad, IDs maliciosos o cambiados y error de consulta. Corpus congelado y validadores semánticos intactos. Sin cambio de prompts, agentes persistentes ni producción. CI y repetición real acotada pendientes de esta PR.
+
+# Continuidad · contratos camelRun 05/11/2026
+
+- F3, base main `4f14e00522b4874ebe5e8daea75924e63ff87d48`. Evaluación real autorizada con crédito existente: run GitHub Actions `42131213750`, modelo `anthropic/claude-haiku-5-5`: 1/32 desarrollo, 0/24 críticos, 6/6 controles. Ocho finales preservados; gate false. Coste reportado por evaluador US$0,0446 (semántica reported_or_reserved_upper_bound); saldo UI de US$4,59 a US$4,54, sin recargas.
+- Causa parcial comprobada: evaluador pedía JSON en texto y no enviaba output.schema. Nuevo contrato por comprensión/redacción/guardián, lectura de output estructurado (incluido outcome.result.output), rechazo si falta, sin confiar en prosa alternativa. Validadores semánticos y corpus congelado sin modificaciones.
+- Prompts versionados aclaran alternativas/objetos y escalamiento obligatorio al requerirse Victoria o faltar evidencia. No se reduce la revisión humana ni se habilitan mensajes o herramientas de clientes.
+- Workflow manual conserva main y run_attempt=1; añade smoke predeterminado (tres casos + seis controles, reserva US$0,30), development (US$2,04) y full (US$2,52). Smoke parcial no acredita cobertura completa ni abre finales.
+- Validación local: verify 408 aprobadas, una omitida, cero fallos; tipos y builds, rutas/HTML y secretos correctos. CI final y nueva inferencia pendientes. Sin modificación de agentes persistentes, Supabase, DNS, credenciales ni flags productivos.
+
+# Continuidad · falsos positivos de evidencia aprobada 05/11/2026
+
+- F2/F3, base `8f1afe45035358b2accbee735c11061fef45652f`; rama `fix/approved-evidence-disclaimers-20261105`. Chrome autenticado verificó 17 descripciones aprobadas, cero fichas faltantes/borradores/vencidas y cero tarifas aprobadas. El propietario comunicó la conformidad de Victoria y autorizó registrar las aprobaciones. Protocolos, tiempos y tarifas sin confirmar conservan sus límites.
+- La simulación productiva general sigue bloqueada por `EVIDENCE_POLICY_BLOCK` y `EVIDENCE_INSUFFICIENT`. Causa reproducida en código: el filtro considera inseguras menciones a «precio» aunque se confirme personalmente y negaciones explícitas de garantías. No es un fallo de persistencia ni prueba de funcionamiento de un LLM.
+- Corrección propuesta: excepciones únicamente para ocho avisos completos y exactos, conservando intactos los fragmentos citados. No hay reconocimiento amplio de negaciones ni exclusión de frases arbitrarias. Todo el contenido restante mantiene el filtro previo. Política v3 invalida aprobaciones de borrador anteriores; revisión humana y `no_send` preservados.
+- Validación local: 55 pruebas focalizadas; `npm run verify` completo (406 aprobadas, una omitida, cero fallos), tipos y ambas compilaciones; comprobación de rutas/HTML y escáner de secretos aprobados. Dry-run del corpus: 32/32 casos de desarrollo y seis controles enumerados; no es evaluación de modelos reales. Los casos congelados no se modificaron.
+- Sin cambios en Supabase, envíos, modelos remotos, credenciales, DNS o despliegues. CI del SHA final y despliegue siguen pendientes. El asistente productivo figuraba `degraded`, sin ejecuciones verificadas; no acreditar operación 24/7.
+
 # Continuidad · auditoría de historial 04/11/2026
 
 - Base Git/main productiva contrastada: `81336f2ab3cf4c4ed28ce7c100ad16b7d4355756`. Rama `codex/preview-history-audit-20261104`; sin cambios alojados.
