@@ -61,3 +61,22 @@ La interfaz del panel privado en **/admin → Fichas → Fichas privadas para Vi
 - **Estado productivo al crear este cambio:** 0 fichas privadas aprobadas. Ninguna aprobación de Victoria ni contenido profesional se infiere de la prueba. El experimento usa datos inventados solo en memoria local y no escribe en Supabase alojado.
 
 - El editor privado se reinicializa al cambiar la identidad de la sesión administrativa (`sessionKey`), evitando conservar en la pantalla borradores de la cuenta anterior.
+
+## Actualización operativa 05/11/2026: 17 borradores referenciales privados
+
+A solicitud del propietario se realizó una **carga excepcional y controlada de borradores orientativos** en el proyecto Supabase principal `jfjzpwlrhzqbcrvqxhzf`, sin iniciar sesión en nombre de Victoria y sin pasar por el RPC habitual del panel. La escritura fue una inserción transaccional de 17 versiones iniciales, condicionada a que no existieran fichas anteriores y a que los 17 servicios canónicos estuvieran registrados. **No repetir esta operación sobre datos ya existentes.**
+
+La investigación pública se basó en información general de la American Academy of Dermatology, NIH/NCCIH y Cleveland Clinic. Cada entrada tiene descripción rotulada `BORRADOR REFERENCIAL SIN VALIDACIÓN DE VICTORIA`, posibles técnicas explícitamente no confirmadas, duración pendiente, precauciones generales y FAQ con URL de fuentes. **No representa procedimientos ofrecidos ni consejo médico, protocolos, resultados clínicos ni capacitación acreditada de Victoria.** Sin importes ni precios.
+
+Verificación SQL en lectura tras la carga:
+- 17 fichas, 17 versiones 1 y 17 referencias a fuentes.
+- `approvedForAI=false` y `priceApproved=false` en las 17.
+- `internalFee` vacío en las 17.
+- `reviewed_by IS NULL` en las 17: no atribuir revisión humana; `reviewed_at` se autocompleta por diseño del esquema incluso en borradores.
+- `public.consultation_knowledge_facts()` devolvió **0 hechos aprobados** para IA.
+- El catálogo administrativo histórico contiene 21 entradas, 17 correspondientes al listado canónico.
+- Ninguna ficha publicada en web, ningún mensaje enviado ni agente remoto activado.
+
+Cuando Victoria esté disponible debe revisar y reemplazar las descripciones, técnicas, condiciones, FAQ, duración y vigencia desde `/admin → Fichas`, guardando nuevas versiones. Solo entonces podrá considerar marcar `approvedForAI` si los datos son seguros y verdaderos. La aprobación de tarifas es independiente. No usar los borradores para respuestas automatizadas ni reescribir su autoría como si fueran hechos profesionales confirmados.
+
+**Nota de continuidad:** el encabezado original de este documento describe el estado del 04/11 (cero fichas); esta sección describe el estado verificado después de la inserción del 05/11.

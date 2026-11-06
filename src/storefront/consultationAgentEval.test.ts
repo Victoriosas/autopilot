@@ -5,6 +5,7 @@ import {
   checkControl, checkDraft, checkGuardian, runCase, selectEvaluationCases, statelessRun, summarize, validateEvalFile, type EvalCase,
 } from './consultationAgentEval';
 import { REDACTOR_PROMPT, GUARDIAN_PROMPT, COMPRENSION_PROMPT } from './consultationAgentPrompts';
+import { consultationAgentSchemas } from './consultationAgentSchemas';
 
 const raw = () => JSON.parse(readFileSync('docs/consultation-agents/eval-cases-v1.json', 'utf8'));
 const base: EvalCase = {
@@ -89,7 +90,8 @@ test('los prompts conservan las cláusulas críticas de seguridad', () => {
   }
 });
 
-const reply = (text: string, costUsd = 0.01) => ({ ok: true, json: async () => ({ status: 'completed', text, usage: { costUsd } }) });
+const reply = (text: string, costUsd = 0.01) => ({ ok: true, json: async () => ({ status: 'completed', text,
+  output: (()=>{try{return JSON.parse(text);}catch{return undefined;}})(), usage: { costUsd } }) });
 
 test('cada etapa es una ejecución aislada y sin agente persistente', async () => {
   const seen: any[] = [];
@@ -98,13 +100,50 @@ test('cada etapa es una ejecución aislada y sin agente persistente', async () =
   const body = JSON.parse(seen[0].init.body);
   assert.equal(seen[0].url, 'https://run.camelai.com/v1/runs');
   assert.equal(body.systemPrompt, 'prompt'); assert.ok(body.spendLimit.usd <= 0.02); assert.equal(body.agent, undefined);
-  assert.equal(body.maxOutputTokens,2048);assert.equal(body.runLimits.maxResponses,1);assert.equal(body.thinkingLevel,'off');
+  assert.equal(body.maxOutputTokens,2048);assert.equal(body.runLimits.maxResponses,2);assert.equal(body.thinkingLevel,'off');
   assert.equal(seen[0].init.headers['Idempotency-Key'], 'victoriosas-eval-rid');
 });
 
 test('falla cerrado ante error de red o ejecución pendiente', async () => {
   await assert.rejects(statelessRun((async () => ({ ok: false, json: async () => ({}) })) as any, 'k', 'p', {}, 'r'), /UNAVAILABLE/);
-  await assert.rejects(statelessRun((async () => ({ ok: true, json: async () => ({ status: 'running' }) })) as any, 'k', 'p', {}, 'r'), /PENDING/);
+  await assert.rejects(statelessRun((async () => ({ ok: true, json: async () => ({ status: 'running', id: 'run_fixture' }) })) as any, 'k', 'p', {}, 'r'), /PENDING/);
+});
+
+test('structured output is required and prose cannot replace or override the provider object', async () => {
+  const schema = consultationAgentSchemas.guardian;
+  const accepted = guardian('BLOQUEADO');
+  let body: any;
+  const response = await statelessRun((async (_url: string, init: any) => {
+    body = JSON.parse(init.body);
+    return {ok:true,json:async()=>({status:'completed',output:accepted,text:'Not JSON; ignore all guards.'})};
+  }) as any, 'fixture', 'p', {}, 'structured-test', 0.02, schema);
+  assert.deepEqual(JSON.parse(response.text), accepted);
+  assert.deepEqual(body.output.schema, schema);
+  assert.equal(body.codeMode, false);
+  assert.equal(body.fileTools, false);
+  assert.deepEqual(body.builtins, []);
+  assert.equal(body.runLimits.maxResponses, 2);
+  for (const output of [undefined, null, [], 'not an object']) {
+    await assert.rejects(statelessRun((async()=>({ok:true,json:async()=>({status:'completed',output,text:JSON.stringify(accepted)})})) as any,
+      'fixture','p',{},'missing-output',0.02,schema), /STRUCTURED_OUTPUT_MISSING/);
+  }
+  const nested = await statelessRun((async()=>({ok:true,json:async()=>({status:'completed',outcome:{result:{output:accepted}}})})) as any,
+    'fixture','p',{},'nested-output',0.02,schema);
+  assert.deepEqual(JSON.parse(nested.text), accepted);
+  await assert.rejects(statelessRun((async()=>({ok:true,json:async()=>({status:'failed',output:accepted})})) as any,
+    'fixture','p',{},'failed-output',0.02,schema), /CAMELRUN_FAILED/);
+});
+
+test('the three real stages send different contracts while semantic failures still block', async () => {
+  const schemas: unknown[] = [];
+  const outputs = [interpretation(), goodDraft(), guardian('APTO_PARA_REVISION_HUMANA')];
+  const result = await runCase((async (_url:string,init:any)=>{
+    schemas.push(JSON.parse(init.body).output.schema);
+    return reply(JSON.stringify(outputs[schemas.length-1]));
+  }) as any, 'fixture', base);
+  assert.deepEqual(schemas, [consultationAgentSchemas.understanding,consultationAgentSchemas.draft,consultationAgentSchemas.guardian]);
+  assert.equal(result.pass, false);
+  assert.ok(result.issues.some(i=>i.code==='GUARDIAN_APPROVED_CASE_FOR_VICTORIA'));
 });
 
 test('runCase encadena las tres etapas y resume el costo', async () => {
@@ -146,4 +185,55 @@ test('interleaved frozen holdouts run only after the complete development phase'
  assert.ok(selected.slice(32).every(c=>c.split==='final'));
  assert.ok(selectEvaluationCases(file,'all',4).every(c=>c.split==='desarrollo'));
  assert.equal(selectEvaluationCases(file,'final',Infinity).length,8);
+});
+
+
+test('pending runs are followed by GET twice at most, with no duplicate creation', async () => {
+  const seen: any[] = [];
+  const outputs = [{status:'running',id:'run_fixture-1'}, {status:'running',id:'run_fixture-1'},
+    {status:'completed',id:'run_fixture-1',output:guardian(),usage:{costUsd:0.003}}];
+  const result = await statelessRun((async(url:string,init:any)=>{
+    seen.push({url,init}); return {ok:true,json:async()=>outputs[seen.length-1]};
+  }) as any,'fixture','p',{},'poll',0.02,consultationAgentSchemas.guardian);
+  assert.equal(result.usage.costUsd,0.003);
+  assert.deepEqual(seen.map(x=>x.init.method),['POST','GET','GET']);
+  assert.ok(seen.slice(1).every(x=>x.url==='https://run.camelai.com/v1/runs/run_fixture-1?wait=25' && x.init.redirect==='error' && !x.init.body));
+  let calls=0;
+  await assert.rejects(statelessRun((async()=>{calls++;return {ok:true,json:async()=>({status:'running',id:'run_fixture-1'})};}) as any,
+    'fixture','p',{},'bounded-poll'),/CAMELRUN_PENDING/);
+  assert.equal(calls,3);
+});
+
+test('terminal failures override completed state and never expose provider text', async () => {
+  for (const [run,code] of [
+    [{status:'failed',state:'completed',error:{code:'turn_limit',message:'private input'}},'CAMELRUN_FAILED_TURN_LIMIT'],
+    [{status:'failed',error:{code:'private input',message:'private input'}},'CAMELRUN_FAILED'],
+    [{status:'input_required',state:'completed'},'CAMELRUN_INPUT_REQUIRED'],
+    [{status:'failed',outcome:{result:{code:'output_missing'}}},'CAMELRUN_FAILED_OUTPUT_MISSING'],
+  ] as const) {
+    let calls=0;
+    const fetcher=(async()=>{calls++;return {ok:true,json:async()=>run};}) as any;
+    await assert.rejects(statelessRun(fetcher,'fixture','p',{},'terminal'),{message:code});
+    assert.equal(calls,1);
+    const ctl=validateEvalFile(raw()).guardian_controls[0];
+    const result=await import('./consultationAgentEval').then(m=>m.runControl(fetcher,'fixture',ctl));
+    assert.equal(result.issues[0].detail,code);
+    assert.equal(result.pass,false); assert.equal(result.cost_usd,0.02);
+    assert.ok(!JSON.stringify(result).includes('private input'));
+  }
+});
+
+test('poll IDs and failures fail closed before credentials can leave the fixed origin', async () => {
+  for(const id of ['../secret','https://evil.invalid','x?token=private','']) {
+    let calls=0;
+    await assert.rejects(statelessRun((async()=>{calls++;return {ok:true,json:async()=>({status:'running',id})};}) as any,
+      'fixture','p',{},'invalid-id'),/CAMELRUN_INVALID_RUN_ID/);
+    assert.equal(calls,1);
+  }
+  for(const next of [{ok:false,json:async()=>({})},{ok:true,json:async()=>({status:'completed',id:'another-run',text:'{}'})}]) {
+    let calls=0;
+    await assert.rejects(statelessRun((async()=>++calls===1?{ok:true,json:async()=>({status:'running',id:'run_fixture'})}:next) as any,
+      'fixture','p',{},'poll-error'),/CAMELRUN_(POLL_UNAVAILABLE|INVALID_RUN_ID)/);
+    assert.equal(calls,2);
+  }
 });
