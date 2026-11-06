@@ -6,6 +6,7 @@ import React from 'react';
 import { createServer as createViteServer } from 'vite';
 import react from '@vitejs/plugin-react';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { writeFileSync, unlinkSync, existsSync } from 'node:fs';
 import { once } from 'node:events';
 import { consultationKnowledge } from '../src/storefront/consultationKnowledge';
@@ -74,9 +75,11 @@ try {
   assert.equal(entries[0].approvedForAI,false);
   assert.equal(entries[0].priceApproved,false);
   assert.equal(await page.locator('#consultation-knowledge-service').inputValue(),first);
-  await page.screenshot({path:'E:/Victoriosas_QA_20261104/f2-review-local-1180.png',fullPage:false});
+  // Use a portable default; Codex/CI can override the screenshot destination.
+  const screenshotPath = process.env.F2_SCREENSHOT_PATH || join(tmpdir(), 'victoriosas-f2-review-local-1180.png');
+  await page.screenshot({path:screenshotPath,fullPage:false});
   assert.deepEqual(errors,[]);
-  console.log(JSON.stringify({localOnly:true,savedMocks:writes,services:17,missing:16,draft:1,approvedForAI:0,switchGuard:'passed',errors,emailsSent:0,remoteCalls:0}));
+  console.log(JSON.stringify({localOnly:true,screenshotPath,savedMocks:writes,services:17,missing:16,draft:1,approvedForAI:0,switchGuard:'passed',errors,emailsSent:0,remoteCalls:0}));
 } finally {
   if(browser)await browser.close().catch(()=>{});
   if(vite)await vite.close().catch(()=>{});
