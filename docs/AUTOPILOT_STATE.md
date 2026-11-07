@@ -20,6 +20,10 @@ Fase F3. Base remota comprobada `908ae4e7a195470266799016a99e06a35d49be27`; cód
 
 - Coordinación 06/11: PR #197 en e760519 conserva un cambio independiente al diagnóstico del monitor, con validate/postgres/CodeQL SUCCESS. Ambas PR comparten base 908ae4e. Simulación de combinación detectó conflicto únicamente en las notas añadidas al final de este archivo; se reubica esta entrada F3 para preservar ambas, sin incorporar código de #197 ni tocar su rama. Los 412 tests de #197 y 423 de #196 corresponden a suites de ramas diferentes; no indican una regresión por sí solos. El 403 de GitHub sigue sin causa demostrada.
 
+## 2026-11-06 · Dirección de continuidad y ensayo conjunto
+
+[Plan F1–F3](CONTINUIDAD_F1_F3_20261106.md): orden #197 → #196 → desarrollo 32+6 → final 40+6 → F4, con puertas explícitas de producción/gasto/envío. Main 908ae4e, PR #196/#197 todavía draft; cero hilos registrados y checks requeridos aprobados en 634d761/50fcea8, sin aprobación humana inferida. Ensayo local aislado d3bd066 (árbol 43d1331) combina ambas: npm run verify 428/428, tipos, skills, builds, HTML, secretos, manifiesto y corpus intacto correctos; dry-run 32+6, no evaluación real. GET health confirmó 908ae4e y checkout cerrado; configuración de consultas habilitada/v1/30d. Catálogo de modelo consultado sin inferencia; ver cálculo y reservas en el plan. Sin fusiones, cambios productivos, modelos, envíos ni nueva automatización. Siguiente acción concreta: autorizar publicación de ambas PR y una evaluación de desarrollo con reserva preventiva US$2,04, sin ocho finales. El nuevo commit solo documenta continuidad; observar su CI exacta en PR #196.
+
 # Continuidad · smoke real aprobado 06/11/2026
 
 - F3: PR192 y PR193 FUSIONADAS, main 458146239f383a630d81737cf40602b9b966ae94. verify 411 pasadas, una omitida, cero fallos, tipos/builds correctos; CI validate, postgres, navegador y seguridad aprobados en ambos SHAs de cambio. Sin despliegue manual ni activación de clientes.
