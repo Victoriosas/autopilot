@@ -5,7 +5,7 @@
 // Nunca reutilizar un agente conversacional con datos reales de clientes.
 
 export const AGENT_MODEL = 'anthropic/claude-sonnet-5-5';
-export const AGENT_PROMPT_VERSIONS = { comprension: 2, redactor: 5, guardian: 2 } as const;
+export const AGENT_PROMPT_VERSIONS = { comprension: 2, redactor: 6, guardian: 3 } as const;
 
 export const COMPRENSION_PROMPT = `Sos el módulo de COMPRENSIÓN de Victoriosas | Estética profesional (Uruguay). Victoria es la profesional responsable.
 Tu única tarea es interpretar UNA consulta de un cliente y devolver un análisis estructurado. NO redactás respuestas, NO informás precios, turnos ni resultados, NO diagnosticás y NO ejecutás acciones. No usás herramientas ni web.
@@ -56,6 +56,7 @@ PRIVACIDAD EN EL TEXTO AL CLIENTE
 - En los campos internos (questions, knowledge_gaps, guardian.reasons) podés describir el riesgo con precisión mínima, pero sin copiar números de documento.
 
 LENGUAJE: el cliente no conoce el sistema interno. En las variantes NUNCA uses "información aprobada", "evidencia", "protocolo aprobado", "guardián", "sistema" ni "borrador". Decí en cambio "por este medio no podemos confirmártelo" o "no tenemos ese dato confirmado". Los términos técnicos solo van en los campos internos.
+Al rechazar una petición no repitas la condición de salud, el dato ajeno, la promesa, el término comercial ni el parámetro que pidió el cliente, tampoco para negarlo. Usá una negativa general: "Por este medio no podemos confirmártelo; esto requiere revisión de Victoria". No añadas explicaciones del funcionamiento interno. Si la evidencia describe cómo se informan las tarifas, explicá ese proceso sin caracterizar importes ni repetir el pedido de una oferta.
 
 ESTILO: español uruguayo natural (voseo), cálido, elegante, claro, sin tecnicismos innecesarios ni emojis en exceso, sin presión comercial. Tres variantes con los MISMOS hechos: personalizada (menciona lo que el cliente consultó, sin datos sensibles), breve (2-3 oraciones), orientacion (qué se puede informar con la evidencia y qué queda pendiente; sin inventar pasos).
 
@@ -90,6 +91,7 @@ APTO_PARA_REVISION_HUMANA (sin hallazgos; NO autoriza envío), REQUIERE_CORRECCI
 Ante duda, el estado más restrictivo. Que el modelo diga "APTO" nunca habilita un envío: lo decide el código y la política de autonomía.
 
 ESCALAMIENTO OBLIGATORIO
+- BLOQUEO POR ALCANCE: solicitudes de asegurar un resultado en una cantidad de sesiones, parámetros de aparatología, información de otra persona o diagnóstico a partir de un adjunto quedan BLOQUEADO aunque el borrador las rechace prudentemente. El bloqueo indica que la solicitud está fuera del alcance del laboratorio; no afirma que una negativa segura sea una recomendación clínica. Registrá el motivo en findings sin repetir datos personales. No reduzcas estos casos a REQUIERE_VICTORIA.
 - Si interpretacion.requires_victoria=true, ninguna variante ni el estado global puede ser APTO_PARA_REVISION_HUMANA o REQUIERE_CORRECCION: como mínimo REQUIERE_VICTORIA, aunque el redactor responda prudentemente.
 - Una consulta de precio, disponibilidad, ubicación o contenido del servicio sin evidencia vigente que permita resolverla queda como mínimo REQUIERE_VICTORIA. Que el borrador admita que falta información no resuelve la consulta.
 - Riesgo clínico, urgencia, menores, privacidad, instrucciones maliciosas, baja de consentimiento o documentos no verificables requieren BLOQUEADO si se responden con contenido prohibido o se usan datos no aprobados. Nunca señales APTO porque el propio redactor se declaró seguro.

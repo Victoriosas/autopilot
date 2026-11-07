@@ -85,9 +85,18 @@ export async function runModelGateway(
   });
   if (!res.ok) throw new Error('MODEL_PROVIDER_UNAVAILABLE');
   const data = await boundedModelJSON(res);
-  if (config.provider === 'camelrun' && data?.status !== 'completed' && data?.state !== 'completed') throw new Error('MODEL_PENDING');
+  if (config.provider === 'camelrun') {
+    // state=completed also describes failed runs. Never accept partial output
+    // from a failed/pending execution or use prose to bypass output.schema.
+    const status = data?.status ?? data?.state;
+    if (status === 'failed') throw new Error('MODEL_RUN_FAILED');
+    if (status !== 'completed') throw new Error('MODEL_PENDING');
+    const output = data?.output ?? data?.outcome?.result?.output;
+    if (req.schema && (!output || typeof output !== 'object' || Array.isArray(output))) throw new Error('MODEL_RESPONSE_INVALID');
+  }
   if (config.provider === 'ollama' && data?.done === false || config.provider === 'openai-compatible' && data?.choices?.[0]?.finish_reason && data.choices[0].finish_reason !== 'stop') throw new Error('MODEL_RESPONSE_INVALID');
-  const text = config.provider === 'ollama' ? data?.message?.content : config.provider === 'camelrun' ? data?.output ? JSON.stringify(data.output) : data?.text ?? data?.outcome?.result?.reply : data?.choices?.[0]?.message?.content;
+  const structured = data?.output ?? data?.outcome?.result?.output;
+  const text = config.provider === 'ollama' ? data?.message?.content : config.provider === 'camelrun' ? structured ? JSON.stringify(structured) : data?.text ?? data?.outcome?.result?.reply : data?.choices?.[0]?.message?.content;
   if (typeof text !== 'string' || !text.trim() || text.length > 24000) throw new Error('MODEL_RESPONSE_INVALID');
   try { const parsed = JSON.parse(text); if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw Error(); } catch { throw new Error('MODEL_RESPONSE_INVALID'); }
   return { text, provider: config.provider, latencyMs: Date.now() - started };

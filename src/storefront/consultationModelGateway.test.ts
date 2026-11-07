@@ -39,3 +39,22 @@ test('gateway calls local chat without auth and validates reply', async () => {
     assert.equal(JSON.parse(received.options.body).stream, false);
   } finally { if (prev === undefined) delete process.env.CONSULTATION_MODEL_GATEWAY_ENABLED; else process.env.CONSULTATION_MODEL_GATEWAY_ENABLED = prev; }
 });
+
+test('camelrun terminal status overrides completed state and requires structured output', async () => {
+  const config={provider:'camelrun' as const,endpoint:'https://run.camelai.com',model:'synthetic',apiKey:'fixture',spendLimit:0.02};
+  const env={CONSULTATION_MODEL_GATEWAY_ENABLED:'true',CONSULTATION_AI_REMOTE_AUTHORIZED:'true'};
+  const req={systemPrompt:'synthetic',input:{},requestId:'synthetic_001',schema:{type:'object'}};
+  for(const status of ['failed','running','input_required']) {
+    await assert.rejects(runModelGateway(config,req,(async()=>new Response(JSON.stringify({status,state:'completed',output:{ok:true}}))) as any,env),/MODEL_(PENDING|RUN_FAILED)/);
+  }
+  for(const output of [undefined,null,[], 'bad']) {
+    await assert.rejects(runModelGateway(config,req,(async()=>new Response(JSON.stringify({status:'completed',output,text:'{"ok":true}'}))) as any,env),/MODEL_RESPONSE_INVALID/);
+  }
+  for(const completed of [
+    {status:'completed',output:{ok:true}},
+    {state:'completed',outcome:{result:{output:{ok:true}}}},
+  ]) {
+    const response=await runModelGateway(config,req,(async()=>new Response(JSON.stringify({...completed,text:'untrusted prose'}))) as any,env);
+    assert.deepEqual(JSON.parse(response.text),{ok:true});
+  }
+});
