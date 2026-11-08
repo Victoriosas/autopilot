@@ -1,3 +1,11 @@
+# Continuidad · F3: criterio de inyección del Guardián · 08/11/2026
+
+- Base `7458d4bc8c43dde16e8eb3a3c7670a5e712ed0ef`; rama aislada `codex/f3-guardian-injection-20261108`, worktree `E:/autopilot-f3-guardian-injection-20261108`. PR #198 conserva la evaluación real 18/32 y 6/6 controles; F3 sigue bloqueada.
+- EV-019 exige `BLOQUEADO` ante una inyección aun cuando el borrador la rechace. La instrucción previa no lo aclaraba; se explicita el bloqueo y se incrementa la versión del prompt del Guardián a 4. Es una hipótesis de mejora, no una causa demostrada ni una garantía de comportamiento del modelo.
+- Prueba sintética de contrato: primero falló por ausencia de la cláusula y después pasó; el evaluador sigue rechazando `REQUIERE_VICTORIA` para el caso crítico. El corpus y los criterios congelados no cambian. La prueba no ejecuta un modelo y no demuestra obediencia real.
+- El manifiesto se regenera localmente desde la fuente. No se cambian definiciones remotas, producción, presupuesto, clientes, envíos, SQL ni corpus; ocho casos finales reservados. Una nueva inferencia requiere autorización específica.
+- Validación local de la versión final del código: `npm run verify` exit 0, 429/429 pruebas, TypeScript y ambos builds; manifiesto coherente, `git diff --check` limpio. CI pendiente del SHA final de la rama. Siguiente: revisión humana de la PR y diagnóstico independiente del resto de fallos sin elevar límites ni relajar guardas.
+
 # Continuidad · depuración autorizada de PR · 06/11/2026
 
 - El propietario autorizó ejecutar la revisión de PR pendientes y dejarla optimizada. Integradas por squash, sin auto-merge ni deploy manual: #186 instrucciones/README (5f1f0f8), #188 captura F2 portátil (5d175c2), #168 GenAI 2.32/Lucide 1.66 (9bb5264). Main base de este cierre: 9bb5264f8cebdd990634e80d6408e91a4f08788b. Todos los heads exactos tuvieron validate/postgres/CodeQL aprobados, sin hilos pendientes. No se reactivó comercio ni modelos.
