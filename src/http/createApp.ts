@@ -36,3 +36,7 @@ export function createApp({ configure, healthMetadata }: AppOptions): Express {
 
   return app;
 }
+
+export function mountApiNotFound(app: Express): void {
+  app.use('/api', (_req, res) => res.status(404).json({ error: 'API_ROUTE_NOT_FOUND' }));
+}

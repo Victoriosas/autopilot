@@ -1,3 +1,11 @@
+# Continuidad · 404 de API y artefactos de compilación · 08/11/2026
+
+Fase F1. Rama `codex/api-404-build-isolation-20261108` sobre `039ecf3` de la PR #200. Node y Vercel devuelven `404` JSON con `API_ROUTE_NOT_FOUND` al llegar al último handler de API. En Node queda después de las rutas existentes y antes del fallback de la SPA. El build de Node usa `dist-node` y sirve `dist-node/public`. Vercel conserva `dist`. `npm start`, el preview local y el comando del Dockerfile apuntan a sus nuevas rutas.
+
+`npm run verify` aprobó 431 pruebas y el smoke de los dos bundles ejecutado después de ambas compilaciones. El smoke usa loopback, un puerto efímero y un directorio temporal sin archivos de entorno. Verificó `GET`, `POST` y `HEAD` de API desconocida, health con checkout cerrado, HTML y JavaScript de Node y `/checkout` con `410`. También aprobaron HTML de Vercel, compilación Edge local y escáner de secretos. La imagen Docker requiere una comprobación con su runtime. CI del commit exacto en la PR.
+
+La entrega depende del montaje común de #200. Revalidar la base tras su integración. Rollback mediante reversión del PR y regeneración de los artefactos del commit anterior.
+
 # Continuidad · montaje común de API · 08/11/2026
 
 Fase F1. Rama `codex/shared-api-mount-20261108` desde `7458d4b`. La API de Node y la app que consumen Vercel y Supabase Edge usan `src/http/createApp.ts` para montar consultas, el parser general, los routers V4 y health. Las entradas conservan sus metadatos, cabeceras, fallbacks y orden. Rollback mediante reversión del PR.
