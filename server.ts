@@ -1,5 +1,5 @@
 import express from "express";
-import { createConsultationRouter } from './src/storefront/consultationRouter';
+import { createApp } from "./src/http/createApp";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
@@ -7,27 +7,27 @@ import { getCJClient } from "./src/services/cjDropshipping";
 import { getSourcingService } from "./src/services/productSourcingService";
 import { getSourcingScheduler } from "./src/services/sourcingScheduler";
 import { aiCompletion, aiStructuredCompletion, getProviderStatus } from "./src/services/aiClient";
-import { mountAutopilotV4 } from "./src/autopilot/mount";
-import { mercadoPagoAvailability } from "./src/payments/mercadoPago";
 import { publicRouteResponse } from "./src/storefront/publicRouting";
 
 dotenv.config({ path: '.env.local' });
 dotenv.config();
 
-const app = express();
 const PORT = 3000;
-
-app.use(async (req, res, next) => {
-  const response = publicRouteResponse(new Request('http://localhost' + req.originalUrl, { method: req.method === 'HEAD' ? 'HEAD' : 'GET' }), process.env.NODE_ENV !== 'production');
-  if (!response) return next();
-  res.status(response.status);
-  response.headers.forEach((value, key) => res.setHeader(key, value));
-  res.end(await response.text());
+const app = createApp({
+  configure(app) {
+    app.use(async (req, res, next) => {
+      const response = publicRouteResponse(new Request('http://localhost' + req.originalUrl, { method: req.method === 'HEAD' ? 'HEAD' : 'GET' }), process.env.NODE_ENV !== 'production');
+      if (!response) return next();
+      res.status(response.status);
+      response.headers.forEach((value, key) => res.setHeader(key, value));
+      res.end(await response.text());
+    });
+  },
+  healthMetadata: () => ({
+    service: 'Victoriosa Autopilot Core',
+    aiProviders: getProviderStatus(),
+  }),
 });
-
-app.use('/api/beauty/inquiries', createConsultationRouter());
-app.use(express.json({ limit: "10mb" }));
-mountAutopilotV4(app);
 
 // System prompt defining Victoriosa Brand Identity & Evaluation Rules
 const VICTORIOSA_IDENTITY_PROMPT = `
@@ -79,20 +79,6 @@ function calculateVictoriosaPricing(costEur: number, supplierShipping: number = 
     priceUsd
   };
 }
-
-// 1. Health check
-app.get("/api/health", async (req, res) => {
-  const checkout = await mercadoPagoAvailability();
-  res.json({
-    status: "ok",
-    service: "Victoriosa Autopilot Core",
-    checkoutEnabled: checkout.available,
-    checkoutRequested: checkout.requested,
-    checkoutUnavailableReason: checkout.reason,
-    aiProviders: getProviderStatus(),
-    timestamp: new Date().toISOString()
-  });
-});
 
 // 2. Autopilot Product Discovery (Generates / Scrapes candidate opportunities)
 app.post("/api/autopilot/discover", async (req, res) => {
