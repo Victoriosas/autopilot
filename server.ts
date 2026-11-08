@@ -1,5 +1,5 @@
 import express from "express";
-import { createApp } from "./src/http/createApp";
+import { createApp, mountApiNotFound } from "./src/http/createApp";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
@@ -12,7 +12,10 @@ import { publicRouteResponse } from "./src/storefront/publicRouting";
 dotenv.config({ path: '.env.local' });
 dotenv.config();
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT || '3000');
+if (!Number.isInteger(PORT) || PORT < 0 || PORT > 65535) {
+  throw new Error('PORT must be an integer between 0 and 65535');
+}
 const app = createApp({
   configure(app) {
     app.use(async (req, res, next) => {
@@ -1203,6 +1206,8 @@ app.get('/api/sourcing/restock', async (req, res) => {
   }
 });
 
+mountApiNotFound(app);
+
 // Start Express and Vite Middleware
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
@@ -1212,7 +1217,9 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), "dist");
+    const distPath = typeof __dirname === 'string'
+      ? path.join(__dirname, 'public')
+      : path.resolve('dist-node', 'public');
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
@@ -1227,8 +1234,11 @@ async function startServer() {
     console.warn('Sourcing scheduler not started:', err);
   }
 
-  app.listen(PORT, process.env.HOST || "0.0.0.0", () => {
-    console.log(`Victoriosa Full-Stack Server running on port ${PORT}`);
+  const server = app.listen(PORT, process.env.HOST || "0.0.0.0", () => {
+    const address = server.address();
+    if (address && typeof address !== 'string') {
+      console.log(`Victoriosa Full-Stack Server running on port ${address.port}`);
+    }
   });
 }
 

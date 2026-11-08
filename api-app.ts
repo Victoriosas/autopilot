@@ -1,4 +1,4 @@
-import { createApp } from './src/http/createApp';
+import { createApp, mountApiNotFound } from './src/http/createApp';
 
 export const app = createApp({
   configure(app) {
@@ -15,4 +15,4 @@ export const app = createApp({
   }),
 });
 
-app.use('/api', (_req, res) => res.status(404).json({ error: 'API_ROUTE_NOT_FOUND' }));
+mountApiNotFound(app);
