@@ -31,6 +31,7 @@ export type MissionCheckpointState =
   | 'in_progress'
   | 'retry_wait'
   | 'blocked'
+  | 'cancelled'
   | 'ready_to_complete'
   | 'completed';
 
