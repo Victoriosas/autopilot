@@ -3,7 +3,8 @@
   "git": {
     "deploymentEnabled": {
       "codex/mission-operator-20261109": false,
-      "codex/mission-trigger-20261109": false
+      "codex/mission-trigger-20261109": false,
+      "codex/mission-native-host-20261109": false
     }
   },
   "buildCommand": "npm run build:vercel",

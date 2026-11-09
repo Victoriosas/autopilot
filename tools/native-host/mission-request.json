@@ -1,0 +1,12 @@
+{
+  "id": "synthetic-native-ord204g",
+  "objective": {
+    "version": 1,
+    "kind": "synthetic.ensure_verified_artifact",
+    "expected": "canonical_synthetic_result",
+    "restrictions": ["local_synthetic_only", "no_network", "no_send"],
+    "resources": ["synthetic_worktree", "result_artifact", "verification_fixture"],
+    "acceptance": ["artifact_matches", "synthetic_test_passed"],
+    "limits": { "maxReplans": 1, "maxSteps": 8 }
+  }
+}
