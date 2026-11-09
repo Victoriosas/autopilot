@@ -1123,3 +1123,16 @@ Fase F1/operación. `micahael-PC` volvió a estar conectada, pero el checkout `C
 ## 2026-11-08 · Habilidades de Codex v2
 
 Rama `codex/victoriosas-skills-v2` sobre `7458d4b`. Cinco habilidades instaladas en un worktree aislado. El catálogo conserva las ocho anteriores y `AGENTS.md` referencia la coordinadora y el control de fases. La incorporación al checkout principal depende de la revisión de la PR y la actualización de ese checkout. La instalación de habilidades no cambia el horario ni activa ejecuciones programadas.
+
+
+## 2026-11-09 · Recuperación de misiones y fencing de ejecutores vencidos
+
+**Orden y base:** misión estratégica de transferir ejecución de Codex a Autopilot. Rama `codex/queue-fencing-20261109`, worktree `C:/autopilot-worktrees/queue-fencing-20261109`, base origin/main `a6cff5aba04e752cb010926b88c24fd4abfe84b6`. Se preservaron worktrees/cambios ajenos. Avance N2 sobre la cola técnica reutilizable para verificaciones F1; sin abrir fases ni comercio.
+
+**Dependencia comprobada:** ORD-204B `1b588f71f3194845f7f5a5e9287d436140a88464` no está en objetos locales; fetch remoto directo responde `not our ref`. No se encontraron MissionLedger, MissionOrchestrator ni six_agent_checkpoint en el código y refs disponibles. PR #204 corresponde a API/auth F1. Falta localizar el repositorio/worktree/respaldo que contiene esos commits; no se reconstruyeron por suposición. Análisis y aceptación pendiente: [MISSION_RECOVERY_20261109.md](MISSION_RECOVERY_20261109.md).
+
+**Cambio material PROBADO/EJECUTADO localmente:** regresión roja de six_agent_fail aceptando lease expirado antes de takeover. Completar/fallar ahora exigen tiempo real clock_timestamp(); evita también aceptar expiración ocurrida dentro de la transacción. Prueba con proceso hijo terminado mediante SIGKILL, tarea durable recuperada por otro proceso psql, token renovado, token obsoleto rechazado, cierre único, auditoría exacta y backoff conservado. Expiración inyectada en fixture; no demuestra scheduler, runner de misiones, modificación autónoma de código ni reconciliación de archivos. SQL sigue staged; no aplicado remotamente.
+
+**Verificación:** PostgreSQL 18 local aislado, seis comprobaciones aprobadas y smoke anterior de cola/health aprobado. `npm run verify` exit 0: 13 skills, tipos, 428/428 pruebas y builds Node/Vercel. Nueva prueba incorporada al job postgres existente; checks del SHA final deben consultarse en la PR de esta rama. Salud pública GET: rutas vigentes y /api/health 200, panel anónimo 401, SHA productivo observado a6cff5a; no hubo POST ni comprobación de entrega. Sin inferencias, envíos, SQL alojado, auto-merge ni despliegue manual. No se certifica coste total de infraestructura.
+
+**Veredicto y próxima orden:** corregida y demostrada la recuperación/fencing de una tarea acotada; misión completa BLOQUEADA por fundamentos ORD-204B no disponibles. Codex todavía prepara escenario, código y pruebas. Recuperar esos commits y conectar ledger/orquestador/adaptador sustituible reutilizando agent_tasks; demostrar los diez criterios en worktree sintético y después planificación/adaptación separada. Sin fusión ni promoción a producción.

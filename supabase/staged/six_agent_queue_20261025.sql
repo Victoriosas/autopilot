@@ -45,7 +45,7 @@ begin
  if length(btrim(coalesce(p_evidence,'')))<3 or length(p_evidence)>500 then raise exception 'evidence_required'; end if;
  update public.agent_tasks t set status='completed',completed_evidence=p_evidence,
  lease_until=null, execution_token=null,updated_at=now()
- where t.id=p_task_id and t.execution_token=p_token and t.status='running' and t.lease_until>now();
+ where t.id=p_task_id and t.execution_token=p_token and t.status='running' and t.lease_until>clock_timestamp();
  get diagnostics v_changed=row_count;
  if v_changed=1 then
  insert into public.agent_audit_events(task_id,event_type,details) values(p_task_id,'six_agent_complete',jsonb_build_object('evidence',p_evidence));
@@ -63,7 +63,7 @@ begin
  status=case when t.attempt_count>=t.max_attempts then 'blocked' else 'failed' end,
  available_at=now()+make_interval(secs=>least(3600,30*power(2,least(t.attempt_count,7)-1)::int)),
  lease_until=null,execution_token=null,updated_at=now()
- where t.id=p_task_id and t.execution_token=p_token and t.status='running';
+ where t.id=p_task_id and t.execution_token=p_token and t.status='running' and t.lease_until>clock_timestamp();
  get diagnostics v_changed=row_count;
  if v_changed=1 then
  insert into public.agent_audit_events(task_id,event_type,details)
