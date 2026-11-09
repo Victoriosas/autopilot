@@ -51,5 +51,6 @@ Los perfiles históricos de dropshipping y ECC quedan deshabilitados en la confi
 
 ## Habilidades de Codex
 
+- Para desarrollo sostenido o mantenimiento de Autopilot, usar `$victoriosas-desarrollo-autonomo` como guía del ciclo técnico. Seleccionar la fase con `$victoriosas-control-de-fases` y cargar los apoyos pertinentes según la tarea.
 - Para tareas repetidas usar las habilidades específicas en `.agents/skills/` descritas en `docs/CODEX_SKILLS.md`.
 - Seleccionar una habilidad pertinente y leer sus referencias bajo demanda; no cargar todas ni tomar una skill como autorización para gastar, publicar o desplegar.
