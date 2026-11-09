@@ -100,6 +100,16 @@ jobs:
         env:
           MISSION_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/victoriosa_mission_runner_test
 
+      - name: Create disposable mission planner database
+        run: createdb -h 127.0.0.1 -p 5432 -U postgres victoriosa_mission_planner_test
+        env:
+          PGPASSWORD: isolated-test-password
+
+      - name: Derive adapt and recover synthetic mission plans
+        run: node --import tsx --test tests/mission-planner-postgres.test.ts
+        env:
+          PLANNER_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/victoriosa_mission_planner_test
+
       - name: Create disposable commerce database
         run: createdb -h 127.0.0.1 -p 5432 -U postgres victoriosa_checkout_test
         env:

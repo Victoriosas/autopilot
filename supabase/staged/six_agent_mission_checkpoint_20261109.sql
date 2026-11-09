@@ -92,7 +92,8 @@ begin
     or v_task.input->>'goal_version' is null
     or v_task.input->>'goal_version' !~ '^[1-9][0-9]{0,8}$'
     or v_task.input->>'plan_version' is null
-    or v_task.input->>'plan_version' !~ '^[1-9][0-9]{0,8}$' then
+    or v_task.input->>'plan_version' !~ '^[1-9][0-9]{0,8}$'
+    or (v_task.input ? 'objective' and p_checkpoint->>'plan_version' is distinct from v_task.input->>'plan_version') then
    return false;
  end if;
 

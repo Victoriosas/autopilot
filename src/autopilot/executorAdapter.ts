@@ -1,4 +1,5 @@
 import type { AgentId } from './sixAgentControlPlane';
+import type { PlanProposal, SyntheticObservation } from './missionPlanner';
 
 export interface MissionPlanStep {
   id: string;
@@ -14,6 +15,9 @@ export interface MissionSpecification {
   plan: MissionPlanStep[];
   restrictions: string[];
   completionCriteria: string[];
+  /** Structured authorization, never an executable plan or a source of host permissions. */
+  objective?: unknown;
+  planHistory?: PlanProposal[];
 }
 
 export interface MissionStepResult {
@@ -43,6 +47,7 @@ export interface PersistedMissionCheckpoint {
     sha: string;
   };
   last_error?: string;
+  plan_version?: number;
 }
 
 export interface MissionCheckpoint extends Omit<PersistedMissionCheckpoint, 'mission_state' | 'current_step_id' | 'worktree'> {
@@ -78,6 +83,7 @@ export interface ExecutorResult {
 export interface ExecutorAdapter {
   readonly executorId: string;
   execute(context: ExecutorContext, signal?: AbortSignal): Promise<ExecutorResult>;
+  observe?(context: ExecutorContext, signal?: AbortSignal): Promise<SyntheticObservation>;
 }
 
 export interface ModelProvider {
@@ -94,6 +100,8 @@ export interface MissionLedger {
   ): Promise<boolean>;
   completeMission(context: ExecutorContext, evidence: string): Promise<void>;
   failMission(context: ExecutorContext, reasonCode: string): Promise<void>;
+  savePlan?(context: ExecutorContext, proposal: PlanProposal, plannerId: string): Promise<boolean>;
+  blockMission?(context: ExecutorContext, reasonCode: string): Promise<void>;
 }
 
 export interface MissionOrchestrator {
