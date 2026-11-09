@@ -20,6 +20,10 @@ function extractBearer(req: Request): string | null {
   return value.slice(7).trim() || null;
 }
 
+function providerUnavailable(status: number | undefined): boolean {
+  return status === undefined || status === 0 || status === 429 || status >= 500;
+}
+
 export async function requireSupabaseAdminAuth(req: Request, res: Response, next: NextFunction) {
   const token = extractBearer(req);
   if (!token) return res.status(401).json({ error: 'ADMIN_AUTH_REQUIRED' });
@@ -33,6 +37,9 @@ export async function requireSupabaseAdminAuth(req: Request, res: Response, next
       auth: { persistSession: false, autoRefreshToken: false },
     });
     const { data: userData, error: userError } = await verifier.auth.getUser(token);
+    if (userError && providerUnavailable(userError.status)) {
+      return res.status(503).json({ error: 'ADMIN_AUTH_UNAVAILABLE' });
+    }
     if (userError || !userData.user) return res.status(401).json({ error: 'ADMIN_AUTH_INVALID' });
 
     // Bind PostgREST to the verified caller. With only the public key configured,
@@ -42,12 +49,15 @@ export async function requireSupabaseAdminAuth(req: Request, res: Response, next
       global: { headers: { Authorization: `Bearer ${token}` } },
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data: profile, error: profileError } = await scopedDb
+    const { data: profile, error: profileError, status: profileStatus } = await scopedDb
       .from('profiles')
       .select('role')
       .eq('id', userData.user.id)
       .single();
 
+    if (profileError && providerUnavailable(profileStatus)) {
+      return res.status(503).json({ error: 'ADMIN_AUTH_UNAVAILABLE' });
+    }
     if (profileError || profile?.role !== 'admin') return res.status(403).json({ error: 'ADMIN_ROLE_REQUIRED' });
 
     res.locals.adminUserId = userData.user.id;
