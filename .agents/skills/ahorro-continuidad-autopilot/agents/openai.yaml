@@ -1,0 +1,9 @@
+interface:
+  display_name: Ahorro y continuidad Autopilot
+  short_description: Optimiza uso y conserva avances
+  default_prompt: Usa $ahorro-continuidad-autopilot respetando las instrucciones del repositorio,
+    seguridad, permisos y evidencia.
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+policy:
+  allow_implicit_invocation: true

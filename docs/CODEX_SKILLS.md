@@ -12,6 +12,11 @@ Estas habilidades viven en `.agents/skills/<nombre>/SKILL.md` y funcionan como i
 | Ahorro de tokens y trabajo continuo | `$victoriosas-codex-ahorro-tokens` |
 | Auditar seis agentes y sus ejecuciones | `$victoriosas-autopilot-operational-audit` |
 | Mantener el norte, seleccionar la fase y sincronizar PC/cloud sin perder cambios | `$victoriosas-control-de-fases` |
+| Coordinar desarrollo sostenido, auditoría y mantenimiento | `$victoriosas-desarrollo-autonomo` |
+| Ejecutar un ciclo técnico con aceptación y evidencia | `$autopilot-core` |
+| Revisar decisiones de arquitectura, producto y release | `$autopilot-roles` |
+| Comprobar permisos, concurrencia y bloqueos | `$autopilot-safety` |
+| Reanudar ciclos y respetar cuotas | `$ahorro-continuidad-autopilot` |
 
 ## Cómo usarlas
 
@@ -25,4 +30,4 @@ Estas habilidades viven en `.agents/skills/<nombre>/SKILL.md` y funcionan como i
 
 `AGENTS.md` gobierna estas habilidades. Ninguna habilidad instala MCP, valida conexiones por sí sola ni activa agentes 24/7. No autoriza gasto, cambios de DNS, correos reales, respuestas autónomas, precios públicos, migraciones productivas ni despliegues manuales.
 
-Fuentes: documentación de Codex sobre habilidades de repositorio y `SKILL.md`: https://learn.chatgpt.com/docs/build-skills y https://learn.chatgpt.com/docs/customization/overview .
+[Documentación de OpenAI sobre instalación de habilidades por proyecto](https://developers.openai.com/api/reference/cli).

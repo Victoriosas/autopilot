@@ -1,0 +1,9 @@
+interface:
+  display_name: Victoriosas Desarrollo Autónomo
+  short_description: Desarrolla Victoriosas con continuidad y seguridad
+  default_prompt: Usa $victoriosas-desarrollo-autonomo como coordinador principal para auditar y
+    avanzar Victoriosas Autopilot sin modificar producción ni duplicar trabajo.
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+policy:
+  allow_implicit_invocation: true
