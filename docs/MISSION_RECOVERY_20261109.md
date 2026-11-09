@@ -39,6 +39,12 @@ La variable `AUTOPILOT_TEST_DATABASE_URL` debe apuntar a esa base local. La CI e
 
 Codex sigue preparando escenario, objetivo y código, lanzando pruebas y revisando evidencia. Esta prueba demuestra recuperación/fencing de una cola acotada; no planificación general, independencia operativa ni ejecución permanente. No se agregó otro scheduler, cola, proveedor o runtime.
 
+## Localización aportada y acceso pendiente
+
+El propietario identifica el origen histórico como `/workspaces/autopilot-mission-recovery`, rama `codex/mission-checkpoint-recovery-20261109`, en el entorno Linux de Copilot: cuatro commits por delante de origin/main y publicación fallida por credenciales según aquel registro. No es el worktree V5 de E:. Esta ubicación fue aportada, no inspeccionada en esta sesión Windows. La consulta de Codespaces devuelve HTTP 403 y requiere un permiso no disponible; no se amplió el permiso ni se cambiaron credenciales. Tampoco se encontró una copia Windows en C:/workspaces. La dependencia ahora es acceso al entorno original o transferencia verificable de sus commits mediante publicación de la rama o git bundle.
+
+CI de `9eaaf6a5c7b6682b8024c4096953c26ce99a43b1`: validate y postgres aprobados tanto en push como en PR; el job de PR 129471737870 ejecutó la nueva regresión. CodeQL aprobado, Vercel Preview aprobado y Supabase Preview omitido; este último sigue sin demostrar integración alojada. La corrección no fue fusionada ni promovida a producción.
+
 ## Siguiente orden y límites
 
 Recuperar la ubicación/repo/respaldo de ORD-204B y conservar sus commits; contrastar sus contratos con las funciones existentes antes de conectar el equivalente vigente de ORD-204C. Aceptación: ledger + orquestador + adaptador sustituible deben dirigir modificación/prueba/checkpoint y recuperación tras caída, reconciliando efectos en worktree aislado. Después, evaluar planificación/adaptación del objetivo mediante mecanismo autorizado en una prueba separada.
