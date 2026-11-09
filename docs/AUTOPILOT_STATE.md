@@ -1123,3 +1123,23 @@ Fase F1/operación. `micahael-PC` volvió a estar conectada, pero el checkout `C
 ## 2026-11-08 · Habilidades de Codex v2
 
 Rama `codex/victoriosas-skills-v2` sobre `7458d4b`. Cinco habilidades instaladas en un worktree aislado. El catálogo conserva las ocho anteriores y `AGENTS.md` referencia la coordinadora y el control de fases. La incorporación al checkout principal depende de la revisión de la PR y la actualización de ese checkout. La instalación de habilidades no cambia el horario ni activa ejecuciones programadas.
+
+## ORD-204B - Checkpoint y recuperacion de misiones (2026-11-09)
+
+**Estado Git:** worktree `/workspaces/autopilot-mission-recovery`, rama `codex/mission-checkpoint-recovery-20261109`, base `origin/main` `a6cff5aba04e752cb010926b88c24fd4abfe84b6`. SHA funcional verificado `343d4961a885a68282e7b9b85b6614e316683580`. Incluye `30c40ae` (checkpoint) y el cambio local de seguridad `e5b233f` (human gate), sin modificar su worktree fuente. Cambios locales de otros worktrees preservados. Sin push ni PR por falta de autenticacion de escritura de GitHub.
+
+**Implementado sobre la cola existente:**
+- `agent_tasks` ahora puede representar una mision estable y versionada con `mission_id`, objetivo/plan en `input` y checkpoint JSONB versionado. Un trigger asigna `mission_id=id` a inserciones legacy.
+- RPC `six_agent_checkpoint` exige service_role, mision/tarea coincidentes, lease vigente, fencing token, version secuencial, plan y transicion validos. Valida dependencias, ciclos y evidencia de finalizacion. Estado y evento de auditoria se escriben en la misma transaccion; replay identico es idempotente y reutilizar el operation_id con contenido distinto se rechaza.
+- `six_agent_claim` entrega el checkpoint recuperado. `complete` y `fail` exigen lease vigente; completitud de mision solo se admite desde `ready_to_complete`. No se agrego una cola, tabla de auditoria o scheduler paralelo.
+- Contratos TypeScript para `ExecutorAdapter`, `ModelProvider`, `MissionLedger` y `MissionOrchestrator`; helper RPC `saveMissionCheckpoint`. Human gate vuelve a exigir admin para aprobar y deja `approvedBy=human`; Codex no puede aprobar su propia tarea protegida.
+
+**Validacion del SHA funcional:** `npm --prefix /workspaces/autopilot-mission-recovery run verify` SUCCESS: 431 tests, 430 pasaron, 1 omitido, 0 fallos; TypeScript/lint, 13 habilidades y builds Vite/servidor y Vercel correctos. `scripts/test-six-agent-queue.sh` SUCCESS en PostgreSQL 18 desechable; incluye expiracion/reclaim, recuperacion, rechazo de token viejo para checkpoint/complete/fail, replay y version obsoletos, rollback al fallar auditoria, continuacion de dos pasos, completitud, secuencia de auditoria, autorizacion service_role y dos escrituras concurrentes con una version/evento. `bash -n scripts/test-six-agent-queue.sh` y `git diff --check` SUCCESS.
+
+**Limites y riesgos abiertos:**
+- La migracion sigue solo en `supabase/staged/six_agent_mission_checkpoint_20261109.sql`; no se agrego a migraciones activas ni se aplico a Supabase alojado. Sin deploy, operaciones remotas, pagos, comunicaciones ni inferencias pagas.
+- Una fila durable representa una mision con pasos, no un grafo de varias tareas/filas. El contrato esta definido, pero `MissionLedger`/orquestador no estan implementados ni conectados end-to-end.
+- No se probo un executor propio que cree un worktree, cambie archivos, ejecute pruebas y guarde el checkpoint sin Codex. Por tanto no declarar independencia operativa. `p_executor_id` es atribucion declarada de auditoria, no identidad criptograficamente autenticada; solo service_role puede llamar RPC.
+- Clasificacion: checkpoint/recovery de mision sintetica PROBADO localmente; FUSIONADO, DESPLEGADO y EJECUTADO en misiones reales: NO VERIFICADO.
+
+**Siguiente prioridad segura:** implementar un `MissionLedger` que recupere el contrato y un executor local efimero con permisos por archivo y worktree aislado; demostrar modificacion sintetica, pruebas y checkpoint end-to-end sin Codex ni proveedor pago en PostgreSQL desechable. Antes de operacion real, definir autenticacion de executor y permisos independientes de service_role. No aplicar SQL alojado ni promover.
