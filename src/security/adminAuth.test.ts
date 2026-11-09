@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
-import { createLegacyAdminGuard } from './adminAuth';
+import { createLegacyAdminGuard, requireSupabaseAdminAuth } from './adminAuth';
 
 test('legacy admin guard protects case aliases and only exempts the V4 path segment', async () => {
   const app = express();
@@ -39,7 +39,6 @@ test('admin verification keeps caller-scoped profiles and distinguishes provider
   }));
   const provider = 'http://127.0.0.1:59999';
   const userId = '11111111-1111-4111-8111-111111111111';
-  const request = globalThis.fetch;
   process.env.SUPABASE_URL = provider;
   delete process.env.VITE_SUPABASE_ANON_KEY;
 
@@ -65,21 +64,19 @@ test('admin verification keeps caller-scoped profiles and distinguishes provider
   };
   t.mock.method(globalThis, 'fetch', mockFetch);
 
-  const app = express();
-  app.use(createLegacyAdminGuard());
-  app.get('/api/connectors', (_req, res) => res.json({ admin: res.locals.adminUserId }));
-  const server = app.listen(0, '127.0.0.1');
-  await once(server, 'listening');
-  t.after(async () => {
-    server.closeAllConnections();
-    await new Promise<void>(resolve => server.close(() => resolve()));
-  });
-  const { port } = server.address() as { port: number };
+  // Exercise provider decisions directly; HTTP path protection is covered above.
+  // This fixture needs no additional server or externally callable auth route.
   const probe = async () => {
-    const response = await request(`http://127.0.0.1:${port}/api/connectors`, {
-      headers: { Authorization: 'Bearer fixture-token' },
-    });
-    return { status: response.status, body: await response.json() };
+    let status = 200;
+    let body: unknown;
+    const req = { header: (name: string) => name === 'authorization' ? 'Bearer fixture-token' : undefined } as Request;
+    const res = {
+      locals: {},
+      status(code: number) { status = code; return this; },
+      json(value: unknown) { body = value; return this; },
+    } as Response;
+    await requireSupabaseAdminAuth(req, res, () => { body = { admin: res.locals.adminUserId }; });
+    return { status, body };
   };
 
   for (const key of ['SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY'] as const) {
