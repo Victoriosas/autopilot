@@ -1,3 +1,23 @@
+# Continuidad · 404 de API y artefactos de compilación · 08/11/2026
+
+Fase F1. Rama `codex/api-404-build-isolation-20261108` sobre `039ecf3` de la PR #200. Node y Vercel devuelven `404` JSON con `API_ROUTE_NOT_FOUND` al llegar al último handler de API. En Node queda después de las rutas existentes y antes del fallback de la SPA. El build de Node usa `dist-node` y sirve `dist-node/public`. Vercel conserva `dist`. `npm start`, el preview local y el comando del Dockerfile apuntan a sus nuevas rutas.
+
+`npm run verify` aprobó 431 pruebas y el smoke de los dos bundles ejecutado después de ambas compilaciones. El smoke usa loopback, un puerto efímero y un directorio temporal sin archivos de entorno. Verificó `GET`, `POST` y `HEAD` de API desconocida, health con checkout cerrado, HTML y JavaScript de Node y `/checkout` con `410`. También aprobaron HTML de Vercel, compilación Edge local y escáner de secretos. La imagen Docker requiere una comprobación con su runtime. CI del commit exacto en la PR.
+
+Revisión Docker del 08/11. El Dockerfile anterior usaba Node 20 aunque el proyecto declara Node 24 y el SDK instalado de Supabase exige al menos Node 22. Un arranque aislado sin `NODE_ENV` sirvió el cliente de desarrollo de Vite. Se alineó la imagen con Node 24, se instaló mediante `npm ci` en el Dockerfile y se fijó `NODE_ENV=production` para el arranque. Las copias explícitas y `.dockerignore` limitan el contexto a las fuentes de build y excluyen archivos de entorno.
+
+Una copia local con las entradas del Dockerfile compiló con Node 24 y arrancó el bundle de producción. Pasaron health con checkout cerrado, HTML y JS compilados y `GET`, `POST` y `HEAD` desconocidos con 404 JSON. `HEAD` tuvo cuerpo vacío. La PC carece de motor Docker o equivalente accesible, por lo que sigue pendiente construir y ejecutar la imagen en contenedor.
+
+La entrega depende del montaje común de #200. Revalidar la base tras su integración. Rollback mediante reversión del PR y regeneración de los artefactos del commit anterior.
+
+# Continuidad · montaje común de API · 08/11/2026
+
+Fase F1. Rama `codex/shared-api-mount-20261108` desde `7458d4b`. La API de Node y la app que consumen Vercel y Supabase Edge usan `src/http/createApp.ts` para montar consultas, el parser general, los routers V4 y health. Las entradas conservan sus metadatos, cabeceras, fallbacks y orden. Rollback mediante reversión del PR.
+
+`npm run verify` aprobó 431 pruebas y ambas compilaciones. Pasaron 17 pruebas HTTP focalizadas, el bundle local de Supabase Edge, el arranque del bundle Node, HTML, secretos y diff. Los dos adaptadores conservaron admin anónimo 401, formulario deshabilitado antes del parser y webhook legado 410. CI exacta en la PR.
+
+Próximos lotes separados. Alinear el 404 JSON de la API con Node y normalizar errores. Separar los artefactos de build: la compilación de Vercel limpia `dist` y elimina el bundle Node previo. Acotar el parser por ruta con contratos medidos y revisar el arranque, que espera al scheduler antes de escuchar. F3 conserva su revisión independiente en las PR #198 y #199.
+
 # Continuidad · depuración autorizada de PR · 06/11/2026
 
 - El propietario autorizó ejecutar la revisión de PR pendientes y dejarla optimizada. Integradas por squash, sin auto-merge ni deploy manual: #186 instrucciones/README (5f1f0f8), #188 captura F2 portátil (5d175c2), #168 GenAI 2.32/Lucide 1.66 (9bb5264). Main base de este cierre: 9bb5264f8cebdd990634e80d6408e91a4f08788b. Todos los heads exactos tuvieron validate/postgres/CodeQL aprobados, sin hilos pendientes. No se reactivó comercio ni modelos.

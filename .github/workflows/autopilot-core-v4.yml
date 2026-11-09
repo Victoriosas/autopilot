@@ -44,6 +44,9 @@ jobs:
       - name: Vercel build
         run: npm run build:vercel
 
+      - name: Check both compiled API entry points
+        run: node scripts/check-built-api.mjs
+
       - name: Check initial public HTML and static assets
         run: node scripts/check-route-html.mjs
 
