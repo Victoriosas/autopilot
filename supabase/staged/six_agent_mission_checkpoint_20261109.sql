@@ -55,7 +55,7 @@ begin
  return query
  select t.id,t.execution_token,
    (case when jsonb_typeof(t.input)='object' then t.input else '{}'::jsonb end)
-   || jsonb_build_object('__autopilot',jsonb_build_object(
+   || jsonb_build_object('goal',t.goal,'__autopilot',jsonb_build_object(
      'mission_id',t.mission_id,
      'checkpoint_version',t.mission_checkpoint_version,
      'checkpoint',t.mission_checkpoint,

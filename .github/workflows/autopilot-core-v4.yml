@@ -85,6 +85,21 @@ jobs:
         env:
           AUTOPILOT_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/victoriosa_six_agent_test
 
+      - name: Six-agent process loss and expired executor fencing
+        run: node --test tests/six-agent-recovery.test.mjs
+        env:
+          AUTOPILOT_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/victoriosa_six_agent_test
+
+      - name: Create disposable mission runner database
+        run: createdb -h 127.0.0.1 -p 5432 -U postgres victoriosa_mission_runner_test
+        env:
+          PGPASSWORD: isolated-test-password
+
+      - name: Autonomous synthetic mission and interrupted effect reconciliation
+        run: node --import tsx --test tests/mission-runner-postgres.test.ts
+        env:
+          MISSION_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/victoriosa_mission_runner_test
+
       - name: Create disposable commerce database
         run: createdb -h 127.0.0.1 -p 5432 -U postgres victoriosa_checkout_test
         env:
