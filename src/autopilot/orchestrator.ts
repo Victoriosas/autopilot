@@ -70,7 +70,7 @@ export class TaskOrchestrator {
     return [...this.tasks.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
-  approve(taskId: string, approvedBy: 'human' | 'codex'): AutopilotTask {
+  approve(taskId: string, approvedBy: 'human'): AutopilotTask {
     const task = this.tasks.get(taskId);
     if (!task) throw new Error(`Task not found: ${taskId}`);
     if (task.status === 'blocked') throw new Error(`Task ${taskId} is blocked and cannot be approved`);
