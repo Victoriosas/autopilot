@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-11-10T01:10:46.9310853Z",
+  "observation_window_start": "2026-11-10T01:05:59Z",
+  "timezone": "America/Montevideo",
+  "actor": "ChatGPT Work / Desktop Commander Remote",
+  "scope": "Inventario dirigido; sin lectura de secretos ni volcado de conversaciones",
+  "host": {
+    "name": "micahael-PC",
+    "access": "online",
+    "changes_applied": "Solo archivos de coordinación externos a checkouts; ninguna configuración operativa modificada"
+  },
+  "repository": {
+    "name": "Victoriosas/autopilot",
+    "main_sha": "a6cff5aba04e752cb010926b88c24fd4abfe84b6",
+    "primary_path": "C:/autopilot",
+    "primary_branch": "codex/workspace-main-20261108",
+    "tracked_changes": 0,
+    "untracked_entries": 138,
+    "untracked_count_mode": "git status --porcelain --untracked-files=normal",
+    "registered_worktrees": 50,
+    "prunable_entries": 1
+  },
+  "session": {
+    "candidate_fingerprint": "a6bf13d814ef8e47",
+    "identification": "Candidata por recencia y cwd; sin vínculo exclusivo PID/thread ni acuse de lectura",
+    "cwd": "C:/autopilot",
+    "last_rollout_update": "2026-11-10T00:56:21.940686Z",
+    "model": "gpt-6.1-sol",
+    "reasoning_effort": "medium",
+    "approval_policy": "never",
+    "sandbox": "danger-full-access",
+    "cli_version": "0.167.0-alpha.3.2",
+    "acknowledgement": "pending"
+  },
+  "config": {
+    "global_path": "C:/Users/micahael/.codex/config.toml",
+    "global_sha256": "326e388a92e8dc77743e2bd1c3a34f212dd74760efa9dc76d7069c45ece7f1f6",
+    "project_path": "C:/autopilot/.codex/config.toml",
+    "project_sha256": "4763820f0f4fea674a6f013d12b19010d58ba69ba80caf002b19a4c65d545187",
+    "project_settings": {
+      "approval_policy": "never"
+    },
+    "global_instruction_sha256": "5959807f2a8c09d4a0b554e11b5737eec1f0e99734e9a035a4cd9fea90d2d9dc",
+    "conflict": "AGENTS global orientado a tienda Victoriosa.click; dirección del repositorio orientada a Victoriosas.online estética y Autopilot. No modificado.",
+    "mcp_configured": [
+      "viki",
+      "supabase",
+      "node_repl",
+      "mercadolibre-mcp-server",
+      "dsers",
+      "paw",
+      "tinyfish",
+      "camelrun",
+      "victoriosas-supabase"
+    ],
+    "mcp_connectivity": "No invocada ni acreditada por configuración",
+    "project_skills": 13,
+    "global_skills": [
+      ".system",
+      "playwright"
+    ],
+    "project_environment_sha256": "f008bb9222ad66d5f81de065f55dd27b2ff073208266259a08aca825593d807c"
+  },
+  "processes": {
+    "codex_app_server_pid": 14728,
+    "codex_exec_pid": 12088,
+    "opencode_server_pid": 15000,
+    "opencode_mode": "serve",
+    "opencode_interference": "No demostrada; no detenido"
+  },
+  "worktrees_of_interest": [
+    {
+      "path": "C:/autopilot-worktrees/mission-native-host-20261109",
+      "sha": "15720289647da59c19cc2c19c7f123ee84259a31",
+      "clean": true
+    },
+    {
+      "path": "C:/autopilot-worktrees/mission-native-activation-20261109",
+      "sha": "bd24d4c8efde7ec24efea05b949b6fb0c8814021",
+      "clean": true,
+      "remote_branch": "No observada en ls-remote por nombre exacto; no afirmar que el objeto no existe remotamente"
+    },
+    {
+      "path": "E:/autopilot-continuation-v5-20261109",
+      "sha": "2a34b77f94d09cdacf4e88b141e912a898d99eef",
+      "clean": true
+    },
+    {
+      "path": "E:/autopilot-victoriosas-skills-v2",
+      "sha": "5b9ceac1f56812a722754fbce873551e9bb9633f",
+      "clean": true
+    },
+    {
+      "path": "E:/autopilot-public-health-20261106",
+      "sha": "50fcea83a6f84acc36cae1da2516690618c91f94",
+      "clean": true
+    },
+    {
+      "path": "E:/autopilot-f3-guardian-injection-20261108",
+      "sha": "2607a427d77f3b523de120a2d41ae1f1898b146f",
+      "clean": true
+    }
+  ],
+  "preserve_dirty_worktrees": [
+    "C:/autopilot-worktrees/diseno",
+    "C:/autopilot-worktrees/glm53-opencode-20261031",
+    "C:/Users/micahael/.codex/worktrees/consultation-ai-circuit/autopilot",
+    "C:/Users/micahael/.codex/worktrees/consultation-phase2/autopilot"
+  ],
+  "backups": {
+    "paths": [
+      "C:/autopilot-backups",
+      "E:/Victoriosas_Recovery_20261108",
+      "E:/AI_Cache_Archive"
+    ],
+    "recovery_report": "Informe de 08/11 describe 256 archivos untracked copiados con SHA256; manifest y carpeta existen. Integridad del conjunto no recalculada; caches no son respaldo de código."
+  },
+  "other_configuration": {
+    "opencode_json_sha256": "4c2b085e1412c79e0e29d88282cddd7ca7e5e3bae9bbba5670c8a53262863414",
+    "opencode_model_configured": "openai/gpt-6.1-sol",
+    "vscode_github_mcp_configured": true,
+    "connectivity_tested": false
+  },
+  "native_window": {
+    "task": "Victoriosas-Autopilot-Synthetic-Demo",
+    "state": "Disabled",
+    "run_level": "Limited",
+    "last_result": 267011,
+    "next_run": "2026-11-10T18:00:00-03:00",
+    "mission": "synthetic-native-ord204g",
+    "approved_sha": "15720289647da59c19cc2c19c7f123ee84259a31",
+    "preparation_start": "2026-11-10T17:58:00-03:00",
+    "trigger_end": "2026-11-10T18:20:00-03:00",
+    "close_before": "2026-11-10T18:28:00-03:00",
+    "automatic_preparation": false,
+    "postgres": "Sin listener en puertos 55439/55441; checkpoint declara stopped. No es un inventario de todos los PostgreSQL.",
+    "checkpoints": [
+      "C:/autopilot-worktrees/mission-native-host-proposal-20261109/RESUME_WINDOW_RULES.json",
+      "C:/autopilot-worktrees/mission-native-host-proposal-20261109/ACTIVATION_CHECKPOINT.json"
+    ]
+  },
+  "heartbeat": {
+    "id": "victoriosa-autopilot-6h",
+    "configured_status": "ACTIVE",
+    "rrule": "FREQ=HOURLY;INTERVAL=6",
+    "toml_sha256": "072516fe583f4aabd0bf6f11b1dc60bc6db5b3c226d4f80c2d98cc896e50e795",
+    "model_last_thread": "gpt-6-luna",
+    "cli_invocation_in_prompt": false,
+    "unchanged": true
+  },
+  "coordination": {
+    "branch": "codex/shared-context-20261110",
+    "pr": "https://github.com/Victoriosas/autopilot/pull/214",
+    "shared_file": "docs/WORK_CODEX_SHARED_CONTEXT.md",
+    "automatic_chat_sync": false,
+    "local_codex_read_confirmed": false,
+    "next_action": "Codex local debe leer el mismo documento, contrastar su cwd/HEAD/configuración y confirmar huella/version; no cambiar checkout aprobado ni activar G fuera de ventana."
+  }
+}

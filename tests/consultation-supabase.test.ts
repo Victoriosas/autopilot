@@ -67,7 +67,10 @@ test('consultation actual disposable Auth PostgREST RPC and administrator RLS', 
       assert.equal((await save(entry)).status,409,'stale revisions cannot overwrite an approval');
       const facts=await service.rpc('consultation_knowledge_facts');assert.equal(facts.error,null);
       assert.equal(facts.data.length,1);assert.equal(facts.data[0].version,'1');
-      assert.ok(!JSON.stringify(facts.data).includes('999'),'internal fee must not reach the AI projection');
+      const approvedFact = facts.data.find((fact: any) => fact.service === entry.slug);
+      assert.ok(approvedFact, 'approved service must appear in the AI projection');
+      assert.equal(Object.hasOwn(approvedFact, 'internalFee'), false, 'internal fee field must not reach the AI projection');
+      assert.equal(JSON.stringify(facts.data).includes(entry.internalFee), false, 'internal fee value must not reach any AI fact');
       const result=await fetch(base+'/admin/lab',{method:'POST',headers,body:JSON.stringify({caseId:'general'})});
       assert.equal(result.status,200);const lab=await result.json();assert.equal(lab.delivery,'NOT_SENT');assert.equal(lab.analysis.evidence[0].fragment,entry.description);
       assert.equal((await save({...entry,version:1,description:'Nueva versión sin aprobación.',approvedForAI:false})).status,200);

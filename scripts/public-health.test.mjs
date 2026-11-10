@@ -2,6 +2,25 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { checkPublicHealth } from './public-health.mjs';
 
+test('existing public monitor classifies only allowed readiness causes without printing provider text',async()=>{
+  for(const reason of ['storage_timeout','PRIVATE_PROVIDER_DETAIL']) {
+    const methods=[];
+    const request=async(url,init)=>{
+      methods.push(init.method);const p=new URL(url).pathname;
+      if(['/tienda','/checkout','/tratamientos'].includes(p))return new Response('',{status:410});
+      if(p.startsWith('/de-mi-para-ti/'))return new Response('',{status:404});
+      if(p==='/api/health')return Response.json({status:'ok',commit:'a'.repeat(40),checkoutEnabled:false,checkoutRequested:false});
+      if(p==='/api/beauty/inquiries/config')return Response.json({enabled:false,unavailableReason:reason});
+      return new Response('');
+    };
+    await assert.rejects(checkPublicHealth('https://victoriosas.online',request),error=>{
+      assert.match(error.message,new RegExp('consultation intake unavailable: '+(reason==='storage_timeout'?'storage_timeout':'unknown')));
+      assert.doesNotMatch(error.message,/PRIVATE_PROVIDER_DETAIL/);return true;
+    });
+    assert.ok(methods.every(x=>x==='GET'));
+  }
+});
+
 test('reports a confirmed Cloudflare challenge without exposing headers or body', async () => {
   const calls = [];
   const request = async (url, init) => {
