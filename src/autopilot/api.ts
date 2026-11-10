@@ -127,8 +127,10 @@ export function createAutopilotV4Router(): Router {
   router.post('/tasks/:id/approve', async (_req, res) => {
     try {
       const principal = getAutopilotPrincipal(res);
-      const approvedBy = principal.role === 'codex' ? 'codex' : 'human';
-      const task = orchestrator.approve(_req.params.id, approvedBy);
+      if (principal.role !== 'admin') {
+        return res.status(403).json({ error: 'HUMAN_APPROVAL_REQUIRED' });
+      }
+      const task = orchestrator.approve(_req.params.id, 'human');
       const event = task.audit[task.audit.length - 1];
       await persistTask(task);
       await persistAuditEvent({
