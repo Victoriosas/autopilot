@@ -1,3 +1,11 @@
+# Continuidad · montaje común de API · 08/11/2026
+
+Fase F1. Rama `codex/shared-api-mount-20261108` desde `7458d4b`. La API de Node y la app que consumen Vercel y Supabase Edge usan `src/http/createApp.ts` para montar consultas, el parser general, los routers V4 y health. Las entradas conservan sus metadatos, cabeceras, fallbacks y orden. Rollback mediante reversión del PR.
+
+`npm run verify` aprobó 431 pruebas y ambas compilaciones. Pasaron 17 pruebas HTTP focalizadas, el bundle local de Supabase Edge, el arranque del bundle Node, HTML, secretos y diff. Los dos adaptadores conservaron admin anónimo 401, formulario deshabilitado antes del parser y webhook legado 410. CI exacta en la PR.
+
+Próximos lotes separados. Alinear el 404 JSON de la API con Node y normalizar errores. Separar los artefactos de build: la compilación de Vercel limpia `dist` y elimina el bundle Node previo. Acotar el parser por ruta con contratos medidos y revisar el arranque, que espera al scheduler antes de escuchar. F3 conserva su revisión independiente en las PR #198 y #199.
+
 # Continuidad · depuración autorizada de PR · 06/11/2026
 
 - El propietario autorizó ejecutar la revisión de PR pendientes y dejarla optimizada. Integradas por squash, sin auto-merge ni deploy manual: #186 instrucciones/README (5f1f0f8), #188 captura F2 portátil (5d175c2), #168 GenAI 2.32/Lucide 1.66 (9bb5264). Main base de este cierre: 9bb5264f8cebdd990634e80d6408e91a4f08788b. Todos los heads exactos tuvieron validate/postgres/CodeQL aprobados, sin hilos pendientes. No se reactivó comercio ni modelos.
