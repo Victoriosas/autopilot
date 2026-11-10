@@ -1,11 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "git": {
-    "deploymentEnabled": {
-      "codex/mission-operator-20261109": false,
-      "codex/mission-trigger-20261109": false
-    }
-  },
   "buildCommand": "npm run build:vercel",
   "outputDirectory": "dist",
   "framework": "vite",
@@ -104,5 +98,13 @@
         }
       ]
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "codex/shared-context-20261110": false,
+      "codex/f1-readiness-20261110": false,
+      "codex/mission-operator-20261109": false,
+      "codex/mission-trigger-20261109": false
+    }
+  }
 }

@@ -7,9 +7,9 @@
   "scripts": {
     "mission:local": "node --import tsx scripts/autopilot-mission.ts",
     "dev": "tsx server.ts",
-    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
-    "start": "node dist/server.cjs",
-    "preview": "vite preview",
+    "build": "vite build --outDir dist-node/public && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist-node/server.cjs",
+    "start": "node dist-node/server.cjs",
+    "preview": "vite preview --outDir dist-node/public",
     "lint": "tsc --noEmit",
     "test": "node --import tsx --test src/autopilot/*.test.ts src/payments/*.test.ts src/storefront/*.test.ts src/integrations/*.test.ts src/security/*.test.ts scripts/public-health.test.mjs",
     "eval:consultation-agents": "node --import tsx scripts/eval-consultation-agents.ts",
@@ -18,7 +18,7 @@
     "test:db": "node --import tsx --test tests/sourcing-postgres.test.ts && node --import tsx --test tests/shadow-auth-postgres.test.ts",
     "test:commerce:db": "node scripts/test-commerce-postgres.mjs",
     "test:hosted-replay:db": "node scripts/test-hosted-replay-postgres.mjs",
-    "verify": "npm run verify:skills && npm run lint && npm test && npm run build && npm run build:vercel",
+    "verify": "npm run verify:skills && npm run lint && npm test && npm run build && npm run build:vercel && node scripts/check-built-api.mjs",
     "verify:skills": "node scripts/check-codex-skills.mjs"
   },
   "dependencies": {
