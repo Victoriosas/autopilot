@@ -14,6 +14,7 @@ import { registerConsultationIntelligence,type IntelligenceRouterDependencies } 
 import { runConsultationIntelligence } from './consultationIntelligenceStore';
 import { registerConsultationLab } from './consultationLabRouter';
 import type { ServiceKnowledgeStore } from './consultationServiceKnowledge';
+import { checkConsultationReadiness } from './consultationReadiness';
 
 export function consultationAddress(req: { ip?: string; get(name: string): string | undefined }, vercel = process.env.VERCEL === '1'): string {
   // Vercel overwrites this header. Outside its runtime, use only Express's peer IP.
@@ -27,9 +28,14 @@ export function createConsultationRouter(deps: { store?: ConsultationStore; read
   const enabled = deps.enabled || (() => process.env.CONSULTATION_REQUESTS_ENABLED === 'true' && process.env.CONSULTATION_PRIVACY_APPROVED === 'true' && process.env.CONSULTATION_RETENTION_READY === 'true');
   const origin = deps.origin || (() => process.env.PUBLIC_APP_URL), abuseKey = deps.abuseKey || (() => process.env.CONSULTATION_ABUSE_SECRET);
   const allowedOrigin = () => { try { const url = new URL(origin() || ''); return url.protocol === 'https:' && !url.username && !url.password ? url.origin : ''; } catch { return ''; } };
-  const available = async () => { try { return enabled() && Boolean(allowedOrigin()) && Boolean(abuseKey() && (deps.abuseKey || abuseKey()!.length >= 32)) && delivery.ready() && await store.ready(); } catch { return false; } };
+  const readiness = () => checkConsultationReadiness({ enabled, configured: () => Boolean(allowedOrigin()) && Boolean(abuseKey() && (deps.abuseKey || abuseKey()!.length >= 32)),
+    notificationReady: () => delivery.ready(), storageReady: signal => store.ready(signal) });
+  const available = async () => (await readiness()).enabled;
   router.use((_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
-  router.get('/config', async (_req, res) => res.json({ enabled: await available(), privacyVersion: 'consultation-v1', retentionDays: 30 }));
+  router.get('/config', async (_req, res) => {
+    const state=await readiness();
+    return res.json({ enabled: state.enabled, ...(!state.enabled ? { unavailableReason: state.unavailableReason } : {}), privacyVersion: 'consultation-v1', retentionDays: 30 });
+  });
   // Aggregate-only private dashboard; no names, email addresses or clinical details.
   router.get('/admin/metrics', deps.auth || requireSupabaseAdminAuth, async (_req, res) => {
     try {

@@ -1,10 +1,15 @@
 import { beautyCallerDatabase, beautyServerDatabase } from './beautyDatabase';
 import type { ConsultationInput } from './consultationRequest';
+import { CONSULTATION_READINESS_TIMEOUT_MS } from './consultationReadiness';
+
+export async function consultationSchemaReady(database: ReturnType<typeof beautyServerDatabase>, signal: AbortSignal): Promise<boolean> {
+  try { const result = await database.rpc('consultation_schema_ready').abortSignal(signal); return !result.error && result.data === 'consultation-v1'; } catch { return false; }
+}
 
 export type ConsultationClaim = { state: 'send' | 'accepted' | 'pending' | 'conflict' | 'throttled' | 'expired'; lease?: string };
 export type ConsultationRecord = { id: string; input: ConsultationInput; created_at: string; expires_at: string };
 export interface ConsultationStore {
-  ready(): Promise<boolean>;
+  ready(signal?: AbortSignal): Promise<boolean>;
   claim(input: ConsultationInput, fingerprint: string, abuseHash: string): Promise<ConsultationClaim>;
   finish(id: string, lease: string, providerId: string): Promise<boolean>;
   list?(token: string, offset: number): Promise<ConsultationRecord[]>;
@@ -21,8 +26,8 @@ export const consultationSupabaseStore: ConsultationStore = {
     if (result.error) throw Error('CONSULTATION_UNAVAILABLE');
     return result.data as ConsultationRecord[];
   },
-  async ready() {
-    try { const result = await beautyServerDatabase().rpc('consultation_schema_ready'); return !result.error && result.data === 'consultation-v1'; } catch { return false; }
+  async ready(signal = AbortSignal.timeout(CONSULTATION_READINESS_TIMEOUT_MS)) {
+    try { return await consultationSchemaReady(beautyServerDatabase(), signal); } catch { return false; }
   },
   async claim(input, fingerprint, abuseHash) {
     const result = await beautyServerDatabase().rpc('consultation_claim', { p_input: input, p_fingerprint: fingerprint, p_abuse_hash: abuseHash });

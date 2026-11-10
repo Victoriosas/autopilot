@@ -34,7 +34,9 @@ export async function checkPublicHealth(origin, request = fetch) {
   // This intake is already enabled independently of the closed Beauty/commerce gates.
   // Readiness checks do not submit data or prove human receipt of notifications.
   const consultations = await (await get('/api/beauty/inquiries/config')).json();
-  assert.equal(consultations.enabled, true, 'consultation intake unavailable');
+  const reason = ['disabled','configuration_incomplete','notification_unavailable','storage_unavailable','storage_timeout'].includes(consultations.unavailableReason)
+    ? consultations.unavailableReason : 'unknown';
+  assert.equal(consultations.enabled, true, `consultation intake unavailable: ${reason}`);
   assert.equal(consultations.privacyVersion, 'consultation-v1');
   assert.equal(consultations.retentionDays, 30);
   await get('/api/beauty/inquiries/admin', 401);
