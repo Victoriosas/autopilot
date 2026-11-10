@@ -74,8 +74,8 @@ async function assertGone(pid:number){await until(()=>{try{process.kill(pid,0);r
 try {
   // Admission, duplicate, rejection and a complete manual execution: all through separate CLI processes.
   const normal=await request('normal');
-  const admissions=await Promise.all([command('admit',['--request',normal.file]),command('admit',['--request',normal.file])]);
-  assert.deepEqual(admissions.map(events=>events.at(-1)!.state).sort(),['duplicate','queued']);
+  const admissions=await Promise.all(Array.from({length:8},()=>command('admit',['--request',normal.file])));
+  assert.deepEqual(admissions.map(events=>events.at(-1)!.state).sort(),['duplicate','duplicate','duplicate','duplicate','duplicate','duplicate','duplicate','queued']);
   assert.equal((await command('admit',['--request',normal.file])).at(-1)!.state,'duplicate');
   const rejected=await request('reject',{objective:{...objective,kind:'send_email'}});
   assert.equal((await command('admit',['--request',rejected.file],[2])).at(-1)!.code,'objective_not_admitted');
