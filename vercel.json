@@ -98,5 +98,10 @@
         }
       ]
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "codex/shared-context-20261110": false
+    }
+  }
 }

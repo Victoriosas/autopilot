@@ -1123,3 +1123,8 @@ Fase F1/operación. `micahael-PC` volvió a estar conectada, pero el checkout `C
 ## 2026-11-08 · Habilidades de Codex v2
 
 Rama `codex/victoriosas-skills-v2` sobre `7458d4b`. Cinco habilidades instaladas en un worktree aislado. El catálogo conserva las ocho anteriores y `AGENTS.md` referencia la coordinadora y el control de fases. La incorporación al checkout principal depende de la revisión de la PR y la actualización de ese checkout. La instalación de habilidades no cambia el horario ni activa ejecuciones programadas.
+
+
+## 2026-11-09 · Coordinación Work y Codex local, host sin acceso remoto
+
+Solicitud del propietario: inventariar PC/configuración/sesión y mantener referencia compartida en GitHub. Ambas conexiones Desktop Commander Remote muestran micahael-PC offline; discos, procesos y sesión actual no inspeccionados. Main contrastado en a6cff5aba04e752cb010926b88c24fd4abfe84b6; PR #213 conserva 15720289647da59c19cc2c19c7f123ee84259a31. Se añade docs/WORK_CODEX_SHARED_CONTEXT.md con referencias B–G, autorización temporal G y contrato de intercambio saneado. Emparejamiento local PENDIENTE hasta observación del host y confirmación de Codex. No se modifican checkout aprobado, tareas, configuración local ni servicios. Rama documental aislada con Git deployment deshabilitado antes de crear su referencia. No hay sincronización automática de chats ni ejecución futura programada por este archivo.
