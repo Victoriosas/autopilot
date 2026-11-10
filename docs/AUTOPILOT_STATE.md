@@ -1,3 +1,23 @@
+# Continuidad · 404 de API y artefactos de compilación · 08/11/2026
+
+Fase F1. Rama `codex/api-404-build-isolation-20261108` sobre `039ecf3` de la PR #200. Node y Vercel devuelven `404` JSON con `API_ROUTE_NOT_FOUND` al llegar al último handler de API. En Node queda después de las rutas existentes y antes del fallback de la SPA. El build de Node usa `dist-node` y sirve `dist-node/public`. Vercel conserva `dist`. `npm start`, el preview local y el comando del Dockerfile apuntan a sus nuevas rutas.
+
+`npm run verify` aprobó 431 pruebas y el smoke de los dos bundles ejecutado después de ambas compilaciones. El smoke usa loopback, un puerto efímero y un directorio temporal sin archivos de entorno. Verificó `GET`, `POST` y `HEAD` de API desconocida, health con checkout cerrado, HTML y JavaScript de Node y `/checkout` con `410`. También aprobaron HTML de Vercel, compilación Edge local y escáner de secretos. La imagen Docker requiere una comprobación con su runtime. CI del commit exacto en la PR.
+
+Revisión Docker del 08/11. El Dockerfile anterior usaba Node 20 aunque el proyecto declara Node 24 y el SDK instalado de Supabase exige al menos Node 22. Un arranque aislado sin `NODE_ENV` sirvió el cliente de desarrollo de Vite. Se alineó la imagen con Node 24, se instaló mediante `npm ci` en el Dockerfile y se fijó `NODE_ENV=production` para el arranque. Las copias explícitas y `.dockerignore` limitan el contexto a las fuentes de build y excluyen archivos de entorno.
+
+Una copia local con las entradas del Dockerfile compiló con Node 24 y arrancó el bundle de producción. Pasaron health con checkout cerrado, HTML y JS compilados y `GET`, `POST` y `HEAD` desconocidos con 404 JSON. `HEAD` tuvo cuerpo vacío. La PC carece de motor Docker o equivalente accesible, por lo que sigue pendiente construir y ejecutar la imagen en contenedor.
+
+La entrega depende del montaje común de #200. Revalidar la base tras su integración. Rollback mediante reversión del PR y regeneración de los artefactos del commit anterior.
+
+# Continuidad · montaje común de API · 08/11/2026
+
+Fase F1. Rama `codex/shared-api-mount-20261108` desde `7458d4b`. La API de Node y la app que consumen Vercel y Supabase Edge usan `src/http/createApp.ts` para montar consultas, el parser general, los routers V4 y health. Las entradas conservan sus metadatos, cabeceras, fallbacks y orden. Rollback mediante reversión del PR.
+
+`npm run verify` aprobó 431 pruebas y ambas compilaciones. Pasaron 17 pruebas HTTP focalizadas, el bundle local de Supabase Edge, el arranque del bundle Node, HTML, secretos y diff. Los dos adaptadores conservaron admin anónimo 401, formulario deshabilitado antes del parser y webhook legado 410. CI exacta en la PR.
+
+Próximos lotes separados. Alinear el 404 JSON de la API con Node y normalizar errores. Separar los artefactos de build: la compilación de Vercel limpia `dist` y elimina el bundle Node previo. Acotar el parser por ruta con contratos medidos y revisar el arranque, que espera al scheduler antes de escuchar. F3 conserva su revisión independiente en las PR #198 y #199.
+
 # Continuidad · depuración autorizada de PR · 06/11/2026
 
 - El propietario autorizó ejecutar la revisión de PR pendientes y dejarla optimizada. Integradas por squash, sin auto-merge ni deploy manual: #186 instrucciones/README (5f1f0f8), #188 captura F2 portátil (5d175c2), #168 GenAI 2.32/Lucide 1.66 (9bb5264). Main base de este cierre: 9bb5264f8cebdd990634e80d6408e91a4f08788b. Todos los heads exactos tuvieron validate/postgres/CodeQL aprobados, sin hilos pendientes. No se reactivó comercio ni modelos.
@@ -1123,6 +1143,20 @@ Fase F1/operación. `micahael-PC` volvió a estar conectada, pero el checkout `C
 ## 2026-11-08 · Habilidades de Codex v2
 
 Rama `codex/victoriosas-skills-v2` sobre `7458d4b`. Cinco habilidades instaladas en un worktree aislado. El catálogo conserva las ocho anteriores y `AGENTS.md` referencia la coordinadora y el control de fases. La incorporación al checkout principal depende de la revisión de la PR y la actualización de ese checkout. La instalación de habilidades no cambia el horario ni activa ejecuciones programadas.
+## 2026-11-08 · Disponibilidad de autenticación administrativa
+
+Fase F1. Rama `codex/admin-auth-upstream-status-20261108` desde `7458d4b`. Se revisó `workspace.tar` en el SHA `b3bc8759297eeeb4421b50388b9e3634f7d4e0ac` mediante extracción selectiva de fuentes y pruebas. Con Auth y PostgREST simulados, el guardián actual autorizó al admin con clave pública o de servicio y consultó su propio perfil con su JWT. La copia antigua devolvió 503 antes de llamar a Auth con solo clave pública. Ambos checkouts se comportaron igual con las dos configuraciones de claves. La centralización antigua queda como referencia.
+
+La prueba HTTP reprodujo `401` ante un 503 de Auth y `403` ante un 503 de PostgREST. El guardián devuelve ahora `503 ADMIN_AUTH_UNAVAILABLE` ante fallos de disponibilidad. Conserva `401` para credencial rechazada y `403` para falta de rol. Pasaron ocho pruebas focalizadas y `npm run verify` con 429 pruebas y ambos builds. RLS y configuración remota quedan bajo sus controles actuales. CI del commit en la PR. Reversión mediante revert del cambio en la rama revisable.
+## 2026-11-09 · F1: revisión de la prueba de autenticación en PR #202
+
+Continuación aislada desde `8b8929a` de PR #202, con `origin/main` revalidado en `a6cff5a`. El monitor público completó todos sus GET: sitio y configuración HTTP 200, bandeja anónima 401, comercio retirado 410; health informó `a6cff5a`. No se envió formulario ni correo.
+
+El check CodeQL de #202 señaló el servidor sintético de la prueba de Auth. Se reemplaza ese segundo servidor por una invocación directa del middleware con Request/Response sintéticos. Se mantienen la prueba HTTP de rutas protegidas, los rechazos de identidad/rol, los fallos del proveedor y las comprobaciones del JWT y clave pública/de servicio enviados a Supabase. No se cambia código de producción, configuración de CodeQL, exclusiones ni alertas. Reversión: restaurar exclusivamente el fixture de la prueba. `npm run verify`: 429/429 pruebas, TypeScript y ambos builds correctos. HTML, secretos y diff correctos después de finalizar la compilación. CI del nuevo SHA se informa en la PR; no atribuirle los checks del head anterior. Sin merge, despliegue manual, SQL remoto, pagos, IA ni mensajes a clientas.
+
+## 2026-11-09 · F1: revisión conjunta de #200–#202
+
+Integración aislada `codex/f1-api-auth-review-20261109` desde main `a6cff5a`: conserva heads `039ecf3` (#200), `7da72d3` (#201, incluye #200) y `eb92a0c` (#202). Solo conflicto documental, resuelto preservando ambas notas. Informe y reversión: [F1_API_AUTH_REVIEW_20261109.md](F1_API_AUTH_REVIEW_20261109.md). `npm run verify` del conjunto: 432/432, cero omitidas, tipos, 13 habilidades, ambos builds y smoke de APIs compiladas aprobados; HTML, secretos y diff correctos. Edge compilado localmente. Docker no está disponible: contenedor sin probar. Checks del SHA final en PR; los checks individuales no certifican esta integración. Sin merge remoto, publicación productiva, SQL alojado ni envíos. Las tres propuestas originales se conservan. Siguiente: revisión del candidato y autorización específica antes de producción.
 
 
 ## 2026-11-09 · Coordinación Work y Codex local, host sin acceso remoto

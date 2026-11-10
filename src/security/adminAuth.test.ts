@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
-import { createLegacyAdminGuard } from './adminAuth';
+import { createLegacyAdminGuard, requireSupabaseAdminAuth } from './adminAuth';
 
 test('legacy admin guard protects case aliases and only exempts the V4 path segment', async () => {
   const app = express();
@@ -27,4 +27,73 @@ test('legacy admin guard protects case aliases and only exempts the V4 path segm
     server.closeAllConnections();
     await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
   }
+});
+
+test('admin verification keeps caller-scoped profiles and distinguishes provider outages', async (t) => {
+  const names = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_ANON_KEY', 'VITE_SUPABASE_ANON_KEY'] as const;
+  const previous = names.map(name => process.env[name]);
+  t.after(() => names.forEach((name, index) => {
+    const value = previous[index];
+    if (value === undefined) delete process.env[name];
+    else process.env[name] = value;
+  }));
+  const provider = 'http://127.0.0.1:59999';
+  const userId = '11111111-1111-4111-8111-111111111111';
+  process.env.SUPABASE_URL = provider;
+  delete process.env.VITE_SUPABASE_ANON_KEY;
+
+  let authStatus = 200;
+  let profileStatus = 200;
+  let role = 'admin';
+  const mockFetch: typeof fetch = async (input, options) => {
+    const url = new URL(input instanceof Request ? input.url : String(input));
+    assert.equal(url.origin, provider);
+    const headers = new Headers(options?.headers);
+    assert.equal(headers.get('authorization'), 'Bearer fixture-token');
+    assert.equal(headers.get('apikey'), 'synthetic-key');
+    if (url.pathname === '/auth/v1/user') {
+      return Response.json(authStatus === 200
+        ? { id: userId, aud: 'authenticated', app_metadata: {}, user_metadata: {} }
+        : { message: 'Synthetic provider error' }, { status: authStatus });
+    }
+    assert.equal(url.pathname, '/rest/v1/profiles');
+    assert.equal(url.searchParams.get('id'), `eq.${userId}`);
+    return Response.json(profileStatus === 200 ? { role } : { message: 'Synthetic provider error' }, {
+      status: profileStatus,
+    });
+  };
+  t.mock.method(globalThis, 'fetch', mockFetch);
+
+  // Exercise provider decisions directly; HTTP path protection is covered above.
+  // This fixture needs no additional server or externally callable auth route.
+  const probe = async () => {
+    let status = 200;
+    let body: unknown;
+    const req = { header: (name: string) => name === 'authorization' ? 'Bearer fixture-token' : undefined } as Request;
+    const res = {
+      locals: {},
+      status(code: number) { status = code; return this; },
+      json(value: unknown) { body = value; return this; },
+    } as Response;
+    await requireSupabaseAdminAuth(req, res, () => { body = { admin: res.locals.adminUserId }; });
+    return { status, body };
+  };
+
+  for (const key of ['SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY'] as const) {
+    delete process.env.SUPABASE_ANON_KEY;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    process.env[key] = 'synthetic-key';
+    role = 'admin';
+    assert.deepEqual(await probe(), { status: 200, body: { admin: userId } }, key);
+    role = 'member';
+    assert.deepEqual(await probe(), { status: 403, body: { error: 'ADMIN_ROLE_REQUIRED' } }, key);
+  }
+  authStatus = 401;
+  assert.deepEqual(await probe(), { status: 401, body: { error: 'ADMIN_AUTH_INVALID' } });
+  authStatus = 200;
+  profileStatus = 503;
+  assert.deepEqual(await probe(), { status: 503, body: { error: 'ADMIN_AUTH_UNAVAILABLE' } });
+  profileStatus = 200;
+  authStatus = 503;
+  assert.deepEqual(await probe(), { status: 503, body: { error: 'ADMIN_AUTH_UNAVAILABLE' } });
 });
