@@ -1142,3 +1142,10 @@ PR #214 contrastada desde 1409874; acuse Codex de huella a6bf13d814ef8e47 y blob
 APLICADO con backup exacto: alcance global AGENTS para Victoriosas/autopilot sin eliminar instrucciones de otros proyectos; nueva sección ya cargada en esta sesión. PRESERVADO remoto: bd24d4c original en codex/mission-native-activation-20261109, descendiente cc7f753 con Git deployment desactivado; sin cambios en checkout G. CamelRun POSPONER: OAuth/inventario reales, siete agentes sin aplicación conectada/runs/schedules; costes no nulos, límites remotos sin demostrar y gateway stateless ya existente. Cero inferencias o agentes ejecutados.
 
 Evidencia, origen/diferencia/decisión/prueba/reversión por candidato: [CONFIGURATION_DECISIONS_20261110.md](CONFIGURATION_DECISIONS_20261110.md). Se retoma desarrollo F1 en rama separada: disponibilidad de consultas acotada y diagnóstico determinista, sin duplicar #204. ORD-204G conserva SHA/manifest/tarea/horario y ventana autorizada; sin activación fuera de ventana, merge, SQL alojado, servicios nuevos, gastos, credenciales o envíos.
+
+
+## Desarrollo retomado F1 · disponibilidad acotada de consultas (09/11/2026 Uruguay)
+
+Tras cerrar investigación en #214/ec121f2, se implementa readiness compartido para GET config y precondición de admisión: clasificación saneada, deadline fijo 3 s y AbortSignal al RPC de disponibilidad. Config añade unavailableReason solo al cerrar; el monitor existente valida allowlist y no imprime causas arbitrarias. No se crean scheduler/cola/modelos ni se duplican #204 o G.
+
+RED HTTP reprodujo causa ausente; GREEN focal 11/11, transporte Supabase real con fetch falso verificó abort sin SQL alojado, HTTP con almacenamiento sin respuesta termina y no admite/escribe/envía. Error privado, flags apagados, permisos de configuración y resultado tardío comprobados. Verify/CI del SHA final en la PR; evidencia [F1_CONSULTATION_READINESS_20261110.md](F1_CONSULTATION_READINESS_20261110.md). Rama codex/f1-readiness-20261110, despliegues Git desactivados. G permanece fijada/deshabilitada y fuera de ventana no se inicia. Sin merge, producción, SQL alojado, inferencia, gastos, credenciales nuevas o envíos.
