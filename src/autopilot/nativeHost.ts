@@ -120,8 +120,9 @@ export async function launchNativeHost(m: NativeManifest, manual: boolean) {
     await record({event:'host_closed',outcome:closed.outcome,reason:closed.reason,runId:closed.runId,attempts:closed.mission?.attempts});
     return run.exitCode===3?3:closed.mission?.state==='completed'||closed.mission?.state==='cancelled'?0:5;
   } catch (e) {
-    if (audit) await record({event:'host_closed',outcome:'rejected',reason:e instanceof Error&&/^[a-z_]+$/.test(e.message)?e.message:'native_launch_failed'});
-    throw Error('native_launch_rejected');
+    const reason=e instanceof Error&&/^[a-z_]{3,64}$/.test(e.message)?e.message:'native_launch_failed';
+    if (audit) await record({event:'host_closed',outcome:'rejected',reason});
+    throw Error(reason);
   } finally {
     clearTimeout(timer); await processes.close(); await auditQueue.catch(()=>{}); await audit?.close();
     process.removeListener('SIGINT',stop);process.removeListener('SIGTERM',stop);

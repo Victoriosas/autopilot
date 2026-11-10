@@ -9,7 +9,7 @@ const m={version:1,checkout:tmpdir(),approvedSha:'a'.repeat(40),executionConfig:
   evidenceDirectory:path.resolve(tmpdir(),'../native-evidence'),taskName:nativeTask,missionId:nativeMission,node:process.execPath,git:process.execPath,psql:process.execPath,maxDurationMs:45000};
 test('native manifest rejects other missions, arbitrary commands, secrets and unbounded duration',()=>{
   assert.equal(manifest(m).missionId,nativeMission);
-  for(const change of [{missionId:'synthetic-other'},{command:'echo payload'},{password:'synthetic-denied'},{approvedSha:'main'},{maxDurationMs:0},{maxDurationMs:60001},{evidenceDirectory:tmpdir()}])
+  for(const change of [{missionId:'synthetic-other'},{node:[process.execPath,process.execPath]},{command:'echo payload'},{password:'synthetic-denied'},{approvedSha:'main'},{maxDurationMs:0},{maxDurationMs:60001},{evidenceDirectory:tmpdir()}])
     assert.throws(()=>manifest({...m,...change}));
 });
 test('native dispatch never reactivates terminal missions or bypasses lease, backoff and budgets',()=>{

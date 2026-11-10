@@ -9,9 +9,9 @@ $output='C:/autopilot-worktrees/mission-native-host-proposal-20261109'
 if ((& git -C $checkout rev-parse HEAD) -ne $ApprovedSha) { throw 'unapproved_checkout' }
 if (Test-Path -LiteralPath $output) { throw 'proposal_directory_already_exists' }
 $sid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-$node=(Get-Command node -CommandType Application).Source
-$git=(Get-Command git -CommandType Application).Source
-$psql=(Get-Command psql -CommandType Application).Source
+$node=(Get-Command node -CommandType Application | Select-Object -First 1).Source
+$git=(Get-Command git -CommandType Application | Select-Object -First 1).Source
+$psql=(Get-Command psql -CommandType Application | Select-Object -First 1).Source
 New-Item -ItemType Directory -Path $output | Out-Null
 New-Item -ItemType Directory -Path "$output/evidence" | Out-Null
 Copy-Item -LiteralPath "$checkout/tools/native-host/execution-host.json" -Destination "$output/execution-host.json"
