@@ -21,7 +21,7 @@ test('consultation HTTP fails closed and accepts only durable recorded/provider-
   const base = `http://127.0.0.1:${(server.address() as any).port}/api/beauty/inquiries`;
   const post = (body: unknown = input, headers: Record<string, string> = {}) => fetch(base, { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://victoriosas.online', ...headers }, body: JSON.stringify(body) });
   try {
-    await t.test('disabled never touches private persistence', async () => { assert.equal((await post()).status, 503); assert.equal(calls, 0); assert.deepEqual(await (await fetch(base + '/config')).json(), { enabled: false, privacyVersion: 'consultation-v1', retentionDays: 30 }); });
+    await t.test('disabled never touches private persistence', async () => { assert.equal((await post()).status, 503); assert.equal(calls, 0); assert.deepEqual(await (await fetch(base + '/config')).json(), { enabled: false, unavailableReason: 'disabled', privacyVersion: 'consultation-v1', retentionDays: 30 }); });
     enabled = true;
     await t.test('configuration closes when schema is unavailable', async () => { ready = false; assert.equal((await (await fetch(base + '/config')).json()).enabled, false); assert.equal((await post()).status, 503); ready = true; });
     await t.test('rejects cross-site/missing origin, honeypot, PII extensions and oversized body', async () => { for (const origin of ['', 'https://attacker.test']) assert.equal((await post(input, { origin })).status, 403); assert.equal((await post({ ...input, website: 'bot' })).status, 400); assert.equal((await post({ ...input, diagnosis: 'extra' })).status, 400); assert.equal((await post({ ...input, message: 'a'.repeat(9000) })).status, 413); assert.equal(calls, 0); });

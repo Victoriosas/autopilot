@@ -1,3 +1,23 @@
+# Continuidad · 404 de API y artefactos de compilación · 08/11/2026
+
+Fase F1. Rama `codex/api-404-build-isolation-20261108` sobre `039ecf3` de la PR #200. Node y Vercel devuelven `404` JSON con `API_ROUTE_NOT_FOUND` al llegar al último handler de API. En Node queda después de las rutas existentes y antes del fallback de la SPA. El build de Node usa `dist-node` y sirve `dist-node/public`. Vercel conserva `dist`. `npm start`, el preview local y el comando del Dockerfile apuntan a sus nuevas rutas.
+
+`npm run verify` aprobó 431 pruebas y el smoke de los dos bundles ejecutado después de ambas compilaciones. El smoke usa loopback, un puerto efímero y un directorio temporal sin archivos de entorno. Verificó `GET`, `POST` y `HEAD` de API desconocida, health con checkout cerrado, HTML y JavaScript de Node y `/checkout` con `410`. También aprobaron HTML de Vercel, compilación Edge local y escáner de secretos. La imagen Docker requiere una comprobación con su runtime. CI del commit exacto en la PR.
+
+Revisión Docker del 08/11. El Dockerfile anterior usaba Node 20 aunque el proyecto declara Node 24 y el SDK instalado de Supabase exige al menos Node 22. Un arranque aislado sin `NODE_ENV` sirvió el cliente de desarrollo de Vite. Se alineó la imagen con Node 24, se instaló mediante `npm ci` en el Dockerfile y se fijó `NODE_ENV=production` para el arranque. Las copias explícitas y `.dockerignore` limitan el contexto a las fuentes de build y excluyen archivos de entorno.
+
+Una copia local con las entradas del Dockerfile compiló con Node 24 y arrancó el bundle de producción. Pasaron health con checkout cerrado, HTML y JS compilados y `GET`, `POST` y `HEAD` desconocidos con 404 JSON. `HEAD` tuvo cuerpo vacío. La PC carece de motor Docker o equivalente accesible, por lo que sigue pendiente construir y ejecutar la imagen en contenedor.
+
+La entrega depende del montaje común de #200. Revalidar la base tras su integración. Rollback mediante reversión del PR y regeneración de los artefactos del commit anterior.
+
+# Continuidad · montaje común de API · 08/11/2026
+
+Fase F1. Rama `codex/shared-api-mount-20261108` desde `7458d4b`. La API de Node y la app que consumen Vercel y Supabase Edge usan `src/http/createApp.ts` para montar consultas, el parser general, los routers V4 y health. Las entradas conservan sus metadatos, cabeceras, fallbacks y orden. Rollback mediante reversión del PR.
+
+`npm run verify` aprobó 431 pruebas y ambas compilaciones. Pasaron 17 pruebas HTTP focalizadas, el bundle local de Supabase Edge, el arranque del bundle Node, HTML, secretos y diff. Los dos adaptadores conservaron admin anónimo 401, formulario deshabilitado antes del parser y webhook legado 410. CI exacta en la PR.
+
+Próximos lotes separados. Alinear el 404 JSON de la API con Node y normalizar errores. Separar los artefactos de build: la compilación de Vercel limpia `dist` y elimina el bundle Node previo. Acotar el parser por ruta con contratos medidos y revisar el arranque, que espera al scheduler antes de escuchar. F3 conserva su revisión independiente en las PR #198 y #199.
+
 # Continuidad · depuración autorizada de PR · 06/11/2026
 
 - El propietario autorizó ejecutar la revisión de PR pendientes y dejarla optimizada. Integradas por squash, sin auto-merge ni deploy manual: #186 instrucciones/README (5f1f0f8), #188 captura F2 portátil (5d175c2), #168 GenAI 2.32/Lucide 1.66 (9bb5264). Main base de este cierre: 9bb5264f8cebdd990634e80d6408e91a4f08788b. Todos los heads exactos tuvieron validate/postgres/CodeQL aprobados, sin hilos pendientes. No se reactivó comercio ni modelos.
@@ -1123,6 +1143,53 @@ Fase F1/operación. `micahael-PC` volvió a estar conectada, pero el checkout `C
 ## 2026-11-08 · Habilidades de Codex v2
 
 Rama `codex/victoriosas-skills-v2` sobre `7458d4b`. Cinco habilidades instaladas en un worktree aislado. El catálogo conserva las ocho anteriores y `AGENTS.md` referencia la coordinadora y el control de fases. La incorporación al checkout principal depende de la revisión de la PR y la actualización de ese checkout. La instalación de habilidades no cambia el horario ni activa ejecuciones programadas.
+## 2026-11-08 · Disponibilidad de autenticación administrativa
+
+Fase F1. Rama `codex/admin-auth-upstream-status-20261108` desde `7458d4b`. Se revisó `workspace.tar` en el SHA `b3bc8759297eeeb4421b50388b9e3634f7d4e0ac` mediante extracción selectiva de fuentes y pruebas. Con Auth y PostgREST simulados, el guardián actual autorizó al admin con clave pública o de servicio y consultó su propio perfil con su JWT. La copia antigua devolvió 503 antes de llamar a Auth con solo clave pública. Ambos checkouts se comportaron igual con las dos configuraciones de claves. La centralización antigua queda como referencia.
+
+La prueba HTTP reprodujo `401` ante un 503 de Auth y `403` ante un 503 de PostgREST. El guardián devuelve ahora `503 ADMIN_AUTH_UNAVAILABLE` ante fallos de disponibilidad. Conserva `401` para credencial rechazada y `403` para falta de rol. Pasaron ocho pruebas focalizadas y `npm run verify` con 429 pruebas y ambos builds. RLS y configuración remota quedan bajo sus controles actuales. CI del commit en la PR. Reversión mediante revert del cambio en la rama revisable.
+## 2026-11-09 · F1: revisión de la prueba de autenticación en PR #202
+
+Continuación aislada desde `8b8929a` de PR #202, con `origin/main` revalidado en `a6cff5a`. El monitor público completó todos sus GET: sitio y configuración HTTP 200, bandeja anónima 401, comercio retirado 410; health informó `a6cff5a`. No se envió formulario ni correo.
+
+El check CodeQL de #202 señaló el servidor sintético de la prueba de Auth. Se reemplaza ese segundo servidor por una invocación directa del middleware con Request/Response sintéticos. Se mantienen la prueba HTTP de rutas protegidas, los rechazos de identidad/rol, los fallos del proveedor y las comprobaciones del JWT y clave pública/de servicio enviados a Supabase. No se cambia código de producción, configuración de CodeQL, exclusiones ni alertas. Reversión: restaurar exclusivamente el fixture de la prueba. `npm run verify`: 429/429 pruebas, TypeScript y ambos builds correctos. HTML, secretos y diff correctos después de finalizar la compilación. CI del nuevo SHA se informa en la PR; no atribuirle los checks del head anterior. Sin merge, despliegue manual, SQL remoto, pagos, IA ni mensajes a clientas.
+
+## 2026-11-09 · F1: revisión conjunta de #200–#202
+
+Integración aislada `codex/f1-api-auth-review-20261109` desde main `a6cff5a`: conserva heads `039ecf3` (#200), `7da72d3` (#201, incluye #200) y `eb92a0c` (#202). Solo conflicto documental, resuelto preservando ambas notas. Informe y reversión: [F1_API_AUTH_REVIEW_20261109.md](F1_API_AUTH_REVIEW_20261109.md). `npm run verify` del conjunto: 432/432, cero omitidas, tipos, 13 habilidades, ambos builds y smoke de APIs compiladas aprobados; HTML, secretos y diff correctos. Edge compilado localmente. Docker no está disponible: contenedor sin probar. Checks del SHA final en PR; los checks individuales no certifican esta integración. Sin merge remoto, publicación productiva, SQL alojado ni envíos. Las tres propuestas originales se conservan. Siguiente: revisión del candidato y autorización específica antes de producción.
+
+
+## 2026-11-09 · Coordinación Work y Codex local, host sin acceso remoto
+
+Solicitud del propietario: inventariar PC/configuración/sesión y mantener referencia compartida en GitHub. Ambas conexiones Desktop Commander Remote muestran micahael-PC offline; discos, procesos y sesión actual no inspeccionados. Main contrastado en a6cff5aba04e752cb010926b88c24fd4abfe84b6; PR #213 conserva 15720289647da59c19cc2c19c7f123ee84259a31. Se añade docs/WORK_CODEX_SHARED_CONTEXT.md con referencias B–G, autorización temporal G y contrato de intercambio saneado. Emparejamiento local PENDIENTE hasta observación del host y confirmación de Codex. No se modifican checkout aprobado, tareas, configuración local ni servicios. Rama documental aislada con Git deployment deshabilitado antes de crear su referencia. No hay sincronización automática de chats ni ejecución futura programada por este archivo.
+
+
+## 2026-11-09 · Inventario de PC reconectada y referencia compartida Work/Codex
+
+Desktop Commander confirmó micahael-PC online. Inspección dirigida de C:/, E:/, .codex, worktrees, respaldo y campos permitidos de OpenCode/VS Code. 50 worktrees registrados; C:/autopilot en a6cff5aba04e752cb010926b88c24fd4abfe84b6 sin cambios versionados, 138 entradas untracked conservadas. Sesión candidata por recencia/cwd: gpt-6.1-sol medium; acuse de lectura local pendiente. Global AGENTS aún orientado a la tienda antigua, discrepancia documentada sin alterar instrucciones globales. Tarea G comprobada Disabled/Limited, checkout aprobado intacto, sin listeners del laboratorio en puertos conocidos; autorización y horario conservados. Se actualiza docs/WORK_CODEX_SHARED_CONTEXT.md y se agrega WORK_CODEX_HOST_INVENTORY.json; copia local fuera de checkouts. No se inicia infraestructura ni se sincronizan chats automáticamente. Ver PR #214 y sus límites de evidencia.
+
+
+## Cierre de configuraciones y capacidades recuperadas · 09/11/2026 Uruguay
+
+PR #214 contrastada desde 1409874; acuse Codex de huella a6bf13d814ef8e47 y blobs compartidos confirmado. Comparación dirigida cerrada: backup Codex no contiene MCP perdido; OpenCode antiguo tiene menos guardas; configuraciones de entorno/VS Code recuperadas idénticas; 256/256 hashes del respaldo E verificados. Scripts de comercio y snapshot de septiembre no se restauran.
+
+APLICADO con backup exacto: alcance global AGENTS para Victoriosas/autopilot sin eliminar instrucciones de otros proyectos; nueva sección ya cargada en esta sesión. PRESERVADO remoto: bd24d4c original en codex/mission-native-activation-20261109, descendiente cc7f753 con Git deployment desactivado; sin cambios en checkout G. CamelRun POSPONER: OAuth/inventario reales, siete agentes sin aplicación conectada/runs/schedules; costes no nulos, límites remotos sin demostrar y gateway stateless ya existente. Cero inferencias o agentes ejecutados.
+
+Evidencia, origen/diferencia/decisión/prueba/reversión por candidato: [CONFIGURATION_DECISIONS_20261110.md](CONFIGURATION_DECISIONS_20261110.md). Se retoma desarrollo F1 en rama separada: disponibilidad de consultas acotada y diagnóstico determinista, sin duplicar #204. ORD-204G conserva SHA/manifest/tarea/horario y ventana autorizada; sin activación fuera de ventana, merge, SQL alojado, servicios nuevos, gastos, credenciales o envíos.
+
+## 2026-11-09 · Protocolo V5 de continuidad Codex
+
+Orden `ORD-V5-PROTOCOL-20261109`, worktree aislado `E:/autopilot-continuation-v5-20261109`, base remota main `a6cff5aba04e752cb010926b88c24fd4abfe84b6`. Se conserva este historial y se añade `docs/CODEX_CONTINUATION.md` con checkpoint JSON enlazado desde la habilidad principal. Recuperación, deduplicación, supervisión adversarial y selección de orden reutilizan las habilidades v2. No se agrega runtime ni scheduler.
+
+Validación documental: 13 habilidades válidas, lectura/parseo del checkpoint desde otro proceso, referencias locales y diff comprobados. Supervisión interna APROBADO para protocolo documental y recuperación local. Configuración de `victoriosa-autopilot-6h` observada ACTIVE; falta prueba de arranque técnico, recepción de esta rama y exclusión. Reanudación desatendida sin verificar.
+
+Siguiente orden F1 ejecutada en lectura: PR #204 OPEN/draft, head `a183ff2f47a4eebcd727e752795ba64b2178f2a1`; Core run 42573757580 success sobre ese SHA con validate/postgres aprobados. Supabase Preview omitida. El informe existente registra Docker sin probar en contenedor. Se reutiliza esa revisión conjunta de #200–#202 sin duplicarla. Siguiente orden recuperable `ORD-V5-RESUMPTION-20261109`, dependiente de evidencia de ejecución del mecanismo existente. Cualquier publicación permanece sujeta a aprobación específica.
+
+## Desarrollo retomado F1 · disponibilidad acotada de consultas (09/11/2026 Uruguay)
+
+Tras cerrar investigación en #214/ec121f2, se implementa readiness compartido para GET config y precondición de admisión: clasificación saneada, deadline fijo 3 s y AbortSignal al RPC de disponibilidad. Config añade unavailableReason solo al cerrar; el monitor existente valida allowlist y no imprime causas arbitrarias. No se crean scheduler/cola/modelos ni se duplican #204 o G.
+
+RED HTTP reprodujo causa ausente; GREEN focal 11/11, transporte Supabase real con fetch falso verificó abort sin SQL alojado, HTTP con almacenamiento sin respuesta termina y no admite/escribe/envía. Error privado, flags apagados, permisos de configuración y resultado tardío comprobados. Verify/CI del SHA final en la PR; evidencia [F1_CONSULTATION_READINESS_20261110.md](F1_CONSULTATION_READINESS_20261110.md). Rama codex/f1-readiness-20261110, despliegues Git desactivados. G permanece fijada/deshabilitada y fuera de ventana no se inicia. Sin merge, producción, SQL alojado, inferencia, gastos, credenciales nuevas o envíos.
 
 ## ORD-204B - Checkpoint y recuperacion de misiones (2026-11-09)
 
@@ -1157,7 +1224,6 @@ Rama `codex/victoriosas-skills-v2` sobre `7458d4b`. Cinco habilidades instaladas
 
 **Límites/veredicto:** procedimiento determinista acotado demostrado, no planificación general ni operación permanente. Codex preparó escenario/código, inició los procesos del arnés y revisó evidencia; no eligió pasos durante la ejecución/recuperación. Mismo contrato con dos instancias/identidades, no otro proveedor/modelo probado. Aislamiento por worktree/allowlist, no sandbox OS para código hostil; token/credenciales quedan fuera del contexto del adaptador. SQL sigue staged, no aplicado remotamente. Sin fusión, promoción a producción, inferencias, pagos ni comunicaciones. La siguiente orden debe probar derivación/adaptación del plan desde un objetivo mediante mecanismo autorizado, separada de esta prueba, y aislamiento de proceso antes de permitir código general.
 
-
 ## ORD-204D · Derivación y adaptación de planes autorizados (2026-11-09)
 
 **Base recuperada:** PR #209 draft, `codex/mission-runner-20261109`, SHA `a6cdc0c1eecc13dde9b57a1c69c56c563fbbd33d`, validate/postgres aprobados para esa base. Trabajo nuevo aislado en `C:/autopilot-worktrees/mission-planner-20261109`, rama `codex/mission-planner-20261109`, entrega apilada sobre #209. Se conservan sus commits y ORD-204B; sin fusionarlos ni crear otra implementación del runner.
@@ -1169,7 +1235,6 @@ Rama `codex/victoriosas-skills-v2` sobre `7458d4b`. Cinco habilidades instaladas
 **Validación local:** npm run verify exit 0, 447/447 sin omitidos, tipos, 13 skills y builds Node/Vercel; PostgreSQL planificación 13/13 y recuperación ORD-204C 3/3. Secret scan correcto. Nuevo caso conectado al job postgres existente. CI del SHA final: consultar la PR de esta rama. Evidencia/contrato/reproducción: [MISSION_PLANNER_ORD204D_20261109.md](MISSION_PLANNER_ORD204D_20261109.md).
 
 **Límites y próxima dependencia:** planificación determinista acotada, no general; el host mantiene permisos y límites, SQL sigue staged, no Supabase alojado. Sin scheduler nuevo, runtime permanente, modelo remoto, fusión, producción, secretos nuevos, gastos ni envíos. Codex todavía define dominio/política/código, inicia el arnés y revisa; el arnés inyecta fallos e interrupción. Próximo tramo: arranque y supervisión de misiones autorizadas fuera del arnés, con aislamiento apropiado antes de ampliar el dominio. Puertas F1→F2→F3→F4 intactas.
-
 
 ## ORD-204E · Entrada operativa manual y supervisión local (2026-11-09)
 

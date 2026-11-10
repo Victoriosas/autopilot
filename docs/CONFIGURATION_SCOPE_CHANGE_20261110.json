@@ -1,0 +1,10 @@
+{
+  "appliedAt": "2026-11-10T01:28:12.057876+00:00",
+  "file": "global AGENTS.md",
+  "backup": "AGENTS.md.backup-20261109-autopilot-scope",
+  "oldSha256": "5959807f2a8c09d4a0b554e11b5737eec1f0e99734e9a035a4cd9fea90d2d9dc",
+  "newSha256": "f4269040d7648df9212eee5b799196e2ceda869ca2cf303214ac31c9b4a53976",
+  "preservedOriginalBytes": true,
+  "scope": "Only Victoriosas/autopilot; no config.toml/MCP/model/task modifications",
+  "rollback": "Restore the exact backup after checking for subsequent edits; do not overwrite concurrent changes."
+}
