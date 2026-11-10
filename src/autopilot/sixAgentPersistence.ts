@@ -9,12 +9,22 @@ export interface ClaimedAgentTask { task_id:string; claim_token:string; task_pay
 function isRecord(value:unknown):value is Record<string,unknown> {
  return typeof value==='object'&&value!==null&&!Array.isArray(value);
 }
-export async function claimPersistedTask(client:SupabaseClient, agent:AgentId):Promise<ClaimedAgentTask|null> {
+async function claimWithProcedure(
+ client:SupabaseClient,
+ agent:AgentId,
+ procedure:'six_agent_claim'|'six_agent_claim_mission',
+):Promise<ClaimedAgentTask|null> {
  if(!AGENT_IDS.includes(agent)) throw new Error('invalid_agent');
- const {data,error}=await client.rpc('six_agent_claim',{p_agent:agent,p_lease_seconds:60});
+ const {data,error}=await client.rpc(procedure,{p_agent:agent,p_lease_seconds:60});
  if(error) throw new Error('claim_failed');
  const claims=data as ClaimedAgentTask[]|null;
  return claims?.[0]??null;
+}
+export async function claimPersistedTask(client:SupabaseClient, agent:AgentId):Promise<ClaimedAgentTask|null> {
+ return claimWithProcedure(client,agent,'six_agent_claim');
+}
+export async function claimPersistedMissionTask(client:SupabaseClient, agent:AgentId):Promise<ClaimedAgentTask|null> {
+ return claimWithProcedure(client,agent,'six_agent_claim_mission');
 }
 export async function completePersistedTask(client:SupabaseClient, task:ClaimedAgentTask, evidence:string):Promise<void> {
  if(!evidence.trim())throw new Error('evidence_required');

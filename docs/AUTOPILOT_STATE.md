@@ -1,3 +1,28 @@
+# Continuidad · corrección del adaptador CLI para claims de misión · 10/11/2026
+
+PR #216, rama `codex/autopilot-next-safe-20261110`. Base incorporada: `origin/main` `7476839080f3a576ab3606c13051c544d0e01f29`. El run `42748841655` aprobó `validate`, pero falló `postgres` en `tests/mission-operator-postgres.test.ts`: el CLI emitió `claimed:false`, `reason:"claim_failed"` y conservó la misión sintética en `queued`.
+
+Causa reproducida: `createMissionLedger.claimMission()` pide `six_agent_claim_mission`, mientras `LocalMissionStore.client()` solo reconocía el nombre legacy `six_agent_claim`. El adaptador local rechazaba el RPC como no permitido y devolvía error; el contrato de claim de producción y la SQL no eran la falla. El cambio mínimo hace que el adaptador aislado acepte únicamente `six_agent_claim_mission` y lo traduzca a `local_mission_claim`, conservando host binding, agente permitido, lease, fencing y auditoría del laboratorio. No se amplió el RPC legacy ni se modificó SQL.
+
+Validación local sintética PostgreSQL 18: antes del arreglo, CI de `42748841655` demuestra el rechazo exacto. Después, `tests/mission-operator-postgres.test.ts` aprobó (1/1; seis casos de CLI); `tests/mission-runner-postgres.test.ts` 3/3; `tests/mission-planner-postgres.test.ts` 13/13; `scripts/test-six-agent-queue.sh` pasó los smoke de selectors, recuperación, leases, fencing, idempotencia y auditoría. Pruebas focalizadas TypeScript 21/21. `npm run verify` exit 0: 464 aprobadas, 0 fallidas, 1 omitida, typecheck, builds y check de API.
+
+Corrección implementada y validada localmente; pendiente de publicar en PR #216. Sin servicios productivos, misiones reales ni SQL alojado. Próximo: crear commit en esta rama, publicar y comprobar `validate`/`postgres` para el SHA final. No fusionar hasta aprobación de esos checks.
+
+# Continuidad · aislamiento de claims de misiones · 10/11/2026
+
+F1, fundamento de continuidad. En rama aislada `codex/autopilot-next-safe-20261110`, desde `origin/main` `6e700879d1bbae0fe50b6addead1ca31cc6cfab8`; commit de implementación probado `9b2ee822c0addcef3c8366f62c33f1def409f2fb`. `createMissionLedger.claimMission()` usa ahora `six_agent_claim_mission`; la RPC legacy `six_agent_claim` deja de consumir misiones. Ambas selectan de `agent_tasks` y reutilizan el helper transaccional, leases, fencing y auditoría existentes. El selector de misión acepta únicamente `mission_schema_version=1`; el legacy excluye toda tarea versionada. Permisos limitados a `service_role`.
+
+- Regresiones focalizadas: `node --import tsx --test src/autopilot/sixAgentPersistence.test.ts` aprobó 8/8; `bash -n scripts/test-six-agent-queue.sh` y `git diff --check` pasaron.
+- `scripts/test-six-agent-queue.sh` pasó en PostgreSQL 18 desechable: selector cruzado aislado, checkpoint, recuperación tras lease expirado, fencing, idempotencia, auditoría y finalización.
+- `tests/mission-runner-postgres.test.ts` pasó 3/3 sin omisiones en PostgreSQL local desechable. Un proceso worker fue terminado con SIGKILL; el reemplazo recuperó el checkpoint, no repitió un efecto ya aplicado y completó la misión. Las escrituras/cierres con token anterior fueron rechazados.
+- `npm run verify` terminó con exit 0: TypeScript, 457 pruebas aprobadas, 0 fallidas, 1 omitida, builds Node/Vercel y comprobación del API compilado.
+- La migración SQL sigue staged/local: no se aplicó a Supabase alojado. No se usaron modelos pagados ni servicios productivos; el costo de cómputo local no se midió.
+- La publicación está BLOQUEADA: `gh auth status` confirmó que no hay sesión de GitHub. No se pudo hacer push ni abrir PR; no hay CI para el SHA de esta rama. El commit local no está fusionado ni desplegado. No había plantilla de PR en `.github/`.
+
+Supervisión adversarial: el smoke detectó inicialmente que sus fixtures de misión aún llamaban al claim genérico y que un lease de 5 s podía vencer durante la validación. Se corrigieron los fixtures al RPC específico y se hizo determinista la expiración en la base desechable, sin alterar el comportamiento del lease en producción. La prueba multiproceso adicional confirmó interrupción, fencing y reconciliación del efecto.
+
+Próxima prioridad segura: recuperar autorización de GitHub, publicar esta rama como PR y observar `validate`/`postgres` para el SHA exacto. Revisar la migración staged en CI; cualquier aplicación remota, fusión o despliegue requiere sus controles y autorización correspondientes.
+
 # Continuidad · 404 de API y artefactos de compilación · 08/11/2026
 
 Fase F1. Rama `codex/api-404-build-isolation-20261108` sobre `039ecf3` de la PR #200. Node y Vercel devuelven `404` JSON con `API_ROUTE_NOT_FOUND` al llegar al último handler de API. En Node queda después de las rutas existentes y antes del fallback de la SPA. El build de Node usa `dist-node` y sirve `dist-node/public`. Vercel conserva `dist`. `npm start`, el preview local y el comando del Dockerfile apuntan a sus nuevas rutas.

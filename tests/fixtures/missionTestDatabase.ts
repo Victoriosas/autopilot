@@ -18,6 +18,7 @@ export function missionTestDatabase(database: string | undefined, name: string) 
   });
   const parameters: Record<string, string[]> = {
     six_agent_claim: ['p_agent', 'p_lease_seconds'],
+    six_agent_claim_mission: ['p_agent', 'p_lease_seconds'],
     six_agent_checkpoint: ['p_task_id', 'p_mission_id', 'p_token', 'p_checkpoint_version', 'p_operation_id', 'p_executor_id', 'p_checkpoint'],
     six_agent_complete: ['p_task_id', 'p_token', 'p_evidence'], six_agent_fail: ['p_task_id', 'p_token', 'p_reason'],
     six_agent_save_plan: ['p_task_id', 'p_token', 'p_checkpoint_version', 'p_operation_id', 'p_planner_id', 'p_proposal'],
@@ -27,7 +28,9 @@ export function missionTestDatabase(database: string | undefined, name: string) 
     assert.ok(Object.hasOwn(parameters, rpc));
     const values = parameters[rpc].map(key => sqlLiteral(args[key]) + (['p_checkpoint', 'p_proposal'].includes(key) ? '::jsonb' : '')).join(',');
     try {
-      const query = rpc === 'six_agent_claim' ? `select coalesce(json_agg(c),'[]'::json) from public.${rpc}(${values}) c;` : `select to_json(public.${rpc}(${values}));`;
+      const query = ['six_agent_claim', 'six_agent_claim_mission'].includes(rpc)
+        ? `select coalesce(json_agg(c),'[]'::json) from public.${rpc}(${values}) c;`
+        : `select to_json(public.${rpc}(${values}));`;
       return { data: JSON.parse(await sql(query)), error: null };
     } catch { return { data: null, error: { message: 'synthetic_rpc_failed' } }; }
   } } as unknown as SupabaseClient;

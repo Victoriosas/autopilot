@@ -30,18 +30,23 @@ create unique index if not exists agent_audit_mission_checkpoint_operation_uidx
  on public.agent_audit_events(task_id,(details->>'operation_id'))
  where event_type='mission_checkpoint_saved';
 
-create or replace function public.six_agent_claim(p_agent text,p_lease_seconds integer default 60)
+create or replace function public.six_agent_claim_task(p_agent text,p_lease_seconds integer,p_mission_only boolean)
 returns table(task_id text, claim_token uuid, task_payload jsonb)
 language plpgsql security definer set search_path = ''
 as $$
 declare v_id text; v_token uuid;
 begin
  if auth.role() is distinct from 'service_role' then raise exception 'unauthorized'; end if;
- if p_agent not in ('director','software','infrastructure','consultations','followup','reports')
-    or p_lease_seconds not between 5 and 300 then raise exception 'invalid_parameters'; end if;
+ if p_agent is null or p_agent not in ('director','software','infrastructure','consultations','followup','reports')
+    or p_lease_seconds is null or p_lease_seconds not between 5 and 300
+    or p_mission_only is null then raise exception 'invalid_parameters'; end if;
  if p_agent='consultations' then return; end if;
  select t.id into v_id from public.agent_tasks t
  where t.agent_id=p_agent and t.attempt_count<t.max_attempts and
+ (case when p_mission_only
+   then t.input->>'mission_schema_version'='1'
+   else not coalesce(t.input ? 'mission_schema_version',false)
+  end) and
  ((t.status in ('queued','failed') and t.available_at<=now())
   or (t.status='running' and t.lease_until<now() and t.execution_token is not null))
  order by t.created_at asc limit 1 for update skip locked;
@@ -51,7 +56,7 @@ begin
  lease_until=now()+make_interval(secs=>p_lease_seconds),execution_token=v_token,updated_at=now()
  where t.id=v_id;
  insert into public.agent_audit_events(task_id,event_type,details)
- values(v_id,'six_agent_claim',jsonb_build_object('agent',p_agent,'attempt','claimed'));
+ values(v_id,'six_agent_claim',jsonb_build_object('agent',p_agent,'attempt','claimed','mission',p_mission_only));
  return query
  select t.id,t.execution_token,
    (case when jsonb_typeof(t.input)='object' then t.input else '{}'::jsonb end)
@@ -61,6 +66,22 @@ begin
      'checkpoint',t.mission_checkpoint,
      'spec_version',t.input->>'mission_schema_version'))
  from public.agent_tasks t where t.id=v_id;
+end $$;
+
+create or replace function public.six_agent_claim(p_agent text,p_lease_seconds integer default 60)
+returns table(task_id text, claim_token uuid, task_payload jsonb)
+language plpgsql security definer set search_path = ''
+as $$
+begin
+ return query select * from public.six_agent_claim_task(p_agent,p_lease_seconds,false);
+end $$;
+
+create or replace function public.six_agent_claim_mission(p_agent text,p_lease_seconds integer default 60)
+returns table(task_id text, claim_token uuid, task_payload jsonb)
+language plpgsql security definer set search_path = ''
+as $$
+begin
+ return query select * from public.six_agent_claim_task(p_agent,p_lease_seconds,true);
 end $$;
 
 create or replace function public.six_agent_checkpoint(
@@ -324,11 +345,15 @@ begin
  return v_changed=1;
 end $$;
 
+revoke all on function public.six_agent_claim_task(text,integer,boolean) from public,anon,authenticated;
 revoke all on function public.six_agent_claim(text,integer) from public,anon,authenticated;
+revoke all on function public.six_agent_claim_mission(text,integer) from public,anon,authenticated;
 revoke all on function public.six_agent_checkpoint(text,text,uuid,integer,text,text,jsonb) from public,anon,authenticated;
 revoke all on function public.six_agent_complete(text,uuid,text) from public,anon,authenticated;
 revoke all on function public.six_agent_fail(text,uuid,text) from public,anon,authenticated;
+grant execute on function public.six_agent_claim_task(text,integer,boolean) to service_role;
 grant execute on function public.six_agent_claim(text,integer) to service_role;
+grant execute on function public.six_agent_claim_mission(text,integer) to service_role;
 grant execute on function public.six_agent_checkpoint(text,text,uuid,integer,text,text,jsonb) to service_role;
 grant execute on function public.six_agent_complete(text,uuid,text) to service_role;
 grant execute on function public.six_agent_fail(text,uuid,text) to service_role;

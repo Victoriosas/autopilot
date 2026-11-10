@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AgentId } from './sixAgentControlPlane';
 import type { ExecutorAdapter, ExecutorContext, MissionCheckpoint, MissionLedger, MissionOrchestrator, MissionSpecification } from './executorAdapter';
-import { claimPersistedTask, completePersistedTask, failPersistedTask, saveMissionCheckpoint, type ClaimedAgentTask } from './sixAgentPersistence';
+import { claimPersistedMissionTask, completePersistedTask, failPersistedTask, saveMissionCheckpoint, type ClaimedAgentTask } from './sixAgentPersistence';
 import { authorizedObjective, PlanPolicyError, safeObservation, validatePlanProposal, type MissionPlanner, type PlanProposal } from './missionPlanner';
 
 function record(value: unknown): value is Record<string, unknown> {
@@ -68,7 +68,7 @@ export function createMissionLedger(client: SupabaseClient, permissions: readonl
   };
   return {
     async claimMission(agentId: AgentId) {
-      const claim = await claimPersistedTask(client, agentId);
+      const claim = await claimPersistedMissionTask(client, agentId);
       if (!claim) return null;
       const mission = missionFromTask(claim);
       const meta = claim.task_payload.__autopilot as Record<string, unknown>;

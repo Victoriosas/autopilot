@@ -94,7 +94,7 @@ export class LocalMissionStore {
     return { rpc: async (rpc: string, args: Record<string, unknown>) => {
       if (!this.config.permissions.execute) return { data: null, error: { message: 'host_permission_required' } };
       try {
-        if (rpc === 'six_agent_claim') {
+        if (rpc === 'six_agent_claim_mission') {
           if (args.p_agent !== 'software') throw Error('agent_not_allowed');
           const data = JSON.parse(await this.query(`select coalesce(json_agg(c),'[]'::json) from public.local_mission_claim(${literal(id)},${literal(this.binding)},${literal(runId)}::uuid,${this.config.leaseSeconds}) c;`, 'claim'));
           if (data[0]) { this.claim = { id, token: data[0].claim_token }; this.report({ event: 'claimed', missionId: id, runId }); }
