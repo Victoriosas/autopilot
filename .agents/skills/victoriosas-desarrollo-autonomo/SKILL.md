@@ -26,5 +26,7 @@ description: Habilidad principal de Codex para Victoriosas/Autopilot. Activar en
 - Respetar trabajos ya terminados y PR abiertas; no revivir tareas superadas.
 
 ## Contrato de salida
+Para recuperar órdenes, aplicar `docs/CODEX_CONTINUATION.md` y contrastar `docs/CODEX_CONTINUATION.json` con Git y CI actuales. Después de cada avance, revisar críticamente al menos una evidencia, registrar el veredicto y elegir la siguiente orden segura. Conservar el historial de `docs/AUTOPILOT_STATE.md`.
+
 `Entorno y SHA | prioridad | cambio verificable | pruebas realizadas | riesgo/bloqueo | siguiente paso`.
 Si no hubo novedad material, no crear nuevos registros ni commits vacíos. Una automatización activa intenta ejecutar en horarios acordados, pero no garantiza disponibilidad de PC, credenciales, cuota o ejecución efectiva.
