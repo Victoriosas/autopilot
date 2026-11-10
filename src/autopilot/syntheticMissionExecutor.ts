@@ -4,6 +4,7 @@ import { lstat, mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/pr
 import path from 'node:path';
 import type { ExecutorAdapter, ExecutorContext, ExecutorResult, MissionPlanStep } from './executorAdapter';
 import { authorizedObjective, SYNTHETIC_RESTRICTIONS, type SyntheticObservation } from './missionPlanner';
+import type { ManagedProcesses } from './managedProcesses';
 
 const exec = promisify(execFile);
 export const SYNTHETIC_GOAL = 'Verify synthetic mission recovery';
@@ -27,7 +28,8 @@ async function exists(location: string) {
 }
 /** Fixed-purpose local adapter. No shell, network, model, repository scripts or arbitrary file paths. */
 export class SyntheticMissionExecutor implements ExecutorAdapter {
-  constructor(readonly executorId: string, private readonly repo: string, private readonly root: string, private readonly baseSha: string) {}
+  constructor(readonly executorId: string, private readonly repo: string, private readonly root: string, private readonly baseSha: string,
+    private readonly processes?: ManagedProcesses) {}
   private authorize(context: ExecutorContext, executing: boolean) {
     const mission = context.mission;
     if (!context.permissions.includes('synthetic_worktree') || mission.goal !== SYNTHETIC_GOAL
@@ -53,8 +55,11 @@ export class SyntheticMissionExecutor implements ExecutorAdapter {
     const hooks = path.join(this.root, 'empty-hooks');
     if (!await exists(hooks)) await mkdir(hooks);
     if ((await lstat(hooks)).isSymbolicLink() || (await readdir(hooks)).length) throw Error('unsafe_hooks');
-    const git = async (args: string[], cwd = this.repo) => (await exec('git', ['-c', `core.hooksPath=${hooks}`, ...args],
-      { cwd, windowsHide: true, timeout: 15000, maxBuffer: 65536, signal })).stdout.trim();
+    const git = async (args: string[], cwd = this.repo) => {
+      const parameters = ['-c', `core.hooksPath=${hooks}`, ...args];
+      return (await (this.processes ? this.processes.exec('git', parameters, { cwd, timeout: 15000, signal, operation: 'synthetic_git' })
+        : exec('git', parameters, { cwd, windowsHide: true, timeout: 15000, maxBuffer: 65536, signal }))).stdout.trim();
+    };
     // Only a single-file seed repository is permitted. An application's hooks/scripts cannot run.
     if (await git(['ls-tree', '--name-only', this.baseSha]) !== 'synthetic-seed.txt'
       || `${await git(['show', `${this.baseSha}:synthetic-seed.txt`])}\n` !== SYNTHETIC_SEED) throw Error('synthetic_repository_required');
@@ -121,8 +126,9 @@ export class SyntheticMissionExecutor implements ExecutorAdapter {
       if (action === 'synthetic.verify') {
         // Do not inherit NODE_OPTIONS/preload hooks or application credentials into the fixture test.
         const env = Object.fromEntries(['PATH', 'Path', 'SystemRoot', 'WINDIR', 'TEMP', 'TMP'].flatMap(key => process.env[key] ? [[key, process.env[key]!]] : []));
-        await exec(process.execPath, ['--test', path.join(folder, 'result.test.cjs')],
-          { cwd: location, env, windowsHide: true, timeout: 10000, maxBuffer: 65536, signal });
+        const parameters = ['--test', path.join(folder, 'result.test.cjs')];
+        if (this.processes) await this.processes.exec(process.execPath, parameters, { cwd: location, env, timeout: 10000, signal, operation: 'synthetic_test' });
+        else await exec(process.execPath, parameters, { cwd: location, env, windowsHide: true, timeout: 10000, maxBuffer: 65536, signal });
         summary = 'synthetic_test_passed';
       }
     }

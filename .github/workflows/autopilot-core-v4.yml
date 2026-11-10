@@ -113,6 +113,16 @@ jobs:
         env:
           PLANNER_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/victoriosa_mission_planner_test
 
+      - name: Create disposable local mission operator database
+        run: createdb -h 127.0.0.1 -p 5432 -U postgres victoriosa_mission_operator_lab
+        env:
+          PGPASSWORD: isolated-test-password
+
+      - name: Standalone CLI admission supervision cancellation and recovery
+        run: node --import tsx --test tests/mission-operator-postgres.test.ts
+        env:
+          OPERATOR_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/victoriosa_mission_operator_lab
+
       - name: Create disposable commerce database
         run: createdb -h 127.0.0.1 -p 5432 -U postgres victoriosa_checkout_test
         env:
