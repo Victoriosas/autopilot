@@ -1,5 +1,7 @@
 # ORD-204G · Propuesta nativa de Windows, preparada sin activar
 
+> Procedimiento histórico del checkout aprobado. La siguiente demostración usa el [procedimiento de diagnóstico y recuperación](ORD204G_RECOVERY_DIAGNOSTICS_20261110.md).
+
 Base contrastada: PR #212, `0359fff114bff73e923678f10e2de16cda743e48`, main `a6cff5aba04e752cb010926b88c24fd4abfe84b6`. Rama aislada `codex/mission-native-host-20261109`, apilada sobre #212; conserva ORD-204B–F. Avance N2 sintético de preparación operativa, sin cambiar las puertas F1–F4. **Estado requerido: PREPARADO; arranque automático NO DEMOSTRADO.**
 
 ## Una propuesta para aprobar

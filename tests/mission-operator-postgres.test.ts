@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -45,6 +45,7 @@ test('standalone operator CLI proves admission execution supervision cancellatio
     await exec(process.execPath,['--import','tsx',fileURLToPath(new URL('../scripts/autopilot-mission.ts',import.meta.url)),'admit','--config',config,'--request',request],{env,timeout:15000});
     const execution=path.join(root,'execution.json');await writeFile(execution,JSON.stringify({...JSON.parse(await readFile(config,'utf8')),permissions:{admit:false,execute:true,cancel:false}}));
     const evidenceDir=path.join(root,'native-evidence');await mkdir(evidenceDir);
+    const diagnosticsDir=path.join(root,'native-diagnostics');await mkdir(diagnosticsDir);
     const locate=process.platform==='win32'?'where.exe':'which';
     const gitFile=(await exec(locate,['git'])).stdout.trim().split(/\r?\n/)[0];
     const psqlFile=process.env.PSQL_PATH||(await exec(locate,['psql'])).stdout.trim().split(/\r?\n/)[0];
@@ -53,7 +54,7 @@ test('standalone operator CLI proves admission execution supervision cancellatio
       evidenceDirectory:evidenceDir,missionId:native.id,taskName:'\\Victoriosas-Autopilot-Synthetic-Demo',node:process.execPath,git:gitFile,psql:psqlFile,maxDurationMs:45000};
     const descriptorFile=path.join(root,'native.json');await writeFile(descriptorFile,JSON.stringify(descriptor));
     const entry=fileURLToPath(new URL('../scripts/autopilot-native-host.ts',import.meta.url));
-    const launch=()=>exec(process.execPath,['--import','tsx',entry,'--manifest',descriptorFile,'--manual'],{env,timeout:50000,maxBuffer:65536});
+    const launch=()=>exec(process.execPath,['--import','tsx',entry,'--diagnostics',diagnosticsDir,'--manifest',descriptorFile,'--manual'],{env,timeout:50000,maxBuffer:65536});
     const compete=async()=>{try{return await launch();}catch(error){if((error as any).code===3)return {stdout:(error as any).stdout};throw error;}};
     const pair=await Promise.all([compete(),compete()]);
     const launches=pair.map(r=>r.stdout.trim().split(/\r?\n/).map((x:string)=>JSON.parse(x)));
@@ -64,6 +65,17 @@ test('standalone operator CLI proves admission execution supervision cancellatio
     assert.ok(rows.some(x=>x.event==='process_started'&&x.operation==='cli_run'&&x.pid));
     assert.equal(JSON.parse((await launch()).stdout.trim().split(/\r?\n/).at(-1)!).outcome,'terminal');
     await writeFile(descriptorFile,JSON.stringify({...descriptor,configSha256:'0'.repeat(64)}));
-    await assert.rejects(launch());
+    await assert.rejects(launch(), (error: Error & { code?: number; stderr?: string }) => {
+      assert.equal(error.code,2);
+      assert.equal(JSON.parse(error.stderr!).code,'native_config_changed');
+      return true;
+    });
+    const diagnosticFiles=await readdir(diagnosticsDir);
+    assert.equal(diagnosticFiles.length,4);
+    const diagnostics=await Promise.all(diagnosticFiles.map(async file =>
+      (await readFile(path.join(diagnosticsDir,file),'utf8')).trim().split('\n').map(line=>JSON.parse(line))));
+    assert.ok(diagnostics.some(events=>events[0].invocationId===rows[0].invocationId
+      && events.at(-1).event==='entry_closed' && events.at(-1).exitCode===0));
+    assert.equal(diagnostics.flat().filter(event=>event.event==='entry_rejected').length,1);
     console.log('native host manual launcher: competing processes claimed once, completed, terminal replay and tampered configuration denied; no scheduler registered');
   });
