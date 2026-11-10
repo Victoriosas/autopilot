@@ -97,7 +97,11 @@ test('launcher durably records independent early rejections with unique correlat
     const configSha256 = createHash('sha256').update('synthetic-secret-marker').digest('hex');
     await writeFile(file, '\uFEFF' + JSON.stringify({ ...good, configSha256 }));
     await launch('config_schema', 'invalid_execution_config');
-    const validConfig = JSON.parse(await readFile(path.join(checkout, 'tools/native-host/execution-host.json'), 'utf8'));
+    const templateConfig = JSON.parse(await readFile(path.join(checkout, 'tools/native-host/execution-host.json'), 'utf8'));
+    // The checked-in host paths are Windows-specific; keep the synthetic fixture valid on Linux CI.
+    const validConfig = { ...templateConfig, resources: {
+      ...templateConfig.resources, repository: checkout, worktreeRoot: fixture,
+    } };
     for (const [change, stage, code] of [
       [{ permissions: { admit: true, execute: true, cancel: false } }, 'config_permissions', 'execution_only_required'],
       [{ deadlineMs: 12000 }, 'config_deadline', 'native_deadline_too_short'],
