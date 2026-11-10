@@ -39,7 +39,7 @@ declare first_token uuid; got_id text; payload jsonb;
 declare first_checkpoint jsonb; result boolean; audit_before integer;
 begin
  select task_id,claim_token,task_payload into got_id,first_token,payload
- from public.six_agent_claim('director',5);
+ from public.six_agent_claim_mission('director',60);
  if got_id is distinct from 'mission-recovery-001' or first_token is null then
    raise exception 'mission first claim missing';
  end if;
@@ -81,7 +81,9 @@ begin
  if result then raise exception 'invalid step transition accepted'; end if;
  insert into public.mission_recovery_test_state values('old_token',first_token::text);
 end $$;
-select pg_sleep(5.2);
+update public.agent_tasks
+set lease_until=clock_timestamp()-interval '1 second'
+where id='mission-recovery-001';
 do $$
 declare first_token uuid; recovery_token uuid; got_id text; payload jsonb;
 declare first_checkpoint jsonb; second_checkpoint jsonb; final_checkpoint jsonb;
@@ -93,7 +95,7 @@ begin
    'mission-op-expired','worker-old',first_checkpoint) into result;
  if result then raise exception 'expired lease checkpoint accepted'; end if;
  select task_id,claim_token,task_payload into got_id,recovery_token,payload
- from public.six_agent_claim('director',60);
+ from public.six_agent_claim_mission('director',60);
  if got_id is distinct from 'mission-recovery-001' or recovery_token is null then
    raise exception 'mission recovery claim missing';
  end if;
@@ -161,7 +163,7 @@ set request.jwt.claim.role='service_role';
 insert into public.agent_tasks(id,goal,actor,action,status,agent_id,input) values
 ('mission-concurrency-001','concurrent synthetic checkpoint','test-runner','synthetic_task','queued','director',
  '{"mission_schema_version":"1","goal_version":1,"plan_version":1,"plan":[{"id":"step-1","task":"concurrent checkpoint","depends_on":[]}]}');
-select task_id||'|'||claim_token from public.six_agent_claim('director',60);
+select task_id||'|'||claim_token from public.six_agent_claim_mission('director',60);
 SQL
 )"
 if [[ "$concurrent_claim" != mission-concurrency-001\|* ]]; then
@@ -209,11 +211,45 @@ trap - EXIT
 psql "$AUTOPILOT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
 set request.jwt.claim.role='service_role';
 do $$
+declare selected_id text; selected_token uuid; selected boolean;
 begin
  if (select mission_checkpoint_version from public.agent_tasks where id='mission-concurrency-001')<>1
     or (select count(*) from public.agent_audit_events
         where task_id='mission-concurrency-001' and event_type='mission_checkpoint_saved')<>1 then
    raise exception 'concurrent checkpoint result is inconsistent';
+ end if;
+
+ insert into public.agent_tasks(id,goal,actor,action,status,agent_id,input,created_at) values
+ ('mission-selector-001','synthetic mission selector','test-runner','synthetic_task','queued','director',
+  '{"mission_schema_version":"1"}',clock_timestamp()-interval '2 minutes'),
+ ('legacy-selector-001','synthetic legacy selector','test-runner','legacy_task','queued','director',
+  '{"synthetic":true}',clock_timestamp()-interval '1 minute');
+ select task_id,claim_token into selected_id,selected_token
+ from public.six_agent_claim('director',60);
+ if selected_id is distinct from 'legacy-selector-001' or selected_token is null then
+   raise exception 'generic claim did not skip older mission task';
+ end if;
+ select public.six_agent_complete(selected_id,selected_token,'synthetic legacy verified') into selected;
+ if not selected then raise exception 'legacy task could not complete through generic claim'; end if;
+ if (select count(*) from public.six_agent_claim('director',60))<>0 then
+   raise exception 'generic claim consumed a mission task';
+ end if;
+ select task_id,claim_token into selected_id,selected_token
+ from public.six_agent_claim_mission('director',60);
+ if selected_id is distinct from 'mission-selector-001' or selected_token is null then
+   raise exception 'mission claim did not select mission task';
+ end if;
+ select public.six_agent_fail(selected_id,selected_token,'synthetic_test_cleanup') into selected;
+ if not selected then raise exception 'mission task cleanup claim failed'; end if;
+ if (select status from public.agent_tasks where id='mission-selector-001')<>'failed'
+    or (select status from public.agent_tasks where id='legacy-selector-001')<>'completed' then
+   raise exception 'mission and legacy queue states crossed';
+ end if;
+ if (select count(*) from public.agent_audit_events where task_id='legacy-selector-001'
+      and event_type='six_agent_claim')<>1
+    or (select count(*) from public.agent_audit_events where task_id='mission-selector-001'
+      and event_type='six_agent_claim')<>1 then
+   raise exception 'selector claim audit missing';
  end if;
 end $$;
 drop trigger reject_mission_checkpoint_audit on public.agent_audit_events;
