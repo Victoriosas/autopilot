@@ -1133,3 +1133,12 @@ Solicitud del propietario: inventariar PC/configuración/sesión y mantener refe
 ## 2026-11-09 · Inventario de PC reconectada y referencia compartida Work/Codex
 
 Desktop Commander confirmó micahael-PC online. Inspección dirigida de C:/, E:/, .codex, worktrees, respaldo y campos permitidos de OpenCode/VS Code. 50 worktrees registrados; C:/autopilot en a6cff5aba04e752cb010926b88c24fd4abfe84b6 sin cambios versionados, 138 entradas untracked conservadas. Sesión candidata por recencia/cwd: gpt-6.1-sol medium; acuse de lectura local pendiente. Global AGENTS aún orientado a la tienda antigua, discrepancia documentada sin alterar instrucciones globales. Tarea G comprobada Disabled/Limited, checkout aprobado intacto, sin listeners del laboratorio en puertos conocidos; autorización y horario conservados. Se actualiza docs/WORK_CODEX_SHARED_CONTEXT.md y se agrega WORK_CODEX_HOST_INVENTORY.json; copia local fuera de checkouts. No se inicia infraestructura ni se sincronizan chats automáticamente. Ver PR #214 y sus límites de evidencia.
+
+
+## Cierre de configuraciones y capacidades recuperadas · 09/11/2026 Uruguay
+
+PR #214 contrastada desde 1409874; acuse Codex de huella a6bf13d814ef8e47 y blobs compartidos confirmado. Comparación dirigida cerrada: backup Codex no contiene MCP perdido; OpenCode antiguo tiene menos guardas; configuraciones de entorno/VS Code recuperadas idénticas; 256/256 hashes del respaldo E verificados. Scripts de comercio y snapshot de septiembre no se restauran.
+
+APLICADO con backup exacto: alcance global AGENTS para Victoriosas/autopilot sin eliminar instrucciones de otros proyectos; nueva sección ya cargada en esta sesión. PRESERVADO remoto: bd24d4c original en codex/mission-native-activation-20261109, descendiente cc7f753 con Git deployment desactivado; sin cambios en checkout G. CamelRun POSPONER: OAuth/inventario reales, siete agentes sin aplicación conectada/runs/schedules; costes no nulos, límites remotos sin demostrar y gateway stateless ya existente. Cero inferencias o agentes ejecutados.
+
+Evidencia, origen/diferencia/decisión/prueba/reversión por candidato: [CONFIGURATION_DECISIONS_20261110.md](CONFIGURATION_DECISIONS_20261110.md). Se retoma desarrollo F1 en rama separada: disponibilidad de consultas acotada y diagnóstico determinista, sin duplicar #204. ORD-204G conserva SHA/manifest/tarea/horario y ventana autorizada; sin activación fuera de ventana, merge, SQL alojado, servicios nuevos, gastos, credenciales o envíos.

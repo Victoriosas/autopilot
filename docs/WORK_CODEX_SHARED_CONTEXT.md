@@ -2,7 +2,7 @@
 
 Última observación: 2026-11-10T01:10:46.9310853Z (09/11/2026 22:10:46 America/Montevideo).
 Autor de esta observación: ChatGPT Work mediante GitHub y Desktop Commander Remote.
-Estado: GITHUB_Y_HOST_CONTRASTADOS / SESION_CANDIDATA_IDENTIFICADA / ACUSE_CODEX_PENDIENTE.
+Estado histórico de la observación Work: GITHUB_Y_HOST_CONTRASTADOS / SESION_CANDIDATA_IDENTIFICADA. Acuse Codex confirmado y cierre posterior al final de este documento.
 Este documento es un punto compartido de lectura y actualización manual; no sincroniza conversaciones, sesiones, configuraciones ni procesos automáticamente.
 
 ## Autoridad y alcance
@@ -98,3 +98,13 @@ Checkout G limpio en 15720289647da59c19cc2c19c7f123ee84259a31. No se cambió su 
 ### Entrega y acuse
 Propuesta en PR #214, rama codex/shared-context-20261110; no fusionada. Se entrega copia externa a los checkouts en C:/autopilot-worktrees/work-codex-coordination-20261110/.
 Codex debe leer WORK_CODEX_SHARED_CONTEXT.md y WORK_CODEX_HOST_INVENTORY.json, contrastar fecha/cwd/HEAD y confirmar lectura con su propia observación. Sin acuse no afirmar memorias sincronizadas ni emparejamiento de sesión completado. Las configuraciones con permisos distintos se documentan; no se copian entre Work y Codex.
+
+## Acuse Codex y cierre dirigido · 09/11/2026, posterior a 22:13 Uruguay
+
+Codex local leyó las copias y verificó igualdad de blobs con PR #214 SHA 140987464847d5eb9709a6798e8b5c11572a2597: contexto cfadca06206c227bf16d83e74135ad01a9265134 e inventario 80d8ba511dee5e88a0337000672afcd254e57d40. La huella a6bf13d814ef8e47 coincide con CODEX_THREAD_ID de esta sesión; cwd C:/autopilot, gpt-6.1-sol/medium, never/danger-full-access. Se confirman 138 untracked, 50 worktrees/uno prunable, hashes de configuración y los seis heads destacados. Este acuse no vincula exclusivamente un PID ni sincroniza chats o memorias. El inventario JSON original se conserva como foto histórica.
+
+Cierre solicitado por el propietario: [CONFIGURATION_DECISIONS_20261110.md](CONFIGURATION_DECISIONS_20261110.md). Recuperados el alcance de instrucciones globales (backup exacto, protocolo comercial conservado para otros proyectos) y el commit documental bd24d4c, ahora preservado remotamente en la rama de activación con despliegue bloqueado. SHA256 del AGENTS global cambió de forma autorizada; [registro saneado](CONFIGURATION_SCOPE_CHANGE_20261110.json). Se recalcularon 256 hashes del respaldo E: todos coinciden.
+
+Codex/OpenCode/MCP/entornos antiguos no contienen una mejora perdida que justifique restaurarlos; se mantienen configuraciones actuales y las capacidades ya presentes. VS Code GitHub y los nueve MCP Codex no se activan por inspección. camelRun POSPONER: OAuth e inventario reales correctos, siete agentes sin aplicación conectada, sin runs/schedules, costes de runtime/almacenamiento no nulos y gateway stateless ya implementado. No se ejecuta ningún agente ni se consume presupuesto de inferencia.
+
+Dependencias pendientes reales: revisión/puertas de las PR abiertas, disponibilidad y prueba de dos disparos G dentro de su ventana, y presupuesto/validación F3 antes de modelos remotos. No falta permiso para repetir las operaciones G ya autorizadas. Investigación cerrada; se continúa con readiness acotado F1 en una rama de código independiente. No se cambió el checkout aprobado, manifest, tarea, horario o servicios.
