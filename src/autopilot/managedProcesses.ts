@@ -6,7 +6,7 @@ export class ManagedProcesses {
   private active = new Map<ChildProcess, Promise<void>>();
   constructor(private readonly report: (event: ProcessEvent) => void = () => {}) {}
   get size() { return this.active.size; }
-  async exec(file: string, args: string[], options: { cwd?: string; env?: NodeJS.ProcessEnv; signal?: AbortSignal; timeout: number; input?: string; operation: string }): Promise<{ stdout: string }> {
+  async exec(file: string, args: string[], options: { cwd?: string; env?: NodeJS.ProcessEnv; signal?: AbortSignal; timeout: number; input?: string; operation: string; acceptExitCodes?: number[]; onStdout?: (chunk: string) => void }): Promise<{ stdout: string; exitCode: number }> {
     options.signal?.throwIfAborted();
     const minimalEnv = Object.fromEntries(['PATH','Path','SystemRoot','WINDIR','TEMP','TMP'].flatMap(k => process.env[k] ? [[k,process.env[k]!]] : []));
     const child = spawn(file, args, { cwd: options.cwd, env: options.env ?? minimalEnv, windowsHide: true,
@@ -26,14 +26,15 @@ export class ManagedProcesses {
     const timeout = setTimeout(() => { failed = true; reason = 'process_timeout'; terminate(); }, options.timeout);
     options.signal?.addEventListener('abort', abort, { once: true });
     if (options.signal?.aborted) abort();
-    const result = new Promise<{ stdout: string }>((resolve, reject) => {
-      child.stdout!.on('data', data => { if (failed) return; output += data; if (Buffer.byteLength(output) > 65536) { failed = true; reason = 'process_output_limit'; terminate(); } });
+    const result = new Promise<{ stdout: string; exitCode: number }>((resolve, reject) => {
+      child.stdout!.on('data', data => { if (failed) return; output += data; if (Buffer.byteLength(output) > 65536) { failed = true; reason = 'process_output_limit'; terminate(); return; }
+        try { options.onStdout?.(String(data)); } catch { failed=true;reason='process_observation_failed';terminate(); } });
       child.stderr!.on('data', () => {}); // Raw child errors may contain credentials or SQL parameters.
       child.on('error', () => { failed = true; });
       child.on('close', code => {
         clearTimeout(timeout); options.signal?.removeEventListener('abort', abort); this.active.delete(child); resolveClosed();
         if (child.pid) this.report({ event: 'process_ended', pid: child.pid, operation: options.operation });
-        if (failed || code !== 0) reject(Error(reason)); else resolve({ stdout: output });
+        if (failed || code === null || !(options.acceptExitCodes ?? [0]).includes(code)) reject(Error(reason)); else resolve({ stdout: output, exitCode: code });
       });
     });
     if (child.pid) this.report({ event: 'process_started', pid: child.pid, operation: options.operation });

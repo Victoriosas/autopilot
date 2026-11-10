@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "mode": "local_synthetic_lab",
+  "database": { "host": "127.0.0.1", "port": 55439, "name": "victoriosa_mission_operator_lab", "user": "postgres" },
+  "resources": {
+    "repository": "C:/autopilot-worktrees/mission-operator-lab-20261109/seed",
+    "worktreeRoot": "C:/autopilot-worktrees/mission-operator-lab-20261109/worktrees",
+    "baseSha": "aafa5bc7085d44289c36d22192d517a6ac1097b8"
+  },
+  "permissions": { "admit": false, "execute": true, "cancel": false },
+  "leaseSeconds": 15,
+  "deadlineMs": 12000,
+  "queryTimeoutMs": 2000
+}

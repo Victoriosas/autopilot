@@ -14,7 +14,7 @@ export function admissionRequest(value: unknown): { id: string; objective: Retur
   return { id: missionId(request.id), objective: authorizedObjective(request.objective) };
 }
 export interface LocalMissionStatus {
-  id: string; queueState: string; state: string; reason: string | null; runId: string | null; leaseActive: boolean;
+  id: string; queueState: string; state: string; reason: string | null; runId: string | null; leaseActive: boolean; availableAt: string;
   attempts: number; maxAttempts: number; checkpointVersion: number; planVersion: number;
   checkpoint: Record<string, unknown>; plans: unknown[]; audit: unknown[];
 }
@@ -71,7 +71,7 @@ export class LocalMissionStore {
     missionId(id);
     const result = await this.query(`select jsonb_build_object('id',t.id,'queueState',t.status,'state',t.mission_checkpoint->>'mission_state',
       'reason',case when t.status='completed' then 'acceptance_satisfied' else t.mission_checkpoint->>'last_error' end,
-      'runId',t.local_run_id,'leaseActive',coalesce(t.status='running' and t.lease_until>clock_timestamp(),false),
+      'runId',t.local_run_id,'availableAt',t.available_at,'leaseActive',coalesce(t.status='running' and t.lease_until>clock_timestamp(),false),
       'attempts',t.attempt_count,'maxAttempts',t.max_attempts,'checkpointVersion',t.mission_checkpoint_version,
       'planVersion',coalesce((t.input->>'plan_version')::integer,0),'checkpoint',t.mission_checkpoint,'plans',coalesce(t.input->'plan_history','[]'::jsonb),
       'audit',(select coalesce(jsonb_agg(jsonb_build_object('event',a.event_type,'details',a.details) order by a.id),'[]'::jsonb)
