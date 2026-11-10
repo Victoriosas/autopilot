@@ -33,6 +33,7 @@ async function sql(query: string): Promise<string> {
 function localRpcClient() {
   const parameters: Record<string, string[]> = {
     six_agent_claim: ['p_agent', 'p_lease_seconds'],
+    six_agent_claim_mission: ['p_agent', 'p_lease_seconds'],
     six_agent_checkpoint: ['p_task_id', 'p_mission_id', 'p_token', 'p_checkpoint_version', 'p_operation_id', 'p_executor_id', 'p_checkpoint'],
     six_agent_complete: ['p_task_id', 'p_token', 'p_evidence'],
     six_agent_fail: ['p_task_id', 'p_token', 'p_reason'],
@@ -41,7 +42,7 @@ function localRpcClient() {
     assert.ok(Object.hasOwn(parameters, name));
     const values = parameters[name].map(key => literal(args[key]) + (key === 'p_checkpoint' ? '::jsonb' : '')).join(',');
     try {
-      const query = name === 'six_agent_claim'
+      const query = ['six_agent_claim', 'six_agent_claim_mission'].includes(name)
         ? `select coalesce(json_agg(c),'[]'::json) from public.${name}(${values}) c;`
         : `select to_json(public.${name}(${values}));`;
       return { data: JSON.parse(await sql(query)), error: null };
