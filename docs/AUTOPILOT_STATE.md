@@ -1157,3 +1157,30 @@ El check CodeQL de #202 señaló el servidor sintético de la prueba de Auth. Se
 ## 2026-11-09 · F1: revisión conjunta de #200–#202
 
 Integración aislada `codex/f1-api-auth-review-20261109` desde main `a6cff5a`: conserva heads `039ecf3` (#200), `7da72d3` (#201, incluye #200) y `eb92a0c` (#202). Solo conflicto documental, resuelto preservando ambas notas. Informe y reversión: [F1_API_AUTH_REVIEW_20261109.md](F1_API_AUTH_REVIEW_20261109.md). `npm run verify` del conjunto: 432/432, cero omitidas, tipos, 13 habilidades, ambos builds y smoke de APIs compiladas aprobados; HTML, secretos y diff correctos. Edge compilado localmente. Docker no está disponible: contenedor sin probar. Checks del SHA final en PR; los checks individuales no certifican esta integración. Sin merge remoto, publicación productiva, SQL alojado ni envíos. Las tres propuestas originales se conservan. Siguiente: revisión del candidato y autorización específica antes de producción.
+
+
+## 2026-11-09 · Coordinación Work y Codex local, host sin acceso remoto
+
+Solicitud del propietario: inventariar PC/configuración/sesión y mantener referencia compartida en GitHub. Ambas conexiones Desktop Commander Remote muestran micahael-PC offline; discos, procesos y sesión actual no inspeccionados. Main contrastado en a6cff5aba04e752cb010926b88c24fd4abfe84b6; PR #213 conserva 15720289647da59c19cc2c19c7f123ee84259a31. Se añade docs/WORK_CODEX_SHARED_CONTEXT.md con referencias B–G, autorización temporal G y contrato de intercambio saneado. Emparejamiento local PENDIENTE hasta observación del host y confirmación de Codex. No se modifican checkout aprobado, tareas, configuración local ni servicios. Rama documental aislada con Git deployment deshabilitado antes de crear su referencia. No hay sincronización automática de chats ni ejecución futura programada por este archivo.
+
+
+## 2026-11-09 · Inventario de PC reconectada y referencia compartida Work/Codex
+
+Desktop Commander confirmó micahael-PC online. Inspección dirigida de C:/, E:/, .codex, worktrees, respaldo y campos permitidos de OpenCode/VS Code. 50 worktrees registrados; C:/autopilot en a6cff5aba04e752cb010926b88c24fd4abfe84b6 sin cambios versionados, 138 entradas untracked conservadas. Sesión candidata por recencia/cwd: gpt-6.1-sol medium; acuse de lectura local pendiente. Global AGENTS aún orientado a la tienda antigua, discrepancia documentada sin alterar instrucciones globales. Tarea G comprobada Disabled/Limited, checkout aprobado intacto, sin listeners del laboratorio en puertos conocidos; autorización y horario conservados. Se actualiza docs/WORK_CODEX_SHARED_CONTEXT.md y se agrega WORK_CODEX_HOST_INVENTORY.json; copia local fuera de checkouts. No se inicia infraestructura ni se sincronizan chats automáticamente. Ver PR #214 y sus límites de evidencia.
+
+
+## Cierre de configuraciones y capacidades recuperadas · 09/11/2026 Uruguay
+
+PR #214 contrastada desde 1409874; acuse Codex de huella a6bf13d814ef8e47 y blobs compartidos confirmado. Comparación dirigida cerrada: backup Codex no contiene MCP perdido; OpenCode antiguo tiene menos guardas; configuraciones de entorno/VS Code recuperadas idénticas; 256/256 hashes del respaldo E verificados. Scripts de comercio y snapshot de septiembre no se restauran.
+
+APLICADO con backup exacto: alcance global AGENTS para Victoriosas/autopilot sin eliminar instrucciones de otros proyectos; nueva sección ya cargada en esta sesión. PRESERVADO remoto: bd24d4c original en codex/mission-native-activation-20261109, descendiente cc7f753 con Git deployment desactivado; sin cambios en checkout G. CamelRun POSPONER: OAuth/inventario reales, siete agentes sin aplicación conectada/runs/schedules; costes no nulos, límites remotos sin demostrar y gateway stateless ya existente. Cero inferencias o agentes ejecutados.
+
+Evidencia, origen/diferencia/decisión/prueba/reversión por candidato: [CONFIGURATION_DECISIONS_20261110.md](CONFIGURATION_DECISIONS_20261110.md). Se retoma desarrollo F1 en rama separada: disponibilidad de consultas acotada y diagnóstico determinista, sin duplicar #204. ORD-204G conserva SHA/manifest/tarea/horario y ventana autorizada; sin activación fuera de ventana, merge, SQL alojado, servicios nuevos, gastos, credenciales o envíos.
+
+## 2026-11-09 · Protocolo V5 de continuidad Codex
+
+Orden `ORD-V5-PROTOCOL-20261109`, worktree aislado `E:/autopilot-continuation-v5-20261109`, base remota main `a6cff5aba04e752cb010926b88c24fd4abfe84b6`. Se conserva este historial y se añade `docs/CODEX_CONTINUATION.md` con checkpoint JSON enlazado desde la habilidad principal. Recuperación, deduplicación, supervisión adversarial y selección de orden reutilizan las habilidades v2. No se agrega runtime ni scheduler.
+
+Validación documental: 13 habilidades válidas, lectura/parseo del checkpoint desde otro proceso, referencias locales y diff comprobados. Supervisión interna APROBADO para protocolo documental y recuperación local. Configuración de `victoriosa-autopilot-6h` observada ACTIVE; falta prueba de arranque técnico, recepción de esta rama y exclusión. Reanudación desatendida sin verificar.
+
+Siguiente orden F1 ejecutada en lectura: PR #204 OPEN/draft, head `a183ff2f47a4eebcd727e752795ba64b2178f2a1`; Core run 42573757580 success sobre ese SHA con validate/postgres aprobados. Supabase Preview omitida. El informe existente registra Docker sin probar en contenedor. Se reutiliza esa revisión conjunta de #200–#202 sin duplicarla. Siguiente orden recuperable `ORD-V5-RESUMPTION-20261109`, dependiente de evidencia de ejecución del mecanismo existente. Cualquier publicación permanece sujeta a aprobación específica.
