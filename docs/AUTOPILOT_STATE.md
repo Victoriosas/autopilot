@@ -1123,3 +1123,12 @@ Fase F1/operación. `micahael-PC` volvió a estar conectada, pero el checkout `C
 ## 2026-11-08 · Habilidades de Codex v2
 
 Rama `codex/victoriosas-skills-v2` sobre `7458d4b`. Cinco habilidades instaladas en un worktree aislado. El catálogo conserva las ocho anteriores y `AGENTS.md` referencia la coordinadora y el control de fases. La incorporación al checkout principal depende de la revisión de la PR y la actualización de ese checkout. La instalación de habilidades no cambia el horario ni activa ejecuciones programadas.
+
+
+## 2026-11-09 · Protocolo V5 de continuidad Codex
+
+Orden `ORD-V5-PROTOCOL-20261109`, worktree aislado `E:/autopilot-continuation-v5-20261109`, base remota main `a6cff5aba04e752cb010926b88c24fd4abfe84b6`. Se conserva este historial y se añade `docs/CODEX_CONTINUATION.md` con checkpoint JSON enlazado desde la habilidad principal. Recuperación, deduplicación, supervisión adversarial y selección de orden reutilizan las habilidades v2. No se agrega runtime ni scheduler.
+
+Validación documental: 13 habilidades válidas, lectura/parseo del checkpoint desde otro proceso, referencias locales y diff comprobados. Supervisión interna APROBADO para protocolo documental y recuperación local. Configuración de `victoriosa-autopilot-6h` observada ACTIVE; falta prueba de arranque técnico, recepción de esta rama y exclusión. Reanudación desatendida sin verificar.
+
+Siguiente orden F1 ejecutada en lectura: PR #204 OPEN/draft, head `a183ff2f47a4eebcd727e752795ba64b2178f2a1`; Core run 42573757580 success sobre ese SHA con validate/postgres aprobados. Supabase Preview omitida. El informe existente registra Docker sin probar en contenedor. Se reutiliza esa revisión conjunta de #200–#202 sin duplicarla. Siguiente orden recuperable `ORD-V5-RESUMPTION-20261109`, dependiente de evidencia de ejecución del mecanismo existente. Cualquier publicación permanece sujeta a aprobación específica.
