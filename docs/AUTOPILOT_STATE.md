@@ -1,3 +1,13 @@
+# Continuidad · publicación y evaluación autorizadas · 06/11/2026
+
+Autorización específica del propietario: fusionar #197 y #196 con sus despliegues automáticos y una sola evaluación real de desarrollo 32+6, presupuesto hasta US$2,04; sin ocho finales ni respuestas a clientas.
+
+- FUSIONADO/DESPLEGADO: #197 → 14dac62; #196 → 7458d4bc8c43dde16e8eb3a3c7670a5e712ed0ef. Vercel producción READY dpl_411bWsxz5FQEvfPKLXMru6HmtikB, alias oficial y health coinciden. Core 42325746260, beauty-stack 42325746417 y CodeQL 42325746292 SUCCESS en main final. Monitor GET completo desde PC exit 0; admin anónimo 401, consultas habilitadas y comercio/pagos cerrados. No prueba entrega humana nueva ni resolución universal del 403.
+- EVALUADO CON MODELO REAL: [run 42326025668](https://github.com/Victoriosas/autopilot/actions/runs/42326025668), SHA 7458d4b, modo development, primer intento y único dispatch. Ejecutó 32/32 casos y 6/6 controles; aprobaron 18/32, 14/24 críticos y 6/6 controles. gate_ok=false y full_evaluation_passed=false; F3 BLOQUEADA.
+- Coste reportado/reservado agregado US$0,1739, no factura; reserva≈US$2,04, sin relanzamientos ni autorización para reutilizar saldo. Coste total de infraestructura/CI no certificado. Todos los 38 resultados no_send; cero envíos y ocho finales intactos, corpus blob df39dfff203eba357425b801cbd5523c0e12cbb8.
+- [Informe y artefacto original preservado](F3_EVALUACION_AUTORIZADA_20261106.md): siete casos antes fallidos pasan; EV-013/032 cambian a fallo. Cinco errores de proveedor ahora localizados por etapa, dos discrepancias críticas de Guardián y nueve coincidencias de contenido prohibido. No hay jerga interna detectada; salidas completas ausentes impiden determinar negación vs afirmación. No atribuir causas no demostradas.
+- Siguiente: diagnóstico offline con los códigos/etapas, sin modificar el corpus ni aumentar límites por intuición. Otra evaluación, 40+6, definiciones remotas o F4 requieren autorización específica. Registro posterior se entrega en PR documental separada, sin otra promoción productiva autorizada.
+
 # Continuidad · depuración autorizada de PR · 06/11/2026
 
 - El propietario autorizó ejecutar la revisión de PR pendientes y dejarla optimizada. Integradas por squash, sin auto-merge ni deploy manual: #186 instrucciones/README (5f1f0f8), #188 captura F2 portátil (5d175c2), #168 GenAI 2.32/Lucide 1.66 (9bb5264). Main base de este cierre: 9bb5264f8cebdd990634e80d6408e91a4f08788b. Todos los heads exactos tuvieron validate/postgres/CodeQL aprobados, sin hilos pendientes. No se reactivó comercio ni modelos.
