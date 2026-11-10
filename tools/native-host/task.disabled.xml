@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo><Description>ORD-204G synthetic fixed mission; proposed only, disabled.</Description><URI>\Victoriosas-Autopilot-Synthetic-Demo</URI></RegistrationInfo>
-  <Triggers><TimeTrigger><Repetition><Interval>PT2M</Interval><Duration>PT20M</Duration><StopAtDurationEnd>true</StopAtDurationEnd></Repetition><StartBoundary>2026-11-10T18:00:00-03:00</StartBoundary><EndBoundary>2026-11-10T18:20:00-03:00</EndBoundary><Enabled>true</Enabled></TimeTrigger></Triggers>
-  <Principals><Principal id="Host"><UserId>S-1-5-21-407708465-2732056728-3733312173-1000</UserId><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal></Principals>
+  <Triggers><TimeTrigger><Repetition><Interval>PT2M</Interval><Duration>PT20M</Duration><StopAtDurationEnd>true</StopAtDurationEnd></Repetition><StartBoundary>2000-01-01T00:00:00Z</StartBoundary><EndBoundary>2000-01-01T00:20:00Z</EndBoundary><Enabled>true</Enabled></TimeTrigger></Triggers>
+  <Principals><Principal id="Host"><UserId>S-1-5-32-545</UserId><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal></Principals>
   <Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><DisallowStartIfOnBatteries>true</DisallowStartIfOnBatteries><StopIfGoingOnBatteries>true</StopIfGoingOnBatteries><AllowHardTerminate>true</AllowHardTerminate><StartWhenAvailable>false</StartWhenAvailable><RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable><Enabled>false</Enabled><Hidden>false</Hidden><WakeToRun>false</WakeToRun><ExecutionTimeLimit>PT2M</ExecutionTimeLimit><Priority>7</Priority></Settings>
-  <Actions Context="Host"><Exec><Command>C:\Program Files\nodejs\node.exe</Command><Arguments>--import tsx "C:/autopilot-worktrees/mission-native-host-20261109/scripts/autopilot-native-host.ts" --manifest "C:/autopilot-worktrees/mission-native-host-proposal-20261109/manifest.json" --native</Arguments><WorkingDirectory>C:/autopilot-worktrees/mission-native-host-20261109</WorkingDirectory></Exec></Actions>
+  <Actions Context="Host"><Exec><Command>UNRENDERED</Command><Arguments></Arguments><WorkingDirectory></WorkingDirectory></Exec></Actions>
 </Task>

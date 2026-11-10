@@ -1,13 +1,13 @@
 import path from 'node:path';
 import { lstat, realpath, readFile, open, stat } from 'node:fs/promises';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { userInfo } from 'node:os';
 import { localProcessEnvironment, readLocalConfig, validateLocalConfig } from './localMissionConfig';
 import { ManagedProcesses } from './managedProcesses';
 import type { LocalMissionStatus } from './localMissionStore';
 
-export const nativeMission = 'synthetic-native-ord204g';
+export const nativeMission = 'synthetic-native-ord204g-recovery-20261110';
 export const nativeTask = '\\Victoriosas-Autopilot-Synthetic-Demo';
 export interface NativeManifest {
   version: 1; checkout: string; approvedSha: string; executionConfig: string; configSha256: string;
@@ -17,6 +17,10 @@ export interface NativeManifest {
 function exact(v: unknown, keys: string[]) {
   return !!v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).sort().join(',') === keys.sort().join(',');
 }
+export function isInside(parent: string, child: string) {
+  const relative = path.relative(parent, child);
+  return !relative || (!relative.startsWith('..' + path.sep) && relative !== '..' && !path.isAbsolute(relative));
+}
 export function manifest(value: unknown): NativeManifest {
   const m = value as NativeManifest;
   if (!exact(m,['version','checkout','approvedSha','executionConfig','configSha256','evidenceDirectory','taskName','missionId','node','git','psql','maxDurationMs'])
@@ -24,8 +28,7 @@ export function manifest(value: unknown): NativeManifest {
     || !/^[a-f0-9]{40}$/.test(m.approvedSha) || !/^[a-f0-9]{64}$/.test(m.configSha256)
     || !Number.isInteger(m.maxDurationMs) || m.maxDurationMs < 1000 || m.maxDurationMs > 60000
     || [m.checkout,m.executionConfig,m.evidenceDirectory,m.node,m.git,m.psql].some(v=>typeof v!=='string'||!path.isAbsolute(v))) throw Error('invalid_native_manifest');
-  const relative=path.relative(m.checkout,m.evidenceDirectory);
-  if (!relative || (!relative.startsWith('..'+path.sep)&&!path.isAbsolute(relative))) throw Error('evidence_inside_checkout');
+  if (isInside(m.checkout,m.evidenceDirectory)) throw Error('evidence_inside_checkout');
   return m;
 }
 export async function canonical(file: string, directory=false) {
@@ -35,7 +38,7 @@ export async function canonical(file: string, directory=false) {
 }
 export async function readManifest(file: string) {
   if ((await canonical(file)).size>16384) throw Error('invalid_native_manifest');
-  return manifest(JSON.parse(await readFile(file,'utf8')));
+  return manifest(JSON.parse((await readFile(file,'utf8')).replace(/^\uFEFF/, '')));
 }
 export function disposition(s: LocalMissionStatus, now=Date.now()): string {
   if (['completed','blocked','cancelled'].includes(s.state)||['completed','blocked'].includes(s.queueState)) return 'terminal';
@@ -46,15 +49,30 @@ export function disposition(s: LocalMissionStatus, now=Date.now()): string {
   if (!['queued','failed','running'].includes(s.queueState)) throw Error('unsupported_queue_state');
   return 'ready';
 }
-export async function launchNativeHost(m: NativeManifest, manual: boolean) {
+export type NativePreflightStage = 'checkout_path' | 'evidence_path' | 'launcher_checkout' | 'config_path'
+  | 'host_binaries' | 'node_identity' | 'config_hash' | 'config_schema' | 'config_permissions'
+  | 'config_deadline' | 'git_head' | 'git_tracked' | 'git_untracked' | 'native_origin' | 'audit_open' | 'execution';
+
+export function nativeOriginRejection(exitCode: number): string {
+  switch (exitCode) {
+    case 10: return 'native_history_disabled';
+    case 11: return 'native_event_query_failed';
+    case 12: return 'native_event_missing';
+    case 13: return 'native_event_ambiguous';
+    default: return 'native_origin_process_failed';
+  }
+}
+
+export async function launchNativeHost(m: NativeManifest, manual: boolean, invocationId: string,
+  stage: (name: NativePreflightStage, rejection: string) => void) {
   manifest(m);
+  if (!/^[a-f0-9-]{36}$/.test(invocationId)) throw Error('invalid_invocation_id');
   const abort=new AbortController();
   const processes=new ManagedProcesses(event=>{if(audit) void record(event).catch(()=>abort.abort());});
   const timer=setTimeout(()=>abort.abort(Error('native_deadline')),m.maxDurationMs);
   const stop=()=>abort.abort(Error('native_interrupted'));
   process.once('SIGINT',stop); process.once('SIGTERM',stop);
   let audit: Awaited<ReturnType<typeof open>>|undefined;
-  const invocationId=randomUUID();
   const env={...localProcessEnvironment(),PSQL_PATH:m.psql,
     PATH:[path.dirname(m.git),path.dirname(m.node),path.dirname(m.psql),path.join(process.env.SystemRoot||'/','System32')].join(path.delimiter)};
   const exec=(file: string,args: string[],operation: string,acceptExitCodes=[0],onStdout?: (chunk: string)=>void)=>processes.exec(file,args,
@@ -66,26 +84,60 @@ export async function launchNativeHost(m: NativeManifest, manual: boolean) {
     await auditQueue;
   };
   try {
-    for (const dir of [m.checkout,m.evidenceDirectory]) await canonical(dir,true);
+    stage('checkout_path', 'unsafe_checkout_path');
+    await canonical(m.checkout,true);
+    stage('evidence_path', 'unsafe_evidence_path');
+    await canonical(m.evidenceDirectory,true);
+    stage('launcher_checkout', 'wrong_launcher_checkout');
     if (await realpath(fileURLToPath(new URL('../../',import.meta.url)))!==path.resolve(m.checkout)) throw Error('wrong_launcher_checkout');
+    stage('config_path', 'invalid_config_file');
     if ((await canonical(m.executionConfig)).size>16384) throw Error('invalid_config_file');
+    stage('host_binaries', 'invalid_host_binary');
     for (const file of [m.node,m.git,m.psql]) if (!(await stat(file)).isFile()) throw Error('invalid_host_binary');
+    stage('node_identity', 'wrong_node_binary');
     if(await realpath(m.node)!==await realpath(process.execPath)) throw Error('wrong_node_binary');
     const configBytes=await readFile(m.executionConfig);
+    stage('config_hash', 'native_config_changed');
     if (createHash('sha256').update(configBytes).digest('hex')!==m.configSha256) throw Error('native_config_changed');
+    stage('config_schema', 'invalid_execution_config');
     const config=validateLocalConfig(JSON.parse(configBytes.toString('utf8')));
+    stage('config_permissions', 'execution_only_required');
     if (config.permissions.admit || !config.permissions.execute || config.permissions.cancel) throw Error('execution_only_required');
+    stage('config_deadline', 'native_deadline_too_short');
     if (config.deadlineMs+10000>m.maxDurationMs) throw Error('native_deadline_too_short');
+    stage('git_head', 'checkout_head_unavailable');
     const sha=(await exec(m.git,['rev-parse','HEAD'],'verify_checkout')).stdout.trim();
+    stage('git_head', 'unapproved_checkout');
     if (sha!==m.approvedSha) throw Error('unapproved_checkout');
-    await exec(m.git,['diff','--quiet','HEAD','--'],'verify_tracked_files');
-    if ((await exec(m.git,['ls-files','--others','--exclude-standard'],'verify_untracked_files')).stdout.trim()) throw Error('untracked_checkout_files');
-    const origin=manual?{mode:'manual',nativeEvent:null,user:userInfo().username}:
-      JSON.parse((await exec(path.join(process.env.SystemRoot||'C:/Windows','System32/WindowsPowerShell/v1.0/powershell.exe'),
-        ['-NoProfile','-NonInteractive','-File',path.join(m.checkout,'tools/native-host/Read-TaskOrigin.ps1'),'-LauncherPid',String(process.pid)],'native_origin')).stdout);
-    if (!manual && (origin.mode!=='windows_task_event'||origin.pid!==process.pid||origin.taskName!==nativeTask||!Number.isInteger(origin.recordId))) throw Error('native_origin_missing');
+    stage('git_tracked', 'tracked_checkout_check_failed');
+    const diff = await exec(m.git,['diff','--quiet','HEAD','--'],'verify_tracked_files',[0,1]);
+    stage('git_tracked', 'tracked_checkout_changed');
+    if (diff.exitCode === 1) throw Error('tracked_checkout_changed');
+    stage('git_untracked', 'untracked_checkout_check_failed');
+    const untracked = await exec(m.git,['ls-files','--others','--exclude-standard'],'verify_untracked_files');
+    stage('git_untracked', 'untracked_checkout_files');
+    if (untracked.stdout.trim()) throw Error('untracked_checkout_files');
+    stage('native_origin', 'native_origin_process_failed');
+    let origin;
+    if (manual) {
+      origin = { mode: 'manual', nativeEvent: null, user: userInfo().username };
+    } else {
+      const result = await exec(path.join(process.env.SystemRoot||'C:/Windows','System32/WindowsPowerShell/v1.0/powershell.exe'),
+        ['-NoProfile','-NonInteractive','-File',path.join(m.checkout,'tools/native-host/Read-TaskOrigin.ps1'),'-LauncherPid',String(process.pid)],
+        'native_origin',[0,10,11,12,13]);
+      if (result.exitCode !== 0) {
+        const rejection = nativeOriginRejection(result.exitCode);
+        stage('native_origin', rejection);
+        throw Error(rejection);
+      }
+      stage('native_origin', 'native_origin_invalid');
+      origin = JSON.parse(result.stdout);
+      if (origin?.mode!=='windows_task_event'||origin.pid!==process.pid||origin.taskName!==nativeTask||!Number.isInteger(origin.recordId)) throw Error('native_origin_invalid');
+    }
+    stage('audit_open', 'native_audit_unavailable');
     audit=await open(path.join(m.evidenceDirectory,`${invocationId}.jsonl`),'wx',0o600);
     await record({event:'host_started',origin});
+    stage('execution', 'native_execution_rejected');
     // Freeze the validated host configuration for this invocation; never read a payload as config.
     const snapshot=path.join(m.evidenceDirectory,`${invocationId}.execution.json`);
     const sealed=await open(snapshot,'wx',0o600);try {await sealed.write(configBytes);await sealed.sync();} finally {await sealed.close();}
