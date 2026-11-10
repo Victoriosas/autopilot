@@ -64,7 +64,7 @@ jobs:
           BEAUTY_SYNTHETIC_SUPABASE: 'true'
           SUPABASE_LOCAL_STATUS_FILE: ${{ runner.temp }}/beauty-status.json
       - name: Retain synthetic screenshots
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: consultation-lab-synthetic
           path: output/consultation-lab/*.png
