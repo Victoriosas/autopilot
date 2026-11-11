@@ -15,6 +15,7 @@ interface Continuity {
   checkout: string;
   verifiedSha: string;
   psqlPath: string;
+  consumedMissions?: string[];
   windows: (TestWindow & { proposalDirectory?: string })[];
 }
 
@@ -60,6 +61,7 @@ function localPath(value: string) {
 }
 
 async function prepare(stateFile: string, state: Continuity, window: TestWindow & { proposalDirectory?: string }, host: Probe) {
+  if (state.consumedMissions?.includes(nativeMission)) throw Error('fresh_mission_identity_required');
   if (classify(window, host) !== 'BEFORE_WINDOW') throw Error('preparation_requires_future_window');
   if (host.task === 'disabled' && !state.windows.some(known => known.firstTrigger === host.taskStart && known.stopsAt === host.taskStop)) {
     throw Error('unknown_registered_task_reservation');
@@ -131,6 +133,8 @@ async function main() {
   try {
     const state: Continuity = JSON.parse(await readFile(stateFile,'utf8'));
     if (state.version !== 1 || !localPath(state.checkout) || !localPath(state.psqlPath)
+        || (state.consumedMissions !== undefined && (!Array.isArray(state.consumedMissions)
+          || state.consumedMissions.some(id => typeof id !== 'string' || !/^synthetic-[a-z0-9-]{1,60}$/.test(id))))
         || !shaPattern.test(state.verifiedSha) || !Array.isArray(state.windows) || isInside(state.checkout,stateFile)) {
       throw Error('invalid_continuity_state');
     }
