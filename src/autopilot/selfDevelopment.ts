@@ -273,7 +273,15 @@ export async function runDevelopmentLab(rootInput: string, options: { signal?: A
         if ((await readdir(root)).some(x => x !== 'owner.json')) throw Error('lab_not_empty');
         await writeFile(marker, expectedMarker, { flag: 'wx' });
       } else if (await readFile(marker, 'utf8') !== expectedMarker) throw Error('bootstrap_changed');
-      if ((await readdir(root)).some(x => !['owner.json', 'bootstrap.json', 'repository', 'hooks'].includes(x))) throw Error('lab_not_empty');
+      if ((await readdir(root)).some(x => !['owner.json', 'bootstrap.json', 'repository', 'hooks', 'baseline.pending'].includes(x))) throw Error('lab_not_empty');
+      const pendingBaseline = path.join(root, 'baseline.pending');
+      if (!await absent(pendingBaseline)) {
+        const info = await lstat(pendingBaseline);
+        if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1
+          || info.size > 8192 || await realpath(pendingBaseline) !== pendingBaseline) throw Error('unsafe_lab_resource');
+        // A previous writer may have died before completing this unpublished file.
+        await unlink(pendingBaseline);
+      }
       for (const dir of [repository, path.join(root, 'hooks')]) {
         if (await absent(dir)) await mkdir(dir);
         const info = await lstat(dir);
@@ -307,7 +315,8 @@ export async function runDevelopmentLab(rootInput: string, options: { signal?: A
       if (await envGit(['ls-tree', '--name-only', head]) !== 'subject.mjs'
         || await envGit(['show', `${head}:subject.mjs`]) !== sourceFor('upper').trim()
         || await envGit(['status', '--porcelain'])) throw Error('bootstrap_changed');
-      await writeFile(path.join(root, 'baseline.json'), JSON.stringify({ sha: head, source: sourceFor('upper'), supervisorHash }), { flag: 'wx' });
+      await writeFile(pendingBaseline, JSON.stringify({ sha: head, source: sourceFor('upper'), supervisorHash }), { flag: 'wx' });
+      await rename(pendingBaseline, path.join(root, 'baseline.json'));
     }
     for (const resource of ['repository', 'hooks', 'baseline.json']) {
       const location = path.join(root, resource); const info = await lstat(location);

@@ -92,6 +92,13 @@ test('interrupted bootstrap resumes only an owned, validated partial lab', async
   await assert.rejects(runDevelopmentLab(foreign), /lab_not_empty/);
   assert.equal(await readFile(path.join(foreign, 'repository', 'foreign.txt'), 'utf8'), 'preserve me');
 
+  const interruptedBaseline = await temporary();
+  await writeFile(path.join(interruptedBaseline, 'bootstrap.json'), marker);
+  await writeFile(path.join(interruptedBaseline, 'baseline.pending'), '{"truncated":');
+  const resumed = await runDevelopmentLab(interruptedBaseline);
+  assert.equal(resumed.context.checkpoint.mission_state, 'completed');
+  await assert.rejects(stat(path.join(interruptedBaseline, 'baseline.pending')), { code: 'ENOENT' });
+
   const unowned = await temporary();
   await mkdir(path.join(unowned, 'repository'));
   await assert.rejects(runDevelopmentLab(unowned), /lab_not_empty/);
