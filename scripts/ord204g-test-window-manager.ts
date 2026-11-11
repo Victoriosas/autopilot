@@ -38,7 +38,7 @@ try {
 }
 $listener = @(Get-NetTCPConnection -State Listen | Where-Object LocalPort -eq 55439)
 $process = @(Get-CimInstance Win32_Process -Filter "Name='node.exe' OR Name='postgres.exe'" |
-  Where-Object { $_.CommandLine -match 'autopilot-native-host\.ts|autopilot-mission\.ts|observe-native-window|queue-fencing-20261109-pg' })
+  Where-Object { $_.CommandLine -match 'autopilot-native-host\.ts|autopilot-mission\.ts|observe-(?:ord204g-)?native-window|queue-fencing-20261109-pg' })
 $now = [datetimeoffset]::Now
 @{ observedAt=$now.ToString('o'); timeZone=(Get-TimeZone).Id; utcOffsetMinutes=$now.Offset.TotalMinutes;
   task=$task; taskStart=$start; taskStop=$stop; occupied=($listener.Count -gt 0 -or $process.Count -gt 0); probeOk=$true;
