@@ -50,6 +50,10 @@ Próximos lotes separados. Alinear el 404 JSON de la API con Node y normalizar e
 - Cerradas #111/#125 documentales y #129/#131 superadas, preservando ramas/commits/descripciones originales. Evidencia histórica rescatada y comparación de guardas: docs/PR_LEGACY_TRIAGE_20261105.md, PR #187 actualizada sobre main. Se conservan #90/#122/#124 en borrador por alcance/aprobaciones; #169 convertida a DRAFT, bloqueo de migración Express 5 documentado con TS2345 de CI 41767936846. No eliminar propuestas ni resolver conflictos eligiendo versiones antiguas en bloque.
 - #187 contiene solo documentación de cierre; verificar validate/postgres del SHA final y estado alojado por separado. Los worktrees previos y archivos ajenos se conservaron; no se declara sincronización global de PC. F3 sigue parcial 3/32 + 6/6; sin nuevo gasto de inferencia, mensajes, SQL alojado, DNS, credenciales ni automatizaciones. Próximo: desarrollo completo autorizado antes de finales; Express 5 requiere tarea independiente.
 
+## 2026-11-10 · F1: redacción de fallos del monitor público
+
+El monitor GET existente podía imprimir valores devueltos por un endpoint al fallar el parseo JSON o una aserción de contenido. La regresión con respuestas sintéticas reproduce el problema. Ahora el fallo comunica el endpoint y la condición incumplida, conserva la lista acotada de causas de disponibilidad y mantiene las comprobaciones de bandeja anónima y controles comerciales. Sin nueva automatización. El siguiente punto de F1 sigue siendo corroborar el recorrido de consulta y la recepción humana en una prueba autorizada.
+
 ## 2026-11-06 · F3: recuperación offline y PR #196 en borrador
 
 Fase F3. Base remota comprobada `908ae4e7a195470266799016a99e06a35d49be27`; código `7828a03e2713dcf4c4d1a71b581adf7f6eea9c31`, rama `codex/f3-quality-recovery-20261106`, worktree aislado `C:/autopilot-worktrees/f3-quality-recovery-20261106`. [PR #196 DRAFT](https://github.com/Victoriosas/autopilot/pull/196), sin merge ni promoción. El commit de continuidad posterior solo documenta este resultado; consultar el SHA final y CI en la PR.
@@ -1307,3 +1311,36 @@ PROBADO: CLI observa modulo real de disponibilidad con hash revisado, reproduce 
 Validacion: npm run verify exit0, 480/480 sin omisiones, tipos, 13 skills, builds y API; secret scan. Seis propuestas parciales rechazadas, supervisor/codigo inesperado/checkout sucio/carpeta ajena bloqueados. SIGKILL real despues del efecto; otro proceso usa la misma CLI, reconcilia sin cambiar mtime y completa. Segunda invocacion terminal no modifica ni duplica commit. No es recuperacion desatendida.
 
 Evidencia/comandos/limites: docs/SELF_DEVELOPMENT_F1_20261110.md y docs/SELF_DEVELOPMENT_F1_EVIDENCE_20261110.json. CI validate/postgres y ausencia de despliegues Vercel del SHA final se registran en la PR; bloqueo Git/ignoreCommand especifico antes de push. ORD-204G sin alteraciones ni activacion. Sin merge, produccion, SQL alojado, secretos nuevos, pagos o envios. Codex aun define/revisa el transformador acotado, inicia CLI y publica la propuesta; no hay generacion libre ni sandbox OS. Siguiente: revision de las PR apiladas y otro contrato F1 solo con fallo reproducible y corpus externo.
+
+
+## Biblioteca inteligente de consultas · Ciclo A (cloud, 2026-11-10)
+
+**DEFINIDO/PROBADO localmente:** rama aislada `codex/consultation-knowledge-engine-v1` desde main `1c44a6389a7bbd6ac9157ac087269e216e654373`. Taxonomía de 20 intenciones, 200 preguntas sintéticas y 28 contrastes/negativos; adaptador determinista sobre comprensión, catálogo de 17 servicios y evidencia/RPC existentes. Recuperación exige aprobación, fuente, versión y vigencia; las revisiones retiradas/vencidas no reviven aprobación previa. Datos ausentes provocan aclaración o revisión humana. Decisión siempre `no_send`.
+
+**Continuidad:** se preservan sin publicar `/workspace/autopilot-f1-104` y `/workspace/autopilot-reception-cycle1` con sus cambios anteriores; la misión prioritaria de biblioteca se implementa en `/workspace/autopilot-knowledge-cycle-a`. Sin modificaciones en main, PR #122/#124, #220–224, corpus congelados ni ORD-204G. Sin acceso a expedientes reales ni al caso histórico de recepción.
+
+**Validación:** evaluador offline: 20 intenciones, 200 ejemplos, 20 contrastes y 8 negativos, cero fallos y cero llamadas remotas; regresiones de aprobación, versión, caducidad, conflicto, privacidad e inyección. `npm run verify` exit 0: 474 aprobadas, una omitida, cero fallos; 10/10 focales, tipos, 13 skills y ambos builds/API compiladas aprobados; escaneo de secretos y diff sin errores. CI por SHA final en la PR. Ver [contrato y reproducción](CONSULTATION_KNOWLEDGE_ENGINE_V1.md).
+
+**Límites/siguiente paso:** biblioteca de laboratorio lista para el Ciclo B de composición y Guardián; no integrada en la bandeja ni habilitada para envíos. No afirma comprensión general ni aprobación de nuevos hechos profesionales. Sin migraciones, modelos pagos, comunicaciones, merge o despliegue. Conservar revisión humana y usar el almacén aprobado existente al integrarla.
+
+
+## Ciclo B · Composición fundamentada y Guardián (2026-11-11)
+
+**cycle_id:** VICTORIOSAS_CONSULTATION_GROUNDED_RESPONSE_V1 · titular Codex · PROBADO localmente, VERIFICANDO CI. Base #225, SHA `3bb87e4dce42dd74ac32085e2911550806f642ba`; checkout `/workspace/autopilot-grounded-cycle-b`, rama `codex/consultation-grounded-response-v1`. No se fusiona ni modifica la rama A.
+
+**Entrega:** tres variantes reproducibles, fuentes/versiones por cláusula, manejo de faltantes y derivación. Guardián separado recalcula evidencia y restricciones y reutiliza `checkDraft`/contrato existente; no acepta autoaprobación ni permisos de envío. Solicitud de material queda estructurada en memoria, pendiente de revisión, sin habilitar contacto externo. Contexto/canal ligados al borrador; revocación, caducidad o cambio de destinatario bloquean.
+
+**Evidencia:** 228 casos de A reutilizados sin cambios en sus corpus; regresiones de fidelidad, privacidad, inyección y manipulación de texto/estado. Demos locales de catálogo y precio sin dato aprobado; ninguna llamada remota o comunicación. Verify y CI por SHA final constan en la PR. Contrato/comandos: [Ciclo B](CONSULTATION_GROUNDED_RESPONSE_V1.md).
+
+**Límites/siguiente paso:** composición controlada local, sin modelo remoto ni integración en bandeja. Persistir solicitudes (C) y revisión en interfaz (D) son posteriores. No nuevas fichas aprobadas, SQL, producción ni cambios a ORD-204G. Checkouts previos preservados. Mantener `no_send` incluso si el contenido es apto para revisión humana.
+
+
+## Ciclo C · Persistencia supervisada (2026-11-11)
+
+**cycle_id:** VICTORIOSAS_CONSULTATION_MATERIAL_PERSISTENCE_V1 · titular Codex · base #226, SHA `e6b455e23361871e373d755cf9b347df147bfa4c`. Worktree aislado `/workspace/autopilot-cycle-c`, rama `codex/consultation-material-persistence-v1`. Inventario local/GitHub sin escritor o PR C equivalente; otros checkouts y sus cambios conservados.
+
+**Entrega:** SQL staged de solicitudes/eventos/claves mínimas, RLS admin existente, RPC con JWT del llamador, idempotencia transaccional y concurrencia; sin acceso directo de escritura o service_role. Metadatos/fuentes/versiones/consentimiento/trazas, sin copiar mensajes o contactos. Guardián B + revalidación SQL del padre/fuentes; persistencia/revisión administrativa nunca autorizan entrega. Toda salida conserva `no_send`.
+
+**Retención y pruebas:** siete días como máximo lógico, acotados por padre/contexto; revocación terminal borra payload; purga controlada y FK eliminan contenido/eventos, claves mínimas hasta retención del padre para impedir resurrección por replay. Migración/rollback/reinstalación en PostgreSQL desechable; CI agrega prueba Auth/PostgREST real local. Resultados, SHA final y estado de escritores al cierre en la PR. [Contrato, reproducción y checkpoint](CONSULTATION_MATERIAL_PERSISTENCE_V1.md).
+
+**Límites:** nada instalado en producción, sin endpoint/bandeja/modelos/envíos ni scheduler. No modificar #225/#226 ni ORD-204G. Siguiente acción: revisar CI por SHA y preparar integración D solo después de revisión humana, conservando permisos de envío separados.

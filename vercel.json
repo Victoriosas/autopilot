@@ -4,7 +4,6 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "installCommand": "npm ci",
-  "ignoreCommand": "node -e \"process.exit(['codex/self-development-20261110','codex/self-development-f1-20261110'].includes(process.env.VERCEL_GIT_COMMIT_REF) ? 0 : 1)\"",
   "crons": [
     {
       "path": "/api/autopilot/v4/cron/sourcing",
@@ -107,7 +106,10 @@
       "codex/shared-context-20261110": false,
       "codex/f1-readiness-20261110": false,
       "codex/mission-operator-20261109": false,
-      "codex/mission-trigger-20261109": false
+      "codex/mission-trigger-20261109": false,
+      "codex/consultation-knowledge-engine-v1": false,
+      "codex/consultation-grounded-response-v1": false,
+      "codex/consultation-material-persistence-v1": false
     }
   }
 }

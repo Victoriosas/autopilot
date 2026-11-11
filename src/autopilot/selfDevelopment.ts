@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { mkdir, readFile, writeFile, readdir, lstat, unlink, realpath, rmdir } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, readdir, lstat, unlink, realpath, rmdir, rename } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { FileAccessController, digest } from './developmentAccess';
 import { ManagedProcesses } from './managedProcesses';
@@ -35,7 +35,31 @@ export class DevelopmentLedger implements MissionLedger {
   async acquire() {
     const lock = path.join(this.root, 'owner.json');
     const guard = path.join(this.root, 'claim-guard');
-    try { await mkdir(guard); } catch { throw Error('busy'); }
+    const guardMarker = path.join(guard, `guard-${this.#token}.json`);
+    try { await mkdir(guard); }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw Error('busy');
+      // Reclaim only an aged guard whose owner is demonstrably dead. A recent
+      // or ambiguous guard is held closed; never clear another live claimant.
+      try {
+        const info = await lstat(guard);
+        if (!info.isDirectory() || info.isSymbolicLink() || Date.now() - info.mtimeMs < 120000) throw Error('busy');
+        const entries = await readdir(guard);
+        if (entries.length > 1 || entries.some(name => !/^guard-[a-f0-9-]{36}\.json$/.test(name))) throw Error('busy');
+        if (Date.now() - (await lstat(guard)).mtimeMs < 120000) throw Error('busy');
+        if (entries.length) {
+          const oldGuard = JSON.parse(await readFile(path.join(guard, entries[0]), 'utf8'));
+          if (!Number.isSafeInteger(oldGuard.pid) || oldGuard.pid <= 0 || typeof oldGuard.token !== 'string') throw Error('busy');
+          try { process.kill(oldGuard.pid, 0); throw Error('busy'); }
+          catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ESRCH') throw Error('busy'); }
+          await unlink(path.join(guard, entries[0]));
+        }
+        await rmdir(guard);
+        await mkdir(guard);
+      } catch { throw Error('busy'); }
+    }
+    try { await writeFile(guardMarker, JSON.stringify({ pid: process.pid, token: this.#token }), { flag: 'wx' }); }
+    catch { await rmdir(guard).catch(() => {}); throw Error('busy'); }
     try {
     if (!await absent(lock)) {
       if (!(await lstat(lock)).isFile() || (await lstat(lock)).isSymbolicLink()) throw Error('invalid_owner');
@@ -46,7 +70,7 @@ export class DevelopmentLedger implements MissionLedger {
       await unlink(lock);
     }
     await writeFile(lock, JSON.stringify({ pid: process.pid, token: this.#token }), { flag: 'wx' });
-    } finally { await rmdir(guard); }
+    } finally { await unlink(guardMarker); await rmdir(guard); }
     try {
     const files = (await readdir(this.root)).filter(x => /^state-\d{3}\.json$/.test(x)).sort();
     let previous = '';
@@ -72,7 +96,15 @@ export class DevelopmentLedger implements MissionLedger {
     const content = { version, previous: this.#snapshot?.hash ?? '', at: new Date().toISOString(), runId: this.#token, pid: process.pid, context: structuredClone(context),
       events: [...(this.#snapshot?.events ?? []), event] };
     const snapshot = { ...content, hash: digest(JSON.stringify(content)) };
-    await writeFile(path.join(this.root, `state-${String(version).padStart(3, '0')}.json`), JSON.stringify(snapshot), { flag: 'wx' });
+    // A killed writer may leave a partial temporary record. Never expose it
+    // as a committed checkpoint; only the atomic rename publishes the version.
+    const target = path.join(this.root, `state-${String(version).padStart(3, '0')}.json`);
+    if (!await absent(target)) throw Error('journal_conflict');
+    const pending = path.join(this.root, `pending-${this.#token}-${String(version).padStart(3, '0')}.tmp`);
+    await writeFile(pending, JSON.stringify(snapshot), { flag: 'wx' });
+    await this.assertOwner();
+    if (!await absent(target)) throw Error('journal_conflict');
+    await rename(pending, target);
     this.#snapshot = snapshot;
   }
   get snapshot() { return this.#snapshot ? structuredClone(this.#snapshot) : null; }
@@ -233,12 +265,58 @@ export async function runDevelopmentLab(rootInput: string, options: { signal?: A
     const repository = path.join(root, 'repository');
     const envGit = async (args: string[]) => (await processes.exec('git', ['-c', `core.hooksPath=${path.join(root, 'hooks')}`, '-c', 'core.autocrlf=false', '-c', 'commit.gpgsign=false', ...args], { cwd: repository, timeout: 5000, signal: options.signal, operation: 'lab_setup' })).stdout.trim();
     if (await absent(path.join(root, 'baseline.json'))) {
-      if ((await readdir(root)).some(x => x !== 'owner.json')) throw Error('lab_not_empty');
-      await mkdir(repository); await mkdir(path.join(root, 'hooks'));
-      await writeFile(path.join(repository, 'subject.mjs'), sourceFor('upper'));
-      await envGit(['init']); await envGit(['add', 'subject.mjs']);
-      await envGit(['-c', 'user.name=Autopilot laboratory', '-c', 'user.email=synthetic@example.invalid', 'commit', '-m', 'synthetic deficiency seed']);
-      await writeFile(path.join(root, 'baseline.json'), JSON.stringify({ sha: await envGit(['rev-parse', 'HEAD']), source: sourceFor('upper'), supervisorHash }), { flag: 'wx' });
+      // Bootstrap marker is created before any repository effects. An interrupted
+      // bootstrap can resume, but only when every surviving artifact is verified.
+      const marker = path.join(root, 'bootstrap.json');
+      const expectedMarker = JSON.stringify({ kind: 'self-development-lab-v1', supervisorHash });
+      if (await absent(marker)) {
+        if ((await readdir(root)).some(x => x !== 'owner.json')) throw Error('lab_not_empty');
+        await writeFile(marker, expectedMarker, { flag: 'wx' });
+      } else if (await readFile(marker, 'utf8') !== expectedMarker) throw Error('bootstrap_changed');
+      if ((await readdir(root)).some(x => !['owner.json', 'bootstrap.json', 'repository', 'hooks', 'baseline.pending'].includes(x))) throw Error('lab_not_empty');
+      const pendingBaseline = path.join(root, 'baseline.pending');
+      if (!await absent(pendingBaseline)) {
+        const info = await lstat(pendingBaseline);
+        if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1
+          || info.size > 8192 || await realpath(pendingBaseline) !== pendingBaseline) throw Error('unsafe_lab_resource');
+        // A previous writer may have died before completing this unpublished file.
+        await unlink(pendingBaseline);
+      }
+      for (const dir of [repository, path.join(root, 'hooks')]) {
+        if (await absent(dir)) await mkdir(dir);
+        const info = await lstat(dir);
+        if (!info.isDirectory() || info.isSymbolicLink() || await realpath(dir) !== dir) throw Error('unsafe_lab_resource');
+      }
+      if ((await readdir(path.join(root, 'hooks'))).length) throw Error('unsafe_lab_resource');
+      const entries = await readdir(repository);
+      if (entries.some(entry => !['.git', 'subject.mjs'].includes(entry))) throw Error('lab_not_empty');
+      const subject = path.join(repository, 'subject.mjs');
+      if (await absent(subject)) await writeFile(subject, sourceFor('upper'), { flag: 'wx' });
+      else {
+        const info = await lstat(subject);
+        if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1
+          || await realpath(subject) !== subject || await readFile(subject, 'utf8') !== sourceFor('upper')) throw Error('bootstrap_changed');
+      }
+      const gitDir = path.join(repository, '.git');
+      if (await absent(gitDir)) await envGit(['init']);
+      else {
+        const info = await lstat(gitDir);
+        if (!info.isDirectory() || info.isSymbolicLink() || await realpath(gitDir) !== gitDir) throw Error('unsafe_lab_resource');
+        if (await envGit(['rev-parse', '--show-toplevel']) !== repository.replaceAll('\\', '/')) throw Error('bootstrap_changed');
+      }
+      let head: string | null = null;
+      try { head = await envGit(['rev-parse', '--verify', 'HEAD']); }
+      catch (error) { if (safeCode(error) !== 'process_failed') throw error; }
+      if (head === null) {
+        await envGit(['add', 'subject.mjs']);
+        await envGit(['-c', 'user.name=Autopilot laboratory', '-c', 'user.email=synthetic@example.invalid', 'commit', '-m', 'synthetic deficiency seed']);
+        head = await envGit(['rev-parse', 'HEAD']);
+      }
+      if (await envGit(['ls-tree', '--name-only', head]) !== 'subject.mjs'
+        || await envGit(['show', `${head}:subject.mjs`]) !== sourceFor('upper').trim()
+        || await envGit(['status', '--porcelain'])) throw Error('bootstrap_changed');
+      await writeFile(pendingBaseline, JSON.stringify({ sha: head, source: sourceFor('upper'), supervisorHash }), { flag: 'wx' });
+      await rename(pendingBaseline, path.join(root, 'baseline.json'));
     }
     for (const resource of ['repository', 'hooks', 'baseline.json']) {
       const location = path.join(root, resource); const info = await lstat(location);

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, writeFile, mkdir, link, symlink, readdir, stat } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile, mkdir, link, symlink, readdir, stat, utimes } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
@@ -31,7 +31,13 @@ test('file capability permits arbitrary extensions but rejects traversal, secret
     await assert.rejects(access.replace(root, file, null, 'x'));
   await assert.rejects(access.read(outside, 'file'), /scope_denied/);
   await access.replace(root, 'arbitrary.new-extension', null, 'before');
+  // Interrupted staged write is reclaimed only for this exact mission/change.
+  const pending = path.join(root, 'arbitrary.new-extension.autopilot-'
+    + digest(JSON.stringify(['mission', 'arbitrary.new-extension', 'before', 'after'])).slice(0, 20) + '.tmp');
+  await writeFile(pending, 'partially written candidate');
   await access.replace(root, 'arbitrary.new-extension', 'before', 'after');
+  assert.equal(await readFile(path.join(root, 'arbitrary.new-extension'), 'utf8'), 'after');
+  await assert.rejects(stat(pending), { code: 'ENOENT' });
   await assert.rejects(access.replace(root, 'arbitrary.new-extension', 'before', 'destroy'), /concurrent_edit/);
   await access.replace(root, 'arbitrary.new-extension', 'after', null);
   await writeFile(path.join(outside, 'private'), 'synthetic outside');
@@ -67,6 +73,37 @@ test('external oracle rejects a broken repair and forged success; candidate cann
   } finally { await processes.close(); }
 });
 
+test('interrupted bootstrap resumes only an owned, validated partial lab', async () => {
+  const hash = digest((await Promise.all(['selfDevelopment.ts', 'developmentAccess.ts', 'missionRuntime.ts', 'managedProcesses.ts']
+    .map(file => readFile(new URL(file, import.meta.url), 'utf8')))).join('\n'));
+  const marker = JSON.stringify({ kind: 'self-development-lab-v1', supervisorHash: hash });
+  const root = await temporary();
+  await writeFile(path.join(root, 'bootstrap.json'), marker);
+  await mkdir(path.join(root, 'repository')); // Simulated process death after this effect.
+  const recovered = await runDevelopmentLab(root);
+  assert.equal(recovered.context.checkpoint.mission_state, 'completed');
+  const again = await runDevelopmentLab(root);
+  assert.equal(again.hash, recovered.hash);
+
+  const foreign = await temporary();
+  await writeFile(path.join(foreign, 'bootstrap.json'), marker);
+  await mkdir(path.join(foreign, 'repository'));
+  await writeFile(path.join(foreign, 'repository', 'foreign.txt'), 'preserve me');
+  await assert.rejects(runDevelopmentLab(foreign), /lab_not_empty/);
+  assert.equal(await readFile(path.join(foreign, 'repository', 'foreign.txt'), 'utf8'), 'preserve me');
+
+  const interruptedBaseline = await temporary();
+  await writeFile(path.join(interruptedBaseline, 'bootstrap.json'), marker);
+  await writeFile(path.join(interruptedBaseline, 'baseline.pending'), '{"truncated":');
+  const resumed = await runDevelopmentLab(interruptedBaseline);
+  assert.equal(resumed.context.checkpoint.mission_state, 'completed');
+  await assert.rejects(stat(path.join(interruptedBaseline, 'baseline.pending')), { code: 'ENOENT' });
+
+  const unowned = await temporary();
+  await mkdir(path.join(unowned, 'repository'));
+  await assert.rejects(runDevelopmentLab(unowned), /lab_not_empty/);
+});
+
 test('real autonomous cycle rejects, rolls back, creates a regression, verifies and commits once', async () => {
   const root = await temporary();
   const result = await runDevelopmentLab(root);
@@ -79,6 +116,36 @@ test('real autonomous cycle rejects, rolls back, creates a regression, verifies 
   const repeated = await runDevelopmentLab(root);
   assert.equal(repeated.hash, result.hash);
   assert.equal((await stat(path.join(root, 'candidate/subject.mjs'))).mtimeMs, mtime);
+});
+
+test('partial pending checkpoint is never admitted as a committed journal record', async () => {
+  const root = await temporary();
+  const first = new DevelopmentLedger(root); await first.acquire();
+  const mission = new SelfDevelopmentObserver().diagnose(sourceFor('upper'))!.mission;
+  await writeFile(path.join(root, 'pending-interrupted-000.tmp'), '{"partial":');
+  await first.admit(mission); await first.release();
+  const next = new DevelopmentLedger(root); await next.acquire();
+  assert.equal(next.snapshot?.version, 0);
+  assert.equal(next.snapshot?.context.checkpoint.mission_state, 'queued');
+  await next.release();
+  assert.equal(await readFile(path.join(root, 'pending-interrupted-000.tmp'), 'utf8'), '{"partial":');
+});
+
+test('stale claim guard recovers only after aging and dead-owner proof', async () => {
+  const root = await temporary(); const guard = path.join(root, 'claim-guard');
+  await mkdir(guard);
+  await assert.rejects(new DevelopmentLedger(root).acquire(), /busy/);
+  const age = new Date(Date.now() - 180000);
+  await utimes(guard, age, age); // Simulated interrupted mkdir before guard metadata.
+  const recovered = new DevelopmentLedger(root);
+  await recovered.acquire(); await recovered.release();
+
+  await mkdir(guard);
+  const marker = path.join(guard, 'guard-00000000-0000-0000-0000-000000000000.json');
+  await writeFile(marker, JSON.stringify({ pid: 2147483647, token: 'dead-owner' }));
+  await utimes(guard, age, age);
+  const next = new DevelopmentLedger(root);
+  await next.acquire(); await next.release();
 });
 
 test('live owner excludes competing executors and old token is rejected', async () => {
