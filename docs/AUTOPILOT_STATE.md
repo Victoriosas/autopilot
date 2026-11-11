@@ -1287,6 +1287,7 @@ BLOQUEO CONCRETO: ningún disparador inspeccionado invoca directamente la CLI co
 
 Evidencia, comandos propuestos, auditoría de mecanismos, límites y criterios pendientes: [MISSION_TRIGGER_ORD204F_20261109.md](MISSION_TRIGGER_ORD204F_20261109.md). N2 sintético; sin nuevas funciones operativas demostradas, planificación general, independencia completa, despliegue, SQL alojado, gastos, credenciales nuevas o envíos. Validación y CI del SHA final se registran en la PR de esta rama.
 
+
 ## Biblioteca inteligente de consultas · Ciclo A (cloud, 2026-11-10)
 
 **DEFINIDO/PROBADO localmente:** rama aislada `codex/consultation-knowledge-engine-v1` desde main `1c44a6389a7bbd6ac9157ac087269e216e654373`. Taxonomía de 20 intenciones, 200 preguntas sintéticas y 28 contrastes/negativos; adaptador determinista sobre comprensión, catálogo de 17 servicios y evidencia/RPC existentes. Recuperación exige aprobación, fuente, versión y vigencia; las revisiones retiradas/vencidas no reviven aprobación previa. Datos ausentes provocan aclaración o revisión humana. Decisión siempre `no_send`.
