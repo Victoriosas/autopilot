@@ -9,6 +9,10 @@
 
 El [diagnóstico y procedimiento de recuperación](ORD204G_RECOVERY_DIAGNOSTICS_20261110.md) conserva el fallo del segundo disparo como causa indeterminada y añade evidencia persistente para el siguiente intento. La nueva identidad sintética queda preparada para una ventana absoluta aprobada. Recuperación con dos disparos de Windows pendiente. F1 sigue en PR #218 sobre #217, sin duplicar la corrección de disponibilidad.
 
+## 2026-11-10 · ORD-204G: gestor de ventanas y precheck del 11/11
+
+El [gestor y procedimiento del laboratorio](ORD204G_TEST_WINDOW_MANAGER.md) reutilizó la ventana autorizada 17:58–18:28 Uruguay y verificó su propuesta. Tarea registrada y deshabilitada, puerto 55439 libre, historial disponible y recuperación nativa pendiente. El observador se probó en PostgreSQL desechable y debe armarse dentro de la ventana. El checkpoint local conserva el estado temporal, las autorizaciones y las pruebas restantes.
+
 ## 2026-11-06 · F3: recuperación offline y PR #196 en borrador
 
 Fase F3. Base remota comprobada `908ae4e7a195470266799016a99e06a35d49be27`; código `7828a03e2713dcf4c4d1a71b581adf7f6eea9c31`, rama `codex/f3-quality-recovery-20261106`, worktree aislado `C:/autopilot-worktrees/f3-quality-recovery-20261106`. [PR #196 DRAFT](https://github.com/Victoriosas/autopilot/pull/196), sin merge ni promoción. El commit de continuidad posterior solo documenta este resultado; consultar el SHA final y CI en la PR.
