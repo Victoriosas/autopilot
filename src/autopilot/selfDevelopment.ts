@@ -35,7 +35,31 @@ export class DevelopmentLedger implements MissionLedger {
   async acquire() {
     const lock = path.join(this.root, 'owner.json');
     const guard = path.join(this.root, 'claim-guard');
-    try { await mkdir(guard); } catch { throw Error('busy'); }
+    const guardMarker = path.join(guard, `guard-${this.#token}.json`);
+    try { await mkdir(guard); }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw Error('busy');
+      // Reclaim only an aged guard whose owner is demonstrably dead. A recent
+      // or ambiguous guard is held closed; never clear another live claimant.
+      try {
+        const info = await lstat(guard);
+        if (!info.isDirectory() || info.isSymbolicLink() || Date.now() - info.mtimeMs < 120000) throw Error('busy');
+        const entries = await readdir(guard);
+        if (entries.length > 1 || entries.some(name => !/^guard-[a-f0-9-]{36}\.json$/.test(name))) throw Error('busy');
+        if (Date.now() - (await lstat(guard)).mtimeMs < 120000) throw Error('busy');
+        if (entries.length) {
+          const oldGuard = JSON.parse(await readFile(path.join(guard, entries[0]), 'utf8'));
+          if (!Number.isSafeInteger(oldGuard.pid) || oldGuard.pid <= 0 || typeof oldGuard.token !== 'string') throw Error('busy');
+          try { process.kill(oldGuard.pid, 0); throw Error('busy'); }
+          catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ESRCH') throw Error('busy'); }
+          await unlink(path.join(guard, entries[0]));
+        }
+        await rmdir(guard);
+        await mkdir(guard);
+      } catch { throw Error('busy'); }
+    }
+    try { await writeFile(guardMarker, JSON.stringify({ pid: process.pid, token: this.#token }), { flag: 'wx' }); }
+    catch { await rmdir(guard).catch(() => {}); throw Error('busy'); }
     try {
     if (!await absent(lock)) {
       if (!(await lstat(lock)).isFile() || (await lstat(lock)).isSymbolicLink()) throw Error('invalid_owner');
@@ -46,7 +70,7 @@ export class DevelopmentLedger implements MissionLedger {
       await unlink(lock);
     }
     await writeFile(lock, JSON.stringify({ pid: process.pid, token: this.#token }), { flag: 'wx' });
-    } finally { await rmdir(guard); }
+    } finally { await unlink(guardMarker); await rmdir(guard); }
     try {
     const files = (await readdir(this.root)).filter(x => /^state-\d{3}\.json$/.test(x)).sort();
     let previous = '';

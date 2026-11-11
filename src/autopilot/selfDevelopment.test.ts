@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, writeFile, mkdir, link, symlink, readdir, stat } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile, mkdir, link, symlink, readdir, stat, utimes } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
@@ -103,6 +103,23 @@ test('real autonomous cycle rejects, rolls back, creates a regression, verifies 
   const repeated = await runDevelopmentLab(root);
   assert.equal(repeated.hash, result.hash);
   assert.equal((await stat(path.join(root, 'candidate/subject.mjs'))).mtimeMs, mtime);
+});
+
+test('stale claim guard recovers only after aging and dead-owner proof', async () => {
+  const root = await temporary(); const guard = path.join(root, 'claim-guard');
+  await mkdir(guard);
+  await assert.rejects(new DevelopmentLedger(root).acquire(), /busy/);
+  const age = new Date(Date.now() - 180000);
+  await utimes(guard, age, age); // Simulated interrupted mkdir before guard metadata.
+  const recovered = new DevelopmentLedger(root);
+  await recovered.acquire(); await recovered.release();
+
+  await mkdir(guard);
+  const marker = path.join(guard, 'guard-00000000-0000-0000-0000-000000000000.json');
+  await writeFile(marker, JSON.stringify({ pid: 2147483647, token: 'dead-owner' }));
+  await utimes(guard, age, age);
+  const next = new DevelopmentLedger(root);
+  await next.acquire(); await next.release();
 });
 
 test('live owner excludes competing executors and old token is rejected', async () => {

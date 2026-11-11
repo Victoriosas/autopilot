@@ -4,7 +4,6 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "installCommand": "npm ci",
-  "ignoreCommand": "node -e \"process.exit(process.env.VERCEL_GIT_COMMIT_REF === 'codex/self-development-20261110' ? 0 : 1)\"",
   "crons": [
     {
       "path": "/api/autopilot/v4/cron/sourcing",
