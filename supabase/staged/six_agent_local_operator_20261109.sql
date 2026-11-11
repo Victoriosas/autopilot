@@ -25,7 +25,7 @@ begin
  insert into public.agent_tasks(id,goal,actor,action,status,agent_id,input) values
   (p_id,'Verify synthetic mission recovery','autopilot-local-cli','synthetic_task','queued','software',
    jsonb_build_object('mission_schema_version','1','goal_version',1,'objective',p_objective,'host_binding',p_binding))
- on conflict(id) do nothing;
+ on conflict do nothing;
  get diagnostics changed=row_count;
  if changed=0 then
   if exists(select 1 from public.agent_tasks where id=p_id and actor='autopilot-local-cli'

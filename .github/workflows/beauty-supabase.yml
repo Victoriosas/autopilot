@@ -33,6 +33,7 @@ jobs:
           cp supabase/migration-sourcing.sql "$fixture/supabase/migrations/20260901000001_legacy_sourcing.sql"
           cp tests/supabase-managed-rls-prerequisite.sql "$fixture/supabase/migrations/20260901000002_managed_rls.sql"
           cp supabase/migrations/*.sql "$fixture/supabase/migrations/"
+          cp supabase/staged/consultation_material_requests_v1.sql "$fixture/supabase/migrations/20261111000000_material_requests_staged.sql"
       - name: Start real local Auth and PostgREST
         run: |
           if ! supabase start --workdir "$RUNNER_TEMP/victoriosa-beauty-ci" -x studio,imgproxy,realtime,storage-api,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit > "$RUNNER_TEMP/beauty-start.log" 2>&1; then
@@ -46,6 +47,7 @@ jobs:
           command -v psql > /dev/null
           node --import tsx --test tests/beauty-supabase.test.ts
           node --import tsx --test tests/beauty-management-supabase.test.ts
+          node --import tsx --test tests/consultation-material-supabase.test.ts
           node --import tsx --experimental-test-coverage --test-coverage-include='**/consultationReading.ts' --test tests/consultation-supabase.test.ts
         env:
           BEAUTY_SYNTHETIC_SUPABASE: 'true'
@@ -64,7 +66,7 @@ jobs:
           BEAUTY_SYNTHETIC_SUPABASE: 'true'
           SUPABASE_LOCAL_STATUS_FILE: ${{ runner.temp }}/beauty-status.json
       - name: Retain synthetic screenshots
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: consultation-lab-synthetic
           path: output/consultation-lab/*.png

@@ -1,3 +1,28 @@
+# Continuidad · corrección del adaptador CLI para claims de misión · 10/11/2026
+
+PR #216, rama `codex/autopilot-next-safe-20261110`. Base incorporada: `origin/main` `7476839080f3a576ab3606c13051c544d0e01f29`. El run `42748841655` aprobó `validate`, pero falló `postgres` en `tests/mission-operator-postgres.test.ts`: el CLI emitió `claimed:false`, `reason:"claim_failed"` y conservó la misión sintética en `queued`.
+
+Causa reproducida: `createMissionLedger.claimMission()` pide `six_agent_claim_mission`, mientras `LocalMissionStore.client()` solo reconocía el nombre legacy `six_agent_claim`. El adaptador local rechazaba el RPC como no permitido y devolvía error; el contrato de claim de producción y la SQL no eran la falla. El cambio mínimo hace que el adaptador aislado acepte únicamente `six_agent_claim_mission` y lo traduzca a `local_mission_claim`, conservando host binding, agente permitido, lease, fencing y auditoría del laboratorio. No se amplió el RPC legacy ni se modificó SQL.
+
+Validación local sintética PostgreSQL 18: antes del arreglo, CI de `42748841655` demuestra el rechazo exacto. Después, `tests/mission-operator-postgres.test.ts` aprobó (1/1; seis casos de CLI); `tests/mission-runner-postgres.test.ts` 3/3; `tests/mission-planner-postgres.test.ts` 13/13; `scripts/test-six-agent-queue.sh` pasó los smoke de selectors, recuperación, leases, fencing, idempotencia y auditoría. Pruebas focalizadas TypeScript 21/21. `npm run verify` exit 0: 464 aprobadas, 0 fallidas, 1 omitida, typecheck, builds y check de API.
+
+Corrección implementada y validada localmente; pendiente de publicar en PR #216. Sin servicios productivos, misiones reales ni SQL alojado. Próximo: crear commit en esta rama, publicar y comprobar `validate`/`postgres` para el SHA final. No fusionar hasta aprobación de esos checks.
+
+# Continuidad · aislamiento de claims de misiones · 10/11/2026
+
+F1, fundamento de continuidad. En rama aislada `codex/autopilot-next-safe-20261110`, desde `origin/main` `6e700879d1bbae0fe50b6addead1ca31cc6cfab8`; commit de implementación probado `9b2ee822c0addcef3c8366f62c33f1def409f2fb`. `createMissionLedger.claimMission()` usa ahora `six_agent_claim_mission`; la RPC legacy `six_agent_claim` deja de consumir misiones. Ambas selectan de `agent_tasks` y reutilizan el helper transaccional, leases, fencing y auditoría existentes. El selector de misión acepta únicamente `mission_schema_version=1`; el legacy excluye toda tarea versionada. Permisos limitados a `service_role`.
+
+- Regresiones focalizadas: `node --import tsx --test src/autopilot/sixAgentPersistence.test.ts` aprobó 8/8; `bash -n scripts/test-six-agent-queue.sh` y `git diff --check` pasaron.
+- `scripts/test-six-agent-queue.sh` pasó en PostgreSQL 18 desechable: selector cruzado aislado, checkpoint, recuperación tras lease expirado, fencing, idempotencia, auditoría y finalización.
+- `tests/mission-runner-postgres.test.ts` pasó 3/3 sin omisiones en PostgreSQL local desechable. Un proceso worker fue terminado con SIGKILL; el reemplazo recuperó el checkpoint, no repitió un efecto ya aplicado y completó la misión. Las escrituras/cierres con token anterior fueron rechazados.
+- `npm run verify` terminó con exit 0: TypeScript, 457 pruebas aprobadas, 0 fallidas, 1 omitida, builds Node/Vercel y comprobación del API compilado.
+- La migración SQL sigue staged/local: no se aplicó a Supabase alojado. No se usaron modelos pagados ni servicios productivos; el costo de cómputo local no se midió.
+- La publicación está BLOQUEADA: `gh auth status` confirmó que no hay sesión de GitHub. No se pudo hacer push ni abrir PR; no hay CI para el SHA de esta rama. El commit local no está fusionado ni desplegado. No había plantilla de PR en `.github/`.
+
+Supervisión adversarial: el smoke detectó inicialmente que sus fixtures de misión aún llamaban al claim genérico y que un lease de 5 s podía vencer durante la validación. Se corrigieron los fixtures al RPC específico y se hizo determinista la expiración en la base desechable, sin alterar el comportamiento del lease en producción. La prueba multiproceso adicional confirmó interrupción, fencing y reconciliación del efecto.
+
+Próxima prioridad segura: recuperar autorización de GitHub, publicar esta rama como PR y observar `validate`/`postgres` para el SHA exacto. Revisar la migración staged en CI; cualquier aplicación remota, fusión o despliegue requiere sus controles y autorización correspondientes.
+
 # Continuidad · 404 de API y artefactos de compilación · 08/11/2026
 
 Fase F1. Rama `codex/api-404-build-isolation-20261108` sobre `039ecf3` de la PR #200. Node y Vercel devuelven `404` JSON con `API_ROUTE_NOT_FOUND` al llegar al último handler de API. En Node queda después de las rutas existentes y antes del fallback de la SPA. El build de Node usa `dist-node` y sirve `dist-node/public`. Vercel conserva `dist`. `npm start`, el preview local y el comando del Dockerfile apuntan a sus nuevas rutas.
@@ -24,6 +49,10 @@ Próximos lotes separados. Alinear el 404 JSON de la API con Node y normalizar e
 - #188: Chrome real/API simulada, 17 servicios, un borrador, cero aprobaciones IA/tarifa, cambios sin guardar protegidos y cero errores JS/envíos/modelos. #168: npm run verify 412/412 local, cero fallos/omisiones, tipos y builds; HTML/secretos correctos. Chrome 390/1365 y navegador CI 42155993343 aprobados; Core 42155993340 aprobado. Cloudflare fallido del head viejo no se considera resuelto ni se altera hosting por ello; Supabase Preview sigue omitida.
 - Cerradas #111/#125 documentales y #129/#131 superadas, preservando ramas/commits/descripciones originales. Evidencia histórica rescatada y comparación de guardas: docs/PR_LEGACY_TRIAGE_20261105.md, PR #187 actualizada sobre main. Se conservan #90/#122/#124 en borrador por alcance/aprobaciones; #169 convertida a DRAFT, bloqueo de migración Express 5 documentado con TS2345 de CI 41767936846. No eliminar propuestas ni resolver conflictos eligiendo versiones antiguas en bloque.
 - #187 contiene solo documentación de cierre; verificar validate/postgres del SHA final y estado alojado por separado. Los worktrees previos y archivos ajenos se conservaron; no se declara sincronización global de PC. F3 sigue parcial 3/32 + 6/6; sin nuevo gasto de inferencia, mensajes, SQL alojado, DNS, credenciales ni automatizaciones. Próximo: desarrollo completo autorizado antes de finales; Express 5 requiere tarea independiente.
+
+## 2026-11-10 · F1: redacción de fallos del monitor público
+
+El monitor GET existente podía imprimir valores devueltos por un endpoint al fallar el parseo JSON o una aserción de contenido. La regresión con respuestas sintéticas reproduce el problema. Ahora el fallo comunica el endpoint y la condición incumplida, conserva la lista acotada de causas de disponibilidad y mantiene las comprobaciones de bandeja anónima y controles comerciales. Sin nueva automatización. El siguiente punto de F1 sigue siendo corroborar el recorrido de consulta y la recepción humana en una prueba autorizada.
 
 ## 2026-11-06 · F3: recuperación offline y PR #196 en borrador
 
@@ -1249,3 +1278,48 @@ RED HTTP reprodujo causa ausente; GREEN focal 11/11, transporte Supabase real co
 **Evidencia/continuidad:** [MISSION_OPERATOR_ORD204E_20261109.md](MISSION_OPERATOR_ORD204E_20261109.md), request reproducible y comandos manuales. Registro local completo `C:/autopilot-worktrees/mission-operator-20261109-evidence.json`; datos de laboratorio conservados al detener servidores temporales.
 
 **Veredicto/límite:** entrada manual y recuperación persistente manual demostradas; no arranque desatendido ni servicio permanente. Codex preparó/inició el entorno y la demostración, inyectó fallos y revisó. Hace falta operador o disparador existente/autorizado/observado para iniciar o relanzar run. Sin otro scheduler, planificación general, sandbox OS para código arbitrario ni garantía de fencing de filesystem. F1→F2→F3→F4 intactas; sin fusión, producción, SQL alojado, secretos nuevos, gastos ni envíos.
+
+## ORD-204F · Disparador real e incompatibilidad de infraestructura (2026-11-09)
+
+Base verificada: PR #211 draft, ee34ef0501130b112e4023afb3cd1c8e04db8b05; ORD-204B/C/D/E conservadas. Rama aislada codex/mission-trigger-20261109, propuesta apilada sobre #211, sin merge. Main y ramas de recuperación contrastadas con remoto; sin PR equivalente.
+
+VERIFICADO: victoriosa-autopilot-6h sigue ACTIVE cada seis horas como heartbeat local de Codex, chat 01a0e385-4c88-7b52-bdc1-4ccdb19311e8. Último turno observado 01a1c177-f6e1-7890-870a-e82e9272603a, 09/11 18:00:27–18:01:54 UTC: diagnóstico público, ninguna misión CLI. Su prompt apunta a C:/autopilot y no invoca ORD-204E. GitHub usa runners Ubuntu; API repositorio devuelve cero self-hosted. Laboratorios PostgreSQL 55439/55441 detenidos; servicio PostgreSQL preexistente no reutilizado. No hay tarea Windows del proyecto en la búsqueda por nombres. No se probó disponibilidad tras reinicio/desconexión.
+
+PREPARADO, NO ACTIVADO: bloque de instrucciones revisable para el mismo heartbeat, ID fijo previamente admitido, configuración exclusiva del host con permiso solo de ejecución, una invocación y correlación de disparo/turno/run/misión. No selector, scheduler, cola ni servicio nuevo. Esta propuesta seguiría mediada por Codex; vínculo durable de disparador al ledger y circuito real pendientes. Reversión documentada; configuración del heartbeat intacta. Git deployments desactivados para la nueva rama antes de publicarla; conservar bloqueo de E.
+
+BLOQUEO CONCRETO: ningún disparador inspeccionado invoca directamente la CLI con acceso al laboratorio local disponible. No se admitió ni ejecutó una misión F, no hay IDs de run/misión F ni segundo disparo de recuperación que atribuir. Recuperación persistente de E permanece manual; sus regresiones no demuestran recuperación desatendida. No se inicia infraestructura permanente ni se adelantan horarios. Preparar o relanzar desde Codex repetiría E.
+
+Evidencia, comandos propuestos, auditoría de mecanismos, límites y criterios pendientes: [MISSION_TRIGGER_ORD204F_20261109.md](MISSION_TRIGGER_ORD204F_20261109.md). N2 sintético; sin nuevas funciones operativas demostradas, planificación general, independencia completa, despliegue, SQL alojado, gastos, credenciales nuevas o envíos. Validación y CI del SHA final se registran en la PR de esta rama.
+
+
+## Biblioteca inteligente de consultas · Ciclo A (cloud, 2026-11-10)
+
+**DEFINIDO/PROBADO localmente:** rama aislada `codex/consultation-knowledge-engine-v1` desde main `1c44a6389a7bbd6ac9157ac087269e216e654373`. Taxonomía de 20 intenciones, 200 preguntas sintéticas y 28 contrastes/negativos; adaptador determinista sobre comprensión, catálogo de 17 servicios y evidencia/RPC existentes. Recuperación exige aprobación, fuente, versión y vigencia; las revisiones retiradas/vencidas no reviven aprobación previa. Datos ausentes provocan aclaración o revisión humana. Decisión siempre `no_send`.
+
+**Continuidad:** se preservan sin publicar `/workspace/autopilot-f1-104` y `/workspace/autopilot-reception-cycle1` con sus cambios anteriores; la misión prioritaria de biblioteca se implementa en `/workspace/autopilot-knowledge-cycle-a`. Sin modificaciones en main, PR #122/#124, #220–224, corpus congelados ni ORD-204G. Sin acceso a expedientes reales ni al caso histórico de recepción.
+
+**Validación:** evaluador offline: 20 intenciones, 200 ejemplos, 20 contrastes y 8 negativos, cero fallos y cero llamadas remotas; regresiones de aprobación, versión, caducidad, conflicto, privacidad e inyección. `npm run verify` exit 0: 474 aprobadas, una omitida, cero fallos; 10/10 focales, tipos, 13 skills y ambos builds/API compiladas aprobados; escaneo de secretos y diff sin errores. CI por SHA final en la PR. Ver [contrato y reproducción](CONSULTATION_KNOWLEDGE_ENGINE_V1.md).
+
+**Límites/siguiente paso:** biblioteca de laboratorio lista para el Ciclo B de composición y Guardián; no integrada en la bandeja ni habilitada para envíos. No afirma comprensión general ni aprobación de nuevos hechos profesionales. Sin migraciones, modelos pagos, comunicaciones, merge o despliegue. Conservar revisión humana y usar el almacén aprobado existente al integrarla.
+
+
+## Ciclo B · Composición fundamentada y Guardián (2026-11-11)
+
+**cycle_id:** VICTORIOSAS_CONSULTATION_GROUNDED_RESPONSE_V1 · titular Codex · PROBADO localmente, VERIFICANDO CI. Base #225, SHA `3bb87e4dce42dd74ac32085e2911550806f642ba`; checkout `/workspace/autopilot-grounded-cycle-b`, rama `codex/consultation-grounded-response-v1`. No se fusiona ni modifica la rama A.
+
+**Entrega:** tres variantes reproducibles, fuentes/versiones por cláusula, manejo de faltantes y derivación. Guardián separado recalcula evidencia y restricciones y reutiliza `checkDraft`/contrato existente; no acepta autoaprobación ni permisos de envío. Solicitud de material queda estructurada en memoria, pendiente de revisión, sin habilitar contacto externo. Contexto/canal ligados al borrador; revocación, caducidad o cambio de destinatario bloquean.
+
+**Evidencia:** 228 casos de A reutilizados sin cambios en sus corpus; regresiones de fidelidad, privacidad, inyección y manipulación de texto/estado. Demos locales de catálogo y precio sin dato aprobado; ninguna llamada remota o comunicación. Verify y CI por SHA final constan en la PR. Contrato/comandos: [Ciclo B](CONSULTATION_GROUNDED_RESPONSE_V1.md).
+
+**Límites/siguiente paso:** composición controlada local, sin modelo remoto ni integración en bandeja. Persistir solicitudes (C) y revisión en interfaz (D) son posteriores. No nuevas fichas aprobadas, SQL, producción ni cambios a ORD-204G. Checkouts previos preservados. Mantener `no_send` incluso si el contenido es apto para revisión humana.
+
+
+## Ciclo C · Persistencia supervisada (2026-11-11)
+
+**cycle_id:** VICTORIOSAS_CONSULTATION_MATERIAL_PERSISTENCE_V1 · titular Codex · base #226, SHA `e6b455e23361871e373d755cf9b347df147bfa4c`. Worktree aislado `/workspace/autopilot-cycle-c`, rama `codex/consultation-material-persistence-v1`. Inventario local/GitHub sin escritor o PR C equivalente; otros checkouts y sus cambios conservados.
+
+**Entrega:** SQL staged de solicitudes/eventos/claves mínimas, RLS admin existente, RPC con JWT del llamador, idempotencia transaccional y concurrencia; sin acceso directo de escritura o service_role. Metadatos/fuentes/versiones/consentimiento/trazas, sin copiar mensajes o contactos. Guardián B + revalidación SQL del padre/fuentes; persistencia/revisión administrativa nunca autorizan entrega. Toda salida conserva `no_send`.
+
+**Retención y pruebas:** siete días como máximo lógico, acotados por padre/contexto; revocación terminal borra payload; purga controlada y FK eliminan contenido/eventos, claves mínimas hasta retención del padre para impedir resurrección por replay. Migración/rollback/reinstalación en PostgreSQL desechable; CI agrega prueba Auth/PostgREST real local. Resultados, SHA final y estado de escritores al cierre en la PR. [Contrato, reproducción y checkpoint](CONSULTATION_MATERIAL_PERSISTENCE_V1.md).
+
+**Límites:** nada instalado en producción, sin endpoint/bandeja/modelos/envíos ni scheduler. No modificar #225/#226 ni ORD-204G. Siguiente acción: revisar CI por SHA y preparar integración D solo después de revisión humana, conservando permisos de envío separados.
