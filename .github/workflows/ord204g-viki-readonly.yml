@@ -1,6 +1,10 @@
 name: ORD-204G - viki readonly evidence bridge
 
 on:
+  pull_request:
+    paths:
+      - 'tools/camelrun-bridge/**'
+      - '.github/workflows/ord204g-viki-readonly.yml'
   workflow_dispatch:
     inputs:
       mode:
@@ -34,10 +38,10 @@ jobs:
       - name: Validate readonly bridge contract
         run: node --test tools/camelrun-bridge/bridge.test.mjs
       - name: GitHub metadata dry-run (no model)
-        if: inputs.mode == 'dry-run'
+        if: github.event_name == 'pull_request' || inputs.mode == 'dry-run'
         run: node tools/camelrun-bridge/bridge.mjs
       - name: Live model analysis (opt-in and budget guarded)
-        if: inputs.mode == 'live'
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'live'
         env:
           CAMELAI_API_KEY: ${{ secrets.CAMELAI_API_KEY }}
         run: |

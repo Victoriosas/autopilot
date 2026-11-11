@@ -39,4 +39,4 @@ node --use-system-ca tools/camelrun-bridge/bridge.mjs --live
 
 ## Reversión y continuidad
 
-El código está aislado bajo `tools/camelrun-bridge/`; se revierte mediante la PR sin alterar otros agentes ni la tarea Windows. Este workflow usa solo `workflow_dispatch` (sin cron ni autoactivación), permisos GitHub limitados a lectura, y no ejecuta `--live` sin confirmación de modo. No hay daemon 24/7: para operación persistente se necesitará un disparador autorizado y aprovisionamiento secreto; una PR o agente creado no certifica eso.
+El código está aislado bajo `tools/camelrun-bridge/`; se revierte mediante la PR sin alterar otros agentes ni la tarea Windows. Este workflow valida automáticamente PRs que cambien el puente (solo GET y dry-run) y permite `workflow_dispatch` manual para live, cuando exista en la rama predeterminada (sin cron ni autoactivación de modelos), permisos GitHub limitados a lectura, y no ejecuta `--live` sin confirmación de modo. No hay daemon 24/7: para operación persistente se necesitará un disparador autorizado y aprovisionamiento secreto; una PR o agente creado no certifica eso.
