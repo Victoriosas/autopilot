@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { inspect } from 'node:util';
 import { test } from 'node:test';
 import { checkPublicHealth } from './public-health.mjs';
 
@@ -106,4 +107,33 @@ test('never prints malformed or untrusted Ray header values', async () => {
       return true;
     },
   );
+});
+test('schema and JSON failures contain only the endpoint and expected condition', async () => {
+  const privateDetail = 'PRIVATE_SYNTHETIC_RESPONSE';
+  const payloads = [
+    ['/api/health', new Response(privateDetail), /\/api\/health: invalid JSON/],
+    ['/api/health', Response.json({ status: privateDetail }), /\/api\/health: invalid status/],
+    ['/api/health', Response.json({ status: 'ok', commit: privateDetail }), /\/api\/health: invalid commit/],
+    ['/api/beauty/catalog', Response.json({ catalogEnabled: false, services: [{ detail: privateDetail }] }),
+      /\/api\/beauty\/catalog: services must be empty/],
+  ];
+  for (const [endpoint, payload, expected] of payloads) {
+    const request = async url => {
+      const route = new URL(url).pathname;
+      if (route === endpoint) return payload;
+      if (['/tienda','/checkout','/tratamientos'].includes(route)) return new Response('',{status:410});
+      if (route.startsWith('/de-mi-para-ti/')) return new Response('',{status:404});
+      if (route === '/api/health') return Response.json({status:'ok',commit:'a'.repeat(40),checkoutEnabled:false,checkoutRequested:false});
+      if (route === '/api/beauty/inquiries/config') return Response.json({enabled:true,privacyVersion:'consultation-v1',retentionDays:30});
+      if (route === '/api/beauty/inquiries/admin') return new Response('',{status:401});
+      if (route === '/api/beauty/config') return Response.json({requestsEnabled:false});
+      if (!route.startsWith('/api/')) return new Response('');
+      throw Error('unexpected route');
+    };
+    await assert.rejects(checkPublicHealth('https://victoriosas.online',request), error => {
+      assert.match(error.message,expected);
+      assert.doesNotMatch(inspect(error),new RegExp(privateDetail));
+      return true;
+    });
+  }
 });
