@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { lstat, realpath, readFile, writeFile, unlink } from 'node:fs/promises';
+import { lstat, realpath, readFile, writeFile, unlink, rename } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 
 export const digest = (text: string) => createHash('sha256').update(text).digest('hex');
@@ -62,6 +62,19 @@ export class FileAccessController {
     if (current !== expected) throw Error('concurrent_edit');
     if (next !== null && Buffer.byteLength(next) > 65536) throw Error('file_budget');
     if (next === null) { if (current !== null) await unlink(target); }
-    else await writeFile(target, next, { flag: current === null ? 'wx' : 'w' });
+    else {
+      // An interrupted staged write must never truncate the candidate.
+      // Only this mission and this exact operation may reclaim its temp file.
+      const pending = target + '.autopilot-' + digest(JSON.stringify([this.missionId, file, expected, next])).slice(0, 20) + '.tmp';
+      try {
+        const info = await lstat(pending);
+        if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1
+          || info.size > 65536 || await realpath(pending) !== pending) throw Error('unsafe_file');
+        await unlink(pending);
+      } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+      await writeFile(pending, next, { flag: 'wx' });
+      if (await this.read(root, file) !== expected) throw Error('concurrent_edit');
+      await rename(pending, target);
+    }
   }
 }

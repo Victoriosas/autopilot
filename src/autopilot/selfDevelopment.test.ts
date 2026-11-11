@@ -31,7 +31,13 @@ test('file capability permits arbitrary extensions but rejects traversal, secret
     await assert.rejects(access.replace(root, file, null, 'x'));
   await assert.rejects(access.read(outside, 'file'), /scope_denied/);
   await access.replace(root, 'arbitrary.new-extension', null, 'before');
+  // Interrupted staged write is reclaimed only for this exact mission/change.
+  const pending = path.join(root, 'arbitrary.new-extension.autopilot-'
+    + digest(JSON.stringify(['mission', 'arbitrary.new-extension', 'before', 'after'])).slice(0, 20) + '.tmp');
+  await writeFile(pending, 'partially written candidate');
   await access.replace(root, 'arbitrary.new-extension', 'before', 'after');
+  assert.equal(await readFile(path.join(root, 'arbitrary.new-extension'), 'utf8'), 'after');
+  await assert.rejects(stat(pending), { code: 'ENOENT' });
   await assert.rejects(access.replace(root, 'arbitrary.new-extension', 'before', 'destroy'), /concurrent_edit/);
   await access.replace(root, 'arbitrary.new-extension', 'after', null);
   await writeFile(path.join(outside, 'private'), 'synthetic outside');
