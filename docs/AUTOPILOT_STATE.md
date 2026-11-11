@@ -1301,3 +1301,14 @@ Evidencia, comandos propuestos, auditoría de mecanismos, límites y criterios p
 **Validación:** evaluador offline: 20 intenciones, 200 ejemplos, 20 contrastes y 8 negativos, cero fallos y cero llamadas remotas; regresiones de aprobación, versión, caducidad, conflicto, privacidad e inyección. `npm run verify` exit 0: 474 aprobadas, una omitida, cero fallos; 10/10 focales, tipos, 13 skills y ambos builds/API compiladas aprobados; escaneo de secretos y diff sin errores. CI por SHA final en la PR. Ver [contrato y reproducción](CONSULTATION_KNOWLEDGE_ENGINE_V1.md).
 
 **Límites/siguiente paso:** biblioteca de laboratorio lista para el Ciclo B de composición y Guardián; no integrada en la bandeja ni habilitada para envíos. No afirma comprensión general ni aprobación de nuevos hechos profesionales. Sin migraciones, modelos pagos, comunicaciones, merge o despliegue. Conservar revisión humana y usar el almacén aprobado existente al integrarla.
+
+
+## Ciclo B · Composición fundamentada y Guardián (2026-11-11)
+
+**cycle_id:** VICTORIOSAS_CONSULTATION_GROUNDED_RESPONSE_V1 · titular Codex · PROBADO localmente, VERIFICANDO CI. Base #225, SHA `3bb87e4dce42dd74ac32085e2911550806f642ba`; checkout `/workspace/autopilot-grounded-cycle-b`, rama `codex/consultation-grounded-response-v1`. No se fusiona ni modifica la rama A.
+
+**Entrega:** tres variantes reproducibles, fuentes/versiones por cláusula, manejo de faltantes y derivación. Guardián separado recalcula evidencia y restricciones y reutiliza `checkDraft`/contrato existente; no acepta autoaprobación ni permisos de envío. Solicitud de material queda estructurada en memoria, pendiente de revisión, sin habilitar contacto externo. Contexto/canal ligados al borrador; revocación, caducidad o cambio de destinatario bloquean.
+
+**Evidencia:** 228 casos de A reutilizados sin cambios en sus corpus; regresiones de fidelidad, privacidad, inyección y manipulación de texto/estado. Demos locales de catálogo y precio sin dato aprobado; ninguna llamada remota o comunicación. Verify y CI por SHA final constan en la PR. Contrato/comandos: [Ciclo B](CONSULTATION_GROUNDED_RESPONSE_V1.md).
+
+**Límites/siguiente paso:** composición controlada local, sin modelo remoto ni integración en bandeja. Persistir solicitudes (C) y revisión en interfaz (D) son posteriores. No nuevas fichas aprobadas, SQL, producción ni cambios a ORD-204G. Checkouts previos preservados. Mantener `no_send` incluso si el contenido es apto para revisión humana.
