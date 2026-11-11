@@ -120,6 +120,16 @@ jobs:
         env:
           OPERATOR_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/victoriosa_mission_operator_lab
 
+      - name: Create disposable native observer database
+        run: createdb -h 127.0.0.1 -p 5432 -U postgres ord204g_observer_test
+        env:
+          PGPASSWORD: isolated-test-password
+
+      - name: Native observer hook scope and cleanup
+        run: node --import tsx --test tests/ord204g-window-observer-postgres.test.ts
+        env:
+          ORD204G_OBSERVER_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/ord204g_observer_test
+
       - name: Create disposable commerce database
         run: createdb -h 127.0.0.1 -p 5432 -U postgres victoriosa_checkout_test
         env:
