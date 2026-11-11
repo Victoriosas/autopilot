@@ -1291,6 +1291,18 @@ BLOQUEO CONCRETO: ningún disparador inspeccionado invoca directamente la CLI co
 
 Evidencia, comandos propuestos, auditoría de mecanismos, límites y criterios pendientes: [MISSION_TRIGGER_ORD204F_20261109.md](MISSION_TRIGGER_ORD204F_20261109.md). N2 sintético; sin nuevas funciones operativas demostradas, planificación general, independencia completa, despliegue, SQL alojado, gastos, credenciales nuevas o envíos. Validación y CI del SHA final se registran en la PR de esta rama.
 
+## 2026-11-10 · Self-Development Observer, laboratorio acotado
+
+Rama codex/self-development-20261110 desde origin/main 1c44a6389a7bbd6ac9157ac087269e216e654373. Orden expresa del propietario: primera version de autodesarrollo supervisado. Reutiliza MissionLedger, PersistentMissionOrchestrator, ExecutorAdapter y ManagedProcesses; sin otra cola, scheduler, modelo ni servicio. CLI development:lab, observador determinista, permisos por raiz, oraculo externo y ledger local con propietario/token/versiones/auditoria.
+
+PROBADO/EJECUTADO: deficiencia sintetica reproducida, mision/plan derivados, worktree creado, propuesta defectuosa rechazada, rollback, correccion, regresion nueva y commit local b63033eddc6385f1b615742cc70af3ddd4af8a5f; cuerpo PR preparado. Proceso realmente interrumpido despues del efecto/antes del checkpoint y recuperado por otro sin reescribir ese efecto. Repeticion terminal sin otro commit; competidor, token anterior, expansion no autorizada, inyecciones, corrupcion y edicion ajena rechazados. Recuperacion relanzada por el arnes, no desatendida.
+
+Validacion: npm run verify exit0, 474/474 sin omisiones, tipos, 13 skills, builds y comprobacion de API; secret scan correcto. Nueve pruebas nuevas incluyen permisos, oraculo independiente, rollback, concurrencia, recuperacion y presupuestos. CI por SHA y ausencia de Preview se registran en la PR, sin inferirlos del resultado local. Bloqueo de Git deployments y ignoreCommand limitado a la rama preparados antes del push.
+
+Limites: gramatica finita de funcion sintetica, no programacion general ni sandbox OS; nivel 3 de ampliacion por defecto denegado y sin activar en CLI. Supervisor externo fijado por hash, no modificable por el candidato; no se acredita auto-modificacion general de controles. Codex aun implementa/revisa dominio, inicia el laboratorio y publica la PR de implementacion. Sin merge, produccion, SQL alojado, gastos ni envios. ORD-204G conserva SHA 15720289647da59c19cc2c19c7f123ee84259a31 y tarea deshabilitada; PostgreSQL dedicado no iniciado.
+
+Detalle, comandos, riesgos y siguiente ciclo: docs/SELF_DEVELOPMENT_OBSERVER_20261110.md. Evidencia estructurada: docs/SELF_DEVELOPMENT_EVIDENCE_20261110.json. Siguiente: transformacion real de bajo riesgo para F1 con supervisor/corpus externos, sin ampliar a codigo arbitrario antes de sandbox y preflight integral.
+
 
 ## Biblioteca inteligente de consultas · Ciclo A (cloud, 2026-11-10)
 

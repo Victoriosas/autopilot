@@ -101,6 +101,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/self-development-20261110": false,
       "codex/shared-context-20261110": false,
       "codex/f1-readiness-20261110": false,
       "codex/mission-operator-20261109": false,
