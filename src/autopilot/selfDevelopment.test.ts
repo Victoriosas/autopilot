@@ -67,6 +67,30 @@ test('external oracle rejects a broken repair and forged success; candidate cann
   } finally { await processes.close(); }
 });
 
+test('interrupted bootstrap resumes only an owned, validated partial lab', async () => {
+  const hash = digest((await Promise.all(['selfDevelopment.ts', 'developmentAccess.ts', 'missionRuntime.ts', 'managedProcesses.ts']
+    .map(file => readFile(new URL(file, import.meta.url), 'utf8')))).join('\n'));
+  const marker = JSON.stringify({ kind: 'self-development-lab-v1', supervisorHash: hash });
+  const root = await temporary();
+  await writeFile(path.join(root, 'bootstrap.json'), marker);
+  await mkdir(path.join(root, 'repository')); // Simulated process death after this effect.
+  const recovered = await runDevelopmentLab(root);
+  assert.equal(recovered.context.checkpoint.mission_state, 'completed');
+  const again = await runDevelopmentLab(root);
+  assert.equal(again.hash, recovered.hash);
+
+  const foreign = await temporary();
+  await writeFile(path.join(foreign, 'bootstrap.json'), marker);
+  await mkdir(path.join(foreign, 'repository'));
+  await writeFile(path.join(foreign, 'repository', 'foreign.txt'), 'preserve me');
+  await assert.rejects(runDevelopmentLab(foreign), /lab_not_empty/);
+  assert.equal(await readFile(path.join(foreign, 'repository', 'foreign.txt'), 'utf8'), 'preserve me');
+
+  const unowned = await temporary();
+  await mkdir(path.join(unowned, 'repository'));
+  await assert.rejects(runDevelopmentLab(unowned), /lab_not_empty/);
+});
+
 test('real autonomous cycle rejects, rolls back, creates a regression, verifies and commits once', async () => {
   const root = await temporary();
   const result = await runDevelopmentLab(root);

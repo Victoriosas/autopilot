@@ -233,12 +233,49 @@ export async function runDevelopmentLab(rootInput: string, options: { signal?: A
     const repository = path.join(root, 'repository');
     const envGit = async (args: string[]) => (await processes.exec('git', ['-c', `core.hooksPath=${path.join(root, 'hooks')}`, '-c', 'core.autocrlf=false', '-c', 'commit.gpgsign=false', ...args], { cwd: repository, timeout: 5000, signal: options.signal, operation: 'lab_setup' })).stdout.trim();
     if (await absent(path.join(root, 'baseline.json'))) {
-      if ((await readdir(root)).some(x => x !== 'owner.json')) throw Error('lab_not_empty');
-      await mkdir(repository); await mkdir(path.join(root, 'hooks'));
-      await writeFile(path.join(repository, 'subject.mjs'), sourceFor('upper'));
-      await envGit(['init']); await envGit(['add', 'subject.mjs']);
-      await envGit(['-c', 'user.name=Autopilot laboratory', '-c', 'user.email=synthetic@example.invalid', 'commit', '-m', 'synthetic deficiency seed']);
-      await writeFile(path.join(root, 'baseline.json'), JSON.stringify({ sha: await envGit(['rev-parse', 'HEAD']), source: sourceFor('upper'), supervisorHash }), { flag: 'wx' });
+      // Bootstrap marker is created before any repository effects. An interrupted
+      // bootstrap can resume, but only when every surviving artifact is verified.
+      const marker = path.join(root, 'bootstrap.json');
+      const expectedMarker = JSON.stringify({ kind: 'self-development-lab-v1', supervisorHash });
+      if (await absent(marker)) {
+        if ((await readdir(root)).some(x => x !== 'owner.json')) throw Error('lab_not_empty');
+        await writeFile(marker, expectedMarker, { flag: 'wx' });
+      } else if (await readFile(marker, 'utf8') !== expectedMarker) throw Error('bootstrap_changed');
+      if ((await readdir(root)).some(x => !['owner.json', 'bootstrap.json', 'repository', 'hooks'].includes(x))) throw Error('lab_not_empty');
+      for (const dir of [repository, path.join(root, 'hooks')]) {
+        if (await absent(dir)) await mkdir(dir);
+        const info = await lstat(dir);
+        if (!info.isDirectory() || info.isSymbolicLink() || await realpath(dir) !== dir) throw Error('unsafe_lab_resource');
+      }
+      if ((await readdir(path.join(root, 'hooks'))).length) throw Error('unsafe_lab_resource');
+      const entries = await readdir(repository);
+      if (entries.some(entry => !['.git', 'subject.mjs'].includes(entry))) throw Error('lab_not_empty');
+      const subject = path.join(repository, 'subject.mjs');
+      if (await absent(subject)) await writeFile(subject, sourceFor('upper'), { flag: 'wx' });
+      else {
+        const info = await lstat(subject);
+        if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1
+          || await realpath(subject) !== subject || await readFile(subject, 'utf8') !== sourceFor('upper')) throw Error('bootstrap_changed');
+      }
+      const gitDir = path.join(repository, '.git');
+      if (await absent(gitDir)) await envGit(['init']);
+      else {
+        const info = await lstat(gitDir);
+        if (!info.isDirectory() || info.isSymbolicLink() || await realpath(gitDir) !== gitDir) throw Error('unsafe_lab_resource');
+        if (await envGit(['rev-parse', '--show-toplevel']) !== repository.replaceAll('\\', '/')) throw Error('bootstrap_changed');
+      }
+      let head: string | null = null;
+      try { head = await envGit(['rev-parse', '--verify', 'HEAD']); }
+      catch (error) { if (safeCode(error) !== 'process_failed') throw error; }
+      if (head === null) {
+        await envGit(['add', 'subject.mjs']);
+        await envGit(['-c', 'user.name=Autopilot laboratory', '-c', 'user.email=synthetic@example.invalid', 'commit', '-m', 'synthetic deficiency seed']);
+        head = await envGit(['rev-parse', 'HEAD']);
+      }
+      if (await envGit(['ls-tree', '--name-only', head]) !== 'subject.mjs'
+        || await envGit(['show', `${head}:subject.mjs`]) !== sourceFor('upper').trim()
+        || await envGit(['status', '--porcelain'])) throw Error('bootstrap_changed');
+      await writeFile(path.join(root, 'baseline.json'), JSON.stringify({ sha: head, source: sourceFor('upper'), supervisorHash }), { flag: 'wx' });
     }
     for (const resource of ['repository', 'hooks', 'baseline.json']) {
       const location = path.join(root, resource); const info = await lstat(location);
