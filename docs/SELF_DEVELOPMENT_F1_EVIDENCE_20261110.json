@@ -1,0 +1,140 @@
+{
+  "state": "completed",
+  "baseline": {
+    "violations": [
+      "enabled:1",
+      "enabled:2",
+      "enabled:3",
+      "enabled:4",
+      "enabled:5",
+      "configured:1",
+      "configured:2",
+      "configured:3",
+      "configured:4",
+      "configured:5",
+      "notificationReady:1",
+      "notificationReady:2",
+      "notificationReady:3",
+      "notificationReady:4",
+      "notificationReady:5"
+    ],
+    "cases": 30
+  },
+  "result": {
+    "version": 5,
+    "previous": "d3daf3f5a562a2a342a04e9f88bb685a7dda573f04bf74e7b81f2edc5e611906",
+    "at": "2026-11-10T06:27:38.57Z",
+    "runId": "f3522a92-b4e9-46ef-aa86-3ceec9d03f33",
+    "pid": 11008,
+    "context": {
+      "mission": {
+        "missionId": "selfdev-f1-readiness",
+        "goal": "Require explicit boolean readiness without changing valid F1 behavior",
+        "goalVersion": 1,
+        "planVersion": 1,
+        "plan": [
+          {
+            "id": "isolate",
+            "task": "readiness.isolate",
+            "depends_on": []
+          },
+          {
+            "id": "repair",
+            "task": "readiness.repair",
+            "depends_on": [
+              "isolate"
+            ]
+          },
+          {
+            "id": "verify",
+            "task": "readiness.verify",
+            "depends_on": [
+              "repair"
+            ]
+          },
+          {
+            "id": "commit",
+            "task": "readiness.commit",
+            "depends_on": [
+              "verify"
+            ]
+          }
+        ],
+        "restrictions": [
+          "reviewed_source_only",
+          "no_network",
+          "no_repository_scripts",
+          "no_publish",
+          "observed:dcc6cbd6abc756d4002a114f275d14bcadf0faa7fa54f5eb982ebf18b9e7e588"
+        ],
+        "completionCriteria": [
+          "invalid_gates_closed_before_storage",
+          "valid_contract_preserved",
+          "external_corpus_passed"
+        ]
+      },
+      "executorId": "readiness-development-v1",
+      "permissions": [
+        "development_lab"
+      ],
+      "checkpointVersion": 4,
+      "checkpoint": {
+        "mission_state": "completed",
+        "current_step_id": null,
+        "completed_steps": [
+          "isolate",
+          "repair",
+          "verify",
+          "commit"
+        ],
+        "pending_steps": [],
+        "results": [
+          {
+            "step_id": "isolate",
+            "status": "passed",
+            "summary": "isolated_real_repository"
+          },
+          {
+            "step_id": "repair",
+            "status": "passed",
+            "summary": "strict_gates_written"
+          },
+          {
+            "step_id": "verify",
+            "status": "passed",
+            "summary": "external_corpus_passed:30"
+          },
+          {
+            "step_id": "commit",
+            "status": "passed",
+            "summary": "commit:3ecc0333a7c4c2fc884df5779df9d56c566b521b"
+          }
+        ],
+        "artifacts": [
+          "src/storefront/consultationReadiness.ts",
+          "src/storefront/consultationReadinessStrict.test.ts"
+        ],
+        "test_evidence": [
+          "isolated_real_repository",
+          "strict_gates_written",
+          "external_corpus_passed:30",
+          "commit:3ecc0333a7c4c2fc884df5779df9d56c566b521b"
+        ],
+        "worktree": {
+          "branch": "codex/readiness-ff5566c5becf",
+          "sha": "7e0a0c0926e7805cb50e397e27cd3586ba6db25b"
+        }
+      }
+    },
+    "events": [
+      "observed_deficiency",
+      "checkpoint:repair",
+      "checkpoint:verify",
+      "checkpoint:commit",
+      "checkpoint:ready",
+      "completed"
+    ],
+    "hash": "d42d2f085192e283da1648d5602aaade828a54ea0fae0b867c03b41cfbc42c12"
+  },
+  "candidate": "C:\\autopilot-worktrees\\readiness-autonomous-final-20261110\\candidate"
+}

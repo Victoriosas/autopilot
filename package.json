@@ -5,6 +5,7 @@
   "description": "Victoriosa ecommerce storefront and durable Autopilot V4 sourcing engine",
   "type": "module",
   "scripts": {
+    "development:readiness": "node --import tsx scripts/autopilot-readiness-development.ts",
     "development:lab": "node --import tsx scripts/autopilot-development.ts",
     "mission:local": "node --import tsx scripts/autopilot-mission.ts",
     "dev": "tsx server.ts",
