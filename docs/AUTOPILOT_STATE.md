@@ -1,3 +1,9 @@
+## 2026-11-10 · ORD-204G: preflight Windows comprobado
+
+**PARTIAL · NOT_EXECUTED / BEFORE_WINDOW.** El 10/11 a las 22:47 de Uruguay (11/11 a las 01:47 UTC), el gestor de [#222](https://github.com/Victoriosas/autopilot/pull/222) en `e2f68d2c9be7423755c2b88d4ab5ee579f1bc65c` comprobó la reserva y validó la preparación del checkout limpio de [#220](https://github.com/Victoriosas/autopilot/pull/220) en `633faa7f9517a6d6edc82158cd125b09a66f6312`. Windows COM confirmó tarea deshabilitada, historial legible, acción, identidad y límites. PostgreSQL dedicado detenido, puerto 55439 libre, sin procesos incompatibles. Gestor 4/4 local, guardia temporal del observador comprobada en Windows y hook en PostgreSQL desechable aprobado en CI. Expediente local: `C:/autopilot-worktrees/ord204g-continuity-20261110/revision-20261110-224650`.
+
+Próxima acción: revalidar a las 17:58 de Uruguay del 11/11. Disparos 18:00 y 18:02, límite de activación 18:20, cierre 18:28. Pendientes la admisión, ambas correlaciones nativas, claims, fencing, reconciliación y limpieza posterior. [#223](https://github.com/Victoriosas/autopilot/pull/223) sigue como supervisión de lectura, sin invocaciones. Mantener [#221](https://github.com/Victoriosas/autopilot/pull/221) independiente y retomar la verificación F1 de disponibilidad y recepción humana.
+
 # Continuidad · corrección del adaptador CLI para claims de misión · 10/11/2026
 
 PR #216, rama `codex/autopilot-next-safe-20261110`. Base incorporada: `origin/main` `7476839080f3a576ab3606c13051c544d0e01f29`. El run `42748841655` aprobó `validate`, pero falló `postgres` en `tests/mission-operator-postgres.test.ts`: el CLI emitió `claimed:false`, `reason:"claim_failed"` y conservó la misión sintética en `queued`.
