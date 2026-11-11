@@ -1,0 +1,81 @@
+name: PLAN Cloud - auditoria segura
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "inventario (sin IA) o codex (requiere secreto de API)"
+        type: choice
+        required: true
+        default: inventory
+        options: [inventory, codex]
+  pull_request:
+    paths:
+      - '.github/workflows/plan-cloud.yml'
+      - '.agents/skills/plan/**'
+      - 'scripts/plan_cloud_inventory.py'
+permissions:
+  contents: read
+  pull-requests: read
+concurrency:
+  group: plan-cloud-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Read-only P0 inventory
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/plan_cloud_inventory.py
+      - name: Publish evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-cloud-inventory-${{ github.run_id }}
+          path: plan-cloud-output/
+          if-no-files-found: warn
+          retention-days: 14
+  codex:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'codex' }}
+    needs: inventory
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check API configuration
+        env:
+          CODEX_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "$CODEX_API_KEY" ]; then
+            echo "::error::Configure OPENAI_API_KEY in GitHub Actions secrets before running Codex."
+            exit 1
+          fi
+      - name: Execute plan in read-only sandbox
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          safety-strategy: read-only
+          sandbox: read-only
+          output-file: plan-cloud-analysis.md
+          prompt: |
+            Use the local .agents/skills/plan/SKILL.md as your planning instructions.
+            Read AGENTS.md and relevant direction and checkpoint docs.
+            Inspect only the checked out repository and plan-cloud-output/inventory.json.
+            Create a concise factual P0 report in Spanish, using your final response.
+            State gaps explicitly: this runner cannot inspect remote Windows writers or live systems.
+            Do not change files, execute mutating commands, send messages, make deployments,
+            create PRs, or treat planning as authorization.
+      - name: Publish Codex report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-cloud-codex-${{ github.run_id }}
+          path: plan-cloud-analysis.md
+          if-no-files-found: warn
+          retention-days: 14

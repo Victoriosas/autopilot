@@ -1,0 +1,16 @@
+interface:
+  display_name: plan
+  short_description: 'Objetivo: convertir el código existente de Victoriosas Autopilot
+    en una plataforma operativa, verificable y recuperable, capaz de atender consultas,
+    coordinar agentes, desarrollar mejoras, supervisar infraestructura y gestionar
+    tareas comerciales autorizadas, con mínima intervención humana en las operaciones
+    de bajo riesgo.'
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
