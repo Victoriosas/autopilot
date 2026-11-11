@@ -106,7 +106,8 @@
       "codex/mission-operator-20261109": false,
       "codex/mission-trigger-20261109": false,
       "codex/consultation-knowledge-engine-v1": false,
-      "codex/consultation-grounded-response-v1": false
+      "codex/consultation-grounded-response-v1": false,
+      "codex/consultation-material-persistence-v1": false
     }
   }
 }
