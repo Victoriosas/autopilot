@@ -1,0 +1,52 @@
+name: ORD-204G - viki readonly evidence bridge
+
+on:
+  pull_request:
+    paths:
+      - 'tools/camelrun-bridge/**'
+      - '.github/workflows/ord204g-viki-readonly.yml'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run (default); live requires separately configured CAMELAI_API_KEY"
+        required: true
+        type: choice
+        default: dry-run
+        options:
+          - dry-run
+          - live
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ord204g-viki-readonly
+  cancel-in-progress: false
+
+jobs:
+  readonly-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate readonly bridge contract
+        run: node --test tools/camelrun-bridge/bridge.test.mjs
+      - name: GitHub metadata dry-run (no model)
+        if: github.event_name == 'pull_request' || inputs.mode == 'dry-run'
+        run: node tools/camelrun-bridge/bridge.mjs
+      - name: Live model analysis (opt-in and budget guarded)
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'live'
+        env:
+          CAMELAI_API_KEY: ${{ secrets.CAMELAI_API_KEY }}
+        run: |
+          if [ -z "$CAMELAI_API_KEY" ]; then
+            echo "CAMELAI_API_KEY missing: no model call performed" >&2
+            exit 1
+          fi
+          node tools/camelrun-bridge/bridge.mjs --live
