@@ -105,6 +105,19 @@ test('real autonomous cycle rejects, rolls back, creates a regression, verifies 
   assert.equal((await stat(path.join(root, 'candidate/subject.mjs'))).mtimeMs, mtime);
 });
 
+test('partial pending checkpoint is never admitted as a committed journal record', async () => {
+  const root = await temporary();
+  const first = new DevelopmentLedger(root); await first.acquire();
+  const mission = new SelfDevelopmentObserver().diagnose(sourceFor('upper'))!.mission;
+  await writeFile(path.join(root, 'pending-interrupted-000.tmp'), '{"partial":');
+  await first.admit(mission); await first.release();
+  const next = new DevelopmentLedger(root); await next.acquire();
+  assert.equal(next.snapshot?.version, 0);
+  assert.equal(next.snapshot?.context.checkpoint.mission_state, 'queued');
+  await next.release();
+  assert.equal(await readFile(path.join(root, 'pending-interrupted-000.tmp'), 'utf8'), '{"partial":');
+});
+
 test('stale claim guard recovers only after aging and dead-owner proof', async () => {
   const root = await temporary(); const guard = path.join(root, 'claim-guard');
   await mkdir(guard);

@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { mkdir, readFile, writeFile, readdir, lstat, unlink, realpath, rmdir } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, readdir, lstat, unlink, realpath, rmdir, rename } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { FileAccessController, digest } from './developmentAccess';
 import { ManagedProcesses } from './managedProcesses';
@@ -96,7 +96,15 @@ export class DevelopmentLedger implements MissionLedger {
     const content = { version, previous: this.#snapshot?.hash ?? '', at: new Date().toISOString(), runId: this.#token, pid: process.pid, context: structuredClone(context),
       events: [...(this.#snapshot?.events ?? []), event] };
     const snapshot = { ...content, hash: digest(JSON.stringify(content)) };
-    await writeFile(path.join(this.root, `state-${String(version).padStart(3, '0')}.json`), JSON.stringify(snapshot), { flag: 'wx' });
+    // A killed writer may leave a partial temporary record. Never expose it
+    // as a committed checkpoint; only the atomic rename publishes the version.
+    const target = path.join(this.root, `state-${String(version).padStart(3, '0')}.json`);
+    if (!await absent(target)) throw Error('journal_conflict');
+    const pending = path.join(this.root, `pending-${this.#token}-${String(version).padStart(3, '0')}.tmp`);
+    await writeFile(pending, JSON.stringify(snapshot), { flag: 'wx' });
+    await this.assertOwner();
+    if (!await absent(target)) throw Error('journal_conflict');
+    await rename(pending, target);
     this.#snapshot = snapshot;
   }
   get snapshot() { return this.#snapshot ? structuredClone(this.#snapshot) : null; }
