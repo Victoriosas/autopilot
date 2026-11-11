@@ -50,6 +50,10 @@ Próximos lotes separados. Alinear el 404 JSON de la API con Node y normalizar e
 - Cerradas #111/#125 documentales y #129/#131 superadas, preservando ramas/commits/descripciones originales. Evidencia histórica rescatada y comparación de guardas: docs/PR_LEGACY_TRIAGE_20261105.md, PR #187 actualizada sobre main. Se conservan #90/#122/#124 en borrador por alcance/aprobaciones; #169 convertida a DRAFT, bloqueo de migración Express 5 documentado con TS2345 de CI 41767936846. No eliminar propuestas ni resolver conflictos eligiendo versiones antiguas en bloque.
 - #187 contiene solo documentación de cierre; verificar validate/postgres del SHA final y estado alojado por separado. Los worktrees previos y archivos ajenos se conservaron; no se declara sincronización global de PC. F3 sigue parcial 3/32 + 6/6; sin nuevo gasto de inferencia, mensajes, SQL alojado, DNS, credenciales ni automatizaciones. Próximo: desarrollo completo autorizado antes de finales; Express 5 requiere tarea independiente.
 
+## 2026-11-10 · F1: redacción de fallos del monitor público
+
+El monitor GET existente podía imprimir valores devueltos por un endpoint al fallar el parseo JSON o una aserción de contenido. La regresión con respuestas sintéticas reproduce el problema. Ahora el fallo comunica el endpoint y la condición incumplida, conserva la lista acotada de causas de disponibilidad y mantiene las comprobaciones de bandeja anónima y controles comerciales. Sin nueva automatización. El siguiente punto de F1 sigue siendo corroborar el recorrido de consulta y la recepción humana en una prueba autorizada.
+
 ## 2026-11-06 · F3: recuperación offline y PR #196 en borrador
 
 Fase F3. Base remota comprobada `908ae4e7a195470266799016a99e06a35d49be27`; código `7828a03e2713dcf4c4d1a71b581adf7f6eea9c31`, rama `codex/f3-quality-recovery-20261106`, worktree aislado `C:/autopilot-worktrees/f3-quality-recovery-20261106`. [PR #196 DRAFT](https://github.com/Victoriosas/autopilot/pull/196), sin merge ni promoción. El commit de continuidad posterior solo documenta este resultado; consultar el SHA final y CI en la PR.
