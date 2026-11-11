@@ -1312,3 +1312,14 @@ Evidencia, comandos propuestos, auditoría de mecanismos, límites y criterios p
 **Evidencia:** 228 casos de A reutilizados sin cambios en sus corpus; regresiones de fidelidad, privacidad, inyección y manipulación de texto/estado. Demos locales de catálogo y precio sin dato aprobado; ninguna llamada remota o comunicación. Verify y CI por SHA final constan en la PR. Contrato/comandos: [Ciclo B](CONSULTATION_GROUNDED_RESPONSE_V1.md).
 
 **Límites/siguiente paso:** composición controlada local, sin modelo remoto ni integración en bandeja. Persistir solicitudes (C) y revisión en interfaz (D) son posteriores. No nuevas fichas aprobadas, SQL, producción ni cambios a ORD-204G. Checkouts previos preservados. Mantener `no_send` incluso si el contenido es apto para revisión humana.
+
+
+## Ciclo C · Persistencia supervisada (2026-11-11)
+
+**cycle_id:** VICTORIOSAS_CONSULTATION_MATERIAL_PERSISTENCE_V1 · titular Codex · base #226, SHA `e6b455e23361871e373d755cf9b347df147bfa4c`. Worktree aislado `/workspace/autopilot-cycle-c`, rama `codex/consultation-material-persistence-v1`. Inventario local/GitHub sin escritor o PR C equivalente; otros checkouts y sus cambios conservados.
+
+**Entrega:** SQL staged de solicitudes/eventos/claves mínimas, RLS admin existente, RPC con JWT del llamador, idempotencia transaccional y concurrencia; sin acceso directo de escritura o service_role. Metadatos/fuentes/versiones/consentimiento/trazas, sin copiar mensajes o contactos. Guardián B + revalidación SQL del padre/fuentes; persistencia/revisión administrativa nunca autorizan entrega. Toda salida conserva `no_send`.
+
+**Retención y pruebas:** siete días como máximo lógico, acotados por padre/contexto; revocación terminal borra payload; purga controlada y FK eliminan contenido/eventos, claves mínimas hasta retención del padre para impedir resurrección por replay. Migración/rollback/reinstalación en PostgreSQL desechable; CI agrega prueba Auth/PostgREST real local. Resultados, SHA final y estado de escritores al cierre en la PR. [Contrato, reproducción y checkpoint](CONSULTATION_MATERIAL_PERSISTENCE_V1.md).
+
+**Límites:** nada instalado en producción, sin endpoint/bandeja/modelos/envíos ni scheduler. No modificar #225/#226 ni ORD-204G. Siguiente acción: revisar CI por SHA y preparar integración D solo después de revisión humana, conservando permisos de envío separados.
