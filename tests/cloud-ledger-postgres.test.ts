@@ -43,8 +43,13 @@ test('two isolated runner processes recover the same durable TLS ledger after re
    await chmod(key,0o600);
    await writeFile(path.join(data,'pg_hba.conf'),'hostssl all autopilot_cloud_runner 127.0.0.1/32 scram-sha-256\nhost all autopilot_cloud_runner 127.0.0.1/32 reject\nhost all postgres 127.0.0.1/32 trust\n');
    const quote=(v:string)=>v.replaceAll('\\','/').replaceAll("'","''");
-   await writeFile(path.join(data,'postgresql.auto.conf'),`listen_addresses='127.0.0.1'\nport=${port}\nssl=on\nssl_cert_file='${quote(ca)}'\nssl_key_file='${quote(key)}'\npassword_encryption='scram-sha-256'\n`);
-   await exec(binary('pg_ctl'),['-D',data,'-l',path.join(root,'postgres.log'),'-w','start'],{env,windowsHide:true,timeout:30000});started=true;
+   await writeFile(path.join(data,'postgresql.auto.conf'),`listen_addresses='127.0.0.1'\nport=${port}\nunix_socket_directories='${quote(root)}'\nssl=on\nssl_cert_file='${quote(ca)}'\nssl_key_file='${quote(key)}'\npassword_encryption='scram-sha-256'\n`);
+   try {
+     await exec(binary('pg_ctl'),['-D',data,'-l',path.join(root,'postgres.log'),'-w','start'],{env,windowsHide:true,timeout:30000});started=true;
+   } catch {
+     // Only startup diagnostics from our empty disposable cluster, before role/password/admission setup.
+     throw Error(`fixture_postgres_start_failed: ${(await readFile(path.join(root,'postgres.log'),'utf8')).slice(-3000)}`);
+   }
    await exec(binary('createdb'),['-h','127.0.0.1','-p',String(port),'-U','postgres','victoriosa_mission_operator_lab'],{env,windowsHide:true,timeout:10000});
    const repo=path.join(root,'seed'),work=path.join(root,'work');await mkdir(repo);await mkdir(work);
    const git=(args:string[])=>exec('git',['-c','core.hooksPath=/dev/null',...args],{cwd:repo,env,windowsHide:true,timeout:10000});
