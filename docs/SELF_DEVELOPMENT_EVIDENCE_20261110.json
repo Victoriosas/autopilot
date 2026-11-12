@@ -1,0 +1,174 @@
+{
+  "implementationBase": "1c44a6389a7bbd6ac9157ac087269e216e654373",
+  "supervisorHash": "5c0bc1a00dfd4ed913d311e232e7753b851d1ffc24d6450c226ce4143b1a9f2a",
+  "laboratoryBase": "327bc8efceb8f59c376b5d774f9b5bf508ae3a38",
+  "result": {
+    "version": 8,
+    "previous": "ffe54a21230689b78be58bb842fa43ccd006ff8744a08e52a0537a17dc549d01",
+    "at": "2026-11-10T05:28:33.449Z",
+    "runId": "9cfc4af0-c4b8-4ade-9057-953aa0d43a46",
+    "pid": 13744,
+    "context": {
+      "mission": {
+        "missionId": "selfdev-bounded-count",
+        "goal": "Keep boundedCount between zero and its declared upper bound",
+        "goalVersion": 1,
+        "planVersion": 1,
+        "plan": [
+          {
+            "id": "isolate",
+            "task": "development.isolate",
+            "depends_on": []
+          },
+          {
+            "id": "propose",
+            "task": "development.propose",
+            "depends_on": [
+              "isolate"
+            ]
+          },
+          {
+            "id": "reject",
+            "task": "development.reject",
+            "depends_on": [
+              "propose"
+            ]
+          },
+          {
+            "id": "rollback",
+            "task": "development.rollback",
+            "depends_on": [
+              "reject"
+            ]
+          },
+          {
+            "id": "repair",
+            "task": "development.repair",
+            "depends_on": [
+              "rollback"
+            ]
+          },
+          {
+            "id": "verify",
+            "task": "development.verify",
+            "depends_on": [
+              "repair"
+            ]
+          },
+          {
+            "id": "commit",
+            "task": "development.commit",
+            "depends_on": [
+              "verify"
+            ]
+          }
+        ],
+        "restrictions": [
+          "local_synthetic_only",
+          "no_network",
+          "immutable_supervisor",
+          "no_publish"
+        ],
+        "completionCriteria": [
+          "negative_and_upper_boundary",
+          "independent_oracle",
+          "rollback_verified"
+        ]
+      },
+      "executorId": "local-self-development-v1",
+      "permissions": [
+        "development_lab"
+      ],
+      "checkpointVersion": 7,
+      "checkpoint": {
+        "mission_state": "completed",
+        "current_step_id": null,
+        "completed_steps": [
+          "isolate",
+          "propose",
+          "reject",
+          "rollback",
+          "repair",
+          "verify",
+          "commit"
+        ],
+        "pending_steps": [],
+        "results": [
+          {
+            "step_id": "isolate",
+            "status": "passed",
+            "summary": "isolate"
+          },
+          {
+            "step_id": "propose",
+            "status": "passed",
+            "summary": "written"
+          },
+          {
+            "step_id": "reject",
+            "status": "passed",
+            "summary": "external_oracle_rejected_upper_regression"
+          },
+          {
+            "step_id": "rollback",
+            "status": "passed",
+            "summary": "baseline_restored"
+          },
+          {
+            "step_id": "repair",
+            "status": "passed",
+            "summary": "corrected_from_rejection"
+          },
+          {
+            "step_id": "verify",
+            "status": "passed",
+            "summary": "oracle:ee533ce018c2663ce5cf0444da9cffd1b698a9de3c8393367d0e7c57801630d9"
+          },
+          {
+            "step_id": "commit",
+            "status": "passed",
+            "summary": "commit:b63033eddc6385f1b615742cc70af3ddd4af8a5f"
+          }
+        ],
+        "artifacts": [
+          "subject.mjs",
+          "regression.mjs"
+        ],
+        "test_evidence": [
+          "isolate",
+          "written",
+          "external_oracle_rejected_upper_regression",
+          "baseline_restored",
+          "corrected_from_rejection",
+          "oracle:ee533ce018c2663ce5cf0444da9cffd1b698a9de3c8393367d0e7c57801630d9",
+          "commit:b63033eddc6385f1b615742cc70af3ddd4af8a5f"
+        ],
+        "worktree": {
+          "branch": "codex/selfdev-bounded-count",
+          "sha": "327bc8efceb8f59c376b5d774f9b5bf508ae3a38"
+        }
+      }
+    },
+    "events": [
+      "observed_deficiency",
+      "checkpoint:propose",
+      "checkpoint:reject",
+      "checkpoint:rollback",
+      "checkpoint:repair",
+      "checkpoint:verify",
+      "checkpoint:commit",
+      "checkpoint:ready",
+      "completed"
+    ],
+    "hash": "49b4fa9e06a99c0882793431896f7709a6d43165b6a4afdbb5d080c5e993f5d0"
+  },
+  "validation": {
+    "failures": 0,
+    "verify": "passed",
+    "generalProgramming": false,
+    "tests": 474,
+    "unattended": false,
+    "skipped": 0,
+    "independentOracle": true
+  }
+}

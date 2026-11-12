@@ -50,6 +50,10 @@ Próximos lotes separados. Alinear el 404 JSON de la API con Node y normalizar e
 - Cerradas #111/#125 documentales y #129/#131 superadas, preservando ramas/commits/descripciones originales. Evidencia histórica rescatada y comparación de guardas: docs/PR_LEGACY_TRIAGE_20261105.md, PR #187 actualizada sobre main. Se conservan #90/#122/#124 en borrador por alcance/aprobaciones; #169 convertida a DRAFT, bloqueo de migración Express 5 documentado con TS2345 de CI 41767936846. No eliminar propuestas ni resolver conflictos eligiendo versiones antiguas en bloque.
 - #187 contiene solo documentación de cierre; verificar validate/postgres del SHA final y estado alojado por separado. Los worktrees previos y archivos ajenos se conservaron; no se declara sincronización global de PC. F3 sigue parcial 3/32 + 6/6; sin nuevo gasto de inferencia, mensajes, SQL alojado, DNS, credenciales ni automatizaciones. Próximo: desarrollo completo autorizado antes de finales; Express 5 requiere tarea independiente.
 
+## 2026-11-10 · F1: redacción de fallos del monitor público
+
+El monitor GET existente podía imprimir valores devueltos por un endpoint al fallar el parseo JSON o una aserción de contenido. La regresión con respuestas sintéticas reproduce el problema. Ahora el fallo comunica el endpoint y la condición incumplida, conserva la lista acotada de causas de disponibilidad y mantiene las comprobaciones de bandeja anónima y controles comerciales. Sin nueva automatización. El siguiente punto de F1 sigue siendo corroborar el recorrido de consulta y la recepción humana en una prueba autorizada.
+
 ## 2026-11-06 · F3: recuperación offline y PR #196 en borrador
 
 Fase F3. Base remota comprobada `908ae4e7a195470266799016a99e06a35d49be27`; código `7828a03e2713dcf4c4d1a71b581adf7f6eea9c31`, rama `codex/f3-quality-recovery-20261106`, worktree aislado `C:/autopilot-worktrees/f3-quality-recovery-20261106`. [PR #196 DRAFT](https://github.com/Victoriosas/autopilot/pull/196), sin merge ni promoción. El commit de continuidad posterior solo documenta este resultado; consultar el SHA final y CI en la PR.
@@ -1286,6 +1290,27 @@ PREPARADO, NO ACTIVADO: bloque de instrucciones revisable para el mismo heartbea
 BLOQUEO CONCRETO: ningún disparador inspeccionado invoca directamente la CLI con acceso al laboratorio local disponible. No se admitió ni ejecutó una misión F, no hay IDs de run/misión F ni segundo disparo de recuperación que atribuir. Recuperación persistente de E permanece manual; sus regresiones no demuestran recuperación desatendida. No se inicia infraestructura permanente ni se adelantan horarios. Preparar o relanzar desde Codex repetiría E.
 
 Evidencia, comandos propuestos, auditoría de mecanismos, límites y criterios pendientes: [MISSION_TRIGGER_ORD204F_20261109.md](MISSION_TRIGGER_ORD204F_20261109.md). N2 sintético; sin nuevas funciones operativas demostradas, planificación general, independencia completa, despliegue, SQL alojado, gastos, credenciales nuevas o envíos. Validación y CI del SHA final se registran en la PR de esta rama.
+
+## 2026-11-10 · Self-Development Observer, laboratorio acotado
+
+Rama codex/self-development-20261110 desde origin/main 1c44a6389a7bbd6ac9157ac087269e216e654373. Orden expresa del propietario: primera version de autodesarrollo supervisado. Reutiliza MissionLedger, PersistentMissionOrchestrator, ExecutorAdapter y ManagedProcesses; sin otra cola, scheduler, modelo ni servicio. CLI development:lab, observador determinista, permisos por raiz, oraculo externo y ledger local con propietario/token/versiones/auditoria.
+
+PROBADO/EJECUTADO: deficiencia sintetica reproducida, mision/plan derivados, worktree creado, propuesta defectuosa rechazada, rollback, correccion, regresion nueva y commit local b63033eddc6385f1b615742cc70af3ddd4af8a5f; cuerpo PR preparado. Proceso realmente interrumpido despues del efecto/antes del checkpoint y recuperado por otro sin reescribir ese efecto. Repeticion terminal sin otro commit; competidor, token anterior, expansion no autorizada, inyecciones, corrupcion y edicion ajena rechazados. Recuperacion relanzada por el arnes, no desatendida.
+
+Validacion: npm run verify exit0, 474/474 sin omisiones, tipos, 13 skills, builds y comprobacion de API; secret scan correcto. Nueve pruebas nuevas incluyen permisos, oraculo independiente, rollback, concurrencia, recuperacion y presupuestos. CI por SHA y ausencia de Preview se registran en la PR, sin inferirlos del resultado local. Bloqueo de Git deployments y ignoreCommand limitado a la rama preparados antes del push.
+
+Limites: gramatica finita de funcion sintetica, no programacion general ni sandbox OS; nivel 3 de ampliacion por defecto denegado y sin activar en CLI. Supervisor externo fijado por hash, no modificable por el candidato; no se acredita auto-modificacion general de controles. Codex aun implementa/revisa dominio, inicia el laboratorio y publica la PR de implementacion. Sin merge, produccion, SQL alojado, gastos ni envios. ORD-204G conserva SHA 15720289647da59c19cc2c19c7f123ee84259a31 y tarea deshabilitada; PostgreSQL dedicado no iniciado.
+
+Detalle, comandos, riesgos y siguiente ciclo: docs/SELF_DEVELOPMENT_OBSERVER_20261110.md. Evidencia estructurada: docs/SELF_DEVELOPMENT_EVIDENCE_20261110.json. Siguiente: transformacion real de bajo riesgo para F1 con supervisor/corpus externos, sin ampliar a codigo arbitrario antes de sandbox y preflight integral.
+## 2026-11-10 · Autodesarrollo aplicado a un contrato real F1
+
+Orden del propietario: siguiente ciclo de #217, correccion real de bajo riesgo con supervisor/corpus externos. Rama codex/self-development-f1-20261110 apilada sobre #217 7e0a0c0, main contrastado 1c44a63. Los cuatro modulos supervisores previos permanecen intactos; nuevo adaptador reutiliza ledger, orquestador, controlador y procesos. Sin nueva cola, scheduler, modelo ni SQL.
+
+PROBADO: CLI observa modulo real de disponibilidad con hash revisado, reproduce 15 violaciones en 30 casos y deriva mision/plan. Crea worktree real, exige true explicito en tres gates, genera regresion, valida con corpus fuera del candidato y crea commit 3ecc0333a7c4c2fc884df5779df9d56c566b521b. Codex incorpora ese parche sin editar mediante cherry-pick d811ee8. Mision selfdev-f1-readiness, run f3522a92-b4e9-46ef-aa86-3ceec9d03f33, completed/checkpoint4/journal5. Es endurecimiento frente a tipos invalidos, no incidente productivo observado.
+
+Validacion: npm run verify exit0, 480/480 sin omisiones, tipos, 13 skills, builds y API; secret scan. Seis propuestas parciales rechazadas, supervisor/codigo inesperado/checkout sucio/carpeta ajena bloqueados. SIGKILL real despues del efecto; otro proceso usa la misma CLI, reconcilia sin cambiar mtime y completa. Segunda invocacion terminal no modifica ni duplica commit. No es recuperacion desatendida.
+
+Evidencia/comandos/limites: docs/SELF_DEVELOPMENT_F1_20261110.md y docs/SELF_DEVELOPMENT_F1_EVIDENCE_20261110.json. CI validate/postgres y ausencia de despliegues Vercel del SHA final se registran en la PR; bloqueo Git/ignoreCommand especifico antes de push. ORD-204G sin alteraciones ni activacion. Sin merge, produccion, SQL alojado, secretos nuevos, pagos o envios. Codex aun define/revisa el transformador acotado, inicia CLI y publica la propuesta; no hay generacion libre ni sandbox OS. Siguiente: revision de las PR apiladas y otro contrato F1 solo con fallo reproducible y corpus externo.
 
 
 ## Biblioteca inteligente de consultas · Ciclo A (cloud, 2026-11-10)

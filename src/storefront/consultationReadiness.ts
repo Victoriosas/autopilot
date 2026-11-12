@@ -9,9 +9,9 @@ export async function checkConsultationReadiness(deps: {
   const closed = (reason: ConsultationUnavailableReason): ConsultationReadiness => ({enabled:false,unavailableReason:reason});
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > CONSULTATION_READINESS_TIMEOUT_MS) return closed('configuration_incomplete');
   try {
-    if (!deps.enabled()) return closed('disabled');
-    if (!deps.configured()) return closed('configuration_incomplete');
-    if (!deps.notificationReady()) return closed('notification_unavailable');
+    if (deps.enabled() !== true) return closed('disabled');
+    if (deps.configured() !== true) return closed('configuration_incomplete');
+    if (deps.notificationReady() !== true) return closed('notification_unavailable');
   } catch { return closed('configuration_incomplete'); }
   const controller = new AbortController();let timedOut=false;
   let timer: ReturnType<typeof setTimeout>;
