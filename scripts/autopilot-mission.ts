@@ -8,13 +8,14 @@ import { createMissionLedger, PersistentMissionOrchestrator } from '../src/autop
 import { DeterministicSyntheticPlanner } from '../src/autopilot/missionPlanner';
 import { SyntheticMissionExecutor } from '../src/autopilot/syntheticMissionExecutor';
 import type { ExecutorAdapter } from '../src/autopilot/executorAdapter';
+import { continuationDecision } from '../src/autopilot/missionContinuation';
 
 const emit = (event: object) => process.stdout.write(`${JSON.stringify(event)}\n`);
 async function main() {
   const [command, ...rest] = process.argv.slice(2);
   if (command === '--help') { emit({ commands: ['init --config FILE','admit --config FILE --request FILE',
-    'run --config FILE --id ID','status --config FILE --id ID','cancel --config FILE --id ID'], scope: 'manual_local_synthetic_only' }); return; }
-  if (!['init','admit','run','status','cancel'].includes(command)) throw Error('invalid_command');
+    'run --config FILE --id ID','resume --config FILE --id ID','status --config FILE --id ID','cancel --config FILE --id ID'], scope: 'local_synthetic_only' }); return; }
+  if (!['init','admit','run','resume','status','cancel'].includes(command)) throw Error('invalid_command');
   const args: Record<string,string> = {};
   for (let i = 0; i < rest.length; i += 2) {
     if (!['--config','--request','--id'].includes(rest[i]) || !rest[i+1] || args[rest[i]]) throw Error('invalid_arguments');
@@ -36,7 +37,15 @@ async function main() {
     if (command === 'status') { emit({ event:'status', mission:await control.status(id) }); return; }
     if (command === 'cancel') { const changed=await control.cancel(id); emit({ event:'cancellation', changed, mission:await control.status(id) }); return; }
     if (!config.permissions.execute) throw Error('host_permission_required');
-    await control.status(id); // Reject unknown/unbound tasks before spawning any executor.
+    const before = await control.status(id); // Reject unknown/unbound tasks before spawning any executor.
+    if (command === 'resume') {
+      const decision = continuationDecision(before);
+      if (decision !== 'resume') {
+        emit({event:'continuation_skipped',missionId:id,outcome:decision,checkpointVersion:before.checkpointVersion});
+        if (decision === 'busy') process.exitCode=3;
+        return;
+      }
+    }
     const runId = randomUUID(); let claimed=false;
     const report = (event: Record<string, unknown>) => { if (event.event==='claimed') claimed=true; emit({ ...event,runId,missionId:id }); };
     const processes = new ManagedProcesses(event => report(event));

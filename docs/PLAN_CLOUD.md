@@ -18,3 +18,11 @@ cambios, envíos, despliegues ni fusiones. La salida se conserva como artefacto.
 No se configura `schedule`: ya existe un heartbeat para Victoriosas.
 La auditoría P0 no demuestra el estado de escritores del PC, servicios externos ni CI.
 Para modificaciones futuras se exige reconciliar worktrees, responsables y evidencia.
+
+## Traspaso durable después de CI (P0, 12/11/2026)
+
+El mismo workflow escucha la finalización de `Autopilot Core v4` y conserva
+`continuation.json` con SHA/run y bloqueo. No ejecuta código del disparador ni
+descarga sus artefactos. Sin adaptador autorizado al ledger cloud falla cerrado;
+no interpreta una CI verde como permiso de misión. No agrega cron.
+Entrada local recuperable y límites: [continuidad P0](AUTONOMY_CONTINUITY_20261112.md).
