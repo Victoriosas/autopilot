@@ -1344,3 +1344,11 @@ Evidencia/comandos/limites: docs/SELF_DEVELOPMENT_F1_20261110.md y docs/SELF_DEV
 **Retención y pruebas:** siete días como máximo lógico, acotados por padre/contexto; revocación terminal borra payload; purga controlada y FK eliminan contenido/eventos, claves mínimas hasta retención del padre para impedir resurrección por replay. Migración/rollback/reinstalación en PostgreSQL desechable; CI agrega prueba Auth/PostgREST real local. Resultados, SHA final y estado de escritores al cierre en la PR. [Contrato, reproducción y checkpoint](CONSULTATION_MATERIAL_PERSISTENCE_V1.md).
 
 **Límites:** nada instalado en producción, sin endpoint/bandeja/modelos/envíos ni scheduler. No modificar #225/#226 ni ORD-204G. Siguiente acción: revisar CI por SHA y preparar integración D solo después de revisión humana, conservando permisos de envío separados.
+
+## 2026-11-12 · P0 continuidad durable, sin activación
+
+Base main 30e9f41 confirmada mediante GitHub; worktree autonomy-continuity-20261112. Core/PLAN Cloud/heartbeat inspeccionados en código y checkpoints. Se reutilizan LocalMissionStore, agent_tasks, claim SQL con lease/token y PersistentMissionOrchestrator; nueva entrada resume omite terminales/propietarios vivos y recupera claims vencidos sin readmitir ni resetear checkpoints. No nueva cola, scheduler ni daemon.
+
+PLAN Cloud prepara traspaso workflow_run de Core con SHA/run y evidencia durable; no checkout ni artefactos del disparador. Falla cerrado: falta adaptador cloud autorizado al ledger local, no basta una clave de modelo. Heartbeat no modificado ni observado en vivo. No se acredita continuación desatendida ni operación cloud.
+
+Pruebas locales: 508/508 aprobadas, incluidas muerte real de proceso, recuperación por otra CLI, efecto no repetido, exclusión y token obsoleto. Verificación completa y CI SHA final se registran en la PR draft. Sin producción, SQL alojado, envíos, merge ni deploy. Rama con Git deployments deshabilitados. Contrato y bloqueo: docs/AUTONOMY_CONTINUITY_20261112.md. Siguiente puerta: adaptador durable cloud y prueba entre dos runners autorizados.

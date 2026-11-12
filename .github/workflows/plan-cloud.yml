@@ -1,5 +1,8 @@
 name: PLAN Cloud - auditoria segura
 on:
+  workflow_run:
+    workflows: ['Autopilot Core v4']
+    types: [completed]
   workflow_dispatch:
     inputs:
       mode:
@@ -20,7 +23,43 @@ concurrency:
   group: plan-cloud-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  continuation:
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      # No checkout or artifact download from the triggering branch: workflow_run is privileged.
+      - name: Record durable handoff and fail closed
+        env:
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+          SOURCE_RUN: ${{ github.event.workflow_run.id }}
+          SOURCE_RESULT: ${{ github.event.workflow_run.conclusion }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          successful = os.environ['SOURCE_RESULT'] == 'success'
+          evidence = {
+            'schema_version': 1,
+            'source_sha': os.environ['SOURCE_SHA'],
+            'source_run': os.environ['SOURCE_RUN'],
+            'state': 'blocked',
+            'reason': 'cloud_ledger_adapter_not_configured' if successful else 'source_ci_not_successful',
+            'executed': False,
+            'scheduler_created': False,
+          }
+          Path('continuation.json').write_text(json.dumps(evidence, indent=2))
+          print(evidence['reason'])
+          raise SystemExit(1)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: continuation-${{ github.event.workflow_run.id }}
+          path: continuation.json
+          retention-days: 14
   inventory:
+    if: ${{ github.event_name != 'workflow_run' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
