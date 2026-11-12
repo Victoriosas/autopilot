@@ -46,8 +46,12 @@ test('two isolated runner processes recover the same durable TLS ledger after re
     });}catch{
       // Fixed metadata fields only: never log mission payloads, SQL stderr or fencing tokens.
       const safe=(v:unknown)=>typeof v==='string'&&/^[a-z][a-z0-9_:-]{0,95}$/.test(v)?v:undefined;
+      const sqlErrors=(await readFile(path.join(root,'postgres.log'),'utf8')).split('\n').flatMap(line=>{
+        const message=line.split('ERROR:  ')[1];
+        return message&&/^[a-zA-Z_ :().-]{1,160}$/.test(message)?[message]:[];
+      }).slice(-4);
       throw Error(`fixture_${label}_effect_failed: ${JSON.stringify({exit:runner.child.exitCode,
-        events:runner.events.slice(-8).map(e=>({event:safe(e.event),code:safe(e.code),outcome:safe(e.outcome),reason:safe(e.reason),stepId:safe(e.stepId)}))})}`);
+        sqlErrors,events:runner.events.slice(-8).map(e=>({event:safe(e.event),operation:safe(e.operation),code:safe(e.code),outcome:safe(e.outcome),reason:safe(e.reason),stepId:safe(e.stepId)}))})}`);
     }
   }
  try{
