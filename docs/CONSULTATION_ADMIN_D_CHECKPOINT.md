@@ -55,3 +55,12 @@ IMPLEMENTADO y PROBADO localmente; pendiente publicación DRAFT/CI del SHA final
 Rollback: revertir commit D (o volver a su padre reconciliado) en esta rama; eliminar únicamente funciones D con el rollback staged si se instalaron en laboratorio. C, sus datos y sus claves no se borran por el rollback D. No ejecutar rollback remoto ni restaurar el bundle sobre cambios nuevos.
 
 Siguiente paso: revisar PR y checks exactos, incluida beauty-stack Auth/PostgREST; mantener SQL staged hasta autorización específica y runbook de instalación/retención. Sin activar entregas por aprobar una revisión administrativa.
+
+## Entrega verificable · 12/11/2026
+
+- PR DRAFT [#229](https://github.com/Victoriosas/autopilot/pull/229), base main; sin conflictos al crearla. SHA de implementación `66065535b28fd1b0ce34a41aecee78394fafc57a`.
+- En ese SHA: validate (push y PR), postgres (push y PR), beauty-stack, public-browser-smoke y CodeQL SUCCESS. Supabase Preview SKIPPED, no computado como integración.
+- beauty-stack completó Auth/PostgREST real local con JWT admin/cliente/inválido, RPC D y guard HTTP; también completó los navegadores sintéticos. No se usó Supabase alojado. Las ampliaciones están en sus fixtures de CI.
+- Verify local final exit 0: 508/508, cero omitidas/fallos, builds/API/tipos/skills; SQL 14/14; focales 2/2; navegador final escritorio/móvil táctil con timeout 15 s, cancelación y contraste inspeccionado. Secret scan y diff-check finales correctos. PostgreSQL temporal detenido; artefactos y bundle conservados localmente e ignorados. Worktree limpio después del commit funcional.
+- Este cierre documental es posterior al SHA funcional probado; no altera código, SQL ni workflows. Sus checks validate/postgres se consultan por el SHA documental en la PR, sin atribuirle una ejecución beauty-stack que no corresponda a sus paths.
+- Estado D: IMPLEMENTADO / PROBADO local y CI, PR DRAFT. NO FUSIONADO, NO DESPLEGADO, NO EJECUTADO con datos reales. Siguiente acción humana: revisar la PR y decidir el runbook de instalación staged por separado; no activar comunicaciones.
