@@ -84,7 +84,8 @@ repositorio de un único archivo sintético. Al terminar detiene y elimina el cl
 CI `postgres` ejecuta esta misma prueba; no usa secrets ni base alojada para P0B.
 
 Resultado local: `npm run verify` exit 0, **512/512**, skills/tipos/ambos builds/API.
-HTML/assets y secret scan aprobados. Prueba TLS final: **1/1**, sin omitir, ~70 s.
+HTML/assets y secret scan aprobados; `npm audit --omit=dev`: cero vulnerabilidades reportadas.
+Prueba TLS final: **1/1**, sin omitir, ~70 s.
 Dos procesos CLI independientes A/B sobre un mismo ledger persistente y volumen
 sintético compartido; no acredita dos máquinas alojadas ni operación desatendida.
 

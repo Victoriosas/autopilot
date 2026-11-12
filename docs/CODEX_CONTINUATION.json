@@ -4,9 +4,9 @@
   "execution_id": "codex-cloud-ledger-p0b-20261112",
   "repository": {
     "branch": "codex/cloud-ledger-adapter-20261112",
-    "head_sha": "25b12155c1cf5e5ededd45135409f5867b7beba7",
+    "head_sha": "678e41a8c98953ff0de5be797913d1cda6660936",
     "worktree": "C:/autopilot-worktrees/cloud-ledger-adapter-20261112",
-    "note": "Base remota PR230. Git local permanece en main 30e9f41 con archivos conservados; publicacion por conector. Contrastar SHA final en la PR."
+    "note": "SHA remoto de implementacion P0B, padre del ajuste documental. HEAD local permanece en main 30e9f41 con archivos conservados; publicacion por conector."
   },
   "current_order": {
     "id": "ORD-P0B-CLOUD-LEDGER-20261112",
@@ -29,7 +29,8 @@
     "docs/CLOUD_LEDGER_P0B_20261112.md",
     "docs/AUTOPILOT_STATE.md",
     "tests/cloud-ledger-postgres.test.ts",
-    "https://github.com/Victoriosas/autopilot/pull/230"
+    "https://github.com/Victoriosas/autopilot/pull/230",
+    "https://github.com/Victoriosas/autopilot/pull/231"
   ],
   "blockers": [
     "No hay host cloud ni persistencia remota de artefactos autorizados; dos procesos de fixture no acreditan dos maquinas cloud"
