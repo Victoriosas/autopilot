@@ -1352,3 +1352,16 @@ Base main 30e9f41 confirmada mediante GitHub; worktree autonomy-continuity-20261
 PLAN Cloud prepara traspaso workflow_run de Core con SHA/run y evidencia durable; no checkout ni artefactos del disparador. Falla cerrado: falta adaptador cloud autorizado al ledger local, no basta una clave de modelo. Heartbeat no modificado ni observado en vivo. No se acredita continuación desatendida ni operación cloud.
 
 Pruebas locales: 508/508 aprobadas, incluidas muerte real de proceso, recuperación por otra CLI, efecto no repetido, exclusión y token obsoleto. Verificación completa y CI SHA final se registran en la PR draft. Sin producción, SQL alojado, envíos, merge ni deploy. Rama con Git deployments deshabilitados. Contrato y bloqueo: docs/AUTONOMY_CONTINUITY_20261112.md. Siguiente puerta: adaptador durable cloud y prueba entre dos runners autorizados.
+
+## 2026-11-12 · P0B cloud ledger adapter, laboratorio aislado
+
+Base PR230 25b12155c1cf5e5ededd45135409f5867b7beba7 y main 30e9f41 contrastados por conector. CloudMissionStore reutiliza LocalMissionStore, createMissionLedger, PersistentMissionOrchestrator y resume; solo cambia transporte TLS y binding independiente de rutas del runner. Rol dedicado sin administracion/membresias; CA/passfile obligatorios; config ausente/invalida bloquea. Prohibida admision/provision desde runner cloud. Sin otra cola, scheduler ni servicio.
+
+PROBADO: verify exit0, 512/512, tipos/skills/builds/API; HTML/assets/secret-scan aprobados. PostgreSQL TLS desechable 1/1: A muere tras efecto, checkpoint conservado, B excluido durante lease vivo y recupera misma ID/plan tras expiracion natural, intento2/completed sin reescribir efecto. Fail/checkpoint/complete del token antiguo rechazados mientras B tiene lease. Rol real sin DDL/DML/admision/claim general. Fixture corregido y revalidado para esperar fin de sesion A antes de liberar gate. Supervision interna APROBADA dentro de este alcance.
+
+Limites: dos procesos independientes y volumen sintetico compartido, no dos hosts cloud ni autonomia desatendida. Ninguna base alojada, credencial real, envio, merge, deploy o cambio de heartbeat; PLAN Cloud conserva cierre seguro. Git deployments de rama deshabilitados. Publicacion via conector GitHub por Git schannel sin credenciales y gh401; worktree conserva archivos sobre HEAD local main, PR remota apilada sobre PR230. Contrato, reproduccion, rollback y siguiente puerta: docs/CLOUD_LEDGER_P0B_20261112.md. CI por SHA final en la PR. Siguiente: revisar PR230/P0B y definir ensayo cloud aislado con persistencia de artefactos/coste/permisos explicitos antes de activar.
+
+
+## 2026-11-12 - PR231 reconciliada con main tras PR230
+
+PR230 fusionada como 9d6bbdb5f7c7200fe62463cd904314edbb9f86f0. Resolucion en clon aislado; SHA previo de PR231 72af6a0f520e6607e84ddce488a216888c7f9b2c conservado como padre, sin rebase ni force push. Conflictos limitados a continuidad y lista Vercel; funcionalidad P0B preservada. Git deployments de main deshabilitados para respetar la orden de fusionar sin despliegue. Cambios locales originales intactos. Validacion y CI del SHA final se registran en PR231; fusion condicionada a pruebas aprobadas. Sin activacion cloud, migracion alojada ni envios.

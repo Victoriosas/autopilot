@@ -1,8 +1,8 @@
 import { readFile, lstat } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { readLocalConfig } from '../src/autopilot/localMissionConfig';
-import { LocalMissionStore, missionId, admissionRequest } from '../src/autopilot/localMissionStore';
+import { readMissionHost } from '../src/autopilot/cloudMissionStore';
+import { missionId, admissionRequest } from '../src/autopilot/localMissionStore';
 import { ManagedProcesses } from '../src/autopilot/managedProcesses';
 import { createMissionLedger, PersistentMissionOrchestrator } from '../src/autopilot/missionRuntime';
 import { DeterministicSyntheticPlanner } from '../src/autopilot/missionPlanner';
@@ -23,8 +23,9 @@ async function main() {
   }
   const expected = command === 'init' ? ['--config'] : command === 'admit' ? ['--config','--request'] : ['--config','--id'];
   if (JSON.stringify(Object.keys(args).sort()) !== JSON.stringify(expected.sort())) throw Error('invalid_arguments');
-  const config = await readLocalConfig(args['--config']);
-  const controls = new ManagedProcesses(); const control = new LocalMissionStore(config, controls);
+  const host = await readMissionHost(args['--config']);
+  const config = host.config;
+  const controls = new ManagedProcesses(); const control = host.store(controls);
   try {
     if (command === 'init') { await control.initialize(); emit({ event:'initialized', scope:'local_synthetic_lab' }); return; }
     if (command === 'admit') {
@@ -50,8 +51,8 @@ async function main() {
     const report = (event: Record<string, unknown>) => { if (event.event==='claimed') claimed=true; emit({ ...event,runId,missionId:id }); };
     const processes = new ManagedProcesses(event => report(event));
     const controller = new AbortController(); const monitorStop = new AbortController();
-    const monitorProcesses = new ManagedProcesses(); const monitorStore = new LocalMissionStore(config,monitorProcesses,monitorStop.signal);
-    const store = new LocalMissionStore(config,processes,controller.signal,report);
+    const monitorProcesses = new ManagedProcesses(); const monitorStore = host.store(monitorProcesses,monitorStop.signal);
+    const store = host.store(processes,controller.signal,report);
     const timer = setTimeout(()=>controller.abort(Error('run_timeout')),config.deadlineMs);
     const interrupted=()=>controller.abort(Error('operator_interrupted'));
     process.once('SIGINT',interrupted); process.once('SIGTERM',interrupted);

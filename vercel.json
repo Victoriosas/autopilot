@@ -101,6 +101,8 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "main": false,
+      "codex/cloud-ledger-adapter-20261112": false,
       "codex/autonomy-continuity-20261112": false,
       "codex/self-development-f1-20261110": false,
       "codex/self-development-20261110": false,

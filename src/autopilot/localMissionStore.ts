@@ -19,13 +19,13 @@ export interface LocalMissionStatus {
   checkpoint: Record<string, unknown>; plans: unknown[]; audit: unknown[];
 }
 export class LocalMissionStore {
-  readonly binding: string;
+  get binding(): string { return hostBinding(this.config); }
   private claim?: { id: string; token: string };
-  constructor(readonly config: LocalMissionConfig, private readonly processes: ManagedProcesses,
-    private readonly signal?: AbortSignal, private readonly report: (event: Record<string, unknown>) => void = () => {}) {
-    validateLocalConfig(config); this.binding = hostBinding(config);
+  constructor(readonly config: LocalMissionConfig, protected readonly processes: ManagedProcesses,
+    protected readonly signal?: AbortSignal, private readonly report: (event: Record<string, unknown>) => void = () => {}) {
+    validateLocalConfig(config);
   }
-  private async execute(query: string, operation: string): Promise<string> {
+  protected async execute(query: string, operation: string): Promise<string> {
     const d = this.config.database;
     const prelude = `set statement_timeout=${this.config.queryTimeoutMs}; set lock_timeout=${this.config.queryTimeoutMs};
       set idle_in_transaction_session_timeout=${this.config.queryTimeoutMs}; set request.jwt.claim.role='service_role';`;
