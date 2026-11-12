@@ -4,10 +4,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
+import express from 'express';
+import { once } from 'node:events';
+import { registerConsultationMaterialAdmin } from '../src/storefront/consultationMaterialAdminRouter';
 import { createClient } from '@supabase/supabase-js';
 import { persistConsultationMaterial } from '../src/storefront/consultationMaterial';
 import { composeGroundedConsultation } from '../src/storefront/consultationGroundedComposer';
 import { createMaterialStore } from '../src/storefront/consultationMaterialStore';
+import { createMaterialAdminStore } from '../src/storefront/consultationMaterialAdmin';
 import type { ConsultationInput } from '../src/storefront/consultationRequest';
 assert.equal(process.env.BEAUTY_SYNTHETIC_SUPABASE,'true');
 const config=JSON.parse(readFileSync(process.env.SUPABASE_LOCAL_STATUS_FILE!,'utf8'));
@@ -35,6 +39,22 @@ test('Cycle C real local JWT admin/customer and service restrictions', {timeout:
   const results=await Promise.all(Array.from({length:4},()=>persistConsultationMaterial(input,draft,operation,{token:actors.admin.token})));
   assert.ok(results.every(result=>result.state==='persisted'));assert.equal(new Set(results.map(result=>(result as any).id)).size,1);
   const store=createMaterialStore(),id=(results[0] as any).id;
+  const adminStore=createMaterialAdminStore();
+  const snapshot=await adminStore.snapshot(actors.admin.token,input.id);assert.equal(snapshot.length,1);assert.equal(snapshot[0].available,true);
+  for(const token of [actors.customer.token,'invalid-synthetic-token'])await assert.rejects(adminStore.snapshot(token,input.id));
+  for(const db of [anon,service])assert.ok((await db.rpc('consultation_material_admin_snapshot',{p_request:input.id})).error);
+  const resultsD=await Promise.all(['reviewed','rejected'].map(state=>adminStore.review(actors.admin.token,input.id,id,snapshot[0].updated_at,state)));
+  assert.deepEqual(resultsD.sort(),[false,true]);
+  const app=express(),router=express.Router();registerConsultationMaterialAdmin(router,()=> 'https://victoriosas.online');app.use(router);
+  const server=app.listen(0,'127.0.0.1');await once(server,'listening');
+  const url=`http://127.0.0.1:${(server.address() as any).port}/admin/${input.id}/material`;
+  try {
+   assert.equal((await fetch(url)).status,401);
+   assert.equal((await fetch(url,{headers:{authorization:'Bearer invalid-synthetic-token'}})).status,401);
+   assert.equal((await fetch(url,{headers:{authorization:'Bearer '+actors.customer.token}})).status,403);
+   const response=await fetch(url,{headers:{authorization:'Bearer '+actors.admin.token}});assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');
+   assert.equal((await response.json()).rows[0].delivery_decision,'no_send');
+  } finally {server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}
   assert.equal((await store.list(actors.admin.token,input.id)).length,1);assert.deepEqual(await store.list(actors.customer.token,input.id),[]);
   assert.equal((await persistConsultationMaterial(input,draft,randomUUID(),{token:actors.customer.token})).state,'unavailable');
   assert.equal((await persistConsultationMaterial(input,draft,randomUUID(),{token:'invalid-synthetic-token'})).state,'unavailable');
@@ -45,8 +65,9 @@ test('Cycle C real local JWT admin/customer and service restrictions', {timeout:
   assert.equal(await store.review(actors.admin.token,id,'reviewed'),true);
   assert.equal(((await store.list(actors.admin.token,input.id))[0] as any).delivery_decision,'no_send');
   assert.equal(await store.review(actors.admin.token,id,'revoked'),true);assert.deepEqual(await store.list(actors.admin.token,input.id),[]);
+  const revoked=(await adminStore.snapshot(actors.admin.token,input.id))[0];assert.equal(revoked.metadata,null);assert.equal(revoked.available,false);assert.equal(revoked.review_state,'revoked');
   assert.equal((await persistConsultationMaterial(input,draft,operation,{token:actors.admin.token})).state,'unavailable');
-  await store.purge(actors.admin.token);
+  assert.equal(await adminStore.purge(actors.admin.token,input.id),1);assert.deepEqual(await adminStore.snapshot(actors.admin.token,input.id),[]);
   assert.equal((await persistConsultationMaterial(input,draft,operation,{token:actors.admin.token})).state,'unavailable');
  }finally{
   try{ownerSql(`delete from public.consultation_requests where id='${input.id}'`);}finally{

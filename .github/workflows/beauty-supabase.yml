@@ -34,6 +34,7 @@ jobs:
           cp tests/supabase-managed-rls-prerequisite.sql "$fixture/supabase/migrations/20260901000002_managed_rls.sql"
           cp supabase/migrations/*.sql "$fixture/supabase/migrations/"
           cp supabase/staged/consultation_material_requests_v1.sql "$fixture/supabase/migrations/20261111000000_material_requests_staged.sql"
+          cp supabase/staged/consultation_material_admin_v1.sql "$fixture/supabase/migrations/20261112000000_material_admin_staged.sql"
       - name: Start real local Auth and PostgREST
         run: |
           if ! supabase start --workdir "$RUNNER_TEMP/victoriosa-beauty-ci" -x studio,imgproxy,realtime,storage-api,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit > "$RUNNER_TEMP/beauty-start.log" 2>&1; then
@@ -62,6 +63,7 @@ jobs:
         run: |
           CONSULTATION_PLAYWRIGHT_MODULE="file://$RUNNER_TEMP/consultation-browser/node_modules/playwright/index.mjs" node --import tsx scripts/test-consultation-form-browser.ts
           CONSULTATION_PLAYWRIGHT_MODULE="file://$RUNNER_TEMP/consultation-browser/node_modules/playwright/index.mjs" node --import tsx scripts/test-consultation-lab-browser.ts
+          CONSULTATION_PLAYWRIGHT_MODULE="file://$RUNNER_TEMP/consultation-browser/node_modules/playwright/index.mjs" node --import tsx scripts/test-consultation-material-browser.ts
         env:
           BEAUTY_SYNTHETIC_SUPABASE: 'true'
           SUPABASE_LOCAL_STATUS_FILE: ${{ runner.temp }}/beauty-status.json

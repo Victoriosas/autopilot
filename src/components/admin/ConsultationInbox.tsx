@@ -3,6 +3,7 @@ import { apiFetch } from '../../lib/api';
 import type { ConsultationRecord } from '../../storefront/consultationSupabase';
 import { serviceGroups, serviceSlug } from '../public/serviceDirectory';
 import { ConsultationReadControl } from './ConsultationReadControl';
+import { ConsultationMaterialPanel } from './ConsultationMaterialPanel';
 import { ConsultationIntelligencePanel } from './ConsultationIntelligencePanel';
 import { ConsultationIntelligenceReport } from './ConsultationIntelligenceReport';
 import { consultationReplyStatus } from '../../storefront/consultationReplyStatus';
@@ -191,6 +192,7 @@ export function ConsultationInbox() {
       </div>}
       {replyState[row.id] && <p role="status">{replyState[row.id]}</p>}
       <ConsultationIntelligencePanel requestId={row.id} enabled={intelligenceEnabled}/>
+      <ConsultationMaterialPanel requestId={row.id}/>
     </li>)}</ul>
     {rows.length > 0 && <div className="flex gap-4"><button disabled={busy || offset === 0} onClick={() => void load(Math.max(0, offset - 50))}>Anterior</button><button disabled={busy || rows.length < 50} onClick={() => void load(offset + 50)}>Siguiente</button></div>}
     </>}

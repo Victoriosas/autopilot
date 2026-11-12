@@ -38,6 +38,7 @@ test('Cycle C real PostgreSQL migration, RLS, concurrency, consent, retention an
   const migration = readFileSync('supabase/staged/consultation_material_requests_v1.sql','utf8');
   const rollback = readFileSync('supabase/staged/rollback/consultation_material_requests_v1.sql','utf8');
   await sql(migration);
+  await sql(readFileSync('supabase/staged/consultation_material_admin_v1.sql','utf8'));
   const value = input(), draft = composeGroundedConsultation(value), operation = randomUUID();
   await admit(value);
   let id = '';
@@ -51,6 +52,32 @@ test('Cycle C real PostgreSQL migration, RLS, concurrency, consent, retention an
     const saved = rows[0] as any; assert.equal(saved.payload.sources.length,17); assert.equal(saved.consent_state,'granted');
     assert.equal(saved.delivery_decision,'no_send'); assert.ok(!JSON.stringify(saved.payload).includes(value.fullName));
     assert.ok(Date.parse(saved.expires_at) <= Date.now()+7*86400000);
+  });
+  await t.test('Cycle D minimum snapshot, CAS concurrency, revoked/expired redaction and scoped purge', async () => {
+    const next=input();await admit(next);const op=randomUUID();
+    const result=await persistConsultationMaterial(next,composeGroundedConsultation(next),op,{token:admin,store});assert.equal(result.state,'persisted');
+    const snapshot=async()=>JSON.parse(await sql(`${actor()}select consultation_material_admin_snapshot('${next.id}')`));
+    const row=(await snapshot())[0];assert.equal(row.available,true);assert.equal(row.metadata.sources.length,17);
+    assert.ok(!JSON.stringify(row).includes(next.fullName));assert.ok(!JSON.stringify(row).includes('parent_fingerprint'));
+    for(const call of [`consultation_material_admin_snapshot('${next.id}')`,`consultation_material_admin_review('${next.id}','${row.id}','${row.updated_at}','revoked')`,`consultation_material_admin_purge('${next.id}')`]) {
+      await assert.rejects(sql(`${actor(customer)}select ${call}`),/ADMIN_REQUIRED/);
+      for(const role of ['anon','service_role'])await assert.rejects(sql(`set role ${role};select ${call}`),/permission denied/);
+    }
+    const compare=(state:string)=>sql(`${actor()}select consultation_material_admin_review('${next.id}','${row.id}','${row.updated_at}','${state}')`);
+    const results=await Promise.all([compare('reviewed'),compare('rejected')]);assert.deepEqual(results.sort(),['f','t']);
+    assert.equal((await snapshot())[0].events.length,2);
+    assert.equal(await sql(`${actor()}select consultation_material_admin_review('${value.id}','${row.id}','${row.updated_at}','revoked')`),'f');
+    const current=(await snapshot())[0];
+    assert.equal(await sql(`${actor()}select consultation_material_admin_review('${next.id}','${row.id}','${current.updated_at}','revoked')`),'t');
+    const revoked=(await snapshot())[0];assert.equal(revoked.available,false);assert.equal(revoked.metadata,null);assert.equal(revoked.review_state,'revoked');assert.equal(revoked.events.length,3);
+    assert.equal(await sql(`${actor()}select consultation_material_admin_purge('${next.id}')`),'1');assert.deepEqual(await snapshot(),[]);
+    assert.equal((await store.list(admin,value.id)).length,1,'other parent preserved');
+    assert.equal((await persistConsultationMaterial(next,composeGroundedConsultation(next),op,{token:admin,store})).state,'unavailable');
+    const newOperation=randomUUID();const expiring=await persistConsultationMaterial(next,composeGroundedConsultation(next),newOperation,{token:admin,store});assert.equal(expiring.state,'persisted');
+    await sql(`update consultation_material_requests set expires_at=now()-interval '1 second' where request_id='${next.id}'`);
+    assert.equal((await snapshot())[0].metadata,null);assert.equal((await snapshot())[0].available,false);
+    assert.equal(await sql(`${actor()}select consultation_material_admin_purge('${next.id}')`),'1');
+    await sql(`delete from consultation_requests where id='${next.id}'`);
   });
   await t.test('published general policies and authorized context expiry are also persisted safely', async () => {
     const next=input('Contame sobre Victoriosas, ¿me mandan información por correo?');await admit(next);
@@ -152,7 +179,7 @@ test('Cycle C real PostgreSQL migration, RLS, concurrency, consent, retention an
     assert.deepEqual(result,{state:'unavailable',delivery_decision:'no_send'});
   });
   await t.test('rollback removes only C objects, preserves parent, and reinstallation works', async () => {
-    const before = await sql('select count(*) from consultation_requests');await sql(rollback);
+    const before = await sql('select count(*) from consultation_requests');await sql(readFileSync('supabase/staged/rollback/consultation_material_admin_v1.sql','utf8'));await sql(rollback);
     assert.equal(await sql("select to_regclass('public.consultation_material_requests') is null"),'t');
     assert.equal(await sql('select count(*) from consultation_requests'),before);
     await sql(migration);assert.equal(await sql('select count(*) from consultation_material_requests'),'0');await sql(rollback);
