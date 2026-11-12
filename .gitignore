@@ -13,3 +13,5 @@ output/consultation-agents-eval/
 
 # Reproducible temporary Supabase API bundle
 /output/supabase-api/
+/output/cycle-d/
+/.git-preservation-*.bundle

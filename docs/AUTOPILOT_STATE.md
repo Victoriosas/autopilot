@@ -1344,3 +1344,11 @@ Evidencia/comandos/limites: docs/SELF_DEVELOPMENT_F1_20261110.md y docs/SELF_DEV
 **Retención y pruebas:** siete días como máximo lógico, acotados por padre/contexto; revocación terminal borra payload; purga controlada y FK eliminan contenido/eventos, claves mínimas hasta retención del padre para impedir resurrección por replay. Migración/rollback/reinstalación en PostgreSQL desechable; CI agrega prueba Auth/PostgREST real local. Resultados, SHA final y estado de escritores al cierre en la PR. [Contrato, reproducción y checkpoint](CONSULTATION_MATERIAL_PERSISTENCE_V1.md).
 
 **Límites:** nada instalado en producción, sin endpoint/bandeja/modelos/envíos ni scheduler. No modificar #225/#226 ni ORD-204G. Siguiente acción: revisar CI por SHA y preparar integración D solo después de revisión humana, conservando permisos de envío separados.
+
+## Ciclo D · Administración de material supervisado (2026-11-12)
+
+Worktree exclusivo consultation-admin-d-20261111, rama codex/consultation-admin-integration-v1. HEAD inicial 1908a3f preservado en bundle local; #225/#226/#227 verificadas MERGED. Main 30e9f41 reconciliado sin conflictos en 19e6483, sin alterar otros worktrees. F1 bandeja fiable / preparación F2, N2 técnico.
+
+Panel administrativo de material dentro de la bandeja existente: estados, fuentes/versiones, consentimiento, expiración, auditoría mínima, revisión CAS, revocación terminal y purga acotada al expediente. JWT llamador/clave pública y admin SQL, no service role; no_send intacto. Tres RPC adicionales solo staged; no migraciones activas ni SQL alojado. Red y sesión fallan cerradas, timeout y cancelación; sin reintentos ciegos.
+
+Pruebas locales: verify 508/508, focales D 2/2, PostgreSQL 18 desechable C+D 14/14; navegador React real con API/Auth sintéticos desktop y móvil táctil. Auth/PostgREST real pendiente de CI del SHA final, separado de mocks. Secret scan y diff-check correctos. Sin merge, despliegue, modelos, envíos ni scheduler. PR DRAFT sobre main porque C ya se fusionó; SHA final/checks en la entrega. Contrato, evidencia, preservación y rollback: [CONSULTATION_ADMIN_D_CHECKPOINT.md](CONSULTATION_ADMIN_D_CHECKPOINT.md).
