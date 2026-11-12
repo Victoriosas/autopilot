@@ -123,6 +123,11 @@ jobs:
         env:
           OPERATOR_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/victoriosa_mission_operator_lab
 
+      - name: Two-runner cloud ledger recovery and least privilege in disposable TLS fixture
+        run: |
+          sudo apt-get install -y postgresql openssl
+          PG_BIN="$(pg_config --bindir)" CLOUD_LEDGER_FIXTURE=1 node --import tsx --test tests/cloud-ledger-postgres.test.ts
+
       - name: Create disposable commerce database
         run: createdb -h 127.0.0.1 -p 5432 -U postgres victoriosa_checkout_test
         env:
