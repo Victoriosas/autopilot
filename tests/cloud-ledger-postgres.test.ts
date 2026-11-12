@@ -37,6 +37,19 @@ test('two isolated runner processes recover the same durable TLS ledger after re
  }
  async function command(command:string,config:string,args:string[]=[],code=0){const r=launch(command,config,args);assert.equal(await r.done,code,JSON.stringify(r.events.at(-1)));return r.events.at(-1)!;}
  async function until<T>(read:()=>T|undefined|Promise<T|undefined>,timeout=20000):Promise<T>{const end=Date.now()+timeout;while(Date.now()<end){const value=await read();if(value!==undefined)return value;await sleep(50);}throw Error('fixture_observation_timeout');}
+  async function effect(runner:ReturnType<typeof launch>,label:string){
+    try {return await until(()=>{
+      const found=runner.events.find(e=>e.event==='step_effect'&&e.stepId==='modify-v1');
+      if(found)return found;
+      if(runner.child.exitCode!==null||runner.child.signalCode!==null)throw Error('runner_closed_before_effect');
+      return undefined;
+    });}catch{
+      // Fixed metadata fields only: never log mission payloads, SQL stderr or fencing tokens.
+      const safe=(v:unknown)=>typeof v==='string'&&/^[a-z][a-z0-9_:-]{0,95}$/.test(v)?v:undefined;
+      throw Error(`fixture_${label}_effect_failed: ${JSON.stringify({exit:runner.child.exitCode,
+        events:runner.events.slice(-8).map(e=>({event:safe(e.event),code:safe(e.code),outcome:safe(e.outcome),reason:safe(e.reason),stepId:safe(e.stepId)}))})}`);
+    }
+  }
  try{
    await exec(binary('initdb'),['-D',data,'-U','postgres','-A','trust','--no-locale','--encoding=UTF8'],{env,windowsHide:true,timeout:30000});
    await exec(openssl,['req','-x509','-newkey','rsa:2048','-nodes','-keyout',key,'-out',ca,'-days','1','-subj','/CN=localhost','-addext','subjectAltName=IP:127.0.0.1,DNS:localhost'],{env,windowsHide:true,timeout:20000});
@@ -81,7 +94,7 @@ test('two isolated runner processes recover the same durable TLS ledger after re
      revoke all on function public.six_agent_checkpoint(text,text,uuid,integer,text,text,jsonb) from public;
      grant execute on function public.six_agent_checkpoint(text,text,uuid,integer,text,text,jsonb) to autopilot_cloud_runner;`);
    const runnerA=launch('resume',a,['--id',id]);
-   await until(()=>runnerA.events.find(e=>e.event==='step_effect'&&e.stepId==='modify-v1'));
+    await effect(runnerA,'runner_a');
    const status=async()=>(await command('status',b,['--id',id])).mission;
    const before=await status();assert.deepEqual(before.checkpoint.completed_steps,['prepare-v1']);
    assert.equal((await command('resume',b,['--id',id],3)).outcome,'busy');
@@ -95,7 +108,7 @@ test('two isolated runner processes recover the same durable TLS ledger after re
    const interrupted=await status();assert.equal(interrupted.checkpointVersion,before.checkpointVersion);
    await sql('update public.fixture_gate set enabled=true;');
    const runnerB=launch('resume',b,['--id',id]);
-   await until(()=>runnerB.events.find(e=>e.event==='step_effect'&&e.stepId==='modify-v1'));
+    await effect(runnerB,'runner_b');
    const replacement=await status();assert.equal(replacement.attempts,2);assert.notEqual(replacement.runId,before.runId);
    assert.equal(await sql(`set request.jwt.claim.role='service_role';select public.six_agent_fail('${id}','${token}','stale_runner');`),'f');
    assert.equal(await sql(`set request.jwt.claim.role='service_role';select public.six_agent_checkpoint('${id}','${id}','${token}',${replacement.checkpointVersion+1},'stale-write','stale-runner','{}'::jsonb);`),'f');
