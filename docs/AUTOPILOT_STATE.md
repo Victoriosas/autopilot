@@ -1365,3 +1365,16 @@ Limites: dos procesos independientes y volumen sintetico compartido, no dos host
 ## 2026-11-12 - PR231 reconciliada con main tras PR230
 
 PR230 fusionada como 9d6bbdb5f7c7200fe62463cd904314edbb9f86f0. Resolucion en clon aislado; SHA previo de PR231 72af6a0f520e6607e84ddce488a216888c7f9b2c conservado como padre, sin rebase ni force push. Conflictos limitados a continuidad y lista Vercel; funcionalidad P0B preservada. Git deployments de main deshabilitados para respetar la orden de fusionar sin despliegue. Cambios locales originales intactos. Validacion y CI del SHA final se registran en PR231; fusion condicionada a pruebas aprobadas. Sin activacion cloud, migracion alojada ni envios.
+
+
+## 2026-11-12 - P0C hosted ledger preparado, sin mutacion alojada
+
+Base main a63ed47 (P0B/PR231) contrastada por conector; rama codex/hosted-ledger-20261112 limpia antes del cambio. Proyecto autorizado exclusivamente juyowvmtluxfetgkckjd, postgres/public vacio segun propietario; jfjzpwlrhzqbcrvqxhzf nunca contactado. Sin consulta alojada ni secretos recuperados/configurados.
+
+Preparado: compatibilidad postgres fijada a host/puerto autorizado; bootstrap staged transaccional con fuentes P0B, auth existente preservado, esquema vacio, binding y rol dedicado obligatorios. RLS y retiro de grants API por defecto. PLAN Cloud conserva cierre automatico y agrega modos manuales status/resume con main/SHA revisado/environment protegido/secrets en paso runtime. Sin provision ni admision remota desde workflow.
+
+PROBADO local: verify 515/515, tipos/skills/builds/API; TLS P0B+P0C 1/1 sin omitir, 69s: intento2/completed, efecto reconciliado, tres escrituras obsoletas rechazadas; postgres sin superuser, auth preservado, rollback por esquema ocupado, replay bloqueado, ACL/runtime negativos. HTML/assets/secret-scan/YAML/diff aprobados. Bootstrap PG18 y ensamblador corregidos y revalidados; cluster temporal detenido/eliminado. Supervision interna APROBADA para preparar candidato, revision humana seguridad/migracion pendiente.
+
+Runbook: docs/HOSTED_LEDGER_P0C_20261112.md; checkpoint OPENCODE y CODEX_CONTINUATION actualizados. Sin SQL alojado, secrets, dispatch, merge, deploy, produccion, envios, gasto ni scheduler nuevo. Git deployments rama deshabilitados antes de publicar por conector GitHub (Git schannel/gh no autenticados). PR borrador y CI por SHA se contrastan al cierre. Siguiente: revisar seguridad/migracion y CI antes de provision autorizada; almacenamiento durable de artefactos entre hosts pendiente.
+
+PR232 inicial 17b90d2: validate aprobado; postgres agoto 3s en primer checkpoint P0B antes de P0C. Ajuste solo de fixture: jit=off y consulta 5s; runner alojado sigue 3s. Causa interna exacta no demostrada; CI final pendiente. Worktree alineado mediante fetch OpenSSL y comparacion exacta de arbol, sin reset/force push.

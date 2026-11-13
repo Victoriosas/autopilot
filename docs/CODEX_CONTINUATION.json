@@ -1,73 +1,77 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-12T23:18:00.073Z",
-  "execution_id": "codex-cloud-ledger-p0b-20261112",
+  "updated_at": "2026-11-13T01:16:00Z",
+  "execution_id": "codex-hosted-ledger-p0c-20261112",
   "repository": {
-    "branch": "codex/cloud-ledger-adapter-20261112",
-    "head_sha": "678e41a8c98953ff0de5be797913d1cda6660936",
-    "worktree": "C:/autopilot-worktrees/cloud-ledger-adapter-20261112",
-    "note": "SHA remoto de implementacion P0B, padre del ajuste documental. HEAD local permanece en main 30e9f41 con archivos conservados; publicacion por conector."
+    "branch": "codex/hosted-ledger-20261112",
+    "head_sha": "17b90d2a96ef08eefea297490e4a29a18ae654f0",
+    "worktree": "C:/autopilot-worktrees/hosted-ledger-20261112",
+    "note": "Implementacion inicial PR232; el commit de este checkpoint agrega ajuste de fixture tras timeout CI P0B. Worktree alineado por fetch OpenSSL; CI final en PR."
   },
   "current_order": {
-    "id": "ORD-P0B-CLOUD-LEDGER-20261112",
+    "id": "ORD-P0C-HOSTED-LEDGER-20261112",
     "phase": "F0",
-    "objective": "Adaptador durable de ledger y recuperacion entre runners para misiones sinteticas aisladas",
+    "objective": "Preparar compatibilidad postgres, bootstrap aislado staged y runner manual sin mutacion alojada",
     "status": "completed",
-    "last_verified_step": "verify 512/512, TLS PostgreSQL desechable 1/1, token antiguo rechazado durante lease B, privilegios negativos, sin activar cloud"
+    "last_verified_step": "verify 515/515; TLS P0B+P0C 1/1 sin omitir, provision sin superuser/auth preservado/ACL negativas; sin ejecutar alojado"
   },
   "completed_operations": [
     {
-      "operation": "Reutilizar transporte e interfaz PR230 sin duplicar scheduler",
-      "detection": "CloudMissionStore hereda LocalMissionStore y usa la misma CLI/orquestador/RPC"
+      "operation": "Compatibilidad limitada al proyecto autorizado",
+      "detection": "cloudMissionStore.test.ts rechaza host existente, otro host, puerto y nombre ajenos"
     },
     {
-      "operation": "Recuperar misma mision tras SIGKILL real",
-      "detection": "tests/cloud-ledger-postgres.test.ts: dos runs, intento 2 completed, mtime conservado y token obsoleto rechazado"
+      "operation": "Probar bootstrap y recuperacion en fixture TLS desechable",
+      "detection": "cloud-ledger-postgres.test.ts: P0B intento2 y P0C postgres no superuser; cluster eliminado"
     }
   ],
   "evidence_refs": [
-    "docs/CLOUD_LEDGER_P0B_20261112.md",
+    "docs/HOSTED_LEDGER_P0C_20261112.md",
+    "docs/OPENCODE_CHECKPOINT.md",
     "docs/AUTOPILOT_STATE.md",
     "tests/cloud-ledger-postgres.test.ts",
-    "https://github.com/Victoriosas/autopilot/pull/230",
-    "https://github.com/Victoriosas/autopilot/pull/231"
+    "supabase/staged/hosted_synthetic_ledger_p0c.sql",
+    "https://github.com/Victoriosas/autopilot/pull/232"
   ],
   "blockers": [
-    "No hay host cloud ni persistencia remota de artefactos autorizados; dos procesos de fixture no acreditan dos maquinas cloud"
+    "Revision humana de seguridad/migracion antes de mutacion alojada",
+    "Secrets y environment protegido no configurados; sin provision/admision remota",
+    "Persistencia de artefactos entre hosts no acreditada"
   ],
-  "next_order_id": "ORD-P0B-REVIEW-20261112",
+  "next_order_id": "ORD-P0C-REVIEW-20261112",
   "next_order": {
-    "id": "ORD-P0B-REVIEW-20261112",
+    "id": "ORD-P0C-REVIEW-20261112",
     "phase": "F0",
-    "objective": "Revisar PR230/P0B y CI por SHA final antes de disenar ensayo cloud aislado",
+    "objective": "Revisar PR/CI y seguridad/migracion antes de provision alojada",
     "status": "pending_review",
     "executor": "Codex",
-    "environment": "GitHub en lectura, fixture desechable si hay cambios",
+    "environment": "GitHub en lectura; Supabase alojado sin mutaciones",
     "dependencies": [
-      "Revision humana de PR230/P0B; identidad, persistencia de artefactos y coste para eventual ensayo cloud"
+      "CI validate/postgres del SHA final",
+      "Revision humana de SQL ensamblado y permisos"
     ],
     "permissions": {
       "status": "authorized",
-      "scope": "Revision y pruebas sinteticas; sin merge, deploy, base alojada, credenciales reales ni envios"
+      "scope": "Revision y preparacion local; nunca tocar jfjzpwlrhzqbcrvqxhzf; sin mutacion alojada hasta revision/aprobacion especifica"
     },
     "acceptance_criteria": [
-      "validate/postgres contrastados por SHA",
-      "Sin duplicar scheduler ni activar PLAN Cloud",
-      "Separar dos procesos de dos hosts cloud"
+      "CI del SHA final verificada",
+      "Revision seguridad/migracion documentada",
+      "Credenciales solo GitHub Secrets, host fijado y environment protegido antes de operar"
     ],
     "idempotency": {
-      "detection": "Consultar PR/rama existentes antes de publicar otra propuesta"
+      "detection": "Consultar PR/rama y estado aislado antes de operar; bootstrap rechaza public ocupado"
     },
-    "next_action": "Revisar la PR draft; no proveer secretos ni activar heartbeat automaticamente"
+    "next_action": "Revisar PR borrador; no configurar secretos/variable ni despachar runner automaticamente"
   },
   "resumption": {
     "status": "unverified",
-    "mechanism": "PLAN Cloud mantiene cierre seguro; fixture acredita recuperacion durable entre procesos, no runtime desatendido"
+    "mechanism": "PLAN Cloud mantiene cierre seguro; modos manuales preparados, ninguno ejecutado alojado"
   },
-  "resume_instructions": "Leer AGENTS, PROJECT_DIRECTION, este checkpoint y PR230/P0B actuales. Preservar cambios locales sobre main; recuperar rama remota por conector si Git/gh siguen sin autenticar. No repetir pruebas validas sin cambio. No activar cloud por existencia del adaptador.",
+  "resume_instructions": "Leer AGENTS, direccion, checkpoint P0C, PR y CI por SHA. HEAD base local y commit remoto pueden diferir por conector; preservar diff. Nunca tocar proyecto existente. No activar hosted por existencia del codigo.",
   "supervision": {
     "verdict": "APROBADO",
-    "scope": "Transporte y recuperacion sintetica local con TLS",
-    "evidence": "512/512 + 1/1; exclusion, fencing durante lease B y privilegios reales negativos; sin afirmar operacion alojada"
+    "scope": "Candidato local para revision, no autorizacion de SQL alojado",
+    "evidence": "515/515 + TLS P0B/P0C 1/1; auth preservado, rollback por public ocupado, replay y privilegios negativos. Revision humana pendiente."
   }
 }

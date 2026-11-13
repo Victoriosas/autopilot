@@ -1,8 +1,18 @@
-# Continuidad OpenCode · 31/10/2026
-Objetivo: motor local de Victoriosas con economía de tokens obligatoria.
-Código: tools/opencode-workstation; política TOKEN_POLICY.md; directivas docs/OPENCODE_DIRECTIVES.md.
-Base previa8d7e3c3; comprobar HEAD/diff y CI actual. No releer todo el historial.
-OAuth camelRun autenticado y MCP conectado; ensayo nativo exit0: camelrun_list_agents devolvió4, sin ejecutar agentes remotos. Flag --camelrun exige repositorio Victoriosas y perfil operaciones; solo inventario permitido y carga bajo demanda. Evidencia camelrun-smoke.json.
-Resend autenticado tras consentimiento explicito Full access. --resend solo operaciones en Victoriosas: herramienta resend_list-domains; ensayo exit0 devuelve0dominios. Conciliar equipo/cuenta con el conector anterior antes de correo; sin crear dominios/DNS/envios.
-Pruebas npm test incluyen límites de rol/repositorio/permiso; instalación actualizada con backup. Config por defecto mantiene MCP opcionales apagados.
-PR156 web independiente:382/382, builds y navegador comprobados; consultar CI final. Sin producción, SQL alojado, DNS, pagos ni envíos. Cuenta Vercel bloqueada. Sin scheduler nuevo.
+# Continuidad P0C hosted ledger - 12/11/2026
+Codex principal; F0/N2 soporte F1-F4. Worktree hosted-ledger-20261112,
+rama codex/hosted-ledger-20261112 desde main a63ed47 (P0B/PR231), contrastado por conector.
+Runbook: docs/HOSTED_LEDGER_P0C_20261112.md; orden: docs/CODEX_CONTINUATION.json.
+Preparado: postgres solo db.juyowvmtluxfetgkckjd.supabase.co:5432; proyecto existente prohibido.
+Bootstrap staged transaccional desde SQL existente, public vacio, auth preservado,
+RLS y ACL restringidos. PLAN Cloud reutilizado: hosted-status/resume manuales, main,
+SHA revisado y environment protegido; secrets solo en paso runtime. Automatico blocked.
+PROBADO local: verify 515/515, tipos/skills/builds/API; TLS P0B+P0C 1/1 sin omitir,
+69s, recuperacion intento2, fencing, postgres sin superuser, auth/ACL/negativos.
+HTML/assets, secrets, YAML, diffcheck; runner sin configuracion bloqueado.
+Cluster temporal detenido/eliminado. Revision interna local aprobada; humana pendiente.
+No SQL alojado, secrets configurados, dispatch, admision remota, merge, app deploy,
+produccion, envios, servicio pago ni scheduler nuevo. Git deployments rama bloqueados.
+PR232 publicada por conector; worktree alineado por fetch OpenSSL, sin force push.
+CI inicial: validate PASS; postgres timeout P0B. Fixture JIT off/5s; CI final pendiente.
+Revisar CI por SHA y seguridad/migracion antes de
+habilitar credenciales o ejecutar runbook. Artefactos entre hosts aun efimeros.
