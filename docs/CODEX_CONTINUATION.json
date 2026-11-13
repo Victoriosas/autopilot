@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-13T01:05:00Z",
+  "updated_at": "2026-11-13T01:16:00Z",
   "execution_id": "codex-hosted-ledger-p0c-20261112",
   "repository": {
     "branch": "codex/hosted-ledger-20261112",
-    "head_sha": "a63ed47a3b79b3ca109fdaba30ecf77f46a37fc2",
+    "head_sha": "17b90d2a96ef08eefea297490e4a29a18ae654f0",
     "worktree": "C:/autopilot-worktrees/hosted-ledger-20261112",
-    "note": "Base main verificada. Commit de esta propuesta y CI deben contrastarse en PR; publicacion por conector por Git/gh sin autenticacion."
+    "note": "Implementacion inicial PR232; el commit de este checkpoint agrega ajuste de fixture tras timeout CI P0B. Worktree alineado por fetch OpenSSL; CI final en PR."
   },
   "current_order": {
     "id": "ORD-P0C-HOSTED-LEDGER-20261112",
@@ -30,7 +30,8 @@
     "docs/OPENCODE_CHECKPOINT.md",
     "docs/AUTOPILOT_STATE.md",
     "tests/cloud-ledger-postgres.test.ts",
-    "supabase/staged/hosted_synthetic_ledger_p0c.sql"
+    "supabase/staged/hosted_synthetic_ledger_p0c.sql",
+    "https://github.com/Victoriosas/autopilot/pull/232"
   ],
   "blockers": [
     "Revision humana de seguridad/migracion antes de mutacion alojada",

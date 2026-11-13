@@ -63,7 +63,8 @@ test('two isolated runner processes recover the same durable TLS ledger after re
    await chmod(key,0o600);
    await writeFile(path.join(data,'pg_hba.conf'),'hostssl all autopilot_cloud_runner 127.0.0.1/32 scram-sha-256\nhost all autopilot_cloud_runner 127.0.0.1/32 reject\nhost all postgres 127.0.0.1/32 trust\nhost all fixture_owner 127.0.0.1/32 trust\n');
    const quote=(v:string)=>v.replaceAll('\\','/').replaceAll("'","''");
-   await writeFile(path.join(data,'postgresql.auto.conf'),`listen_addresses='127.0.0.1'\nport=${port}\nunix_socket_directories='${quote(root)}'\nssl=on\nssl_cert_file='${quote(ca)}'\nssl_key_file='${quote(key)}'\npassword_encryption='scram-sha-256'\n`);
+   // Keep PostgreSQL JIT compilation out of this bounded correctness fixture on small CI CPUs.
+   await writeFile(path.join(data,'postgresql.auto.conf'),`listen_addresses='127.0.0.1'\nport=${port}\nunix_socket_directories='${quote(root)}'\nssl=on\nssl_cert_file='${quote(ca)}'\nssl_key_file='${quote(key)}'\npassword_encryption='scram-sha-256'\njit=off\n`);
    try {
      await exec(binary('pg_ctl'),['-D',data,'-l',path.join(root,'postgres.log'),'-w','start'],{env,windowsHide:true,timeout:30000});started=true;
    } catch {
@@ -81,7 +82,7 @@ test('two isolated runner processes recover the same durable TLS ledger after re
    const c:CloudMissionConfig={version:1,mode:'cloud_synthetic_lab',ledgerId:'synthetic-cloud-recovery',
      database:{host:'127.0.0.1',port,name:'victoriosa_mission_operator_lab',user:'autopilot_cloud_runner',sslRootCert:ca,passFile},
      resources:{repository:repo,worktreeRoot:work,baseSha:(await git(['rev-parse','HEAD'])).stdout.trim()},
-     permissions:{admit:false,execute:true,cancel:true},leaseSeconds:20,deadlineMs:18000,queryTimeoutMs:3000};
+     permissions:{admit:false,execute:true,cancel:true},leaseSeconds:20,deadlineMs:18000,queryTimeoutMs:5000};
    const bootstrap={...localCloudResources(c),database:{...localCloudResources(c).database,user:'postgres'},permissions:{admit:true,execute:true,cancel:true}};
    const oldPsql=process.env.PSQL_PATH;process.env.PSQL_PATH=binary('psql');
    try {await new LocalMissionStore(bootstrap,processes).initialize();}finally{if(oldPsql===undefined)delete process.env.PSQL_PATH;else process.env.PSQL_PATH=oldPsql;}

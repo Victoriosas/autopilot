@@ -144,6 +144,10 @@ Veredicto interno: APROBADO solo para preparar/revisar el candidato local;
 revisión humana de seguridad/migración y ejecución alojada PENDIENTES.
 Los ensayos iniciales detectaron cierre de stdin en negativos, sustitución de `$$`
 al ensamblar y protección del rol bootstrap en PG18; corregidos y revalidados.
+Primera CI: validate aprobado; fixture P0B agotó 3 s en el primer checkpoint,
+antes de P0C. Se desactiva JIT y se usa el máximo permitido de 5 s solo en el
+clúster/configuración desechables; el runner alojado conserva 3 s. CI posterior
+debe comprobarse por SHA en la PR, sin asumir la causa del timeout como demostrada.
 
 Rollback antes de ejecutar: cerrar/revertir PR, mantener variable ausente y secretos
 sin configurar. Después de eventual provisión autorizada: retirar variable/permiso
