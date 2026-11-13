@@ -10,7 +10,11 @@ on:
         type: choice
         required: true
         default: inventory
-        options: [inventory, codex]
+        options: [inventory, codex, hosted-status, hosted-resume]
+      mission_id:
+        description: 'ID synthetic previamente admitida; solo modos hosted'
+        type: string
+        default: ''
   pull_request:
     paths:
       - '.github/workflows/plan-cloud.yml'
@@ -59,7 +63,7 @@ jobs:
           path: continuation.json
           retention-days: 14
   inventory:
-    if: ${{ github.event_name != 'workflow_run' }}
+    if: ${{ github.event_name != 'workflow_run' && inputs.mode != 'hosted-status' && inputs.mode != 'hosted-resume' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -118,3 +122,31 @@ jobs:
           path: plan-cloud-analysis.md
           if-no-files-found: warn
           retention-days: 14
+  hosted-ledger:
+    # No PR/workflow_run credentials. Exact reviewed commit AND protected environment required.
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && (inputs.mode == 'hosted-status' || inputs.mode == 'hosted-resume') && vars.P0C_HOSTED_REVIEWED_SHA == github.sha }}
+    environment: p0c-hosted-ledger
+    concurrency:
+      group: p0c-hosted-ledger
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Run isolated synthetic ledger operation
+        env:
+          P0C_RUNNER_PASSWORD: ${{ secrets.P0C_LEDGER_RUNNER_PASSWORD }}
+          P0C_CA_CERT: ${{ secrets.P0C_LEDGER_CA_CERT }}
+          P0C_REVIEWED_SHA: ${{ vars.P0C_HOSTED_REVIEWED_SHA }}
+          P0C_MISSION_ID: ${{ inputs.mission_id }}
+          P0C_ACTION: ${{ inputs.mode == 'hosted-status' && 'status' || 'resume' }}
+        run: node --import tsx scripts/hosted-ledger-runner.mjs

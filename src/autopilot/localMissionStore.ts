@@ -19,6 +19,7 @@ export interface LocalMissionStatus {
   checkpoint: Record<string, unknown>; plans: unknown[]; audit: unknown[];
 }
 export class LocalMissionStore {
+  protected get databaseName(): string { return this.config.database.name; }
   get binding(): string { return hostBinding(this.config); }
   private claim?: { id: string; token: string };
   constructor(readonly config: LocalMissionConfig, protected readonly processes: ManagedProcesses,
@@ -37,7 +38,7 @@ export class LocalMissionStore {
   }
   private async query(query: string, operation: string): Promise<string> {
     return this.execute(`do $guard$ begin
-      if current_database()<>'victoriosa_mission_operator_lab' or not exists(select 1 from public.autopilot_local_lab where binding=${literal(this.binding)})
+      if current_database()<>${literal(this.databaseName)} or not exists(select 1 from public.autopilot_local_lab where binding=${literal(this.binding)})
       then raise exception 'unbound_local_lab'; end if; end $guard$;\n${query}`, operation);
   }
   async initialize(): Promise<void> {

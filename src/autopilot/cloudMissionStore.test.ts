@@ -24,6 +24,15 @@ test('ledger binding survives runner relocation but separates seed and authoriza
  assert.notEqual(cloudBinding(a),cloudBinding({...b,ledgerId:'synthetic-other-fixture'}));
  assert.notEqual(cloudBinding(a),cloudBinding({...b,resources:{...b.resources,baseSha:'b'.repeat(40)}}));
 });
+
+test('postgres transport is pinned to the authorized isolated Supabase project',()=>{
+ const c=cloudConfig();c.database.name='postgres';c.database.host='db.juyowvmtluxfetgkckjd.supabase.co';
+ assert.equal(validateCloudConfig(c).database.name,'postgres');
+ for(const host of ['db.jfjzpwlrhzqbcrvqxhzf.supabase.co','127.0.0.1','other.supabase.co'])
+   assert.throws(()=>validateCloudConfig({...c,database:{...c.database,host}}));
+ assert.throws(()=>validateCloudConfig({...c,database:{...c.database,port:6543}}));
+ assert.throws(()=>validateCloudConfig({...c,database:{...c.database,name:'victoriosa_mission_operator_lab'}}));
+});
 test('cloud libpq environment cannot inherit redirection, password, TLS downgrade or preload options',()=>{
  const poisoned={PGHOSTADDR:'203.0.113.1',PGOPTIONS:'untrusted',PGPASSWORD:'untrusted',PGSSLMODE:'disable',PGSERVICE:'untrusted',NODE_OPTIONS:'untrusted'};
  const before=Object.fromEntries(Object.keys(poisoned).map(k=>[k,process.env[k]]));

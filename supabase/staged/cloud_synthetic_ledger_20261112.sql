@@ -1,8 +1,12 @@
--- OFFLINE provisioning only, in the dedicated disposable synthetic database after LocalMissionStore.initialize().
--- The operator creates a LOGIN role separately; no password, role creation or hosted migration here.
+-- Dedicated synthetic lab grants; hosted use only inside the reviewed P0C bootstrap transaction.
+-- The operator creates a LOGIN role separately; no password, role creation or automatic migration here.
 begin;
 do $$ begin
- if current_database()<>'victoriosa_mission_operator_lab'
+ if current_database()='postgres' then
+   if not exists(select 1 from public.autopilot_hosted_lab where project_ref='juyowvmtluxfetgkckjd')
+   then raise exception 'isolated_hosted_lab_required'; end if;
+ end if;
+ if current_database() not in ('victoriosa_mission_operator_lab','postgres')
    or not exists(select 1 from public.autopilot_local_lab)
    or not exists(select 1 from pg_roles where rolname='autopilot_cloud_runner'
      and not (rolsuper or rolcreatedb or rolcreaterole or rolreplication or rolbypassrls))
@@ -10,7 +14,7 @@ do $$ begin
  then raise exception 'isolated_cloud_lab_required';end if;
 end $$;
 revoke create on schema public from public;
-grant connect on database victoriosa_mission_operator_lab to autopilot_cloud_runner;
+do $$ begin execute format('grant connect on database %I to autopilot_cloud_runner',current_database()); end $$;
 grant usage on schema public to autopilot_cloud_runner;
 grant select on public.autopilot_local_lab,public.agent_tasks,public.agent_audit_events to autopilot_cloud_runner;
 create policy cloud_synthetic_binding_read on public.autopilot_local_lab for select to autopilot_cloud_runner using(true);
