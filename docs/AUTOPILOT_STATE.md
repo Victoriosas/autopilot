@@ -1,3 +1,9 @@
+# Seguridad · autenticación de la demo de catálogo · 21/11/2026
+
+Remediación acotada sobre main `c2bc247`, sin cambiar la orden ni las fases vigentes. La demo desechable sustituye trust por SCRAM-SHA-256 con contraseña aleatoria de 256 bits por ejecución, archivos privados y PGPASSFILE; no incluye contraseñas en URL/argumentos/logs. Elimina los archivos de credenciales al terminar, incluso ante error, conservando únicamente los datos sintéticos y el recibo. El paso adicional de CI se entrega en la descripción de la PR para incorporación manual: la conexión de publicación no permite modificar workflows.
+
+PROBADO local con PostgreSQL18: regresión RED (conexión TCP sin contraseña aceptada en la base), GREEN (sin contraseña y contraseña incorrecta rechazadas; cliente autorizado y cinco escenarios del catálogo aprobados). Reglas HBA exclusivamente SCRAM, archivo cliente0600 y archivo initdb eliminado antes de la prueba. Fallo de createdb inducido: clúster detenido y ambos archivos de credenciales eliminados. `npm run verify`:614 casos,613 aprobados,1 omitido,0 fallos; tipos/skills/builds/API aprobados. CI del SHA publicado pendiente; no FUSIONADO ni DESPLEGADO. Sin SQL alojado, envíos, datos reales, cambios de producción ni sincronización de PC acreditada. Siguiente: revisión y checks exactos de la PR, sin auto-merge.
+
 # Orden vigente · tres demostraciones staging en paralelo · 21/11/2026
 
 ORD-THREE-DEMONSTRATIONS-20261121 por instrucción expresa del propietario. A consulta, B seis roles, C catálogo fixture y D handoff cloud avanzan en worktrees separados mediante contratos existentes; P2 no se reabre ni bloquea estos ensayos. Base66da49d tras reconciliar #263. D implementa handoff manual protegido; barrera automática y guards intactos. A/B/C en pruebas locales; no certificación integral anticipada.

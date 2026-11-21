@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { readFile, writeFile } from 'node:fs/promises';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { readFile, stat, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { missionTestDatabase, sqlLiteral as literal } from './fixtures/missionTestDatabase';
 import { createMissionLedger, PersistentMissionOrchestrator } from '../src/autopilot/missionRuntime';
@@ -13,6 +14,30 @@ const { sql, client } = missionTestDatabase(database, 'victoriosa_catalog_demo')
 
 test('normal SQL mission entry uses read-only catalog with durable permission, outage, quota and shutdown evidence',
   { skip: !database, timeout: 60000 }, async () => {
+    if (process.env.CATALOG_DEMO_RECEIPT) {
+      // The demo must reject other local accounts, not merely hide its data directory.
+      const target = new URL(database!);
+      assert.equal(target.password, '');
+      const passFile = process.env.PGPASSFILE!;
+      assert.ok(passFile);
+      if (process.platform !== 'win32') assert.equal((await stat(passFile)).mode & 0o777, 0o600);
+      await assert.rejects(stat(path.join(path.dirname(passFile), 'initdb-password')), { code: 'ENOENT' });
+      const args = [database!, '-X', '-w', '-qAt', '-c', 'select 1'];
+      const unauthenticated = spawnSync(process.env.PSQL_PATH || 'psql', args, {
+        timeout: 15000, encoding: 'utf8', env: { ...process.env,
+          PGPASSFILE: `${process.env.CATALOG_DEMO_RECEIPT}.no-password`, PGPASSWORD: '', LC_ALL: 'C' },
+      });
+      assert.notEqual(unauthenticated.status, 0, 'demo must reject passwordless TCP connections');
+      assert.match(unauthenticated.stderr, /no password supplied/);
+      const wrongPassword = spawnSync(process.env.PSQL_PATH || 'psql', args, {
+        timeout: 15000, encoding: 'utf8', env: { ...process.env, PGPASSWORD: 'invalid-demo-password', LC_ALL: 'C' },
+      });
+      assert.notEqual(wrongPassword.status, 0, 'demo must reject incorrect passwords');
+      assert.match(wrongPassword.stderr, /password authentication failed/);
+      assert.equal(await sql('show password_encryption;'), 'scram-sha-256');
+      assert.equal(await sql("select count(*) from pg_hba_file_rules where auth_method <> 'scram-sha-256' or error is not null;"), '0');
+      assert.equal(await sql('select 1;'), '1', 'authorized demo clients still connect');
+    }
     const bootstrap = (await readFile('scripts/test-six-agent-queue.sh', 'utf8')).match(/<<'SQL'\r?\n([\s\S]*?)\r?\nSQL/)![1];
     await sql(bootstrap);
     for (const file of ['six_agent_queue_20261025.sql', 'six_agent_mission_checkpoint_20261109.sql'])
