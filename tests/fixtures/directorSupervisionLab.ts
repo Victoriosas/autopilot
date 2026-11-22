@@ -39,6 +39,21 @@ export async function sql(query: string): Promise<string> {
     child.stdin!.end(`set statement_timeout=5000; set request.jwt.claim.role='service_role';\n${query}`);
   });
 }
+/** Connects as the restricted cloud runner with certificate-verified TLS for SQL NULL regressions. */
+export async function runnerSql(query: string): Promise<string> {
+  const url=labConnection();
+  const passFile=process.env.DIRECTOR_LAB_RUNNER_PASSFILE;
+  const rootCert=process.env.DIRECTOR_LAB_TLS_ROOT_CERT;
+  if(!passFile||!path.isAbsolute(passFile)||!rootCert||!path.isAbsolute(rootCert))throw Error('runner_lab_tls_required');
+  return new Promise((resolve,reject)=>{
+    const child=execFile(process.env.PSQL_PATH||'psql',['-h','127.0.0.1','-p',url.port,'-U','autopilot_cloud_runner',
+      '-d','victoriosa_director_supervision_lab','-w','-X','-qAt','-v','ON_ERROR_STOP=1'],{
+      timeout:10000,maxBuffer:262144,env:{PATH:process.env.PATH,PGPASSFILE:passFile,PGSSLMODE:'verify-full',
+        PGSSLROOTCERT:rootCert,PGCONNECT_TIMEOUT:'3',PGCLIENTENCODING:'UTF8'},
+    },(error,stdout)=>error?reject(Error('runner_lab_sql_rejected')):resolve(stdout.trim()));
+    child.stdin!.end(`set statement_timeout=5000;${query}`);
+  });
+}
 export async function readAgents() {
   const records = JSON.parse(await sql(`select coalesce(json_agg(r),'[]') from
     (select id,agent_id,status,attempt_count,updated_at,lease_until,completed_evidence

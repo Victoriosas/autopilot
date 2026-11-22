@@ -4,7 +4,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import path from 'node:path';
 import { AGENT_IDS } from '../src/autopilot/sixAgentControlPlane';
 import { runDirectorSyntheticMission, directorSlot, type DirectorCloudGrant } from '../src/autopilot/directorCloudMission';
-import { directorCloudStore, labConnection, literal, sql } from './fixtures/directorSupervisionLab';
+import { directorCloudStore, labConnection, literal, runnerSql, sql } from './fixtures/directorSupervisionLab';
 
 const source=(name:string)=>import('node:fs/promises').then(fs=>fs.readFile(path.isAbsolute(name)?name:new URL(`../${name}`,import.meta.url),'utf8'));
 const reviewedSha='8892d2b10c204627b1b5efc661e8e052ef247cc7';
@@ -79,15 +79,108 @@ test('Director cloud adapter is synthetic-only, TLS/SCRAM-bound, slot-idempotent
     values('synthetic-director-supervision','Observe approved synthetic six-agent aggregates','synthetic-director-lab','observe','queued','director',
       ${literal(input)}::jsonb || jsonb_build_object('host_binding',${literal(binding)}));
     ${rows}`);
+  const initialCheckpoint=JSON.parse(await sql(`select mission_checkpoint from public.agent_tasks
+    where id='synthetic-director-supervision';`));
   const slot=directorSlot();
   const expires=new Date(Date.parse(slot)+30*60_000).toISOString().replace('.000Z','Z');
+  // Regression: a valid synthetic fixture without the durable grant must not
+  // let SQL NULL pass a PL/pgSQL IF guard or consume a protected attempt.
+  const unapproved={missionId:'synthetic-director-supervision',binding,reviewedSha,slot,
+    authorizationId:'director-auth-missing-0001',hostIdentity:'autopilot_cloud_runner',
+    notBefore:slot,expiresAt:expires};
+  const denied=await store.directorClient(unapproved).rpc('six_agent_claim_mission',
+    {p_agent:'director',p_lease_seconds:25});
+  assert.deepEqual(denied.data,[],'a fixture without director_authorization cannot be claimed');
+  assert.equal(denied.error,null);
+  const unmodified=JSON.parse(await sql(`select json_build_object('status',status,'attempts',attempt_count,
+    'token',execution_token,'checkpoint_version',mission_checkpoint_version) from public.agent_tasks
+    where id='synthetic-director-supervision';`));
+  assert.deepEqual(unmodified,{status:'queued',attempts:0,token:null,checkpoint_version:0},
+    'denied claim leaves mission state and attempt budget unchanged');
+  assert.equal(await sql(`select count(*) from public.agent_audit_events where task_id='synthetic-director-supervision';`),'0',
+    'denied claim creates no audit side effect');
+  await assert.rejects(()=>store.callDirectorSql('director_observe_synthetic_agents',[
+    unapproved.missionId,binding,reviewedSha,slot,unapproved.authorizationId]));
+  await assert.rejects(()=>store.callDirectorSql('director_read_mission',[
+    unapproved.missionId,binding,reviewedSha,slot,unapproved.authorizationId]));
+  await assert.rejects(()=>runnerSql(`select * from public.six_agent_director_claim(
+    null::text,${literal(binding)},${literal(reviewedSha)},${literal(slot)},${literal(unapproved.authorizationId)},25);`));
+  assert.equal(await runnerSql(`select public.six_agent_director_checkpoint(
+    null::text,null::text,null::uuid,null::integer,null::text,null::text,null::jsonb,
+    null::text,null::text,null::text,null::text);`),'f','checkpoint rejects null security fields');
+  assert.equal(await runnerSql(`select public.six_agent_director_complete(
+    null::text,null::uuid,null::text,null::text,null::text,null::text,null::text);`),'f','complete rejects null security fields');
+  assert.equal(await runnerSql(`select public.six_agent_director_fail(
+    null::text,null::uuid,null::text,null::text,null::text,null::text,null::text);`),'f','fail rejects null security fields');
+  await assert.rejects(()=>runnerSql(`select public.director_observe_synthetic_agents(
+    ${literal(unapproved.missionId)},${literal(binding)},${literal(reviewedSha)},${literal(slot)},null::text);`));
+  await assert.rejects(()=>runnerSql(`select public.director_read_mission(
+    ${literal(unapproved.missionId)},${literal(binding)},${literal(reviewedSha)},${literal(slot)},null::text);`));
+  await assert.rejects(()=>sql(`select public.director_authorize(null::text,${literal(binding)},${literal(reviewedSha)},
+    ${literal(slot)},${literal('director-auth-null-0001')},${literal(expires)}::timestamptz,0);`));
   assert.equal(await sql(`select public.director_authorize(${literal('synthetic-director-supervision')},${literal(binding)},
     ${literal(reviewedSha)},${literal(slot)},${literal('director-auth-lab-0001')},${literal(expires)}::timestamptz,0);`),'t');
+  const validAuthorization=JSON.parse(await sql(`select input->'director_authorization' from public.agent_tasks
+    where id='synthetic-director-supervision';`));
   const authRow=JSON.parse(await sql(`select input->'director_authorization'->'grant' from public.agent_tasks
     where id='synthetic-director-supervision';`));
-  const grant:DirectorCloudGrant={missionId:'synthetic-director-supervision',binding,reviewedSha,slot,
+  let grant:DirectorCloudGrant={missionId:'synthetic-director-supervision',binding,reviewedSha,slot,
     authorizationId:authRow.id,hostIdentity:'autopilot_cloud_runner',notBefore:authRow.notBefore,expiresAt:authRow.expiresAt};
   assert.equal(store.hostIdentity,'autopilot_cloud_runner');
+  const invalidAuthorizations:unknown[]=[null,{...validAuthorization,active:null},{...validAuthorization,grant:null},
+    ...['id','missionId','agentRole','binding','reviewedSha','hostRole','slot','notBefore','expiresAt','no_send','no_dispatch']
+      .map(field=>({...validAuthorization,grant:Object.fromEntries(Object.entries(validAuthorization.grant)
+        .filter(([key])=>key!==field))}))];
+  for(const invalidAuthorization of invalidAuthorizations) {
+    await sql(`update public.agent_tasks set input=jsonb_set(input,'{director_authorization}',
+      ${literal(invalidAuthorization)}::jsonb) where id='synthetic-director-supervision';`);
+    const deniedClaim=await store.directorClient(grant).rpc('six_agent_claim_mission',{p_agent:'director',p_lease_seconds:25});
+    assert.deepEqual(deniedClaim.data,[],'null or incomplete durable grants cannot claim');
+    await assert.rejects(()=>store.callDirectorSql('director_observe_synthetic_agents',[
+      grant.missionId,binding,reviewedSha,slot,grant.authorizationId]));
+    await assert.rejects(()=>store.callDirectorSql('director_read_mission',[
+      grant.missionId,binding,reviewedSha,slot,grant.authorizationId]));
+  }
+  await sql(`update public.agent_tasks set input=jsonb_set(input,'{director_authorization}',
+    ${literal(validAuthorization)}::jsonb) where id='synthetic-director-supervision';`);
+  assert.deepEqual(JSON.parse(await sql(`select json_build_object('status',status,'attempts',attempt_count,
+    'token',execution_token,'version',mission_checkpoint_version) from public.agent_tasks
+    where id='synthetic-director-supervision';`)),{status:'queued',attempts:0,token:null,version:0},
+    'malformed grants deny claims without changing task state');
+  assert.equal(await sql(`select count(*) from public.agent_audit_events where task_id='synthetic-director-supervision';`),'1',
+    'malformed grant denials do not append audit events');
+  const preflightClaim=await store.directorClient(grant).rpc('six_agent_claim_mission',{p_agent:'director',p_lease_seconds:25});
+  assert.equal(preflightClaim.data?.length,1,'valid durable grant can claim in the isolated lab');
+  const preflightToken=preflightClaim.data[0].claim_token;
+  await sql(`update public.agent_tasks set input=input-'director_authorization' where id='synthetic-director-supervision';`);
+  const guardedCheckpoint={mission_state:'in_progress',current_step_id:'observe-ledger',completed_steps:[],pending_steps:['observe-ledger'],
+    results:[],artifacts:[],test_evidence:[],worktree:{branch:'negative-test',sha:reviewedSha}};
+  for(const procedureValues of [
+    ['six_agent_director_checkpoint',['synthetic-director-supervision','synthetic-director-supervision',preflightToken,1,'no-auth-cp','director-cloud-synthetic',guardedCheckpoint,binding,reviewedSha,slot,grant.authorizationId]],
+    ['six_agent_director_fail',['synthetic-director-supervision',preflightToken,'no-auth-fail',binding,reviewedSha,slot,grant.authorizationId]],
+    ['six_agent_director_complete',['synthetic-director-supervision',preflightToken,`director_verified:${reviewedSha}:${slot}`,binding,reviewedSha,slot,grant.authorizationId]],
+  ] as const) {
+    assert.equal(await store.callDirectorSql(procedureValues[0],[...procedureValues[1]]),'false',
+      `${procedureValues[0]} rejects a running lease whose durable grant disappeared`);
+  }
+  assert.deepEqual(JSON.parse(await sql(`select json_build_object('status',status,'attempts',attempt_count,'token',execution_token,
+    'version',mission_checkpoint_version,'checkpoint',mission_checkpoint) from public.agent_tasks
+    where id='synthetic-director-supervision';`)),{
+      status:'running',attempts:1,token:preflightToken,version:0,checkpoint:initialCheckpoint,
+    },'missing authorization cannot checkpoint, fail or complete a live claim');
+  assert.equal(await sql(`select count(*) from public.agent_audit_events where task_id='synthetic-director-supervision';`),'2',
+    'failed guarded writes do not append audit events');
+  // Return only the disposable fixture to its original state before the existing concurrency/recovery scenario.
+  await sql(`delete from public.agent_audit_events where task_id='synthetic-director-supervision';
+    update public.agent_tasks set input=input-'director_authorization',status='queued',attempt_count=0,
+      lease_until=null,execution_token=null,mission_checkpoint_version=0,mission_checkpoint=${literal(initialCheckpoint)}::jsonb
+      where id='synthetic-director-supervision';
+    select public.director_authorize(${literal('synthetic-director-supervision')},${literal(binding)},
+      ${literal(reviewedSha)},${literal(slot)},${literal('director-auth-lab-0001')},${literal(expires)}::timestamptz,0);`);
+  const reauthorized=JSON.parse(await sql(`select input->'director_authorization'->'grant' from public.agent_tasks
+    where id='synthetic-director-supervision';`));
+  grant={...grant,authorizationId:reauthorized.id,notBefore:reauthorized.notBefore,expiresAt:reauthorized.expiresAt};
+  assert.equal(await sql(`select count(*) from public.agent_audit_events where task_id='synthetic-director-supervision';`),'1');
   assert.equal(await sql(`update public.director_lab_control set reject_version=1; select 1;`),'1');
 
   // Two workers race the exact same mission/slot. One consumes the claim; checkpoint 1 is rejected and rolls back.

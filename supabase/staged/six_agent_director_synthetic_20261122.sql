@@ -7,25 +7,25 @@ create unique index if not exists agent_audit_director_slot_uidx
 
 create function public.director_current_slot(p_slot text) returns boolean
 language sql volatile set search_path='' as $$
- select p_slot ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):(00|30):00Z$'
+ select coalesce(p_slot ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):(00|30):00Z$'
  and p_slot::timestamptz =
    date_trunc('hour',clock_timestamp()) +
-     case when extract(minute from clock_timestamp())<30 then interval '0 minutes' else interval '30 minutes' end;
+     case when extract(minute from clock_timestamp())<30 then interval '0 minutes' else interval '30 minutes' end,false);
 $$;
 
 create function public.director_host_safe() returns boolean
 language sql stable set search_path='' as $$
- select session_user='autopilot_cloud_runner'
+ select coalesce(session_user='autopilot_cloud_runner'
  and exists(select 1 from pg_stat_ssl where pid=pg_backend_pid() and ssl)
  and not exists(select 1 from pg_roles where rolname=session_user
    and (rolsuper or rolcreatedb or rolcreaterole or rolreplication or rolbypassrls))
- and not exists(select 1 from pg_auth_members where member=(select oid from pg_roles where rolname=session_user));
+ and not exists(select 1 from pg_auth_members where member=(select oid from pg_roles where rolname=session_user)),false);
 $$;
 
 create function public.director_authorization_valid(
  p_task public.agent_tasks,p_mission_id text,p_binding text,p_reviewed_sha text,p_slot text,p_authorization_id text
 ) returns boolean language sql volatile set search_path='' as $$
- select public.director_host_safe()
+ select coalesce((public.director_host_safe()
  and p_task.id=p_mission_id and p_task.mission_id=p_mission_id
  and p_task.id='synthetic-director-supervision' and p_task.agent_id='director'
  and p_task.actor='synthetic-director-lab'
@@ -41,11 +41,13 @@ create function public.director_authorization_valid(
  and p_task.input->'director_authorization'->'grant'->>'reviewedSha'=p_reviewed_sha
  and p_task.input->'director_authorization'->'grant'->>'hostRole'='autopilot_cloud_runner'
  and p_task.input->'director_authorization'->'grant'->>'slot'=p_slot
+ and p_task.input->'director_authorization'->'grant'->>'no_send'='true'
+ and p_task.input->'director_authorization'->'grant'->>'no_dispatch'='true'
  and public.director_current_slot(p_slot)
  and clock_timestamp()>=(p_task.input->'director_authorization'->'grant'->>'notBefore')::timestamptz
  and clock_timestamp()<(p_task.input->'director_authorization'->'grant'->>'expiresAt')::timestamptz
- and (p_task.input->'director_authorization'->'grant'->>'expiresAt')::timestamptz<=
-   p_slot::timestamptz+interval '30 minutes';
+   and (p_task.input->'director_authorization'->'grant'->>'expiresAt')::timestamptz<=
+   p_slot::timestamptz+interval '30 minutes'),false);
 $$;
 
 create function public.director_authorize(
@@ -54,16 +56,18 @@ create function public.director_authorize(
 declare t public.agent_tasks%rowtype; old_revision integer; slot_start timestamptz;
 begin
  if auth.role() is distinct from 'service_role' then raise exception 'unauthorized'; end if;
- if p_task_id is distinct from 'synthetic-director-supervision'
+ if p_task_id is null or p_binding is null or p_reviewed_sha is null or p_slot is null
+   or p_authorization_id is null or p_expires_at is null or p_expected_revision is null
+   or p_task_id is distinct from 'synthetic-director-supervision'
    or p_binding !~ '^[a-f0-9]{64}$' or p_reviewed_sha !~ '^[a-f0-9]{40}$'
-   or p_authorization_id !~ '^director-auth-[a-z0-9-]{8,64}$' or p_expected_revision is null or p_expected_revision<0
-   or not public.director_current_slot(p_slot) then raise exception 'invalid_director_authorization'; end if;
+   or p_authorization_id !~ '^director-auth-[a-z0-9-]{8,64}$' or p_expected_revision<0
+   or public.director_current_slot(p_slot) is distinct from true then raise exception 'invalid_director_authorization'; end if;
  slot_start=p_slot::timestamptz;
  select * into t from public.agent_tasks where id=p_task_id for update;
- if not found or t.mission_id<>p_task_id or t.agent_id<>'director' or t.actor<>'synthetic-director-lab'
-   or t.input->>'director_fixture_version'<>'1' or t.input->>'host_binding'<>p_binding
-   or t.input->>'no_send'<>'true' or t.input->>'no_dispatch'<>'true'
-   or t.input->'restrictions'<>'["synthetic_only","no_send","no_dispatch"]'::jsonb
+ if not found or t.mission_id is distinct from p_task_id or t.agent_id is distinct from 'director' or t.actor is distinct from 'synthetic-director-lab'
+   or t.input->>'director_fixture_version' is distinct from '1' or t.input->>'host_binding' is distinct from p_binding
+   or t.input->>'no_send' is distinct from 'true' or t.input->>'no_dispatch' is distinct from 'true'
+   or t.input->'restrictions' is distinct from '["synthetic_only","no_send","no_dispatch"]'::jsonb
    or t.status not in ('queued','running')
    or (t.status='running' and coalesce(t.lease_until,clock_timestamp())>=clock_timestamp())
    then raise exception 'director_authorization_scope_denied'; end if;
@@ -90,7 +94,8 @@ begin
  select * into t from public.agent_tasks where id=p_task_id and id='synthetic-director-supervision' for update;
  if not found then raise exception 'director_authorization_scope_denied'; end if;
  revision=(t.input->'director_authorization'->>'revision')::integer;
- if revision is distinct from p_expected_revision or t.input->'director_authorization'->>'active'<>'true' then return false; end if;
+ if p_expected_revision is null or revision is distinct from p_expected_revision
+   or t.input->'director_authorization'->>'active' is distinct from 'true' then return false; end if;
  update public.agent_tasks set input=jsonb_set(jsonb_set(input,'{director_authorization,active}','false'::jsonb),
    '{director_authorization,revision}',to_jsonb(revision+1)) where id=p_task_id;
  insert into public.agent_audit_events(task_id,event_type,details) values(p_task_id,'director_authorization_revoked',
@@ -104,10 +109,15 @@ create function public.six_agent_director_claim(
 language plpgsql security definer set search_path='' as $$
 declare t public.agent_tasks%rowtype; token uuid; existing_slot boolean;
 begin
- if not public.director_host_safe() then raise exception 'unauthorized_director_host'; end if;
+ if public.director_host_safe() is distinct from true then raise exception 'unauthorized_director_host'; end if;
+ if p_task_id is null or p_binding is null or p_reviewed_sha is null or p_slot is null or p_authorization_id is null
+   or p_task_id is distinct from 'synthetic-director-supervision'
+   or p_binding !~ '^[a-f0-9]{64}$' or p_reviewed_sha !~ '^[a-f0-9]{40}$'
+   or p_authorization_id !~ '^director-auth-[a-z0-9-]{8,64}$'
+   or public.director_current_slot(p_slot) is distinct from true then raise exception 'invalid_director_claim'; end if;
  if p_lease_seconds is null or p_lease_seconds not between 5 and 30 then raise exception 'invalid_parameters'; end if;
  select * into t from public.agent_tasks where id=p_task_id for update skip locked;
- if not found or not public.director_authorization_valid(t,p_task_id,p_binding,p_reviewed_sha,p_slot,p_authorization_id)
+ if not found or public.director_authorization_valid(t,p_task_id,p_binding,p_reviewed_sha,p_slot,p_authorization_id) is distinct from true
    or t.attempt_count>=t.max_attempts or (t.status='queued' and t.available_at>clock_timestamp())
    or not (t.status='queued' or (t.status='running' and t.lease_until<clock_timestamp() and t.execution_token is not null))
    then return; end if;
@@ -138,8 +148,8 @@ declare t public.agent_tasks%rowtype;
 begin
  if not public.director_host_safe() then raise exception 'unauthorized_director_host'; end if;
  select * into t from public.agent_tasks where id=p_task_id for update;
- return found and t.status='running' and t.execution_token=p_token and t.lease_until>clock_timestamp()
-   and public.director_authorization_valid(t,p_task_id,p_binding,p_reviewed_sha,p_slot,p_authorization_id);
+ return coalesce(found and t.status='running' and t.execution_token=p_token and t.lease_until>clock_timestamp()
+   and public.director_authorization_valid(t,p_task_id,p_binding,p_reviewed_sha,p_slot,p_authorization_id) is true,false);
 end $$;
 
 create function public.six_agent_director_checkpoint(
@@ -147,7 +157,10 @@ create function public.six_agent_director_checkpoint(
  p_binding text,p_reviewed_sha text,p_slot text,p_authorization_id text
 ) returns boolean language plpgsql security definer set search_path='' as $$
 begin
- if not public.director_guarded_write(p_task_id,p_token,p_binding,p_reviewed_sha,p_slot,p_authorization_id) then return false; end if;
+ if p_task_id is null or p_mission_id is null or p_token is null or p_checkpoint_version is null or p_operation_id is null
+   or p_executor_id is null or p_checkpoint is null or p_binding is null or p_reviewed_sha is null or p_slot is null
+   or p_authorization_id is null
+   or public.director_guarded_write(p_task_id,p_token,p_binding,p_reviewed_sha,p_slot,p_authorization_id) is distinct from true then return false; end if;
  if p_mission_id is distinct from p_task_id or p_executor_id is distinct from 'director-cloud-synthetic'
    or (select id from public.agent_tasks where id=p_task_id) is distinct from 'synthetic-director-supervision'
    or jsonb_typeof(p_checkpoint) is distinct from 'object' then return false; end if;
@@ -159,7 +172,9 @@ create function public.six_agent_director_complete(
  p_task_id text,p_token uuid,p_evidence text,p_binding text,p_reviewed_sha text,p_slot text,p_authorization_id text
 ) returns boolean language plpgsql security definer set search_path='' as $$
 begin
- if not public.director_guarded_write(p_task_id,p_token,p_binding,p_reviewed_sha,p_slot,p_authorization_id)
+ if p_task_id is null or p_token is null or p_evidence is null or p_binding is null or p_reviewed_sha is null or p_slot is null
+   or p_authorization_id is null
+   or public.director_guarded_write(p_task_id,p_token,p_binding,p_reviewed_sha,p_slot,p_authorization_id) is distinct from true
    or p_evidence !~ '^director_verified:[a-f0-9]{40}:[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):(00|30):00Z$'
    then return false; end if;
  perform set_config('request.jwt.claim.role','service_role',true);
@@ -170,7 +185,9 @@ create function public.six_agent_director_fail(
  p_task_id text,p_token uuid,p_reason text,p_binding text,p_reviewed_sha text,p_slot text,p_authorization_id text
 ) returns boolean language plpgsql security definer set search_path='' as $$
 begin
- if not public.director_guarded_write(p_task_id,p_token,p_binding,p_reviewed_sha,p_slot,p_authorization_id) then return false; end if;
+ if p_task_id is null or p_token is null or p_reason is null or p_binding is null or p_reviewed_sha is null or p_slot is null
+   or p_authorization_id is null
+   or public.director_guarded_write(p_task_id,p_token,p_binding,p_reviewed_sha,p_slot,p_authorization_id) is distinct from true then return false; end if;
  perform set_config('request.jwt.claim.role','service_role',true);
  return public.six_agent_fail(p_task_id,p_token,p_reason);
 end $$;
@@ -181,7 +198,7 @@ create function public.director_observe_synthetic_agents(
 declare t public.agent_tasks%rowtype; result jsonb;
 begin
  select * into t from public.agent_tasks where id=p_task_id;
- if not found or not public.director_authorization_valid(t,p_task_id,p_binding,p_reviewed_sha,p_slot,p_authorization_id) then
+ if not found or public.director_authorization_valid(t,p_task_id,p_binding,p_reviewed_sha,p_slot,p_authorization_id) is distinct from true then
    raise exception 'director_authorization_denied'; end if;
  select coalesce(jsonb_agg(jsonb_build_object(
    'id',id,'agent_id',agent_id,'status',status,'attempt_count',attempt_count,
@@ -201,7 +218,7 @@ create function public.director_read_mission(
 declare t public.agent_tasks%rowtype;
 begin
  select * into t from public.agent_tasks where id=p_task_id;
- if not found or not public.director_authorization_valid(t,p_task_id,p_binding,p_reviewed_sha,p_slot,p_authorization_id) then
+ if not found or public.director_authorization_valid(t,p_task_id,p_binding,p_reviewed_sha,p_slot,p_authorization_id) is distinct from true then
    raise exception 'director_authorization_denied'; end if;
  return jsonb_build_object('id',t.id,'status',t.status,'lease_active',t.lease_until>clock_timestamp(),
    'attempts',t.attempt_count,'checkpoint_version',t.mission_checkpoint_version,
