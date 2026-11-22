@@ -57,7 +57,8 @@ test('session pooler requires explicit mode and pins project routing without cha
    assert.throws(()=>validateCloudConfig({...session,database:{...session.database,...patch}}));
 });
 test('cloud runner never provisions or admits and owns a copy of host config',async()=>{
- const c=cloudConfig(),p=new ManagedProcesses(),store=new CloudMissionStore(c,p);const binding=store.binding;
+ const c=cloudConfig();Object.assign(c.database,{host:'db.juyowvmtluxfetgkckjd.supabase.co',name:'postgres'});
+ const p=new ManagedProcesses(),store=new CloudMissionStore(c,p);const binding=store.binding;
  c.ledgerId='synthetic-mutated-fixture';assert.equal(store.binding,binding);
  await assert.rejects(store.initialize(),/cloud_provisioning_not_allowed/);
  await assert.rejects(store.admit({}),/cloud_admission_not_allowed/);

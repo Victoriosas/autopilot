@@ -13,18 +13,20 @@ async function claimWithProcedure(
  client:SupabaseClient,
  agent:AgentId,
  procedure:'six_agent_claim'|'six_agent_claim_mission',
+ leaseSeconds=60,
 ):Promise<ClaimedAgentTask|null> {
  if(!AGENT_IDS.includes(agent)) throw new Error('invalid_agent');
- const {data,error}=await client.rpc(procedure,{p_agent:agent,p_lease_seconds:60});
+ if(!Number.isInteger(leaseSeconds)||leaseSeconds<5||leaseSeconds>300)throw new Error('invalid_lease');
+ const {data,error}=await client.rpc(procedure,{p_agent:agent,p_lease_seconds:leaseSeconds});
  if(error) throw new Error('claim_failed');
  const claims=data as ClaimedAgentTask[]|null;
  return claims?.[0]??null;
 }
-export async function claimPersistedTask(client:SupabaseClient, agent:AgentId):Promise<ClaimedAgentTask|null> {
- return claimWithProcedure(client,agent,'six_agent_claim');
+export async function claimPersistedTask(client:SupabaseClient, agent:AgentId,leaseSeconds=60):Promise<ClaimedAgentTask|null> {
+ return claimWithProcedure(client,agent,'six_agent_claim',leaseSeconds);
 }
-export async function claimPersistedMissionTask(client:SupabaseClient, agent:AgentId):Promise<ClaimedAgentTask|null> {
- return claimWithProcedure(client,agent,'six_agent_claim_mission');
+export async function claimPersistedMissionTask(client:SupabaseClient, agent:AgentId,leaseSeconds=60):Promise<ClaimedAgentTask|null> {
+ return claimWithProcedure(client,agent,'six_agent_claim_mission',leaseSeconds);
 }
 export async function completePersistedTask(client:SupabaseClient, task:ClaimedAgentTask, evidence:string):Promise<void> {
  if(!evidence.trim())throw new Error('evidence_required');
