@@ -5,6 +5,10 @@ import { createMissionLedger, PersistentMissionOrchestrator } from '../../src/au
 import { observeAgents, type AgentTaskObservation } from '../../src/autopilot/agentObservation';
 import { AGENT_IDS } from '../../src/autopilot/sixAgentControlPlane';
 import type { ExecutorAdapter, MissionCheckpoint } from '../../src/autopilot/executorAdapter';
+import { CloudMissionStore, cloudBinding, type CloudMissionConfig } from '../../src/autopilot/cloudMissionStore';
+import { ManagedProcesses } from '../../src/autopilot/managedProcesses';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 
 export const LAB_MISSION = 'synthetic-director-supervision';
 export const literal = (value: unknown) => `'${(typeof value === 'object' ? JSON.stringify(value) : String(value)).replaceAll("'", "''")}'`;
@@ -14,6 +18,15 @@ export function labConnection() {
     || url.pathname !== '/victoriosa_director_supervision_lab' || url.search || url.hash
     || !/^[a-z_][a-z0-9_]*$/.test(url.username) || !url.port) throw Error('disposable_loopback_lab_required');
   return url;
+}
+export function directorCloudStore() {
+  const db=labConnection();
+  const config:CloudMissionConfig={version:1,mode:'cloud_synthetic_lab',ledgerId:'synthetic-director-supervision-lab',
+    database:{host:'127.0.0.1',port:Number(db.port),name:'victoriosa_director_supervision_lab',user:'autopilot_cloud_runner',
+      sslRootCert:process.env.DIRECTOR_LAB_TLS_ROOT_CERT??'',passFile:process.env.DIRECTOR_LAB_RUNNER_PASSFILE??''},
+    resources:{repository:process.cwd(),worktreeRoot:tmpdir(),baseSha:process.env.DIRECTOR_LAB_REVIEWED_SHA??'8892d2b10c204627b1b5efc661e8e052ef247cc7'},
+    permissions:{admit:false,execute:true,cancel:false},leaseSeconds:25,deadlineMs:20000,queryTimeoutMs:5000};
+  return {config,store:new CloudMissionStore(config,new ManagedProcesses()),binding:cloudBinding(config)};
 }
 export async function sql(query: string): Promise<string> {
   const url = labConnection();

@@ -3,7 +3,8 @@ import { mkdtemp, writeFile, rm, access, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { randomBytes, createHash } from 'node:crypto';
-import { spawn } from 'node:child_process';
+import { spawn, execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 
@@ -17,8 +18,10 @@ for (const name of ['initdb','pg_ctl']) await access(exe(name));
 const root = await mkdtemp(path.join(tmpdir(),'director-supervision-pg-'));
 const data = path.join(root,'data');
 const password = randomBytes(32).toString('hex');
+const runnerPassword = randomBytes(32).toString('hex');
 const pwfile = path.join(root,'password');
 await writeFile(pwfile,password,{mode:0o600});
+const runnerPassfile=path.join(root,'runner.pgpass');
 const listener = createServer();
 await new Promise((resolve,reject)=>{listener.once('error',reject);listener.listen(0,'127.0.0.1',resolve);});
 const port = listener.address().port;
@@ -28,6 +31,8 @@ const env = {PATH:process.env.PATH,...(process.env.SystemRoot?{SystemRoot:proces
   PGPASSWORD:password,PGCONNECT_TIMEOUT:'3',
   DIRECTOR_LAB_DATABASE_URL:`postgresql://lab_owner:${password}@127.0.0.1:${port}/victoriosa_director_supervision_lab`,
   DIRECTOR_LAB_LEASE_FIX_SQL:path.resolve(fix),
+  DIRECTOR_LAB_RUNNER_PASSWORD:runnerPassword,
+  DIRECTOR_LAB_RUNNER_PASSFILE:runnerPassfile,
   ...(process.env.PSQL_PATH?{PSQL_PATH:process.env.PSQL_PATH}:{})};
 const run = (program,args,output='ignore') => new Promise((resolve,reject)=>{
   const child = spawn(program,args,{env,stdio:['ignore',output,output],windowsHide:true});
@@ -36,7 +41,16 @@ const run = (program,args,output='ignore') => new Promise((resolve,reject)=>{
 });
 let started = false;
 try {
+  const openssl=process.env.OPENSSL_PATH||'C:/Program Files/Git/usr/bin/openssl.exe';
+  await access(openssl);
   await run(exe('initdb'),['-D',data,'-U','lab_owner','--pwfile',pwfile,'--auth=scram-sha-256','--no-locale','--encoding=UTF8']);
+  const cert=path.join(root,'server.crt'),key=path.join(root,'server.key');
+  await promisify(execFile)(openssl,['req','-x509','-newkey','rsa:2048','-sha256','-nodes','-keyout',key,'-out',cert,
+    '-days','1','-subj','/CN=127.0.0.1','-addext','subjectAltName=IP:127.0.0.1'],{windowsHide:true,timeout:20000});
+  const pgPath=value=>value.replaceAll('\\','/').replaceAll("'","''");
+  await writeFile(path.join(data,'postgresql.auto.conf'),`ssl=on\nssl_cert_file='${pgPath(cert)}'\nssl_key_file='${pgPath(key)}'\n`);
+  await writeFile(runnerPassfile,`127.0.0.1:${port}:victoriosa_director_supervision_lab:autopilot_cloud_runner:${runnerPassword}\n`,{mode:0o600});
+  env.DIRECTOR_LAB_TLS_ROOT_CERT=cert;
   // Port race is fail-closed. No connection is attempted unless our own pg_ctl confirms startup.
   await run(exe('pg_ctl'),['-D',data,'-l',path.join(root,'server.log'),'-o',
     `-h 127.0.0.1 -p ${port}${process.platform==='win32'?'':` -k "${root}"`}`,'-w','start']);

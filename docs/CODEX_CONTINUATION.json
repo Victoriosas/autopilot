@@ -57,41 +57,41 @@
       "external_blocker": "Resolve API HTTP429 using the account/project owning the existing GitHub secret. No provider billing or account details published. Do not assert insufficient_quota solely from HTTP429.",
       "next_action": "After owner confirms usable API quota/access: reconcile live main and PRs, pause the existing local heartbeat again, then admit one bounded reviewed-base attempt within USD5/month. Keep deterministic branch receipts; no replay on either prior base. The existing cloud schedule is every six hours once admitted.",
       "historical_observation_only": true,
-      "current_session_limit": "El21/11 Vercel Agent no consult\u00f3 variables Actions, configuraci\u00f3n heartbeat ni cuota del proveedor. Ver runtime_audit.session_read_only_20261121; no reactivar ni certificar estado actual a partir de este registro hist\u00f3rico."
+      "current_session_limit": "El21/11 Vercel Agent no consultó variables Actions, configuración heartbeat ni cuota del proveedor. Ver runtime_audit.session_read_only_20261121; no reactivar ni certificar estado actual a partir de este registro histórico."
     }
   },
-  "updated_at": "2026-11-21T04:15:17.602Z",
+  "updated_at": "2026-11-22T10:42:53Z",
   "execution_id": "three-demonstrations-20261121",
   "repository": {
-    "branch": "codex/lane-d-cloud-contract-20261121",
-    "base_sha": "66da49d3cb7a91b0decb52163a0cbf2e67ee6168",
-    "head_sha": null,
-    "worktree": "WORKTREE:lane-d-cloud-contract-20261121",
-    "pr_lookup": "https://github.com/Victoriosas/autopilot/pulls?q=is%3Apr+head%3Acodex%2Fp2-cancel-ledger-boundary-20261117",
-    "note": "Nueva orden sint\u00e9tica autorizada. Consultar PR por rama/SHA; no atribuir resultados futuros a esta versi\u00f3n.",
-    "pr_number": null,
-    "pr_url": null
+    "branch": "codex/cloud-director-observation-20261122",
+    "base_sha": "82b6fb24e76d81e5026c94af2630358d00f2ebe9",
+    "head_sha": "8892d2b10c204627b1b5efc661e8e052ef247cc7",
+    "worktree": "E:/autopilot-worktrees/cloud-director-implement-20261122",
+    "pr_lookup": "https://github.com/Victoriosas/autopilot/pull/274",
+    "note": "head_sha es el padre remoto verificado anterior al incremento local; resolver el commit contenedor y los checks del head vivo de PR #274 antes de integrar. No atribuir CI de ese padre al candidato.",
+    "pr_number": 274,
+    "pr_url": "https://github.com/Victoriosas/autopilot/pull/274"
   },
   "current_order": {
     "id": "ORD-THREE-DEMONSTRATIONS-20261121",
     "phase": "F0",
     "linear_phase": "P3-P6_SYNTHETIC",
-    "objective": "Tres demostraciones reproducibles staging por contratos existentes: consulta integral, seis roles y cat\u00e1logo; handoff cloud acotado como carril independiente.",
+    "objective": "Tres demostraciones reproducibles staging por contratos existentes: consulta integral, seis roles y catálogo; handoff cloud acotado como carril independiente.",
     "status": "in_progress_parallel_staging",
     "limits": [
-      "no_send y datos sint\u00e9ticos; sin pagos/clientas/credenciales o permisos productivos/migraciones remotas productivas/deploy manual",
-      "P2 preservada sin reapertura ni tareas nuevas; no modificar cinco archivos ni cl\u00faster original",
+      "no_send y datos sintéticos; sin pagos/clientas/credenciales o permisos productivos/migraciones remotas productivas/deploy manual",
+      "P2 preservada sin reapertura ni tareas nuevas; no modificar cinco archivos ni clúster original",
       "Sin nuevo ledger/cola/scheduler/supervisor; conservar heartbeat victoriosa-autopilot-6h ACTIVE cada30min",
       "Sin bypass de environment prevent_self_review, SHA revisado, RLS/TLS/fencing o tests"
     ],
     "acceptance_criteria": [
-      "A: formulario a cierre reconstruible en panel, cuatro negativos, acuse SIMULADO deduplicado y recuperaci\u00f3n durable",
+      "A: formulario a cierre reconstruible en panel, cuatro negativos, acuse SIMULADO deduplicado y recuperación durable",
       "B: seis entradas normales ejercitadas y evidencia por rol; pausa SQL se prueba y se conserva si deniega",
-      "C: misi\u00f3n autorizada y denegada, m\u00ednimo permiso/auditor\u00eda/cuota/unavailable/disable",
+      "C: misión autorizada y denegada, mínimo permiso/auditoría/cuota/unavailable/disable",
       "D: handoff por adaptador existente con contratos locales o entrega cloud autorizada demostrada; conservar fallo original",
       "PRs revisadas y CI exacta validate/postgres/CodeQL antes de merge; estados separado por entorno"
     ],
-    "last_verified_step": "Base66da49d incorpora #263. Medici\u00f3n de esta orden main eac9870 antes de cambios; alias victoriosas.online9d6bbdb (brecha de despliegue), heartbeatACTIVE30min, cola64/130,45completed/13queued/6blocked/0leases. Causas infraestructura:6blocked,3/3intentoss y18failure site_unavailable;13queued0claims. P2 intacta. Cuatro worktrees exclusivos, A/B/C delegados expresamente seg\u00fan solicitud y D root."
+    "last_verified_step": "Carril D F0 implementado y probado localmente en PR #274 sobre main 82b6fb2, padre 8892d2b. DirectorSyntheticExecutor/CloudMissionStore reutilizan el ledger existente; SQL scoped en staged, sin activar #273 ni hosted. PostgreSQL18 loopback SCRAM/TLS: 2 workers, un solo intento; rollback/checkpoint durable, idempotencia slot, expiración/recovery, revocación/reautorización compare-and-set, stale grant/token rechazado en claim/checkpoint/fail/complete, observador independiente coincide, otros cinco agentes 0 claims y scheduler 0. npm verify 621/621, secret-scan PASS, diff-check PASS. PR #272 cb67032, #273 009713f y el head previo de #274 tienen anotación oficial de billing: jobs no iniciaron; CI del diff candidato pendiente. P2 INDETERMINADO/PRESERVAR, sin reapertura."
   },
   "completed_operations": [
     {
@@ -115,19 +115,19 @@
       "detection": "run43657434746 SUCCESS hosted-status state completed; excepcion humana puntual auditada; intento/checkpoint/auditoria sin cambios"
     },
     {
-      "operation": "Auditor\u00eda en worktree exclusivo y consolidaci\u00f3n de plan/prompt",
-      "detection": "Manifiesto/evidencias fechadas, fuentes hist\u00f3ricas preservadas, c\u00f3digo de aplicaci\u00f3n sin cambios"
+      "operation": "Auditoría en worktree exclusivo y consolidación de plan/prompt",
+      "detection": "Manifiesto/evidencias fechadas, fuentes históricas preservadas, código de aplicación sin cambios"
     },
     {
-      "operation": "Validaci\u00f3n local actual",
-      "detection": "Segundo verify516/516; primer fallo conservado. P0D8/8 y probe state inesperado sin IO. fsck conectividad y GET p\u00fablico."
+      "operation": "Validación local actual",
+      "detection": "Segundo verify516/516; primer fallo conservado. P0D8/8 y probe state inesperado sin IO. fsck conectividad y GET público."
     },
     {
       "operation": "Reconciliar24 fuentes locales cloud y continuidad",
-      "detection": "8 iguales a main CRLF normalizado,13 iguales a historia de main y3 solo l\u00ednea final vac\u00eda; evidencia local-cloud-reconciliation.json; sin mutar recursos"
+      "detection": "8 iguales a main CRLF normalizado,13 iguales a historia de main y3 solo línea final vacía; evidencia local-cloud-reconciliation.json; sin mutar recursos"
     },
     {
-      "operation": "Confirmar PR235/CI y detectar integraci\u00f3n externa",
+      "operation": "Confirmar PR235/CI y detectar integración externa",
       "detection": "Head0f2482f con checks requeridos SUCCESS; mergef2129e9 observado externamente; main validate/postgres/CodeQL SUCCESS, continuation cerrado"
     },
     {
@@ -135,20 +135,20 @@
       "detection": "DPAPI CurrentUser; proceso nuevo compara745/405 archivos; historia completa cifrada y unpack-objects -n --strict exit0 sin objetos plaintext escritos"
     },
     {
-      "operation": "Minimizar evidencia p\u00fablica sin borrar historia",
+      "operation": "Minimizar evidencia pública sin borrar historia",
       "detection": "IDs/alias/conteos en lugar de rutas de perfil, PIDs, plugins y destinos; originales cifrados, versiones previas Git conservadas"
     },
     {
-      "operation": "Preparar alineaci\u00f3n de heartbeat existente",
-      "detection": "Contrato ya en main; solo view/lectura y texto listo; hash de configuraci\u00f3n completa intacto, cadencia/destino/estado sin cambio"
+      "operation": "Preparar alineación de heartbeat existente",
+      "detection": "Contrato ya en main; solo view/lectura y texto listo; hash de configuración completa intacto, cadencia/destino/estado sin cambio"
     },
     {
       "operation": "Conservar heads y refs de17 PR cerradas externamente",
       "detection": "17 commits y refs de seguimiento locales intactos; pack de historias cifrado y strict dry-run exit0;16 ramas remotas presentes, Dependabot169 ausente. Sin close/merge/delete de esta orden."
     },
     {
-      "operation": "Registrar decisi\u00f3n del propietario sobre cierres externos",
-      "detection": "Respuesta expl\u00edcita: registrar los cierres y conservar ramas; ninguna reapertura ni recreaci\u00f3n remota ejecutada."
+      "operation": "Registrar decisión del propietario sobre cierres externos",
+      "detection": "Respuesta explícita: registrar los cierres y conservar ramas; ninguna reapertura ni recreación remota ejecutada."
     },
     {
       "operation": "Alinear localmente heartbeat existente y revalidar campos",
@@ -163,8 +163,8 @@
       "detection": "3 archivos historicos recuperados por SHA; status adaptado a LocalMissionStore, rechazos de binding, fase, estados y lease; 20 pruebas focales, lint TypeScript correcto."
     },
     {
-      "operation": "Corregir revisi\u00f3n de PR237 sin duplicar misi\u00f3n",
-      "detection": "enabled no booleano rechazado antes de leer el host; false real no selecciona objetivo. Plan y checkpoint reconciliados para la misma orden P1; integraci\u00f3n operativa sigue pendiente."
+      "operation": "Corregir revisión de PR237 sin duplicar misión",
+      "detection": "enabled no booleano rechazado antes de leer el host; false real no selecciona objetivo. Plan y checkpoint reconciliados para la misma orden P1; integración operativa sigue pendiente."
     },
     {
       "operation": "Integrate read-only supervisor observation into existing mission runtime",
@@ -175,12 +175,12 @@
       "detection": "Remote main 4ceb541; read-only runtime/CLI is merged, not a pending PR. RED missing authorization rejection reproduced; fresh scoped claim rejects denial, stale objective/version/cancellation and duplicate claim in PostgreSQL18 disposable local lab."
     },
     {
-      "operation": "Continuar ORD-P1-SUPERVISOR-ADAPTER-20261114 con autorizaci\u00f3n por efecto y atestaci\u00f3n independiente",
-      "detection": "Worktree aislado sobre main 44dbae; RED reproduce denegaci\u00f3n post-claim y completion sin verificador, m\u00e1s checkpoint terminal duplicado. GREEN focal 25/25, lint aprobado y verify 555/555 aprobado. Sin efecto remoto/SQL/dispatch."
+      "operation": "Continuar ORD-P1-SUPERVISOR-ADAPTER-20261114 con autorización por efecto y atestación independiente",
+      "detection": "Worktree aislado sobre main 44dbae; RED reproduce denegación post-claim y completion sin verificador, más checkpoint terminal duplicado. GREEN focal 25/25, lint aprobado y verify 555/555 aprobado. Sin efecto remoto/SQL/dispatch."
     },
     {
-      "operation": "Publicar una PR draft \u00fanica para la continuaci\u00f3n P1 y conciliar el checkpoint",
-      "detection": "PR #240 abierta por el perfil Victoriosas, base 44dbaeeb y head inicial 77c6e3c; rama codex/p1-per-effect-authorization-20261115. No hay fusi\u00f3n. CI final en curso; Vercel Preview fue activado autom\u00e1ticamente por GitHub, sin despliegue manual a producci\u00f3n."
+      "operation": "Publicar una PR draft única para la continuación P1 y conciliar el checkpoint",
+      "detection": "PR #240 abierta por el perfil Victoriosas, base 44dbaeeb y head inicial 77c6e3c; rama codex/p1-per-effect-authorization-20261115. No hay fusión. CI final en curso; Vercel Preview fue activado automáticamente por GitHub, sin despliegue manual a producción."
     },
     {
       "operation": "Corregir regresion de permisos sinteticos legacy detectada por postgres CI en PR240",
@@ -195,28 +195,28 @@
       "detection": "En head 7318fc1760ca4510d0fc9964a0ac50b51ab6afcb validate SUCCESS (ambos runs), postgres SUCCESS (ambos reports), CodeQL SUCCESS sin alertas nuevas, public-browser-smoke SUCCESS y Vercel Preview SUCCESS. Supabase Preview SKIPPED. Fetch PR confirma abierta/draft/mergeable/no-merged; sin review. No hosted SQL, ejecucion ni deploy."
     },
     {
-      "operation": "Reconciliar estado actual de PR240 y actualizar continuidad sin cambiar c\u00f3digo",
-      "detection": "Head 45f970943561c7274b7fed5025d8f78f56889530 sincronizado con origin; main 44dbaeeb6384740da81db2357fb003c7de42d33b; PR abierta/draft/mergeable y lista de reviews vac\u00eda. CI exacta del head: validate/postgres/CodeQL/public-browser-smoke/Vercel Preview SUCCESS, Supabase Preview SKIPPED. Body de la misma PR actualizado. Este commit solo registra checkpoint; no hubo misi\u00f3n, SQL, merge ni deploy."
+      "operation": "Reconciliar estado actual de PR240 y actualizar continuidad sin cambiar código",
+      "detection": "Head 45f970943561c7274b7fed5025d8f78f56889530 sincronizado con origin; main 44dbaeeb6384740da81db2357fb003c7de42d33b; PR abierta/draft/mergeable y lista de reviews vacía. CI exacta del head: validate/postgres/CodeQL/public-browser-smoke/Vercel Preview SUCCESS, Supabase Preview SKIPPED. Body de la misma PR actualizado. Este commit solo registra checkpoint; no hubo misión, SQL, merge ni deploy."
     },
     {
       "operation": "Verificar CI exacta del checkpoint documental PR240",
-      "detection": "En head 625214f2e935eaaca7d917cb8ddb24270ae0380d validate SUCCESS (dos runs), postgres SUCCESS (dos jobs), CodeQL SUCCESS sin alertas nuevas, public-browser-smoke SUCCESS, Vercel Preview SUCCESS y Vercel Preview Comments SUCCESS. Supabase Preview SKIPPED. PR #240 permanece abierta/draft/mergeable/sin reviews. No se repiti\u00f3 c\u00f3digo ni hubo operaci\u00f3n externa."
+      "detection": "En head 625214f2e935eaaca7d917cb8ddb24270ae0380d validate SUCCESS (dos runs), postgres SUCCESS (dos jobs), CodeQL SUCCESS sin alertas nuevas, public-browser-smoke SUCCESS, Vercel Preview SUCCESS y Vercel Preview Comments SUCCESS. Supabase Preview SKIPPED. PR #240 permanece abierta/draft/mergeable/sin reviews. No se repitió código ni hubo operación externa."
     },
     {
       "operation": "Conciliar y verificar CI del checkpoint PR240 baa8d4e",
       "detection": "Head exacto baa8d4e00a51516234f83c3393458c424689987b; validate SUCCESS (dos runs), postgres SUCCESS (dos jobs), CodeQL SUCCESS sin alertas nuevas, public-browser-smoke SUCCESS, Vercel Preview SUCCESS y Preview Comments SUCCESS. Supabase Preview SKIPPED. Push del hijo documental anterior confirmado fast-forward tras error DNS de la primera tentativa; branch remoto coincide."
     },
     {
-      "operation": "Revalidar PR240 y registrar espera de revisi\u00f3n humana",
-      "detection": "origin/main 44dbaeeb6384740da81db2357fb003c7de42d33b; branch remota y worktree sincronizados en 89bffdae96695e754be71354087bbadfc1fa4807. PR abierta/draft/mergeable/no-merged; reviews y threads humanos vac\u00edos, \u00fanico comentario vercel[bot]. CI del SHA exacto aprobada en validate/postgres (dos reportes cada uno), CodeQL, public-browser-smoke, Vercel Preview y Vercel Preview Comments; Supabase Preview SKIPPED. Sin cambios de aplicaci\u00f3n ni efectos externos."
+      "operation": "Revalidar PR240 y registrar espera de revisión humana",
+      "detection": "origin/main 44dbaeeb6384740da81db2357fb003c7de42d33b; branch remota y worktree sincronizados en 89bffdae96695e754be71354087bbadfc1fa4807. PR abierta/draft/mergeable/no-merged; reviews y threads humanos vacíos, único comentario vercel[bot]. CI del SHA exacto aprobada en validate/postgres (dos reportes cada uno), CodeQL, public-browser-smoke, Vercel Preview y Vercel Preview Comments; Supabase Preview SKIPPED. Sin cambios de aplicación ni efectos externos."
     },
     {
-      "operation": "Registrar verificaci\u00f3n del head PR240 y barrera de revisi\u00f3n",
-      "detection": "PR #240 head exacto 9605a0757d08e24142f913faca4fba1d7cd24388; validate/postgres SUCCESS en dos informes cada uno; CodeQL, public-browser-smoke, Vercel Preview y Preview Comments SUCCESS; Supabase Preview SKIPPED. Reviews y threads humanas vac\u00edas; solo comentario vercel[bot]. PR abierta/draft/mergeable. Body actualizado con el head. Sin c\u00f3digo, misi\u00f3n ni efecto alojado."
+      "operation": "Registrar verificación del head PR240 y barrera de revisión",
+      "detection": "PR #240 head exacto 9605a0757d08e24142f913faca4fba1d7cd24388; validate/postgres SUCCESS en dos informes cada uno; CodeQL, public-browser-smoke, Vercel Preview y Preview Comments SUCCESS; Supabase Preview SKIPPED. Reviews y threads humanas vacías; solo comentario vercel[bot]. PR abierta/draft/mergeable. Body actualizado con el head. Sin código, misión ni efecto alojado."
     },
     {
-      "operation": "Completar verificaci\u00f3n del checkpoint documental 63495d1 y confirmar barrera",
-      "detection": "GitHub main 44dbaeeb6384740da81db2357fb003c7de42d33b; rama PR y worktree coinciden en 63495d142c1f46922eede2948f3048addc695d2b. PR #240 sigue abierta/draft/mergeable, sin review ni threads humanas; \u00fanico comentario Vercel. CI exacta del head: validate SUCCESS (dos runs), postgres SUCCESS (dos jobs), CodeQL SUCCESS sin alertas nuevas, public-browser-smoke SUCCESS, Vercel Preview SUCCESS y Preview Comments SUCCESS; Supabase Preview SKIPPED. No hubo cambios de aplicaci\u00f3n ni efectos externos."
+      "operation": "Completar verificación del checkpoint documental 63495d1 y confirmar barrera",
+      "detection": "GitHub main 44dbaeeb6384740da81db2357fb003c7de42d33b; rama PR y worktree coinciden en 63495d142c1f46922eede2948f3048addc695d2b. PR #240 sigue abierta/draft/mergeable, sin review ni threads humanas; único comentario Vercel. CI exacta del head: validate SUCCESS (dos runs), postgres SUCCESS (dos jobs), CodeQL SUCCESS sin alertas nuevas, public-browser-smoke SUCCESS, Vercel Preview SUCCESS y Preview Comments SUCCESS; Supabase Preview SKIPPED. No hubo cambios de aplicación ni efectos externos."
     },
     {
       "operation": "Review PR240 and correct approval/attestation binding and the real guarded positive path",
@@ -224,7 +224,7 @@
     },
     {
       "operation": "Reconcile four owner integrations",
-      "detection": "PR240\u219216e4c92, PR241\u21926463be7, PR242\u2192711b211, PR243\u21920342d39, each verified merged. No old PR reopened or duplicated."
+      "detection": "PR240→16e4c92, PR241→6463be7, PR242→711b211, PR243→0342d39, each verified merged. No old PR reopened or duplicated."
     },
     {
       "operation": "Implement durable policy and terminal recovery on the existing ledger",
@@ -292,11 +292,15 @@
     },
     {
       "operation": "Recuperar estado durable del intento cancel-cead08 sin replay",
-      "detection": "Host nativo accesible21/11: transcript original sesi\u00f3n12801 recuperado hasta06:23:48Z17/11 sin exit_code. Copia forense aislada de1300 archivos originales verificada; SELECT independiente recupera misi\u00f3n synthetic-protected-node-effect-cancel-cead08 intento2/CP3/cancelled, evento55 mission_cancelled06:23:41.725164Z, lease/token nulos. Copia detenida; cero hashes originales cambiados y cinco archivos preservados. Hashes actuales del efecto coinciden. INDETERMINADO: faltan cierre/PIDs/IPC, late-write receipts e identidad pre/post originales. Main02450f1, #260/#261 fusionadas; validate/postgres/CodeQL exactos SUCCESS, continuation44858707202 bloqueado. Producci\u00f3n por alias9d6bbdb. Heartbeat mismo ID ACTIVE cada30min reobservado, sin cambios. Informe docs/P2_FORENSIC_RECEIPT_20261121.md"
+      "detection": "Host nativo accesible21/11: transcript original sesión12801 recuperado hasta06:23:48Z17/11 sin exit_code. Copia forense aislada de1300 archivos originales verificada; SELECT independiente recupera misión synthetic-protected-node-effect-cancel-cead08 intento2/CP3/cancelled, evento55 mission_cancelled06:23:41.725164Z, lease/token nulos. Copia detenida; cero hashes originales cambiados y cinco archivos preservados. Hashes actuales del efecto coinciden. INDETERMINADO: faltan cierre/PIDs/IPC, late-write receipts e identidad pre/post originales. Main02450f1, #260/#261 fusionadas; validate/postgres/CodeQL exactos SUCCESS, continuation44858707202 bloqueado. Producción por alias9d6bbdb. Heartbeat mismo ID ACTIVE cada30min reobservado, sin cambios. Informe docs/P2_FORENSIC_RECEIPT_20261121.md"
     },
     {
       "operation": "Medir seis roles mediante agregados de solo lectura",
       "detection": "All recorded tasks infrastructure/read_only_public_health. Other five roles zero rows here; on-demand entries not exercised. No retries, dispatch or remote writes."
+    },
+    {
+      "operation": "Implementar y probar adaptador Director sintético scoped en la misma PR #274",
+      "detection": "Directores sintéticos usan solo las RPC staged y el ledger existente; PostgreSQL18 descartable TLS/SCRAM verifica exclusión, idempotencia por slot, rollback, checkpoint, expiración, revocación compare-and-set, rechazo stale-token y proyección independiente; npm verify 621/621, secret scan y diff-check PASS. Sin efecto alojado. La CI remota del padre fue bloqueada antes del runner por billing; candidata final pendiente."
     }
   ],
   "evidence_refs": [
@@ -366,43 +370,46 @@
     "https://github.com/Victoriosas/autopilot/actions/runs/44861091827",
     "https://github.com/Victoriosas/autopilot/actions/runs/44861091854",
     "https://github.com/Victoriosas/autopilot/actions/runs/44861335499",
-    "docs/P2_FORENSIC_RECEIPT_20261121.md"
+    "docs/P2_FORENSIC_RECEIPT_20261121.md",
+    "docs/DIRECTOR_SUPERVISION_LAB_20261122.md"
   ],
   "blockers": [
     "P2 original INDETERMINADO, preservado y fuera del trabajo activo; no bloquea A/B/C/D",
     "consultations tiene entrada SQL pausada; probar rechazo conservando guarda",
     "Cloud remoto condicionado al reviewed SHA y environment prevent_self_review; local contrato autorizado",
-    "Dominio todav\u00eda9d6bbdb: brecha despliegue, no prueba de demos productivas"
+    "Dominio todavía9d6bbdb: brecha despliegue, no prueba de demos productivas",
+    "Carril D: GitHub Actions account locked due to billing issue (official annotations); no CI del candidato final.",
+    "No autorización para aplicar SQL alojado, configurar credenciales cloud, reclamar misión alojada ni activar workflow/Cron."
   ],
   "next_order_id": "ORD-THREE-DEMONSTRATIONS-20261121",
   "next_order": {
     "id": "ORD-THREE-DEMONSTRATIONS-20261121",
     "phase": "F0",
     "linear_phase": "P3-P6_SYNTHETIC",
-    "objective": "Tres demostraciones reproducibles staging por contratos existentes: consulta integral, seis roles y cat\u00e1logo; handoff cloud acotado como carril independiente.",
+    "objective": "Tres demostraciones reproducibles staging por contratos existentes: consulta integral, seis roles y catálogo; handoff cloud acotado como carril independiente.",
     "status": "in_progress_parallel_staging",
     "limits": [
-      "no_send y datos sint\u00e9ticos; sin pagos/clientas/credenciales o permisos productivos/migraciones remotas productivas/deploy manual",
-      "P2 preservada sin reapertura ni tareas nuevas; no modificar cinco archivos ni cl\u00faster original",
+      "no_send y datos sintéticos; sin pagos/clientas/credenciales o permisos productivos/migraciones remotas productivas/deploy manual",
+      "P2 preservada sin reapertura ni tareas nuevas; no modificar cinco archivos ni clúster original",
       "Sin nuevo ledger/cola/scheduler/supervisor; conservar heartbeat victoriosa-autopilot-6h ACTIVE cada30min",
       "Sin bypass de environment prevent_self_review, SHA revisado, RLS/TLS/fencing o tests"
     ],
     "acceptance_criteria": [
-      "A: formulario a cierre reconstruible en panel, cuatro negativos, acuse SIMULADO deduplicado y recuperaci\u00f3n durable",
+      "A: formulario a cierre reconstruible en panel, cuatro negativos, acuse SIMULADO deduplicado y recuperación durable",
       "B: seis entradas normales ejercitadas y evidencia por rol; pausa SQL se prueba y se conserva si deniega",
-      "C: misi\u00f3n autorizada y denegada, m\u00ednimo permiso/auditor\u00eda/cuota/unavailable/disable",
+      "C: misión autorizada y denegada, mínimo permiso/auditoría/cuota/unavailable/disable",
       "D: handoff por adaptador existente con contratos locales o entrega cloud autorizada demostrada; conservar fallo original",
       "PRs revisadas y CI exacta validate/postgres/CodeQL antes de merge; estados separado por entorno"
     ],
-    "last_verified_step": "Base66da49d incorpora #263. Medici\u00f3n de esta orden main eac9870 antes de cambios; alias victoriosas.online9d6bbdb (brecha de despliegue), heartbeatACTIVE30min, cola64/130,45completed/13queued/6blocked/0leases. Causas infraestructura:6blocked,3/3intentoss y18failure site_unavailable;13queued0claims. P2 intacta. Cuatro worktrees exclusivos, A/B/C delegados expresamente seg\u00fan solicitud y D root.",
+    "last_verified_step": "Base66da49d incorpora #263. Medición de esta orden main eac9870 antes de cambios; alias victoriosas.online9d6bbdb (brecha de despliegue), heartbeatACTIVE30min, cola64/130,45completed/13queued/6blocked/0leases. Causas infraestructura:6blocked,3/3intentoss y18failure site_unavailable;13queued0claims. P2 intacta. Cuatro worktrees exclusivos, A/B/C delegados expresamente según solicitud y D root.",
     "executor": "Codex",
-    "next_action": "Continuar ORD-THREE-DEMONSTRATIONS-20261121; A/B/C/D paralelos autorizados por propietario21/11. P2 PRESERVAR/NO_REABRIR. Releer execution_inventory, recuperar trabajo ya creado y elegir cualquier acci\u00f3n no bloqueada. No usar dependencias P2 hist\u00f3ricas para detener staging; no cambios productivos ni guardas rebajadas. No repetir ensayos inciertos. Mantener scheduler existente y verificar checkpoint publicado."
+    "next_action": "Continuar ORD-THREE-DEMONSTRATIONS-20261121; A/B/C/D paralelos autorizados por propietario21/11. P2 PRESERVAR/NO_REABRIR. Releer execution_inventory, recuperar trabajo ya creado y elegir cualquier acción no bloqueada. No usar dependencias P2 históricas para detener staging; no cambios productivos ni guardas rebajadas. No repetir ensayos inciertos. Mantener scheduler existente y verificar checkpoint publicado."
   },
   "resumption": {
-    "status": "p2_active_partial",
-    "mechanism": "Same published checkpoint; verify containing head/PR/CI and integrated effects. Native synthetic proof does not certify heartbeat/global writer recovery."
+    "status": "ORD-THREE-DEMONSTRATIONS-20261121_F0_lane_D_local_proven_P2_preserved",
+    "mechanism": "Same canonical checkpoint. Verify live main/PR head/checks and preserve other lanes and P2 resources. No hosted operation, wake, Cron, SQL or dispatch without separate authorization."
   },
-  "resume_instructions": "Continuar ORD-THREE-DEMONSTRATIONS-20261121; A/B/C/D paralelos autorizados por propietario21/11. P2 PRESERVAR/NO_REABRIR. Releer execution_inventory, recuperar trabajo ya creado y elegir cualquier acci\u00f3n no bloqueada. No usar dependencias P2 hist\u00f3ricas para detener staging; no cambios productivos ni guardas rebajadas. No repetir ensayos inciertos. Mantener scheduler existente y verificar checkpoint publicado.",
+  "resume_instructions": "Continuar ORD-THREE-DEMONSTRATIONS-20261121; A/B/C/D paralelos autorizados por propietario21/11. P2 PRESERVAR/NO_REABRIR. Releer execution_inventory, recuperar trabajo ya creado y elegir cualquier acción no bloqueada. No usar dependencias P2 históricas para detener staging; no cambios productivos ni guardas rebajadas. No repetir ensayos inciertos. Mantener scheduler existente y verificar checkpoint publicado.",
   "supervision": {
     "verdict": "P2_PARTIAL",
     "scope": "Bounded local completion-cancellation boundary in the existing P2 order.",
@@ -421,7 +428,7 @@
     "scope": "Trusted-host synthetic technical core only; no product/hosted closure."
   },
   "deferred_phase_requirements": {
-    "P3": "Recuperaci\u00f3n cloud de efectos entre hosts, no ejecutada ni activada en P0"
+    "P3": "Recuperación cloud de efectos entre hosts, no ejecutada ni activada en P0"
   },
   "owner_decisions": [
     {
@@ -453,13 +460,13 @@
     },
     {
       "date": "2026-11-21",
-      "decision": "Misi\u00f3n vigente del propietario: tres capacidades demostrables; continuar incrementos independientes sin confirmaciones rutinarias.",
-      "scope": "Lectura integral, sint\u00e9tico/staging por contratos existentes, pruebas, ramas/PR propias y merge expl\u00edcito tras puertas y CI exacta. No autoriza pagos/env\u00edos reales, secretos/permisos productivos, migraciones remotas productivas, deploy manual productivo, operaci\u00f3n irreversible, reapertura del efecto incierto ni rebajar guardas. No activa fases sin satisfacer dependencias."
+      "decision": "Misión vigente del propietario: tres capacidades demostrables; continuar incrementos independientes sin confirmaciones rutinarias.",
+      "scope": "Lectura integral, sintético/staging por contratos existentes, pruebas, ramas/PR propias y merge explícito tras puertas y CI exacta. No autoriza pagos/envíos reales, secretos/permisos productivos, migraciones remotas productivas, deploy manual productivo, operación irreversible, reapertura del efecto incierto ni rebajar guardas. No activa fases sin satisfacer dependencias."
     },
     {
       "date": "2026-11-21",
-      "decision": "Solicitud adjunta expl\u00edcita: A/B/C/D son carriles paralelos; P2 indeterminado no bloquea oficina/P5/P6/extensi\u00f3n. Aprovisionar staging local y ejecutar pruebas por entradas normales.",
-      "scope": "no_send y datos sint\u00e9ticos; sin pagos/clientas/credenciales o permisos productivos/migraciones remotas productivas/deploy manual; P2 preservada sin reapertura ni tareas nuevas; no modificar cinco archivos ni cl\u00faster original; Sin nuevo ledger/cola/scheduler/supervisor; conservar heartbeat victoriosa-autopilot-6h ACTIVE cada30min; Sin bypass de environment prevent_self_review, SHA revisado, RLS/TLS/fencing o tests"
+      "decision": "Solicitud adjunta explícita: A/B/C/D son carriles paralelos; P2 indeterminado no bloquea oficina/P5/P6/extensión. Aprovisionar staging local y ejecutar pruebas por entradas normales.",
+      "scope": "no_send y datos sintéticos; sin pagos/clientas/credenciales o permisos productivos/migraciones remotas productivas/deploy manual; P2 preservada sin reapertura ni tareas nuevas; no modificar cinco archivos ni clúster original; Sin nuevo ledger/cola/scheduler/supervisor; conservar heartbeat victoriosa-autopilot-6h ACTIVE cada30min; Sin bypass de environment prevent_self_review, SHA revisado, RLS/TLS/fencing o tests"
     }
   ],
   "validation": {
@@ -486,18 +493,20 @@
       ]
     },
     "current_pr_head_checks": {
-      "lookup": "https://github.com/Victoriosas/autopilot/pulls?q=is%3Apr+head%3Acodex%2Fp2-claim-cancellation-bound-20261117",
+      "lookup": "https://github.com/Victoriosas/autopilot/pull/274",
+      "sha": "8892d2b10c204627b1b5efc661e8e052ef247cc7",
       "required": [
         "validate",
         "postgres"
       ],
       "additional": [
         "CodeQL",
-        "public-browser-smoke when triggered",
-        "Vercel Preview when triggered"
+        "public-browser-smoke",
+        "Vercel Security Review",
+        "Vercel Preview"
       ],
-      "status": "pending_exact_final_candidate_CI",
-      "scope": "Containing commit needs its own checks; no self-referential polling commit."
+      "status": "failed_before_runner_start_github_billing_lock_on_parent_sha; local_candidate_CI_pending",
+      "evidence": "GitHub check annotations on PR #272, #273 and #274 state that jobs were not started because the account is locked due to a billing issue. The parent SHA is not the modified candidate."
     },
     "integrated_readonly_runtime": {
       "pr": 238,
@@ -540,7 +549,7 @@
       "verify_skipped": 0,
       "verify_exit_code": 0,
       "checks": "Types,14 skills, Node/Vercel builds, compiled API smoke, route HTML, secret scan, diff check passed.",
-      "postgres": "PASS PostgreSQL18 disposable: actual guarded factory \u2192 canonical JSONB objective \u2192 authorized observation/planner \u2192 synthetic executor \u2192 independent verifier \u2192 completed (version5); checkpoint denial prevents its SQL write; observation denial creates no worktree; claim/lease/fencing/legacy regressions pass. No hosted SQL.",
+      "postgres": "PASS PostgreSQL18 disposable: actual guarded factory → canonical JSONB objective → authorized observation/planner → synthetic executor → independent verifier → completed (version5); checkpoint denial prevents its SQL write; observation denial creates no worktree; claim/lease/fencing/legacy regressions pass. No hosted SQL.",
       "prior_sql_test_failure": "New positive guarded fixture reached completed but its test expected version4. Existing six_agent_complete increments the checkpoint too, giving plan1 + steps3 + completion1 =5. Corrected the new assertion against SQL source and readback; no SQL permission or contract changed.",
       "claim_scope": "Existing claim/lease/token/fencing and same SQL ledger retained; only fixture resources created by this review used."
     },
@@ -786,7 +795,7 @@
       "pass": 11,
       "fail": 0,
       "scope": "Contrato local con driver/store aislados y child gestionado Windows; no entrega cloud ni cierre transitivo Linux acreditados",
-      "independent_review": "Agente B reprodujo carrera abort/close; driver corregido a ManagedProcesses; revisi\u00f3n posterior confirmada",
+      "independent_review": "Agente B reprodujo carrera abort/close; driver corregido a ManagedProcesses; revisión posterior confirmada",
       "full_verify": {
         "tests": 608,
         "pass": 608,
@@ -795,28 +804,60 @@
         "builds_and_api": "PASS",
         "dependency_scope": "Local node_modules reutilizadas; Vite6.4.5 observado frente lockfile actual. CI npmci del SHA exacto es autoridad de dependencias."
       }
+    },
+    "director_synthetic_lab": {
+      "base_sha": "82b6fb24e76d81e5026c94af2630358d00f2ebe9",
+      "branch": "codex/cloud-director-observation-20261122",
+      "pr_number": 274,
+      "pre_change_head_sha": "8892d2b10c204627b1b5efc661e8e052ef247cc7",
+      "local_verify": {
+        "command": "npm run verify",
+        "tests": 621,
+        "passed": 621,
+        "failed": 0,
+        "skipped": 0,
+        "exit_code": 0
+      },
+      "focused_director_tests": {
+        "command": "npx tsx --test src/autopilot/directorCloudMission.test.ts",
+        "tests": 2,
+        "passed": 2
+      },
+      "disposable_postgres": "PostgreSQL18 loopback SCRAM + TLS verify-full PASS: 2 concurrent workers/1 claim, slot replay idempotent, checkpoint rollback and durable checkpoint, expired lease recovery, mid-run revocation, compare-and-set reauthorization, old grant denied at claim, stale token denied at checkpoint/fail/complete, independent synthetic projection matches, other agent claims 0, pg_cron/pg_net absent.",
+      "secret_scan": "node scripts/secret-scan.mjs PASS after shortening one synthetic test sentinel that matched the scanner pattern.",
+      "diff_check": "git diff --check PASS",
+      "hosted": "No hosted database connection or SQL, no claim/mission, no workflow dispatch, no wake/Cron, no send, merge, deployment, or cost.",
+      "costs": "No external cost observed; future hosted execution quota/rate not verified.",
+      "rollback": "Revert only this increment on PR #274; preserve PR #272/#273 and P2 resources."
     }
   },
   "p1_remaining_work": [],
   "preserved_limits": [
     "Heartbeat receipt now demonstrated for two16/11 turns, one verified documentary cycle; future dispatch, global exclusion and full SQL mission not established.",
     "Historical metadata and offsite DPAPI recovery limitations retained; all pre-existing resources preserved.",
-    "P5 hosted material A\u2013C persistence remains unaccredited; no hosted migration authorized."
+    "P5 hosted material A–C persistence remains unaccredited; no hosted migration authorized."
   ],
   "selected_mission": {
     "order_id": "ORD-THREE-DEMONSTRATIONS-20261121",
-    "objective": "Implementar handoff por adaptador existente y registrar autorizaci\u00f3n de carriles sint\u00e9ticos paralelos.",
+    "objective": "Implementar el adaptador específico de Director sintético en la PR #274 y verificar checkpoint, recuperación, autorización y métricas agregadas en PostgreSQL desechable.",
     "modified_files": [
-      "src/autopilot/cloudLedgerHandoff.ts",
-      "src/autopilot/cloudLedgerHandoff.test.ts",
-      "scripts/hosted-ledger-runner.mjs",
-      ".github/workflows/plan-cloud.yml",
-      "docs/MASTER_LINEAR_DEVELOPMENT_PLAN.md",
-      "docs/CODEX_CONTINUATION.json",
+      "scripts/test-director-supervision-db.mjs",
+      "src/autopilot/cloudMissionStore.test.ts",
+      "src/autopilot/cloudMissionStore.ts",
+      "src/autopilot/directorCloudMission.test.ts",
+      "src/autopilot/directorCloudMission.ts",
+      "src/autopilot/missionRuntime.ts",
+      "src/autopilot/sixAgentPersistence.ts",
+      "src/autopilot/sixAgentStatusRouter.test.ts",
+      "src/autopilot/sixAgentStatusRouter.ts",
+      "supabase/staged/six_agent_director_synthetic_20261122.sql",
+      "tests/director-supervision-postgres.test.ts",
+      "tests/fixtures/directorSupervisionLab.ts",
+      "docs/DIRECTOR_SUPERVISION_LAB_20261122.md",
       "docs/AUTOPILOT_STATE.md",
-      "docs/CLOUD_HANDOFF_CONTRACT_20261121.md"
+      "docs/CODEX_CONTINUATION.json"
     ],
-    "integration_state": "Implementaci\u00f3n local, CI/PR exacta pendiente. No entrega cloud ni producci\u00f3n."
+    "integration_state": "Implementado y probado en laboratorio local desechable; mismo PR #274 draft. No conectado a servicio/workflow, no SQL/ejecución alojada, CI remota del SHA final bloqueada por billing."
   },
   "next_mission": {
     "order_id": "ORD-THREE-DEMONSTRATIONS-20261121",
@@ -826,13 +867,13 @@
       "Respetar contratos existentes, permisos y CI exacta"
     ],
     "acceptance": [
-      "A: formulario a cierre reconstruible en panel, cuatro negativos, acuse SIMULADO deduplicado y recuperaci\u00f3n durable",
+      "A: formulario a cierre reconstruible en panel, cuatro negativos, acuse SIMULADO deduplicado y recuperación durable",
       "B: seis entradas normales ejercitadas y evidencia por rol; pausa SQL se prueba y se conserva si deniega",
-      "C: misi\u00f3n autorizada y denegada, m\u00ednimo permiso/auditor\u00eda/cuota/unavailable/disable",
+      "C: misión autorizada y denegada, mínimo permiso/auditoría/cuota/unavailable/disable",
       "D: handoff por adaptador existente con contratos locales o entrega cloud autorizada demostrada; conservar fallo original",
       "PRs revisadas y CI exacta validate/postgres/CodeQL antes de merge; estados separado por entorno"
     ],
-    "recoverable_prompt": "Continuar ORD-THREE-DEMONSTRATIONS-20261121; A/B/C/D paralelos autorizados por propietario21/11. P2 PRESERVAR/NO_REABRIR. Releer execution_inventory, recuperar trabajo ya creado y elegir cualquier acci\u00f3n no bloqueada. No usar dependencias P2 hist\u00f3ricas para detener staging; no cambios productivos ni guardas rebajadas. No repetir ensayos inciertos. Mantener scheduler existente y verificar checkpoint publicado."
+    "recoverable_prompt": "Continuar ORD-THREE-DEMONSTRATIONS-20261121, F0 carril D, en la misma PR #274 y worktree/branch existentes. Primero leer el head actual y resolver el commit de checkpoint; revisar CI exacta (sin reintentar mientras billing esté bloqueado) y comentarios de la PR. El propietario debe resolver la cuenta de GitHub billing. Mantener #272/#273 como dependencias abiertas, P2 INDETERMINADO/PRESERVAR, no hosted SQL/dispatch/wake/Cron/merge/deploy. Cuando CI exacta y revisión independiente estén disponibles, preparar una decisión separada para primer ensayo hospedado; requerir costo/cuota, identidad/TLS/grants y autorización puntual antes de cualquier operación alojada."
   },
   "preservation_refs": {
     "original_branch": "codex/p1-durable-policy-20261116",
@@ -850,13 +891,13 @@
       "PR252 is integrated by a9fc08a4ecd8daa6f35eca1573d1c090d20eb63b; final head exact validate/postgres/CodeQL/public-browser-smoke/Vercel Security Review/Vercel/Preview Comments succeeded; Supabase Preview skipped.",
       "RED/GREEN proves cancellation at second completion authorization is propagated and prevents a not-yet-admitted base completion write.",
       "Focused runtime and authorization suites 43/43; full verify 583/583, zero fail/skip; builds/API and diff-check pass.",
-      "Copia forense del intento original: cancelled/CP3/attempt2/mission_cancelled, lease y token liberados. Observador psql independiente; no prueba cierre de descendientes ni negativos tard\u00edos.",
+      "Copia forense del intento original: cancelled/CP3/attempt2/mission_cancelled, lease y token liberados. Observador psql independiente; no prueba cierre de descendientes ni negativos tardíos.",
       "PR #262 merged at 2026-11-21T03:25:57Z as eac987031e4291337b213a16f3e774af8cd02ef9; exact PR-head validate/postgres/CodeQL/security/Vercel checks passed, Supabase Preview skipped and Vercel preview only. Main exact validate/postgres and dynamic checks passed; no main-SHA CodeQL run was listed."
     ],
     "pending": [
-      "INDETERMINADO el intento original: faltan recibos originales de salida/descendientes, negativos tard\u00edos e identidad completa pre/post. Cancelaci\u00f3n durable intento2/CP3/evento55 acreditada; no repetir operaci\u00f3n.",
-      "Matriz P2 completa pendiente: interrupci\u00f3n/reinicio/obsoleto/efecto admitido/cancelaci\u00f3n/descendientes con observador y estado durable. No extrapolar de cancelaci\u00f3n SQL a cierre de proceso.",
-      "P3\u2013P6 y extensibilidad conservan dependencias pendientes; nuevos permisos del propietario no sustituyen evidencia de sus gates."
+      "INDETERMINADO el intento original: faltan recibos originales de salida/descendientes, negativos tardíos e identidad completa pre/post. Cancelación durable intento2/CP3/evento55 acreditada; no repetir operación.",
+      "Matriz P2 completa pendiente: interrupción/reinicio/obsoleto/efecto admitido/cancelación/descendientes con observador y estado durable. No extrapolar de cancelación SQL a cierre de proceso.",
+      "P3–P6 y extensibilidad conservan dependencias pendientes; nuevos permisos del propietario no sustituyen evidencia de sus gates."
     ],
     "boundaries": [
       "Local synthetic and guarded-ledger component coverage only; cancellation prevents a write not yet admitted after authorization. It does not roll back or cancel a SQL write already admitted.",
@@ -949,7 +990,7 @@
           "result": "Documentary checkpoint/push; commitbebaf18 integrated"
         }
       ],
-      "receipt_scope": "TOML actual reobservado21/11; hilo original recibo02:46:16Z terminado SIN CAMBIOS. Sin v\u00ednculo SQL acreditado.",
+      "receipt_scope": "TOML actual reobservado21/11; hilo original recibo02:46:16Z terminado SIN CAMBIOS. Sin vínculo SQL acreditado.",
       "stale_metadata": "Secondary codex-dev registry is stale and prompt differs; active codex registry matches TOML. Neither modified.",
       "historical_observation_only": true,
       "current_state_reference": "runtime_audit.session_read_only_20261121.heartbeat",
@@ -1097,7 +1138,7 @@
     {
       "lane": "A",
       "state": "IMPLEMENTADO",
-      "next": "Cerrar demo navegador/verify, revisi\u00f3n y PR",
+      "next": "Cerrar demo navegador/verify, revisión y PR",
       "blocker": null
     },
     {
@@ -1109,14 +1150,14 @@
     {
       "lane": "C",
       "state": "PROBADO",
-      "next": "Finalizar verify y revisi\u00f3n independiente, PR",
+      "next": "Finalizar verify y revisión independiente, PR",
       "blocker": null
     },
     {
       "lane": "D",
-      "state": "PROBADO",
-      "next": "Completar verify y revisi\u00f3n del handoff, PR",
-      "blocker": "Run alojado exige reviewed SHA exacto y environment protegido prevent_self_review; no bypass"
+      "state": "IMPLEMENTADO_PROBADO_LOCAL_NO_HOSTED",
+      "next": "Resolver el bloqueo de facturación de GitHub por el titular; después verificar CI/review del SHA exacto final de la misma PR #274. Mantener hosted SQL, dispatch y #273 desactivados.",
+      "blocker": "Anotaciones de PR #272/#273/#274 confirman que GitHub no inició jobs por bloqueo de facturación; CI del candidato nuevo todavía no demostrada."
     }
   ]
 }
