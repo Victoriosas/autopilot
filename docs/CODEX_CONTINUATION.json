@@ -60,15 +60,15 @@
       "current_session_limit": "El21/11 Vercel Agent no consultó variables Actions, configuración heartbeat ni cuota del proveedor. Ver runtime_audit.session_read_only_20261121; no reactivar ni certificar estado actual a partir de este registro histórico."
     }
   },
-  "updated_at": "2026-11-22T10:42:53Z",
+  "updated_at": "2026-11-22T10:50:17Z",
   "execution_id": "three-demonstrations-20261121",
   "repository": {
     "branch": "codex/cloud-director-observation-20261122",
     "base_sha": "82b6fb24e76d81e5026c94af2630358d00f2ebe9",
-    "head_sha": "8892d2b10c204627b1b5efc661e8e052ef247cc7",
+    "head_sha": "d8267ed8695df9568d639484b376006944f504bf",
     "worktree": "E:/autopilot-worktrees/cloud-director-implement-20261122",
     "pr_lookup": "https://github.com/Victoriosas/autopilot/pull/274",
-    "note": "head_sha es el padre remoto verificado anterior al incremento local; resolver el commit contenedor y los checks del head vivo de PR #274 antes de integrar. No atribuir CI de ese padre al candidato.",
+    "note": "head_sha identifica el commit de implementación local d8267ed8695df9568d639484b376006944f504bf, hijo del padre remoto verificado 8892d2b. Este commit de checkpoint será un hijo documental de la implementación; tras el push, resolver el head vivo de PR #274 y consultar CI exacta. No atribuir CI del padre al candidato.",
     "pr_number": 274,
     "pr_url": "https://github.com/Victoriosas/autopilot/pull/274"
   },
@@ -91,7 +91,7 @@
       "D: handoff por adaptador existente con contratos locales o entrega cloud autorizada demostrada; conservar fallo original",
       "PRs revisadas y CI exacta validate/postgres/CodeQL antes de merge; estados separado por entorno"
     ],
-    "last_verified_step": "Carril D F0 implementado y probado localmente en PR #274 sobre main 82b6fb2, padre 8892d2b. DirectorSyntheticExecutor/CloudMissionStore reutilizan el ledger existente; SQL scoped en staged, sin activar #273 ni hosted. PostgreSQL18 loopback SCRAM/TLS: 2 workers, un solo intento; rollback/checkpoint durable, idempotencia slot, expiración/recovery, revocación/reautorización compare-and-set, stale grant/token rechazado en claim/checkpoint/fail/complete, observador independiente coincide, otros cinco agentes 0 claims y scheduler 0. npm verify 621/621, secret-scan PASS, diff-check PASS. PR #272 cb67032, #273 009713f y el head previo de #274 tienen anotación oficial de billing: jobs no iniciaron; CI del diff candidato pendiente. P2 INDETERMINADO/PRESERVAR, sin reapertura."
+    "last_verified_step": "Carril D F0 implementado y probado localmente en PR #274 sobre main 82b6fb2, padre 8892d2b, commit de implementación d8267ed. DirectorSyntheticExecutor/CloudMissionStore reutilizan el ledger existente; SQL scoped en staged, sin activar #273 ni hosted. PostgreSQL18 loopback SCRAM/TLS: 2 workers, un solo intento; rollback/checkpoint durable, idempotencia slot, expiración/recovery, revocación/reautorización compare-and-set, stale grant/token rechazado en claim/checkpoint/fail/complete, observador independiente coincide, otros cinco agentes 0 claims y scheduler 0. npm verify 621/621, secret-scan PASS, diff-check PASS. PR #272 cb67032, #273 009713f y el head previo de #274 tienen anotación oficial de billing: jobs no iniciaron; CI del diff candidato pendiente. P2 INDETERMINADO/PRESERVAR, sin reapertura."
   },
   "completed_operations": [
     {
@@ -300,7 +300,7 @@
     },
     {
       "operation": "Implementar y probar adaptador Director sintético scoped en la misma PR #274",
-      "detection": "Directores sintéticos usan solo las RPC staged y el ledger existente; PostgreSQL18 descartable TLS/SCRAM verifica exclusión, idempotencia por slot, rollback, checkpoint, expiración, revocación compare-and-set, rechazo stale-token y proyección independiente; npm verify 621/621, secret scan y diff-check PASS. Sin efecto alojado. La CI remota del padre fue bloqueada antes del runner por billing; candidata final pendiente."
+      "detection": "Directores sintéticos usan solo las RPC staged y el ledger existente; PostgreSQL18 descartable TLS/SCRAM verifica exclusión, idempotencia por slot, rollback, checkpoint, expiración, revocación compare-and-set, rechazo stale-token y proyección independiente; npm verify 621/621, secret scan y diff-check PASS. Sin efecto alojado. La CI remota del padre fue bloqueada antes del runner por billing; candidata final pendiente. Commit de implementación local: d8267ed8695df9568d639484b376006944f504bf; checkpoint documental en su siguiente hijo."
     }
   ],
   "evidence_refs": [
@@ -828,7 +828,8 @@
       "diff_check": "git diff --check PASS",
       "hosted": "No hosted database connection or SQL, no claim/mission, no workflow dispatch, no wake/Cron, no send, merge, deployment, or cost.",
       "costs": "No external cost observed; future hosted execution quota/rate not verified.",
-      "rollback": "Revert only this increment on PR #274; preserve PR #272/#273 and P2 resources."
+      "rollback": "Revert only this increment on PR #274; preserve PR #272/#273 and P2 resources.",
+      "candidate_code_sha": "d8267ed8695df9568d639484b376006944f504bf"
     }
   },
   "p1_remaining_work": [],
