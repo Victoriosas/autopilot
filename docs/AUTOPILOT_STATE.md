@@ -1,3 +1,11 @@
+# Cloud Director · checkpoint y recuperación SQL sintética · 22/11/2026
+
+Continúa la misma PR #274 bajo la solicitud actual; no se crea otra cadena. Reconciliados main82b6fb2 y los candidatos #272/#273. La orden candidata de #272 es ORD-AUTONOMOUS-ENGINE-01; se preservan P2 y sus barreras. Autorización actual limitada al laboratorio sintético, sin efectos alojados.
+
+**PROBADO local PostgreSQL18.6 real:** seis roles leídos con runtime unknown; checkpoint1 confirmado; fallo SQL inyectado en auditoría del checkpoint2 causa rollback atómico; otro proceso no puede tomar lease vigente; replay exacto no duplica auditoría; expiración real, fail/checkpoint con token anterior rechazados; proceso nuevo reanuda solo el segundo paso y llega a completed/intento2/checkpoint3. Otros cinco roles sin claims; cero pg_cron/pg_net y no_send/no_dispatch. Dos clústeres desechables distintos aprobaron; runner reproducible en npm run test:director-supervision:db, sin nuevas dependencias de aplicación. Consume el SQL original de #272 verificado por hash, no lo duplica.
+
+**NO autonomía alojada:** no migraciones, workers, envíos, trigger, cron ni despliegue nuevo. Adaptadores productivos y autorización local estricta intactos; no se convierte la fixture psql en endpoint cloud. La causa de CI por facturación sigue reportada por informes previos: GitHub no devolvió logs de los jobs consultados, no hay revalidación independiente aquí. [Prueba, diseño de integración, preparación30min y puertas exactas del primer ciclo alojado](DIRECTOR_SUPERVISION_LAB_20261122.md).
+
 # Cloud Director · observación operativa · 22/11/2026
 
 Solicitud actual: implementar progresivamente Cloud Director, sin producción ni nuevos servicios pagos. Base GitHub main `82b6fb24e76d81e5026c94af2630358d00f2ebe9`, PR272/273 abiertas y sin fusionar. Fase F0: proyección de lectura del ledger existente; no nueva cola/scheduler ni activación de ejecutores.
