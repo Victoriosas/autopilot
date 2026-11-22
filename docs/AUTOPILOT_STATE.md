@@ -1884,3 +1884,12 @@ GitHub Actions del SHA d9bf79d: validate, postgres (dos workflows), Analyze acti
 Límites: código enviado solo a la rama/PR; no fusionado ni desplegado. Sin SQL alojado, credenciales, conexión Supabase, claims/ejecución remotos, Cron, workflow dispatch, envíos o gastos. Coste externo nuevo no observado; costo/cuota de futura ejecución alojada no comprobados. Rollback: revertir solo d9bf79d (y los commits de esta misma rama según revisión), sin modificar dependencias ni P2.
 
 Siguiente acción exacta: titular resuelve billing por sus canales; después reconsultar y aprobar validate/postgres/CodeQL/browser y Vercel en el SHA final de #274, exigir revisión humana antes de integrar. No activar hosted SQL, dispatch, wake o Cron por este resultado.
+
+
+## 2026-11-22 11:18 UTC — CI y revisión de seguridad del head documental previo
+
+PR #274 continúa abierta/draft. SHA 45cf3ea7be7984dca063a7c2cefd0495d93d4699 (commit documental hijo de d9bf79d) fue el head remoto verificado antes de este checkpoint. En su SHA exacto, Vercel Security Review terminó SUCCESS (“No findings”); la lista Vercel no muestra vulnerabilidades abiertas. El fix de SQL fue introducido en d9bf79d, donde Vercel cerró el finding #6 como resuelto.
+
+Validate, ambos Postgres, CodeQL Actions/JS/TS/Python y browser smoke fallaron antes de iniciar. Las ocho anotaciones de ese SHA dicen literalmente que la cuenta está bloqueada por facturación. Supabase Preview quedó SKIPPED. No se reintentó, no se modificó billing y no se atribuye éxito remoto a las pruebas locales. Base/main sigue 82b6fb24e76d81e5026c94af2630358d00f2ebe9; PR #272 cb67032..., #273 009713f... abiertas sin modificación.
+
+El estado/checkpoint de esta ejecución queda en un commit hijo de 45cf3ea; consultar el head vivo y los checks exactos antes de cualquier cambio posterior. Sin SQL alojado, claims/ejecución remotos, workflow dispatch, Cron, envíos, gasto, merge o deploy. Siguiente dependencia: el titular resuelve billing; luego se requieren validate/postgres/CodeQL/browser y Security Review verdes en el SHA final, revisión humana, y autorización separada para cualquier operación alojada.

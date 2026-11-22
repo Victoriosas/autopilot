@@ -60,15 +60,15 @@
       "current_session_limit": "El21/11 Vercel Agent no consultó variables Actions, configuración heartbeat ni cuota del proveedor. Ver runtime_audit.session_read_only_20261121; no reactivar ni certificar estado actual a partir de este registro histórico."
     }
   },
-  "updated_at": "2026-11-22T11:14:54Z",
+  "updated_at": "2026-11-22T11:18:44Z",
   "execution_id": "director-authorization-null-fix-20261122",
   "repository": {
     "branch": "codex/cloud-director-observation-20261122",
     "base_sha": "82b6fb24e76d81e5026c94af2630358d00f2ebe9",
-    "head_sha": "d9bf79dd76ce71406ffed89e7e79c901c7fad18f",
+    "head_sha": "45cf3ea7be7984dca063a7c2cefd0495d93d4699",
     "worktree": "E:/autopilot-worktrees/cloud-director-implement-20261122",
     "pr_lookup": "https://github.com/Victoriosas/autopilot/pull/274",
-    "note": "head_sha identifica el commit de código y seguridad d9bf79dd76ce71406ffed89e7e79c901c7fad18f. El checkpoint documental será su hijo y deberá resolver nuevamente el head vivo de PR #274; no atribuirle checks del padre. No es fusión ni despliegue.",
+    "note": "repository.head_sha identifica el último head remoto verificado antes del nuevo commit documental: 45cf3ea7be7984dca063a7c2cefd0495d93d4699, hijo documental del fix de código d9bf79dd76ce71406ffed89e7e79c901c7fad18f. En 45cf3ea Vercel Security Review SUCCESS/No findings; GitHub CI falló antes de iniciar por billing y Supabase Preview fue SKIPPED. El commit de este checkpoint será un hijo documental; después del push resolver el head vivo y no atribuirle checks del padre.",
     "pr_number": 274,
     "pr_url": "https://github.com/Victoriosas/autopilot/pull/274"
   },
@@ -91,7 +91,7 @@
       "D: handoff por adaptador existente con contratos locales o entrega cloud autorizada demostrada; conservar fallo original",
       "PRs revisadas y CI exacta validate/postgres/CodeQL antes de merge; estados separado por entorno"
     ],
-    "last_verified_step": "Carril D F0: finding Vercel #6 authorization-bypass reproducido RED en PostgreSQL18 desechable al a5828d7 (claim sin director_authorization). Fix d9bf79d endurece COALESCE, IS DISTINCT FROM TRUE, argumentos y campos grant no_send/no_dispatch. PostgreSQL18 SCRAM/TLS verify-full: negativos sin grant/null/incompleto/null args/lectura/escritura sin cambio de attempts, lease/token, checkpoint o audit; escenario positivo de concurrencia/recovery PASS. npm verify 621/621, secret scan y diff-check PASS. Vercel Security Review d9bf79 SUCCESS; Vercel cerró finding #6 como resolved en d9bf79. Exact GitHub CI d9bf79: validate/postgres/CodeQL/browser fallaron antes de iniciar; ocho anotaciones indican bloqueo de cuenta por billing. Supabase Preview SKIPPED. No hosted SQL, conexión, claim, dispatch, wake, Cron, merge ni deploy. PR #274 abierta/draft. P2 INDETERMINADO/PRESERVAR."
+    "last_verified_step": "Carril D F0: finding Vercel #6 authorization-bypass reproducido RED en PostgreSQL18 desechable al a5828d7 (claim sin director_authorization). Fix d9bf79d endurece COALESCE, IS DISTINCT FROM TRUE, argumentos y campos grant no_send/no_dispatch. PostgreSQL18 SCRAM/TLS verify-full: negativos sin grant/null/incompleto/null args/lectura/escritura sin cambio de attempts, lease/token, checkpoint o audit; escenario positivo de concurrencia/recovery PASS. npm verify 621/621, secret scan y diff-check PASS. Vercel Security Review d9bf79 SUCCESS; Vercel cerró finding #6 como resolved en d9bf79. Exact GitHub CI d9bf79: validate/postgres/CodeQL/browser fallaron antes de iniciar; ocho anotaciones indican bloqueo de cuenta por billing. Supabase Preview SKIPPED. No hosted SQL, conexión, claim, dispatch, wake, Cron, merge ni deploy. PR #274 abierta/draft. P2 INDETERMINADO/PRESERVAR. Exact PR head documental 45cf3ea Vercel Security Review SUCCESS/No findings y lista Vercel sin findings abiertos; sus ocho fallos GitHub anteriores a runner-start siguen todos bloqueados por billing."
   },
   "completed_operations": [
     {
@@ -498,7 +498,7 @@
     },
     "current_pr_head_checks": {
       "lookup": "https://github.com/Victoriosas/autopilot/pull/274",
-      "sha": "d9bf79dd76ce71406ffed89e7e79c901c7fad18f",
+      "sha": "45cf3ea7be7984dca063a7c2cefd0495d93d4699",
       "required": [
         "validate",
         "postgres"
@@ -509,8 +509,8 @@
         "Vercel Security Review",
         "Vercel Preview"
       ],
-      "status": "GitHub jobs failed before runner start from billing lock; Vercel Security Review SUCCESS with no findings; Supabase Preview SKIPPED; CI candidate not passed.",
-      "evidence": "Exact check runs on d9bf79dd76ce71406ffed89e7e79c901c7fad18f; annotations for all eight GitHub failures state account locked due to billing. Vercel finding #6 closed as resolved in this SHA."
+      "status": "GitHub validate/postgres/CodeQL/browser failed before runner start from billing lock; Vercel Security Review SUCCESS (No findings); Supabase Preview SKIPPED. PR remains draft and candidate CI is not passed.",
+      "evidence": "Exact check runs on 45cf3ea7be7984dca063a7c2cefd0495d93d4699. Eight failure annotations state the account is locked due to a billing issue. Vercel has no open vulnerabilities; finding 6 was resolved in d9bf79d."
     },
     "integrated_readonly_runtime": {
       "pr": 238,
@@ -921,7 +921,7 @@
       "D: handoff por adaptador existente con contratos locales o entrega cloud autorizada demostrada; conservar fallo original",
       "PRs revisadas y CI exacta validate/postgres/CodeQL antes de merge; estados separado por entorno"
     ],
-    "recoverable_prompt": "Continuar ORD-THREE-DEMONSTRATIONS-20261121, F0 carril D, misma PR #274 y worktree existentes. Head de código d9bf79dd76ce71406ffed89e7e79c901c7fad18f contiene la corrección del finding Vercel #6, ya cerrado/resuelto por Security Review. Leer head y reconsultar CI exacta: Vercel Security Review PASS, pero validate/postgres/CodeQL/browser no iniciaron por bloqueo de facturación; Supabase Preview SKIPPED. No repetir/reintentar mientras continúe el bloqueo ni modificar billing. Titular resuelve billing; después exigir checks requeridos verdes en SHA final y revisión humana. Mantener #272/#273 abiertas, P2 INDETERMINADO/PRESERVAR, sin hosted SQL/dispatch/wake/Cron/merge/deploy."
+    "recoverable_prompt": "Continuar ORD-THREE-DEMONSTRATIONS-20261121, F0 carril D, misma PR #274/worktree. El fix del finding Vercel #6 está en d9bf79dd76ce71406ffed89e7e79c901c7fad18f y Vercel lo cerró como resolved. El head remoto 45cf3ea documental tuvo Vercel Security Review SUCCESS/No findings; validate/postgres/CodeQL/browser no iniciaron por bloqueo de facturación (ocho anotaciones) y Supabase Preview fue SKIPPED. Resolver billing corresponde al titular; no reintentar ni tocar billing. Primero leer head/checks vivos, revisar checks requeridos verdes en SHA final y conseguir revisión humana. Mantener #272/#273 abiertas, P2 INDETERMINADO/PRESERVAR; no hosted SQL/dispatch/wake/Cron/merge/deploy."
   },
   "preservation_refs": {
     "original_branch": "codex/p1-durable-policy-20261116",
