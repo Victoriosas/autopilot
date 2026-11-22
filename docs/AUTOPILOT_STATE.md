@@ -1867,3 +1867,20 @@ Límites: no se dispone de operaciones para inventariar/cerrar alertas privadas 
 **Rollback:** revertir solo los commits de este incremento en la rama existente #274; no retirar ni editar las dependencias #272/#273 ni el worktree P2 preservado. El checkpoint canónico y el presente registro siguen siendo del mismo orden D; la misión alojada requiere resolver billing, CI exacta revisable, inspección independiente de configuración/identidad/CA/grants/costo y autorización puntual antes de configurar, migrar o ejecutar.
 
 Commit de implementación creado localmente en la misma rama: `d8267ed8695df9568d639484b376006944f504bf`, hijo del head remoto verificado `8892d2b10c204627b1b5efc661e8e052ef247cc7`. El JSON cita ese SHA de implementación y explica que el checkpoint es su hijo documental. Antes del push el remoto todavía apuntaba a `8892d2b`; no se atribuyen al candidato los checks de ese padre.
+
+
+## 2026-11-22 11:14:54 UTC — corrección del hallazgo Vercel #6 (PR #274)
+
+Estado: ORD-THREE-DEMONSTRATIONS-20261121, F0, carril D; main sigue en 82b6fb24e76d81e5026c94af2630358d00f2ebe9. La PR #274 sigue abierta y draft, head de código d9bf79dd76ce71406ffed89e7e79c901c7fad18f. No se modificaron #272/#273 ni recursos P2.
+
+Vercel Security Review encontró en a5828d7 que la ausencia de director_authorization producía SQL NULL y el claim SECURITY DEFINER podía adquirir la misión y consumir un intento. La regresión RED se reprodujo antes del fix en PostgreSQL18 desechable con el rol runner TLS/SCRAM: el claim devolvió tarea/token sin grant. No hubo conexión alojada; el clúster se eliminó al terminar.
+
+Corrección en d9bf79d: el validador de grant, host y slot ahora retorna booleano no nulo; claim, lecturas y escrituras rechazan todo resultado distinto de TRUE; argumentos esenciales y los campos grant no_send/no_dispatch se comprueban explícitamente. Se añadieron negativos para autorización ausente, JSON null, active null, grant null, cada campo grant ausente, argumentos RPC null, lecturas protegidas y checkpoint/fail/complete tras eliminar grant de un lease vigente. Los rechazos conservaron intento, lease/token, checkpoint y auditoría. npm run test:director-supervision:db aprobó 1/1; el escenario positivo existente de concurrencia/recuperación también pasó.
+
+npm run verify PASS: 621/621, 0 fallos, 0 omitidos; node scripts/secret-scan.mjs PASS; git diff --check PASS. Vercel Security Review del SHA exacto d9bf79d terminó SUCCESS (“No findings”); Vercel cerró el finding 6 como resolved en ese SHA. No equivale a despliegue.
+
+GitHub Actions del SHA d9bf79d: validate, postgres (dos workflows), Analyze actions/JS/TS/Python y public-browser-smoke fallaron antes de iniciar. Anotaciones oficiales para los ocho checks dicen: la cuenta está bloqueada por un problema de facturación. Vercel Preview no generó evidencia requerida y Supabase Preview está SKIPPED. No se reintentaron ni se tocó billing. La CI requerida del candidato continúa pendiente.
+
+Límites: código enviado solo a la rama/PR; no fusionado ni desplegado. Sin SQL alojado, credenciales, conexión Supabase, claims/ejecución remotos, Cron, workflow dispatch, envíos o gastos. Coste externo nuevo no observado; costo/cuota de futura ejecución alojada no comprobados. Rollback: revertir solo d9bf79d (y los commits de esta misma rama según revisión), sin modificar dependencias ni P2.
+
+Siguiente acción exacta: titular resuelve billing por sus canales; después reconsultar y aprobar validate/postgres/CodeQL/browser y Vercel en el SHA final de #274, exigir revisión humana antes de integrar. No activar hosted SQL, dispatch, wake o Cron por este resultado.

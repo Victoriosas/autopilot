@@ -60,15 +60,15 @@
       "current_session_limit": "El21/11 Vercel Agent no consultó variables Actions, configuración heartbeat ni cuota del proveedor. Ver runtime_audit.session_read_only_20261121; no reactivar ni certificar estado actual a partir de este registro histórico."
     }
   },
-  "updated_at": "2026-11-22T10:50:17Z",
-  "execution_id": "three-demonstrations-20261121",
+  "updated_at": "2026-11-22T11:14:54Z",
+  "execution_id": "director-authorization-null-fix-20261122",
   "repository": {
     "branch": "codex/cloud-director-observation-20261122",
     "base_sha": "82b6fb24e76d81e5026c94af2630358d00f2ebe9",
-    "head_sha": "d8267ed8695df9568d639484b376006944f504bf",
+    "head_sha": "d9bf79dd76ce71406ffed89e7e79c901c7fad18f",
     "worktree": "E:/autopilot-worktrees/cloud-director-implement-20261122",
     "pr_lookup": "https://github.com/Victoriosas/autopilot/pull/274",
-    "note": "head_sha identifica el commit de implementación local d8267ed8695df9568d639484b376006944f504bf, hijo del padre remoto verificado 8892d2b. Este commit de checkpoint será un hijo documental de la implementación; tras el push, resolver el head vivo de PR #274 y consultar CI exacta. No atribuir CI del padre al candidato.",
+    "note": "head_sha identifica el commit de código y seguridad d9bf79dd76ce71406ffed89e7e79c901c7fad18f. El checkpoint documental será su hijo y deberá resolver nuevamente el head vivo de PR #274; no atribuirle checks del padre. No es fusión ni despliegue.",
     "pr_number": 274,
     "pr_url": "https://github.com/Victoriosas/autopilot/pull/274"
   },
@@ -91,7 +91,7 @@
       "D: handoff por adaptador existente con contratos locales o entrega cloud autorizada demostrada; conservar fallo original",
       "PRs revisadas y CI exacta validate/postgres/CodeQL antes de merge; estados separado por entorno"
     ],
-    "last_verified_step": "Carril D F0 implementado y probado localmente en PR #274 sobre main 82b6fb2, padre 8892d2b, commit de implementación d8267ed. DirectorSyntheticExecutor/CloudMissionStore reutilizan el ledger existente; SQL scoped en staged, sin activar #273 ni hosted. PostgreSQL18 loopback SCRAM/TLS: 2 workers, un solo intento; rollback/checkpoint durable, idempotencia slot, expiración/recovery, revocación/reautorización compare-and-set, stale grant/token rechazado en claim/checkpoint/fail/complete, observador independiente coincide, otros cinco agentes 0 claims y scheduler 0. npm verify 621/621, secret-scan PASS, diff-check PASS. PR #272 cb67032, #273 009713f y el head previo de #274 tienen anotación oficial de billing: jobs no iniciaron; CI del diff candidato pendiente. P2 INDETERMINADO/PRESERVAR, sin reapertura."
+    "last_verified_step": "Carril D F0: finding Vercel #6 authorization-bypass reproducido RED en PostgreSQL18 desechable al a5828d7 (claim sin director_authorization). Fix d9bf79d endurece COALESCE, IS DISTINCT FROM TRUE, argumentos y campos grant no_send/no_dispatch. PostgreSQL18 SCRAM/TLS verify-full: negativos sin grant/null/incompleto/null args/lectura/escritura sin cambio de attempts, lease/token, checkpoint o audit; escenario positivo de concurrencia/recovery PASS. npm verify 621/621, secret scan y diff-check PASS. Vercel Security Review d9bf79 SUCCESS; Vercel cerró finding #6 como resolved en d9bf79. Exact GitHub CI d9bf79: validate/postgres/CodeQL/browser fallaron antes de iniciar; ocho anotaciones indican bloqueo de cuenta por billing. Supabase Preview SKIPPED. No hosted SQL, conexión, claim, dispatch, wake, Cron, merge ni deploy. PR #274 abierta/draft. P2 INDETERMINADO/PRESERVAR."
   },
   "completed_operations": [
     {
@@ -301,6 +301,10 @@
     {
       "operation": "Implementar y probar adaptador Director sintético scoped en la misma PR #274",
       "detection": "Directores sintéticos usan solo las RPC staged y el ledger existente; PostgreSQL18 descartable TLS/SCRAM verifica exclusión, idempotencia por slot, rollback, checkpoint, expiración, revocación compare-and-set, rechazo stale-token y proyección independiente; npm verify 621/621, secret scan y diff-check PASS. Sin efecto alojado. La CI remota del padre fue bloqueada antes del runner por billing; candidata final pendiente. Commit de implementación local: d8267ed8695df9568d639484b376006944f504bf; checkpoint documental en su siguiente hijo."
+    },
+    {
+      "operation": "Corregir autorización Director fail-open por SQL NULL en la misma PR #274",
+      "detection": "Vercel Security finding 6 cerrada por Security Review en d9bf79dd76ce71406ffed89e7e79c901c7fad18f; RED reprodujo claim sin grant en PostgreSQL18 desechable; GREEN añadió guards null-safe y negativos de claim/read/write. npm verify 621/621 y PostgreSQL 1/1 PASS. CI GitHub no inició por billing; ningún efecto alojado."
     }
   ],
   "evidence_refs": [
@@ -378,7 +382,7 @@
     "consultations tiene entrada SQL pausada; probar rechazo conservando guarda",
     "Cloud remoto condicionado al reviewed SHA y environment prevent_self_review; local contrato autorizado",
     "Dominio todavía9d6bbdb: brecha despliegue, no prueba de demos productivas",
-    "Carril D: GitHub Actions account locked due to billing issue (official annotations); no CI del candidato final.",
+    "Carril D: finding Vercel #6 resuelto y cerrado en d9bf79d; CI GitHub del SHA exacto no inició por bloqueo de facturación confirmado en ocho anotaciones.",
     "No autorización para aplicar SQL alojado, configurar credenciales cloud, reclamar misión alojada ni activar workflow/Cron."
   ],
   "next_order_id": "ORD-THREE-DEMONSTRATIONS-20261121",
@@ -494,7 +498,7 @@
     },
     "current_pr_head_checks": {
       "lookup": "https://github.com/Victoriosas/autopilot/pull/274",
-      "sha": "8892d2b10c204627b1b5efc661e8e052ef247cc7",
+      "sha": "d9bf79dd76ce71406ffed89e7e79c901c7fad18f",
       "required": [
         "validate",
         "postgres"
@@ -505,8 +509,8 @@
         "Vercel Security Review",
         "Vercel Preview"
       ],
-      "status": "failed_before_runner_start_github_billing_lock_on_parent_sha; local_candidate_CI_pending",
-      "evidence": "GitHub check annotations on PR #272, #273 and #274 state that jobs were not started because the account is locked due to a billing issue. The parent SHA is not the modified candidate."
+      "status": "GitHub jobs failed before runner start from billing lock; Vercel Security Review SUCCESS with no findings; Supabase Preview SKIPPED; CI candidate not passed.",
+      "evidence": "Exact check runs on d9bf79dd76ce71406ffed89e7e79c901c7fad18f; annotations for all eight GitHub failures state account locked due to billing. Vercel finding #6 closed as resolved in this SHA."
     },
     "integrated_readonly_runtime": {
       "pr": 238,
@@ -829,7 +833,50 @@
       "hosted": "No hosted database connection or SQL, no claim/mission, no workflow dispatch, no wake/Cron, no send, merge, deployment, or cost.",
       "costs": "No external cost observed; future hosted execution quota/rate not verified.",
       "rollback": "Revert only this increment on PR #274; preserve PR #272/#273 and P2 resources.",
-      "candidate_code_sha": "d8267ed8695df9568d639484b376006944f504bf"
+      "candidate_code_sha": "d9bf79dd76ce71406ffed89e7e79c901c7fad18f",
+      "security_regression_20261122": {
+        "finding_id": "01M81E6ZEQQ5ANV4JK8CXZF3QW",
+        "number": 6,
+        "severity": "low",
+        "class": "authorization-bypass",
+        "first_seen_sha": "a5828d79d4a3d9ac5eb19818cc35ae4a1a8666e4",
+        "red_reproduction": "Disposable PostgreSQL18 runner TLS/SCRAM claimed the fixed synthetic Director row while director_authorization was absent; no hosted database was used.",
+        "code_fix_sha": "d9bf79dd76ce71406ffed89e7e79c901c7fad18f",
+        "fix": "Non-null host/slot/grant booleans; fail closed unless authorization guard IS TRUE; explicit essential NULL argument checks; bind grant no_send/no_dispatch.",
+        "negative_tests": "Missing authorization object, JSON null, active null, grant null, each grant field absent, null RPC parameters, protected aggregate/mission reads, and checkpoint/fail/complete after grant removal from a live lease; task attempts/lease/token/checkpoint/audit unchanged.",
+        "postgres": {
+          "command": "npm run test:director-supervision:db",
+          "tests": 1,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "scope": "PostgreSQL18 disposable loopback SCRAM + TLS verify-full"
+        },
+        "full_verify": {
+          "command": "npm run verify",
+          "tests": 621,
+          "passed": 621,
+          "failed": 0,
+          "skipped": 0,
+          "exit_code": 0
+        },
+        "secret_scan": "node scripts/secret-scan.mjs PASS",
+        "diff_check": "git diff --check PASS",
+        "vercel_security_review": {
+          "sha": "d9bf79dd76ce71406ffed89e7e79c901c7fad18f",
+          "conclusion": "success",
+          "summary": "No findings",
+          "finding_status": "closed_resolved"
+        },
+        "github_actions": {
+          "sha": "d9bf79dd76ce71406ffed89e7e79c901c7fad18f",
+          "required_and_additional": "validate/postgres/CodeQL/public-browser-smoke failed before runner start; all eight failure annotations cite account locked due to billing issue",
+          "supabase_preview": "SKIPPED"
+        },
+        "hosted_effects": "None: no Supabase connection, hosted SQL, claim, execution, dispatch, wake, Cron, merge, deploy, or send.",
+        "costs": "No external cost observed; future hosted quota/rate unverified.",
+        "rollback": "Revert code fix in existing PR #274 only; preserve #272/#273 and P2."
+      }
     }
   },
   "p1_remaining_work": [],
@@ -858,7 +905,7 @@
       "docs/AUTOPILOT_STATE.md",
       "docs/CODEX_CONTINUATION.json"
     ],
-    "integration_state": "Implementado y probado en laboratorio local desechable; mismo PR #274 draft. No conectado a servicio/workflow, no SQL/ejecución alojada, CI remota del SHA final bloqueada por billing."
+    "integration_state": "Implementado, probado localmente y corregido ante finding Vercel #6 en la misma PR #274 draft. Vercel Security Review lo cerró como resuelto en d9bf79d; CI GitHub del SHA exacto no inició por billing. No conectado a servicio/workflow; no SQL ni ejecución alojada."
   },
   "next_mission": {
     "order_id": "ORD-THREE-DEMONSTRATIONS-20261121",
@@ -874,7 +921,7 @@
       "D: handoff por adaptador existente con contratos locales o entrega cloud autorizada demostrada; conservar fallo original",
       "PRs revisadas y CI exacta validate/postgres/CodeQL antes de merge; estados separado por entorno"
     ],
-    "recoverable_prompt": "Continuar ORD-THREE-DEMONSTRATIONS-20261121, F0 carril D, en la misma PR #274 y worktree/branch existentes. Primero leer el head actual y resolver el commit de checkpoint; revisar CI exacta (sin reintentar mientras billing esté bloqueado) y comentarios de la PR. El propietario debe resolver la cuenta de GitHub billing. Mantener #272/#273 como dependencias abiertas, P2 INDETERMINADO/PRESERVAR, no hosted SQL/dispatch/wake/Cron/merge/deploy. Cuando CI exacta y revisión independiente estén disponibles, preparar una decisión separada para primer ensayo hospedado; requerir costo/cuota, identidad/TLS/grants y autorización puntual antes de cualquier operación alojada."
+    "recoverable_prompt": "Continuar ORD-THREE-DEMONSTRATIONS-20261121, F0 carril D, misma PR #274 y worktree existentes. Head de código d9bf79dd76ce71406ffed89e7e79c901c7fad18f contiene la corrección del finding Vercel #6, ya cerrado/resuelto por Security Review. Leer head y reconsultar CI exacta: Vercel Security Review PASS, pero validate/postgres/CodeQL/browser no iniciaron por bloqueo de facturación; Supabase Preview SKIPPED. No repetir/reintentar mientras continúe el bloqueo ni modificar billing. Titular resuelve billing; después exigir checks requeridos verdes en SHA final y revisión humana. Mantener #272/#273 abiertas, P2 INDETERMINADO/PRESERVAR, sin hosted SQL/dispatch/wake/Cron/merge/deploy."
   },
   "preservation_refs": {
     "original_branch": "codex/p1-durable-policy-20261116",
@@ -1158,7 +1205,7 @@
       "lane": "D",
       "state": "IMPLEMENTADO_PROBADO_LOCAL_NO_HOSTED",
       "next": "Resolver el bloqueo de facturación de GitHub por el titular; después verificar CI/review del SHA exacto final de la misma PR #274. Mantener hosted SQL, dispatch y #273 desactivados.",
-      "blocker": "Anotaciones de PR #272/#273/#274 confirman que GitHub no inició jobs por bloqueo de facturación; CI del candidato nuevo todavía no demostrada."
+      "blocker": "Finding Vercel #6 cerrado/resuelto en d9bf79d. GitHub Actions CI del SHA final aún no ejecutada: ocho anotaciones exactas confirman bloqueo por billing."
     }
   ]
 }

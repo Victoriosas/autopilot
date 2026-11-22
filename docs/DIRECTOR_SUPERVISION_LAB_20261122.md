@@ -90,3 +90,12 @@ Archivos nuevos: adaptador/ejecutor Director, prueba focal, SQL staged Director,
 - **Rollback:** revertir únicamente los commits nuevos de esta rama PR #274; conservar #272/#273, el ledger original y el worktree P2 sin modificación. Para cualquier ejecución alojada futura se requiere revisión de código/CI utilizable, verificación de proyecto/identidad/TLS/grants, cuota/costo y autorización puntual de migración/configuración/ensayo; esta PR no da ese permiso.
 
 Costo: herramientas locales gratuitas en sandbox, sin proveedor de modelos, despliegue nuevo, servicios contratados ni consumo cloud externo solicitado. No se promete costo cero para una activación futura. El Preview anterior corresponde al head anterior de #274 y no verifica este nuevo candidato.
+
+
+## 2026-11-22 11:14:54 UTC — Vercel finding #6: fail-closed en grants nulos
+
+Vercel Security Review identificó una autorización Director que fallaba abierta por semántica SQL de tres valores. La regresión se reprodujo en PostgreSQL18 descartable, con SCRAM/TLS verify-full y rol runner: antes del fix, el claim para fixture sin director_authorization devolvió la tarea y consumió un intento. No hubo conexión alojada.
+
+En d9bf79d, el validador retorna booleano no nulo; claim/lecturas/escrituras rechazan resultados que no sean TRUE; se validan argumentos esenciales y flags no_send/no_dispatch del grant. Los negativos cubren autorización ausente, JSON null, active null, grant null, campo grant ausente uno por uno, parámetros RPC null, lecturas no autorizadas y checkpoint/fail/complete tras quitar autorización a un lease. Sin mutación de intento/lease/token/checkpoint/auditoría ante rechazo. PostgreSQL desechable 1/1; npm verify 621/621; secret scan y diff-check PASS.
+
+En el SHA exacto d9bf79d, Vercel Security Review SUCCESS (“No findings”) y Vercel cerró el finding 6 como resolved. GitHub validate/postgres/CodeQL/browser no iniciaron por bloqueo de facturación, según las ocho anotaciones exactas; Supabase Preview SKIPPED. PR #274 sigue abierta/draft. No hubo SQL alojado, conexión, misión/claim remoto, dispatch, wake, Cron, merge, deploy ni gasto. La revisión pendiente de GitHub y los límites alojados se mantienen.
