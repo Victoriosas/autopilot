@@ -1,3 +1,11 @@
+# Cloud Director · observación operativa · 22/11/2026
+
+Solicitud actual: implementar progresivamente Cloud Director, sin producción ni nuevos servicios pagos. Base GitHub main `82b6fb24e76d81e5026c94af2630358d00f2ebe9`, PR272/273 abiertas y sin fusionar. Fase F0: proyección de lectura del ledger existente; no nueva cola/scheduler ni activación de ejecutores.
+
+Incremento: los claims con lease vencida/ausente/inválida pasan a reconciliación, no a ejecución; evidencia declarada se distingue de validación independiente. La oficina de agentes mantiene disponibilidad `unknown` sin heartbeat, marca métricas no medidas y usa America/Montevideo. Se conserva Supabase Auth/rol admin. Cinco pruebas focales pasan; verify: 619 tests, 618 aprobados, cero fallos y una omisión existente; tipos/builds/API compilada, escaneo de secretos y diff-check aprobados. CI exacta del candidato en su PR.
+
+**IMPLEMENTADO/PROBADO local, autonomía alojada NO demostrada**. Sin acceso SQL alojado desde esta sesión ni credenciales de servidor aisladas para Preview. No se copian secretos de producción; no SQL/RLS/fencing/claims/checkpoints remotos, cron, envíos, modelos pagos, merge ni promoción. Se preservan órdenes y recibos anteriores. [Inventario, límites y siguiente dependencia](CLOUD_DIRECTOR_OBSERVATION_20261122.md).
+
 # Seguridad · autenticación de la demo de catálogo · 21/11/2026
 
 Corrección acotada de F0/N2 para el laboratorio de catálogo, sin cambiar la fase ni la orden vigente. La demo iniciaba un superusuario PostgreSQL con `trust`, accesible a otras cuentas locales por TCP. Se sustituye por SCRAM con contraseña aleatoria de 256 bits por ejecución, archivos temporales exclusivos con modo 0600 y `PGPASSFILE` limitado a clientes; sin contraseña en URL, argumentos ni recibos. Los archivos de credenciales se eliminan incluso si falla la inicialización, un cliente o la parada.

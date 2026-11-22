@@ -1,7 +1,9 @@
 import React,{useEffect,useState} from 'react';
 import {apiFetch} from '../../lib/api';
 
-type AgentRow={id:string;configuredState:string;trigger:string;lastActivity:string|null;pending:number;running:number;completed:number;blocked:number};
+import type {AgentObservation} from '../../autopilot/agentObservation';
+
+type AgentRow=AgentObservation;
 type AgentPayload={source:'supabase';generatedAt:string;partial:boolean;agents:AgentRow[]};
 const labels:Record<string,string>={director:'Director Autopilot',software:'Ingeniero de software',infrastructure:'Auditor de infraestructura',consultations:'Asistente de consultas',followup:'Seguimiento operativo',reports:'Informes y auditoría'};
 export function SixAgentStatusPanel(){
@@ -19,17 +21,19 @@ export function SixAgentStatusPanel(){
  }
  useEffect(()=>{void reload();},[]);
  return <section className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-4" aria-label="Estado de los seis agentes">
-  <div className="flex justify-between gap-3 items-center"><h2 className="text-lg font-semibold text-white">Agentes · Estado verificado</h2>
+  <div className="flex justify-between gap-3 items-center"><h2 className="text-lg font-semibold text-white">Cloud Director · Oficina de agentes</h2>
    <button type="button" onClick={()=>void reload()} disabled={loading} className="border border-white/30 px-3 py-2 rounded-lg text-sm text-white">{loading?'Consultando…':'Actualizar'}</button></div>
   {error&&<p role="status" className="text-amber-300">{error}</p>}
-  {state&&<><p className="text-xs text-slate-400">Fuente: Supabase · {new Date(state.generatedAt).toLocaleString('es-UY')} {state.partial?'· Lectura limitada a 500 tareas':''}</p>
+  {state&&<><p className="text-xs text-slate-400">Fuente: Supabase · {new Date(state.generatedAt).toLocaleString('es-UY',{timeZone:'America/Montevideo'})} · America/Montevideo · Últimas 500 tareas {state.partial?'· Ventana posiblemente incompleta: no son totales globales':''}</p>
    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{state.agents.map(a=><article key={a.id} className="rounded-xl border border-white/10 p-4 space-y-2 text-slate-200">
      <h3 className="font-semibold">{labels[a.id]??a.id}</h3>
-     <p className="text-xs">Configuración: {a.configuredState}. Sin certificación de ejecución 24/7.</p>
+     <p className="text-xs">Configuración: {a.configuredState} · Disponibilidad: desconocida (sin heartbeat de ejecutor).</p>
      <p className="text-xs text-slate-400">Disparador: {a.trigger}</p>
-     <p className="text-sm">Pendientes: {a.pending} · Ejecutando: {a.running}</p>
-     <p className="text-sm">Completadas verificadas: {a.completed} · Bloqueadas: {a.blocked}</p>
-     <p className="text-xs text-slate-400">Última actividad: {a.lastActivity?new Date(a.lastActivity).toLocaleString('es-UY'):'Sin registros'}</p>
+     <p className="text-sm">Pendientes: {a.pending} · Claims con lease vigente: {a.running}</p>
+     <p className="text-sm">Completadas con evidencia declarada: {a.completed} · Bloqueadas: {a.blocked}</p>
+     <p className="text-xs">Claims a reconciliar: {a.staleClaims} · Completadas sin evidencia: {a.completionWithoutEvidence}</p>
+     <p className="text-xs">Cierres pendientes de validación independiente: {a.completionUnverified}. Consumo: no medido.</p>
+     <p className="text-xs text-slate-400">Última escritura del ledger: {a.lastActivity?new Date(a.lastActivity).toLocaleString('es-UY',{timeZone:'America/Montevideo'}):'Sin registros'}</p>
     </article>)}</div></>}
  </section>;
 }
