@@ -1,59 +1,73 @@
-import type { Actor, AutopilotAction } from './policyEngine';
+import { AGENT_IDS, type AgentId } from './sixAgentControlPlane';
+import type { AutopilotAction } from './policyEngine';
 
 export interface AgentDefinition {
-  id: string;
-  actor: Actor;
+  id: AgentId;
   purpose: string;
   autonomousActions: AutopilotAction[];
   humanGatedActions: AutopilotAction[];
-  enabled: boolean;
+  /** Configuration visibility is not proof of a worker or a running process. */
+  runtimeStatus: 'not_proven';
+  /** Closed until a separately reviewed runtime and task scope exist. */
+  enabled: false;
+  /** No agent configuration in this registry may send external communications. */
+  noSend: true;
 }
 
-const AGENTS: AgentDefinition[] = [
-  {
-    id: 'discovery-agent',
-    actor: 'discovery',
-    purpose: 'Find, normalize, and rank product candidates.',
-    autonomousActions: ['read', 'analyze', 'create_candidate'],
-    humanGatedActions: ['publish_product'],
-    enabled: true,
-  },
-  {
-    id: 'pricing-agent',
-    actor: 'pricing',
-    purpose: 'Analyze pricing, margin, and catalog economics without charging customers.',
-    autonomousActions: ['read', 'analyze'],
-    humanGatedActions: ['publish_product'],
-    enabled: true,
-  },
-  {
-    id: 'purchasing-agent',
-    actor: 'purchasing',
-    purpose: 'Prepare supplier purchasing actions subject to monetary and risk policy.',
-    autonomousActions: ['read', 'analyze'],
-    humanGatedActions: ['purchase', 'refund'],
-    enabled: false,
-  },
-  {
-    id: 'opencode-worker',
-    actor: 'opencode',
-    purpose: 'Implement code changes only on agent branches and produce reviewable pull requests.',
-    autonomousActions: ['read', 'analyze', 'write_code', 'create_branch'],
-    humanGatedActions: ['merge_main', 'deploy_production', 'modify_secrets'],
-    enabled: true,
-  },
-  {
-    id: 'codex-governor',
-    actor: 'codex',
-    purpose: 'Review code and governance decisions before protected actions proceed.',
-    autonomousActions: ['read', 'analyze'],
-    humanGatedActions: ['merge_main', 'deploy_production', 'modify_secrets'],
-    enabled: true,
-  },
+type AgentConfig = Omit<AgentDefinition, 'id'>;
+
+const READ_ONLY: AutopilotAction[] = ['read', 'analyze'];
+const EFFECTFUL: AutopilotAction[] = [
+  'create_candidate', 'publish_product', 'write_code', 'create_branch',
+  'merge_main', 'deploy_production', 'modify_secrets', 'purchase', 'refund',
 ];
 
+const CONFIG: Record<AgentId, AgentConfig> = {
+  director: {
+    purpose: 'Coordinate and report on approved, read-only work; no dispatch or execution is configured.',
+    autonomousActions: [...READ_ONLY],
+    humanGatedActions: [...EFFECTFUL],
+    runtimeStatus: 'not_proven', enabled: false, noSend: true,
+  },
+  software: {
+    purpose: 'Prepare code changes and reviewable branches; integration and release remain gated.',
+    autonomousActions: ['read', 'analyze', 'write_code', 'create_branch'],
+    humanGatedActions: ['create_candidate', 'publish_product', 'merge_main', 'deploy_production', 'modify_secrets', 'purchase', 'refund'],
+    runtimeStatus: 'not_proven', enabled: false, noSend: true,
+  },
+  infrastructure: {
+    purpose: 'Observe infrastructure health and report; configuration changes and deployment remain gated.',
+    autonomousActions: [...READ_ONLY],
+    humanGatedActions: [...EFFECTFUL],
+    runtimeStatus: 'not_proven', enabled: false, noSend: true,
+  },
+  consultations: {
+    purpose: 'Classify and summarize consultations for human review; never send a reply.',
+    autonomousActions: [...READ_ONLY],
+    humanGatedActions: [...EFFECTFUL],
+    runtimeStatus: 'not_proven', enabled: false, noSend: true,
+  },
+  followup: {
+    purpose: 'Identify authorized follow-up work for review; no customer contact is configured.',
+    autonomousActions: [...READ_ONLY],
+    humanGatedActions: [...EFFECTFUL],
+    runtimeStatus: 'not_proven', enabled: false, noSend: true,
+  },
+  reports: {
+    purpose: 'Prepare aggregate reports without exposing raw evidence or personal data.',
+    autonomousActions: [...READ_ONLY],
+    humanGatedActions: [...EFFECTFUL],
+    runtimeStatus: 'not_proven', enabled: false, noSend: true,
+  },
+};
+
 export function listAgents(): AgentDefinition[] {
-  return AGENTS.map((agent) => ({ ...agent, autonomousActions: [...agent.autonomousActions], humanGatedActions: [...agent.humanGatedActions] }));
+  return AGENT_IDS.map((id) => ({
+    id,
+    ...CONFIG[id],
+    autonomousActions: [...CONFIG[id].autonomousActions],
+    humanGatedActions: [...CONFIG[id].humanGatedActions],
+  }));
 }
 
 export function getAgent(id: string): AgentDefinition | undefined {
