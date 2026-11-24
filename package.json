@@ -21,6 +21,7 @@
     "test:commerce:db": "node scripts/test-commerce-postgres.mjs",
     "test:hosted-replay:db": "node scripts/test-hosted-replay-postgres.mjs",
     "test:director-wake:deno": "node scripts/run-director-wake-deno.mjs",
+    "test:director-supervision:db": "node scripts/test-director-supervision-db.mjs",
     "verify": "npm run verify:skills && npm run lint && npm test && npm run build && npm run build:vercel && node scripts/check-built-api.mjs",
     "verify:skills": "node scripts/check-codex-skills.mjs"
   },

@@ -1,3 +1,19 @@
+# Cloud Director · checkpoint y recuperación SQL sintética · 22/11/2026
+
+Continúa la misma PR #274 bajo la solicitud actual; no se crea otra cadena. Reconciliados main82b6fb2 y los candidatos #272/#273. La orden candidata de #272 es ORD-AUTONOMOUS-ENGINE-01; se preservan P2 y sus barreras. Autorización actual limitada al laboratorio sintético, sin efectos alojados.
+
+**PROBADO local PostgreSQL18.6 real:** seis roles leídos con runtime unknown; checkpoint1 confirmado; fallo SQL inyectado en auditoría del checkpoint2 causa rollback atómico; otro proceso no puede tomar lease vigente; replay exacto no duplica auditoría; expiración real, fail/checkpoint con token anterior rechazados; proceso nuevo reanuda solo el segundo paso y llega a completed/intento2/checkpoint3. Otros cinco roles sin claims; cero pg_cron/pg_net y no_send/no_dispatch. Dos clústeres desechables distintos aprobaron; runner reproducible en npm run test:director-supervision:db, sin nuevas dependencias de aplicación. Consume el SQL original de #272 verificado por hash, no lo duplica.
+
+**NO autonomía alojada:** no migraciones, workers, envíos, trigger, cron ni despliegue nuevo. Adaptadores productivos y autorización local estricta intactos; no se convierte la fixture psql en endpoint cloud. La causa de CI por facturación sigue reportada por informes previos: GitHub no devolvió logs de los jobs consultados, no hay revalidación independiente aquí. [Prueba, diseño de integración, preparación30min y puertas exactas del primer ciclo alojado](DIRECTOR_SUPERVISION_LAB_20261122.md).
+
+# Cloud Director · observación operativa · 22/11/2026
+
+Solicitud actual: implementar progresivamente Cloud Director, sin producción ni nuevos servicios pagos. Base GitHub main `82b6fb24e76d81e5026c94af2630358d00f2ebe9`, PR272/273 abiertas y sin fusionar. Fase F0: proyección de lectura del ledger existente; no nueva cola/scheduler ni activación de ejecutores.
+
+Incremento: los claims con lease vencida/ausente/inválida pasan a reconciliación, no a ejecución; evidencia declarada se distingue de validación independiente. La oficina de agentes mantiene disponibilidad `unknown` sin heartbeat, marca métricas no medidas y usa America/Montevideo. Se conserva Supabase Auth/rol admin. Cinco pruebas focales pasan; verify: 619 tests, 618 aprobados, cero fallos y una omisión existente; tipos/builds/API compilada, escaneo de secretos y diff-check aprobados. CI exacta del candidato en su PR.
+
+**IMPLEMENTADO/PROBADO local, autonomía alojada NO demostrada**. Sin acceso SQL alojado desde esta sesión ni credenciales de servidor aisladas para Preview. No se copian secretos de producción; no SQL/RLS/fencing/claims/checkpoints remotos, cron, envíos, modelos pagos, merge ni promoción. Se preservan órdenes y recibos anteriores. [Inventario, límites y siguiente dependencia](CLOUD_DIRECTOR_OBSERVATION_20261122.md).
+
 # Seguridad · autenticación de la demo de catálogo · 21/11/2026
 
 Corrección acotada de F0/N2 para el laboratorio de catálogo, sin cambiar la fase ni la orden vigente. La demo iniciaba un superusuario PostgreSQL con `trust`, accesible a otras cuentas locales por TCP. Se sustituye por SCRAM con contraseña aleatoria de 256 bits por ejecución, archivos temporales exclusivos con modo 0600 y `PGPASSFILE` limitado a clientes; sin contraseña en URL, argumentos ni recibos. Los archivos de credenciales se eliminan incluso si falla la inicialización, un cliente o la parada.
@@ -1887,3 +1903,47 @@ No se reintentaron workflows ni se alteraron permisos, cuenta, facturación, hos
 **Bloqueo y siguiente paso exacto:** el propietario/custodio de GitHub debe resolver por el canal oficial el bloqueo de cuenta de facturación; no se solicita al agente cambiar facturación ni habilitar gasto. Luego, sin re-run manual ni alterar workflows, consultar de nuevo los checks del head exacto de las PR existentes y continuar solo cuando se asignen runners y las protecciones técnicas pasen. La siguiente barrera independiente sigue siendo autorización específica antes de cualquier migración hosted, instalación de `pg_net`, cron o deploy Edge; medir cuotas/costos reales antes de activarlos. No se ha creado tarea `director`, claim, ejecución hosted, ni demostración de autonomía.
 
 Resultado del ciclo: **BLOQUEADO**. La evidencia previa de falla sin clasificar queda histórica; esta anotación nueva acota la causa observada a bloqueo de cuenta de GitHub, sin inferir monto ni quién debe pagarlo.
+
+## 2026-11-22 10:42 UTC — ORD-THREE-DEMONSTRATIONS-20261121, carril D
+
+**Estado:** fase F0, misma orden y PR #274 (`codex/cloud-director-observation-20261122`). `origin/main` verificada en `82b6fb24e76d81e5026c94af2630358d00f2ebe9`; PR #272 abierta en `cb67032cd2319b622f5868590e14dc291c1ce001`, #273 abierta en `009713fc5e444176bf97f8e7ffa3287b4ae849c4`, #274 abierta/draft en `8892d2b10c204627b1b5efc661e8e052ef247cc7` antes del incremento. P2 permanece INDETERMINADO/PRESERVAR, sin reapertura ni cambios a sus archivos/worktree.
+
+**Implementado en esta rama:** nuevo `DirectorSyntheticExecutor` de propósito único sobre `CloudMissionStore`, `createMissionLedger`, `PersistentMissionOrchestrator` y `observeAgents`; solo misión/plan Director sintéticos fijos. `CloudMissionStore.directorClient` y el SQL staged añaden claim/checkpoint/complete/fail/lectura específicos, autorización durable compare-and-set, revocación y verificación de `authorizationId`, slot UTC actual de 30 minutos, binding/SHA/host, TLS y fencing vigente. La proyección separa evidencia declarada/no verificada, mantiene `evidenceVerified=0` y `runtimeStatus=unknown`. Se fail-closea el endpoint admin existente en 503 hasta lector sintético configurado; ya no consulta filas del ledger principal con service role. El handoff existente se puede consumir con grant pero no se monta en un servicio, workflow ni scheduler.
+
+**RED/GREEN conservado:** antes de las correcciones, PostgreSQL descubrió ambigüedad `task_id` en `RETURNS TABLE`, aridad errónea al construir la RPC de checkpoint y sensibilidad del tiempo de lease. Se corrigieron sin eliminar negativas. La prueba final usa PostgreSQL 18 desechable en loopback con SCRAM y TLS `verify-full`, clave de runner aleatoria; confirma rollback atómico, checkpoint durable, dos workers y un solo intento, replay de slot idempotente, expiración/recuperación, revocación entre pasos, reautorización compare-and-set, rechazo de grant anterior al reclamar, rechazo de token antiguo en checkpoint/fail/complete, verificación independiente desde sesión SQL nueva, cero claims de los otros cinco agentes y cero Cron/pg_net. Salida: `scope=disposable_postgres18_loopback_scram_tls`, intento 3/checkpoint 3, sin operación alojada. El runner detuvo el clúster antes de limpiar sus archivos temporales.
+
+**Verificación local del candidato de código:** `npm run verify` exit 0, 621/621, cero fallos/omisiones; `node scripts/secret-scan.mjs` PASS; `git diff --check` PASS. El escáner primero marcó un sentinel sintético del test por longitud; se redujo ese valor fijo de fixture y el escaneo volvió a pasar. Prueba PostgreSQL aislada: 1/1 PASS; pruebas focales Director 2/2 PASS. El test SQL requiere una copia externa intacta de la migración de fencing de #272 y verifica su SHA; no modifica aquella PR.
+
+**CI remota del head anterior:** anotaciones oficiales de GitHub en validate/postgres/browser de #274, validate/postgres de #272 y validate/postgres de #273 dicen que los jobs no iniciaron porque la cuenta está bloqueada por facturación. CodeQL del head #274 también terminó en fallo sin pasos; no se declara aprobada ni defecto de código. Vercel Security Review pasó; Supabase Preview SKIPPED. No se reintentaron ejecuciones ni se tocó billing. Los checks del nuevo SHA final seguirán bloqueados mientras el titular no resuelva la cuenta.
+
+**Límites y autorizaciones:** PR #274 no fusionada; Vercel Preview no es producción. No se llamó Supabase, no se aplicó SQL alojado, no se creó/admitió/reclamó misión remota, ni se activó #273, pg_cron, pg_net, workflow, servicio, envío, compra, gasto o despliegue. `cloud_ledger_adapter_not_configured` permanece para cualquier ruta alojada no autorizada/configurada. Coste externo nuevo no observado; tarifa/cuota de hosting futuro no comprobada.
+
+**Rollback:** revertir solo los commits de este incremento en la rama existente #274; no retirar ni editar las dependencias #272/#273 ni el worktree P2 preservado. El checkpoint canónico y el presente registro siguen siendo del mismo orden D; la misión alojada requiere resolver billing, CI exacta revisable, inspección independiente de configuración/identidad/CA/grants/costo y autorización puntual antes de configurar, migrar o ejecutar.
+
+Commit de implementación creado localmente en la misma rama: `d8267ed8695df9568d639484b376006944f504bf`, hijo del head remoto verificado `8892d2b10c204627b1b5efc661e8e052ef247cc7`. El JSON cita ese SHA de implementación y explica que el checkpoint es su hijo documental. Antes del push el remoto todavía apuntaba a `8892d2b`; no se atribuyen al candidato los checks de ese padre.
+
+
+## 2026-11-22 11:14:54 UTC — corrección del hallazgo Vercel #6 (PR #274)
+
+Estado: ORD-THREE-DEMONSTRATIONS-20261121, F0, carril D; main sigue en 82b6fb24e76d81e5026c94af2630358d00f2ebe9. La PR #274 sigue abierta y draft, head de código d9bf79dd76ce71406ffed89e7e79c901c7fad18f. No se modificaron #272/#273 ni recursos P2.
+
+Vercel Security Review encontró en a5828d7 que la ausencia de director_authorization producía SQL NULL y el claim SECURITY DEFINER podía adquirir la misión y consumir un intento. La regresión RED se reprodujo antes del fix en PostgreSQL18 desechable con el rol runner TLS/SCRAM: el claim devolvió tarea/token sin grant. No hubo conexión alojada; el clúster se eliminó al terminar.
+
+Corrección en d9bf79d: el validador de grant, host y slot ahora retorna booleano no nulo; claim, lecturas y escrituras rechazan todo resultado distinto de TRUE; argumentos esenciales y los campos grant no_send/no_dispatch se comprueban explícitamente. Se añadieron negativos para autorización ausente, JSON null, active null, grant null, cada campo grant ausente, argumentos RPC null, lecturas protegidas y checkpoint/fail/complete tras eliminar grant de un lease vigente. Los rechazos conservaron intento, lease/token, checkpoint y auditoría. npm run test:director-supervision:db aprobó 1/1; el escenario positivo existente de concurrencia/recuperación también pasó.
+
+npm run verify PASS: 621/621, 0 fallos, 0 omitidos; node scripts/secret-scan.mjs PASS; git diff --check PASS. Vercel Security Review del SHA exacto d9bf79d terminó SUCCESS (“No findings”); Vercel cerró el finding 6 como resolved en ese SHA. No equivale a despliegue.
+
+GitHub Actions del SHA d9bf79d: validate, postgres (dos workflows), Analyze actions/JS/TS/Python y public-browser-smoke fallaron antes de iniciar. Anotaciones oficiales para los ocho checks dicen: la cuenta está bloqueada por un problema de facturación. Vercel Preview no generó evidencia requerida y Supabase Preview está SKIPPED. No se reintentaron ni se tocó billing. La CI requerida del candidato continúa pendiente.
+
+Límites: código enviado solo a la rama/PR; no fusionado ni desplegado. Sin SQL alojado, credenciales, conexión Supabase, claims/ejecución remotos, Cron, workflow dispatch, envíos o gastos. Coste externo nuevo no observado; costo/cuota de futura ejecución alojada no comprobados. Rollback: revertir solo d9bf79d (y los commits de esta misma rama según revisión), sin modificar dependencias ni P2.
+
+Siguiente acción exacta: titular resuelve billing por sus canales; después reconsultar y aprobar validate/postgres/CodeQL/browser y Vercel en el SHA final de #274, exigir revisión humana antes de integrar. No activar hosted SQL, dispatch, wake o Cron por este resultado.
+
+
+## 2026-11-22 11:18 UTC — CI y revisión de seguridad del head documental previo
+
+PR #274 continúa abierta/draft. SHA 45cf3ea7be7984dca063a7c2cefd0495d93d4699 (commit documental hijo de d9bf79d) fue el head remoto verificado antes de este checkpoint. En su SHA exacto, Vercel Security Review terminó SUCCESS (“No findings”); la lista Vercel no muestra vulnerabilidades abiertas. El fix de SQL fue introducido en d9bf79d, donde Vercel cerró el finding #6 como resuelto.
+
+Validate, ambos Postgres, CodeQL Actions/JS/TS/Python y browser smoke fallaron antes de iniciar. Las ocho anotaciones de ese SHA dicen literalmente que la cuenta está bloqueada por facturación. Supabase Preview quedó SKIPPED. No se reintentó, no se modificó billing y no se atribuye éxito remoto a las pruebas locales. Base/main sigue 82b6fb24e76d81e5026c94af2630358d00f2ebe9; PR #272 cb67032..., #273 009713f... abiertas sin modificación.
+
+El estado/checkpoint de esta ejecución queda en un commit hijo de 45cf3ea; consultar el head vivo y los checks exactos antes de cualquier cambio posterior. Sin SQL alojado, claims/ejecución remotos, workflow dispatch, Cron, envíos, gasto, merge o deploy. Siguiente dependencia: el titular resuelve billing; luego se requieren validate/postgres/CodeQL/browser y Security Review verdes en el SHA final, revisión humana, y autorización separada para cualquier operación alojada.
