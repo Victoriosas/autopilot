@@ -20,7 +20,7 @@ psql "$AUTOPILOT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/staged/six_ag
 psql "$AUTOPILOT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
 grant all on public.agent_tasks,public.agent_audit_events to anon,authenticated;
 SQL
-psql "$AUTOPILOT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261122045000_six_agent_fail_lease_fencing.sql
+psql "$AUTOPILOT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/staged/20261122045000_six_agent_fail_lease_fencing.sql
 psql "$AUTOPILOT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
 set request.jwt.claim.role='service_role';
 do $$

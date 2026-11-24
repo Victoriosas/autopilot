@@ -9,9 +9,11 @@ import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 
 const bin = process.env.DIRECTOR_LAB_PG_BINDIR;
-const fix = process.env.DIRECTOR_LAB_LEASE_FIX_SQL;
+const fix = process.env.DIRECTOR_LAB_LEASE_FIX_SQL || path.resolve('supabase/staged/20261122045000_six_agent_fail_lease_fencing.sql');
+const suite = process.env.DIRECTOR_LAB_SUITE || 'director-supervision';
+if(!['director-supervision','cloud-runtime-v3','integration-regressions','preview-history'].includes(suite))throw Error('unknown_lab_suite');
 if (!bin || !path.isAbsolute(bin) || !fix) throw Error('Set DIRECTOR_LAB_PG_BINDIR and DIRECTOR_LAB_LEASE_FIX_SQL; no tools are installed automatically');
-if (createHash('sha256').update(await readFile(fix)).digest('hex') !== '9c36d6949b3f44c24605cf57b2bd634fc202d22708aa4b7a1c7b9bac88f7e9a1')
+if (createHash('sha256').update((await readFile(fix,'utf8')).replaceAll('\r\n','\n')).digest('hex') !== '9c36d6949b3f44c24605cf57b2bd634fc202d22708aa4b7a1c7b9bac88f7e9a1')
   throw Error('Reviewed PR272 migration required, unchanged');
 const exe = name => path.join(bin, name + (process.platform==='win32'?'.exe':''));
 for (const name of ['initdb','pg_ctl']) await access(exe(name));
@@ -33,6 +35,8 @@ const env = {PATH:process.env.PATH,...(process.env.SystemRoot?{SystemRoot:proces
   DIRECTOR_LAB_LEASE_FIX_SQL:path.resolve(fix),
   DIRECTOR_LAB_RUNNER_PASSWORD:runnerPassword,
   DIRECTOR_LAB_RUNNER_PASSFILE:runnerPassfile,
+  ...(process.env.INTEGRATION_REGRESSION_CASE?{INTEGRATION_REGRESSION_CASE:process.env.INTEGRATION_REGRESSION_CASE}:{}),
+  ...(process.env.SUPABASE_CLI_PATH?{SUPABASE_CLI_PATH:process.env.SUPABASE_CLI_PATH}:{}),
   ...(process.env.PSQL_PATH?{PSQL_PATH:process.env.PSQL_PATH}:{})};
 const run = (program,args,output='ignore') => new Promise((resolve,reject)=>{
   const child = spawn(program,args,{env,stdio:['ignore',output,output],windowsHide:true});
@@ -41,8 +45,8 @@ const run = (program,args,output='ignore') => new Promise((resolve,reject)=>{
 });
 let started = false;
 try {
-  const openssl=process.env.OPENSSL_PATH||'C:/Program Files/Git/usr/bin/openssl.exe';
-  await access(openssl);
+  const openssl=process.env.OPENSSL_PATH||(process.platform==='win32'?'C:/Program Files/Git/usr/bin/openssl.exe':'openssl');
+  if(path.isAbsolute(openssl))await access(openssl);
   await run(exe('initdb'),['-D',data,'-U','lab_owner','--pwfile',pwfile,'--auth=scram-sha-256','--no-locale','--encoding=UTF8']);
   const cert=path.join(root,'server.crt'),key=path.join(root,'server.key');
   await promisify(execFile)(openssl,['req','-x509','-newkey','rsa:2048','-sha256','-nodes','-keyout',key,'-out',cert,
@@ -56,7 +60,11 @@ try {
     `-h 127.0.0.1 -p ${port}${process.platform==='win32'?'':` -k "${root}"`}`,'-w','start']);
   started=true;
   await run(process.env.CREATEDB_PATH||'createdb',['-h','127.0.0.1','-p',String(port),'-U','lab_owner','-w','victoriosa_director_supervision_lab']);
-  await run(process.execPath,['--import','tsx','--test',fileURLToPath(new URL('../tests/director-supervision-postgres.test.ts',import.meta.url))],'inherit');
+  if(suite==='preview-history'){
+    await run(process.env.CREATEDB_PATH||'createdb',['-h','127.0.0.1','-p',String(port),'-U','lab_owner','-w','victoriosa_hosted_replay_test']);
+    env.HOSTED_REPLAY_TEST_DATABASE_URL=`postgresql://lab_owner:${password}@127.0.0.1:${port}/victoriosa_hosted_replay_test`;
+  }
+  await run(process.execPath,['--import','tsx','--test',fileURLToPath(new URL(`../tests/${suite}-postgres.test.ts`,import.meta.url))],'inherit');
 } finally {
   // Never delete a cluster if its shutdown could not be confirmed.
   if (started) await run(exe('pg_ctl'),['-D',data,'-m','immediate','-w','stop']);

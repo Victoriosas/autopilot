@@ -1207,5 +1207,24 @@
       "next": "Resolver el bloqueo de facturación de GitHub por el titular; después verificar CI/review del SHA exacto final de la misma PR #274. Mantener hosted SQL, dispatch y #273 desactivados.",
       "blocker": "Finding Vercel #6 cerrado/resuelto en d9bf79d. GitHub Actions CI del SHA final aún no ejecutada: ocho anotaciones exactas confirman bloqueo por billing."
     }
-  ]
+  ],
+  "cloud_runtime_integration_v3": {
+    "requested_on": "2026-11-24",
+    "branch": "autopilot-integration",
+    "base_main_sha": "82b6fb24e76d81e5026c94af2630358d00f2ebe9",
+    "integrated_prs": {
+      "272": "cb67032cd2319b622f5868590e14dc291c1ce001",
+      "273": "009713fc5e444176bf97f8e7ffa3287b4ae849c4",
+      "274": "4d4f2720a2c759c9921ea94d41035dcdbfa1b10e"
+    },
+    "status": "implemented_local_tests_hosted_authorization_pending",
+    "report": "docs/CLOUD_RUNTIME_INTEGRATION_V3.md",
+    "scope": "read_only_office_observations_no_send_no_sourcing",
+    "hosted_execution_verified": false,
+    "production_activated": false,
+    "remote_mutations": 0,
+    "primary_blocked_tasks": 6,
+    "primary_blocked_fingerprint": "607eb4a9f680ea6826964779f2f74f72",
+    "next": "Exact final SHA/CI and review; specific approval for isolated ledger SQL, minimum credentials, bundled wake and one manual cloud cycle. Separate later approval for production handoff and sole Cron. Do not modify main."
+  }
 }

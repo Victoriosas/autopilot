@@ -17,6 +17,7 @@ declare const Deno: {
 
 const base = 'http://127.0.0.1:8000/functions/v1/autopilot-director-wake';
 const syntheticToken = 'synthetic-director-wake-' + 'r'.repeat(40);
+const cloudToken = 'synthetic-cloud-runtime-' + 'c'.repeat(40);
 
 async function waitForServer() {
   for (let attempt = 0; attempt < 40; attempt++) {
@@ -34,8 +35,10 @@ async function waitForServer() {
 if (Deno.args[0] === 'serve') {
   if (Deno.args[1] === 'configured') {
     Deno.env.set('AUTOPILOT_DIRECTOR_WAKE_TOKEN', syntheticToken);
+    Deno.env.set('AUTOPILOT_CLOUD_TRIGGER_TOKEN', cloudToken);
   } else {
     Deno.env.delete('AUTOPILOT_DIRECTOR_WAKE_TOKEN');
+    Deno.env.delete('AUTOPILOT_CLOUD_TRIGGER_TOKEN');
   }
   await import('../supabase/functions/autopilot-director-wake/index.ts');
   await new Promise(() => {});
@@ -62,8 +65,10 @@ if (Deno.args.length === 0) {
   assert.equal(body.executed, false);
   assert.equal(body.tasksClaimed, 0);
   assert.equal(body.noSend, true);
+  assert.equal((await runDenoCase('configured','POST','/run')).status,401);
+  assert.equal((await runDenoCase('configured','POST','/run',cloudToken,'x-autopilot-cloud-token')).status,503);
 
-  console.log('DENO_REAL_ENTRYPOINT_LOOPBACK_PASS: GET405,FALSE404,WRONG401,UNCONFIGURED503,CORRECT200');
+  console.log('DENO_REAL_ENTRYPOINT_LOOPBACK_PASS: GET405,FALSE404,WRONG401,UNCONFIGURED503,CORRECT200,CLOUD_PREFLIGHT_TOKEN401,CLOUD_UNCONFIGURED503');
 }
 
 async function runDenoCase(
@@ -71,6 +76,7 @@ async function runDenoCase(
   method: 'GET' | 'POST',
   suffix = '',
   token = syntheticToken,
+  headerName = 'x-autopilot-wake-token',
 ) {
   const command = new Deno.Command(Deno.realPathSync(denoExe), {
     args: ['run', '--allow-env', '--allow-net', '--allow-read', '--allow-run', 'scripts/test-director-wake-deno.ts', 'serve', mode],
@@ -81,7 +87,7 @@ async function runDenoCase(
   const child = command.spawn();
   try {
     await waitForServer();
-    return await fetch(base + suffix, { method, headers: { 'x-autopilot-wake-token': token } });
+    return await fetch(base + suffix, { method, headers: { [headerName]: token } });
   } finally {
     child.kill('SIGTERM');
     await child.status;

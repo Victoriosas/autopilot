@@ -34,7 +34,8 @@ test('Edge entrypoint works over independent HTTP loopback without Deno or Supab
         method:'POST',headers:{'x-autopilot-wake-token':token}
       });
       assert.equal((await send('wrong'.repeat(12))).status,401);
-      assert.equal((await send(scopedToken,base+'/run')).status,404);
+      assert.equal((await send(scopedToken,base+'/run')).status,503);
+      assert.equal((await send(scopedToken,base+'/unexpected')).status,404);
       const result=await send(scopedToken);
       assert.equal(result.status,200);
       const body=await result.json();

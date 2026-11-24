@@ -27,6 +27,8 @@ test('admin agent status never falls back to primary task rows while synthetic r
     return Response.json({unexpected_ledger_read:true},{status:500});
   });
   const app=express();app.use('/api/autopilot/v4/agents-status',createSixAgentStatusRouter());
+  app.use('/configured',createSixAgentStatusRouter(async()=>({source:'supabase',scope:'cloud_v3_read_only',environment:'isolated',generatedAt:new Date().toISOString(),partial:false,
+    agents:['director','software','infrastructure','consultations','followup','reports'].map(id=>({id,pending:0,running:0,blocked:1,completed:1,lastHeartbeat:null,results:1,lastResult:null}))})));
   const server=app.listen(0,'127.0.0.1');await once(server,'listening');
   t.after(async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));});
   const {port}=server.address() as {port:number};
@@ -38,4 +40,7 @@ test('admin agent status never falls back to primary task rows while synthetic r
   assert.equal(response.status,503);
   assert.deepEqual(await response.json(),{error:'DIRECTOR_SYNTHETIC_READER_NOT_CONFIGURED'});
   assert.equal(ledgerReads,0,'unconfigured panel must not read production customer or task rows');
+  const configured=await fetch(`http://127.0.0.1:${port}/configured`,{headers:{authorization:'Bearer synthetic-admin'}});
+  assert.equal(configured.status,200);assert.equal((await configured.json()).agents.length,6);
+  assert.equal(configured.headers.get('cache-control'),'no-store');
 });
