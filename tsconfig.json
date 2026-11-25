@@ -25,6 +25,7 @@
   },
   "exclude": [
     "node_modules",
-    "supabase/functions/**"
+    "supabase/functions/**",
+    "output/cloud-runtime-v3/**"
   ]
 }
