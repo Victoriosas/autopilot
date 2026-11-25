@@ -94,6 +94,11 @@ jobs:
         env:
           AUTOPILOT_TEST_DATABASE_URL: postgresql://postgres:isolated-test-password@127.0.0.1:5432/victoriosa_six_agent_test
 
+      - name: Cloud V3 isolated role fencing and persisted six-agent evidence
+        run: |
+          sudo apt-get install -y postgresql openssl
+          DIRECTOR_LAB_PG_BINDIR="$(pg_config --bindir)" npm run test:cloud-runtime:db
+
       - name: Create disposable mission runner database
         run: createdb -h 127.0.0.1 -p 5432 -U postgres victoriosa_mission_runner_test
         env:

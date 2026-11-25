@@ -1,3 +1,4 @@
+import { diagnosePublicHealth } from '../../../src/autopilot/publicHealthDiagnostic.ts';
 // GitHub OIDC gated, single-purpose infrastructure health worker.
 // No arbitrary task input, customer records, outbound customer messages or LLM calls.
 import {createRemoteJWKSet,jwtVerify} from 'npm:jose@5.9.6';
@@ -27,12 +28,7 @@ async function rest(path:string,body:Record<string,unknown>,prefer?:string):Prom
  if(prefer?.includes('return=minimal'))return null;
  return await r.json();
 }
-async function publicSiteHealthy():Promise<boolean>{
- const r=await fetch('https://victoriosas.online/',{
-  method:'GET',redirect:'manual',headers:{accept:'text/html'},signal:AbortSignal.timeout(12000)
- });
- return r.status===200 && (await r.text()).includes('Victoriosas');
-}
+
 async function work():Promise<Record<string,unknown>>{
  const slot=Math.floor(Date.now()/21600000);
  const id='six-health:infrastructure:'+slot;
@@ -48,11 +44,11 @@ async function work():Promise<Record<string,unknown>>{
  const claim=claims[0];
  if(typeof claim?.task_id!=='string'||!claim.task_id.startsWith('six-health:infrastructure:')||
     typeof claim?.claim_token!=='string')throw Error('unexpected_claim');
- let good=false;
- try{good=await publicSiteHealthy();}catch{good=false;}
- if(!good){
-  await rest('rpc/six_agent_fail',{p_task_id:claim.task_id,p_token:claim.claim_token,p_reason:'site_unavailable'});
-  throw Error('site_unavailable');
+ const diagnostic=await diagnosePublicHealth();
+ if(!diagnostic.healthy){
+  const failed=await rest('rpc/six_agent_fail',{p_task_id:claim.task_id,p_token:claim.claim_token,p_reason:'site_'+diagnostic.code});
+  if(failed!==true)throw Error('fenced_failure_rejected');
+  return {state:'failed',task_id:claim.task_id,diagnostic};
  }
  const completed=await rest('rpc/six_agent_complete',{
   p_task_id:claim.task_id,p_token:claim.claim_token,p_evidence:'site_http_200_brand_verified'
@@ -71,6 +67,7 @@ Deno.serve(async(request:Request)=>{
      !['schedule','workflow_dispatch'].includes(String(payload.event_name)))
      return respond(403,{error:'forbidden'});
  }catch{return respond(401,{error:'unauthorized'});}
+ if(Deno.env.get('AUTOPILOT_SCHEDULER_OWNER')==='supabase_cron')return respond(409,{error:'scheduler_handed_over'});
  try{return respond(200,await work());}
  catch{return respond(503,{error:'safe_health_worker_failed'});}
 });

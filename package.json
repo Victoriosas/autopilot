@@ -20,8 +20,12 @@
     "test:db": "node --import tsx --test tests/sourcing-postgres.test.ts && node --import tsx --test tests/shadow-auth-postgres.test.ts",
     "test:commerce:db": "node scripts/test-commerce-postgres.mjs",
     "test:hosted-replay:db": "node scripts/test-hosted-replay-postgres.mjs",
+    "test:director-wake:deno": "node scripts/run-director-wake-deno.mjs",
+    "test:director-supervision:db": "node scripts/test-director-supervision-db.mjs",
     "verify": "npm run verify:skills && npm run lint && npm test && npm run build && npm run build:vercel && node scripts/check-built-api.mjs",
-    "verify:skills": "node scripts/check-codex-skills.mjs"
+    "verify:skills": "node scripts/check-codex-skills.mjs",
+    "test:cloud-runtime:db": "node scripts/test-cloud-runtime-db.mjs",
+    "package:cloud-runtime": "node scripts/package-cloud-runtime.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",

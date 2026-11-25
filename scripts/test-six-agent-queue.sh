@@ -17,6 +17,65 @@ create table public.agent_audit_events(id bigint generated always as identity pr
 task_id text references public.agent_tasks(id),event_type text,details jsonb,created_at timestamptz default now());
 SQL
 psql "$AUTOPILOT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/staged/six_agent_queue_20261025.sql
+psql "$AUTOPILOT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+grant all on public.agent_tasks,public.agent_audit_events to anon,authenticated;
+SQL
+psql "$AUTOPILOT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/staged/20261122045000_six_agent_fail_lease_fencing.sql
+psql "$AUTOPILOT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+set request.jwt.claim.role='service_role';
+do $$
+declare selected_id text; selected_token uuid; failed boolean;
+declare metrics jsonb; private_text text;
+begin
+ if exists (
+   select 1 from unnest(array['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER','MAINTAIN']) privilege
+   where has_table_privilege('anon','public.agent_tasks',privilege)
+      or has_table_privilege('authenticated','public.agent_tasks',privilege)
+      or has_table_privilege('anon','public.agent_audit_events',privilege)
+      or has_table_privilege('authenticated','public.agent_audit_events',privilege)
+ ) then
+   raise exception 'browser role retained direct ledger table privilege';
+ end if;
+ if has_function_privilege('anon','public.six_agent_report_metrics()','EXECUTE')
+    or has_function_privilege('authenticated','public.six_agent_report_metrics()','EXECUTE') then
+   raise exception 'browser role retained aggregate RPC execute privilege';
+ end if;
+
+ insert into public.agent_tasks(id,goal,actor,action,status,agent_id,completed_evidence)
+ values('private-evidence-metric-001','synthetic aggregate fixture','test-runner','synthetic_task',
+   'completed','director','synthetic_private_text_must_not_return'),
+   ('unassigned-metric-001','synthetic aggregate fixture','test-runner','synthetic_task',
+   'blocked','unexpected_agent',null);
+ select coalesce(jsonb_agg(to_jsonb(m)),'[]'::jsonb) into metrics
+ from public.six_agent_report_metrics() m;
+ private_text=metrics::text;
+ if private_text like '%synthetic_private_text_must_not_return%'
+    or (select completed_with_evidence from public.six_agent_report_metrics() where agent_id='director')<>1
+    or (select unassigned from public.six_agent_report_metrics() limit 1)<>1 then
+   raise exception 'aggregate RPC leaked private evidence or returned incorrect counts';
+ end if;
+
+ insert into public.agent_tasks(id,goal,actor,action,status,agent_id,input)
+ values('expired-fail-lease-001','expired lease negative test','test-runner','synthetic_task',
+   'queued','director','{"synthetic":true}');
+ select task_id,claim_token into selected_id,selected_token
+ from public.six_agent_claim('director',30);
+ if selected_id is distinct from 'expired-fail-lease-001' or selected_token is null then
+   raise exception 'expired lease fixture was not claimed';
+ end if;
+ update public.agent_tasks set lease_until=clock_timestamp()-interval '1 second'
+ where id=selected_id;
+ select public.six_agent_fail(selected_id,selected_token,'expired_worker') into failed;
+ if failed then raise exception 'expired current token was allowed to fail task'; end if;
+ if (select status from public.agent_tasks where id=selected_id)<>'running'
+    or (select execution_token from public.agent_tasks where id=selected_id) is distinct from selected_token
+    or (select count(*) from public.agent_audit_events where task_id=selected_id and event_type='six_agent_failure')<>0 then
+   raise exception 'expired failure changed task or audit state';
+ end if;
+ update public.agent_tasks set status='blocked',execution_token=null,lease_until=null
+ where id=selected_id;
+end $$;
+SQL
 psql "$AUTOPILOT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/staged/six_agent_mission_checkpoint_20261109.sql
 psql "$AUTOPILOT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
 set request.jwt.claim.role='service_role';

@@ -62,7 +62,8 @@ export function missionFromTask(task: ClaimedAgentTask): MissionSpecification {
 }
 
 /** Credentials stay in the host. Adapters receive no client or fencing token. */
-export function createMissionLedger(client: SupabaseClient, permissions: readonly string[] = []): MissionLedger {
+export function createMissionLedger(client: SupabaseClient, permissions: readonly string[] = [], claimLeaseSeconds=60): MissionLedger {
+  if(!Number.isInteger(claimLeaseSeconds)||claimLeaseSeconds<5||claimLeaseSeconds>300)throw Error('invalid_lease');
   const claims = new WeakMap<ExecutorContext, ClaimedAgentTask>();
   const claimFor = (context: ExecutorContext) => {
     const claim = claims.get(context);
@@ -71,7 +72,7 @@ export function createMissionLedger(client: SupabaseClient, permissions: readonl
   };
   return {
     async claimMission(agentId: AgentId) {
-      const claim = await claimPersistedMissionTask(client, agentId);
+      const claim = await claimPersistedMissionTask(client, agentId,claimLeaseSeconds);
       if (!claim) return null;
       const mission = missionFromTask(claim);
       const meta = claim.task_payload.__autopilot as Record<string, unknown>;
