@@ -1,0 +1,355 @@
+{
+  "schema_version": 1,
+  "scope": "authorized_single_isolated_synthetic_cycle",
+  "project": "juyowvmtluxfetgkckjd",
+  "local_date": "2026-11-24",
+  "timezone": "America/Montevideo",
+  "requested_at_utc": "2026-11-25T00:07:31.218Z",
+  "deployed_code_sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+  "bundle_sha256": "e19b79a9c6fb22869b19c4833990ca34210f9488bcba45d60696a6c5751a91d0",
+  "edge_function": {
+    "name": "autopilot-director-wake",
+    "version": 1,
+    "id": "97872aa9-9dbf-47f2-8e73-40927d541087",
+    "exact_uploaded_source_verified": true,
+    "provider_archive_sha256": "1f159bf287bbcbe4e4e6afb2eab3067b8bfc555ef14dfd7deff9949c7748eaaa"
+  },
+  "invocation": {
+    "http_status": 200,
+    "state": "cycle_recorded",
+    "tasksClaimed": 6,
+    "noSend": true,
+    "origin": "Supabase_Edge_Function",
+    "executed_cycles": 1
+  },
+  "baseline": {
+    "tasks": {
+      "rows": 1,
+      "blocked": 0,
+      "fingerprint": "fa1961242f650018361e5ab414e799ea"
+    },
+    "audit": {
+      "rows": 7,
+      "fingerprint": "25111a1ee19375d9f29db3c009b3fdae"
+    }
+  },
+  "persisted": {
+    "tasks": [
+      {
+        "id": "cloud-v3:997536:consultations",
+        "agent": "consultations",
+        "status": "completed",
+        "attempts": 1,
+        "evidence": "cloud_v3:consultations:7c353f5e59b71be03958097a86ec8c47915f8197",
+        "updated_at": "2026-11-25T00:07:39.372686+00:00",
+        "lease_cleared": true,
+        "token_cleared": true
+      },
+      {
+        "id": "cloud-v3:997536:director",
+        "agent": "director",
+        "status": "completed",
+        "attempts": 1,
+        "evidence": "cloud_v3:director:7c353f5e59b71be03958097a86ec8c47915f8197",
+        "updated_at": "2026-11-25T00:07:41.011647+00:00",
+        "lease_cleared": true,
+        "token_cleared": true
+      },
+      {
+        "id": "cloud-v3:997536:followup",
+        "agent": "followup",
+        "status": "completed",
+        "attempts": 1,
+        "evidence": "cloud_v3:followup:7c353f5e59b71be03958097a86ec8c47915f8197",
+        "updated_at": "2026-11-25T00:07:40.101804+00:00",
+        "lease_cleared": true,
+        "token_cleared": true
+      },
+      {
+        "id": "cloud-v3:997536:infrastructure",
+        "agent": "infrastructure",
+        "status": "completed",
+        "attempts": 1,
+        "evidence": "cloud_v3:infrastructure:7c353f5e59b71be03958097a86ec8c47915f8197",
+        "updated_at": "2026-11-25T00:07:37.958981+00:00",
+        "lease_cleared": true,
+        "token_cleared": true
+      },
+      {
+        "id": "cloud-v3:997536:reports",
+        "agent": "reports",
+        "status": "completed",
+        "attempts": 1,
+        "evidence": "cloud_v3:reports:7c353f5e59b71be03958097a86ec8c47915f8197",
+        "updated_at": "2026-11-25T00:07:40.606007+00:00",
+        "lease_cleared": true,
+        "token_cleared": true
+      },
+      {
+        "id": "cloud-v3:997536:software",
+        "agent": "software",
+        "status": "completed",
+        "attempts": 1,
+        "evidence": "cloud_v3:software:7c353f5e59b71be03958097a86ec8c47915f8197",
+        "updated_at": "2026-11-25T00:07:36.944158+00:00",
+        "lease_cleared": true,
+        "token_cleared": true
+      }
+    ],
+    "events": [
+      {
+        "at": "2026-11-25T00:07:36.024735+00:00",
+        "task": "cloud-v3:997536:director",
+        "type": "cloud_v3_claim",
+        "details": {
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "director"
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:36.517705+00:00",
+        "task": "cloud-v3:997536:software",
+        "type": "cloud_v3_claim",
+        "details": {
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "software"
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:36.939432+00:00",
+        "task": "cloud-v3:997536:software",
+        "type": "cloud_v3_heartbeat",
+        "details": {
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "software"
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:36.939432+00:00",
+        "task": "cloud-v3:997536:software",
+        "type": "cloud_v3_result",
+        "details": {
+          "ok": true,
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "software",
+          "result": {
+            "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+            "kind": "artifact_verified"
+          }
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:37.392849+00:00",
+        "task": "cloud-v3:997536:infrastructure",
+        "type": "cloud_v3_claim",
+        "details": {
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "infrastructure"
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:37.955379+00:00",
+        "task": "cloud-v3:997536:infrastructure",
+        "type": "cloud_v3_heartbeat",
+        "details": {
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "infrastructure"
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:37.955379+00:00",
+        "task": "cloud-v3:997536:infrastructure",
+        "type": "cloud_v3_result",
+        "details": {
+          "ok": true,
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "infrastructure",
+          "result": {
+            "code": "ok",
+            "kind": "public_health"
+          }
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:38.410218+00:00",
+        "task": "cloud-v3:997536:consultations",
+        "type": "cloud_v3_claim",
+        "details": {
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "consultations"
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:39.36973+00:00",
+        "task": "cloud-v3:997536:consultations",
+        "type": "cloud_v3_heartbeat",
+        "details": {
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "consultations"
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:39.36973+00:00",
+        "task": "cloud-v3:997536:consultations",
+        "type": "cloud_v3_result",
+        "details": {
+          "ok": true,
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "consultations",
+          "result": {
+            "kind": "consultations_aggregate",
+            "count": 1
+          }
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:39.78596+00:00",
+        "task": "cloud-v3:997536:followup",
+        "type": "cloud_v3_claim",
+        "details": {
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "followup"
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:40.099115+00:00",
+        "task": "cloud-v3:997536:followup",
+        "type": "cloud_v3_heartbeat",
+        "details": {
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "followup"
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:40.099115+00:00",
+        "task": "cloud-v3:997536:followup",
+        "type": "cloud_v3_result",
+        "details": {
+          "ok": true,
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "followup",
+          "result": {
+            "kind": "followup_aggregate",
+            "count": 0
+          }
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:40.254998+00:00",
+        "task": "cloud-v3:997536:reports",
+        "type": "cloud_v3_claim",
+        "details": {
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "reports"
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:40.603685+00:00",
+        "task": "cloud-v3:997536:reports",
+        "type": "cloud_v3_heartbeat",
+        "details": {
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "reports"
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:40.603685+00:00",
+        "task": "cloud-v3:997536:reports",
+        "type": "cloud_v3_result",
+        "details": {
+          "ok": true,
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "reports",
+          "result": {
+            "kind": "reports_aggregate",
+            "count": 21
+          }
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:41.008953+00:00",
+        "task": "cloud-v3:997536:director",
+        "type": "cloud_v3_heartbeat",
+        "details": {
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "director"
+        }
+      },
+      {
+        "at": "2026-11-25T00:07:41.008953+00:00",
+        "task": "cloud-v3:997536:director",
+        "type": "cloud_v3_result",
+        "details": {
+          "ok": true,
+          "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+          "agent": "director",
+          "result": {
+            "kind": "office_cycle",
+            "children_completed": true
+          }
+        }
+      }
+    ],
+    "legacy_task_fingerprint": "fa1961242f650018361e5ab414e799ea",
+    "legacy_audit_fingerprint": "25111a1ee19375d9f29db3c009b3fdae"
+  },
+  "fencing": {
+    "postgrest_replayed_completion": false,
+    "expired_cloud_finish_rejected": true,
+    "expired_legacy_fail_rejected": true,
+    "temporary_fixture_changes_rolled_back": true,
+    "audit_events_after_probes": 18
+  },
+  "closure": {
+    "policy_enabled": false,
+    "runner_login_disabled": true,
+    "cron_installed": false
+  },
+  "preview": {
+    "deployment": "dpl_5LsMnVQQQJuYgbqPb1uXdUHDqRKo",
+    "url": "https://autopilot-3nvnyd9us-autopilot12.vercel.app/admin",
+    "target": "preview",
+    "sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+    "state": "READY",
+    "status_reader": {
+      "anonymous": 401,
+      "restricted_reader_as_admin": 403,
+      "synthetic_admin": 200,
+      "roles": 6
+    },
+    "desktop_width": 1440,
+    "mobile_width": 390
+  },
+  "local_verification": {
+    "verify_tests": 637,
+    "passed": 637,
+    "failed": 0,
+    "skipped": 0,
+    "types": true,
+    "node_build": true,
+    "vercel_build": true,
+    "api_smoke": true,
+    "postgres18_scram_tls": true,
+    "hosted_postgres17": true
+  },
+  "production": {
+    "mutations": 0,
+    "main_sha": "82b6fb24e76d81e5026c94af2630358d00f2ebe9",
+    "blocked_tasks": 6,
+    "blocked_fingerprint": "607eb4a9f680ea6826964779f2f74f72",
+    "cron_activated": false,
+    "messages_sent": 0,
+    "additional_services_purchased": 0,
+    "cost_total_measured": false
+  },
+  "limits": [
+    "One bounded observation cycle, not proof of permanent availability or full agent autonomy",
+    "Consultations source is a synthetic inbox fixture",
+    "Other clinical/settings UI endpoints are not provisioned in this isolated ledger",
+    "GitHub required CI blocked by billing; Supabase Preview skipped"
+  ],
+  "evidence_images": [
+    "docs/evidence/cloud-v3-menu-desktop-20261124.png",
+    "docs/evidence/cloud-v3-menu-mobile-20261124.png"
+  ]
+}

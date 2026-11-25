@@ -1217,14 +1217,25 @@
       "273": "009713fc5e444176bf97f8e7ffa3287b4ae849c4",
       "274": "4d4f2720a2c759c9921ea94d41035dcdbfa1b10e"
     },
-    "status": "implemented_local_tests_hosted_authorization_pending",
+    "status": "one_isolated_hosted_cycle_verified_runner_closed_no_cron",
     "report": "docs/CLOUD_RUNTIME_INTEGRATION_V3.md",
     "scope": "read_only_office_observations_no_send_no_sourcing",
-    "hosted_execution_verified": false,
+    "hosted_execution_verified": true,
     "production_activated": false,
-    "remote_mutations": 0,
     "primary_blocked_tasks": 6,
     "primary_blocked_fingerprint": "607eb4a9f680ea6826964779f2f74f72",
-    "next": "Exact final SHA/CI and review; specific approval for isolated ledger SQL, minimum credentials, bundled wake and one manual cloud cycle. Separate later approval for production handoff and sole Cron. Do not modify main."
+    "next": "Close CI billing/review and prove renewable runtime credentials before requesting production SQL, a single cloud scheduler and promotion; see docs/CLOUD_RUNTIME_PERMANENT_ACTIVATION_PLAN.md. No current authority to activate Cron or production.",
+    "pr": "https://github.com/Victoriosas/autopilot/pull/277",
+    "executed_code_sha": "7c353f5e59b71be03958097a86ec8c47915f8197",
+    "receipt": "docs/CLOUD_RUNTIME_ISOLATED_RECEIPT_20261124.json",
+    "preview_url": "https://autopilot-3nvnyd9us-autopilot12.vercel.app/admin",
+    "preview_reader_http": 200,
+    "completed_tasks": 6,
+    "heartbeats": 6,
+    "result_events": 6,
+    "cloud_cycles": 1,
+    "policy_enabled": false,
+    "runner_login_disabled": true,
+    "remote_mutations_scope": "Only approved isolated ledger schema, synthetic identities and one bounded cycle; Preview-only branch configuration/deployment. No production mutations."
   }
 }

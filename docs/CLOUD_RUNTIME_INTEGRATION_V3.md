@@ -234,3 +234,19 @@ al vencer un JWT copiado. La contraseña se configura como variable sensible
 solo de Preview y solo de la rama autopilot-integration. El navegador recibe
 únicamente su sesión admin sintética y la clave publicable. RLS del perfil
 permite leer solo el perfil propio; no hay escritura desde navegador.
+
+## Resultado del ensayo autorizado
+
+EJECUTADO/VERIFICADO el24/11/2026 a21:07 Uruguay en el ledger aislado, con código
+7c353f5e59b71be03958097a86ec8c47915f8197. Receipt completo en
+[CLOUD_RUNTIME_ISOLATED_RECEIPT_20261124.json](CLOUD_RUNTIME_ISOLATED_RECEIPT_20261124.json).
+Seis cierres/claims/heartbeats/resultados, todos en intento1. La Preview admin
+mostró esos seis resultados con HTTP200 y mantuvo401/403 sin autoridad suficiente.
+La política quedó cerrada, el runner bloqueado y Cron ausente. Se conservan los
+fingerprints heredados y las seis bloqueadas del principal.
+
+La barrera de autorización del primer ensayo descrita arriba quedó satisfecha
+por la orden expresa del propietario. Las barreras de producción y periodicidad
+permanecen. Próximo paquete: [plan de activación permanente](CLOUD_RUNTIME_PERMANENT_ACTIVATION_PLAN.md).
+Las secciones clínicas/settings de la Preview no fueron provisionadas; el503
+resuelto es el lector de agentes, no toda la aplicación aislada.

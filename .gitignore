@@ -15,3 +15,4 @@ output/consultation-agents-eval/
 /output/supabase-api/
 /output/cloud-runtime-v3/
 /.lab-tools/
+/.playwright-cli/
