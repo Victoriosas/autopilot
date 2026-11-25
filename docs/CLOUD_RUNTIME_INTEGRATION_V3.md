@@ -208,3 +208,29 @@ Fuentes oficiales: [eve](https://eve.dev/docs/getting-started),
   dry-run de historial en PostgreSQL descartable sin aplicar SQL. CLI 3.4.0
   cambia los flags de ese test histórico; se usó la versión fijada compatible.
   Ninguna de estas pruebas acredita por sí misma integración alojada.
+
+## Ensayo cloud aislado autorizado · 24/11/2026
+
+El propietario autorizó SQL exclusivamente en juyowvmtluxfetgkckjd, credenciales
+mínimas, bundle aislado, un ciclo sintético, correcciones técnicas y Preview.
+Cron y producción siguen fuera de alcance. Las migraciones de fencing, inbox
+sintética, runtime y perfiles aislados se aplicaron allí. Baseline: 1 task y 7
+audit events previos, sin bloqueadas; deben conservarse. El principal no se toca.
+
+El proyecto no expone una clave JWT de firma reutilizable y la CLI no tiene
+sesión. Se añaden identidades técnicas sintéticas de Supabase Auth con roles
+autopilot_cloud_runtime/autopilot_cloud_reader, sin permisos de tablas ni claims
+genéricos. Auth firma JWT de corta duración; no se exporta su clave ni se entrega
+service_role al runtime. Credenciales locales protegidas con Windows DPAPI.
+
+La modalidad /run-bearer verifica la identidad contra Auth y PostgREST valida
+cada RPC con el mismo JWT restringido. Solo el bundle --isolated incluye la
+clave PUBLICABLE del ledger exacto y el SHA compilado. No contiene contraseñas,
+refresh tokens ni claves privilegiadas. El owner manual_once está limitado a
+environment=isolated y un slot fijo; no crea Cron y no permite otros ciclos.
+
+Preview admite login server-side del lector restringido para no quedar inválido
+al vencer un JWT copiado. La contraseña se configura como variable sensible
+solo de Preview y solo de la rama autopilot-integration. El navegador recibe
+únicamente su sesión admin sintética y la clave publicable. RLS del perfil
+permite leer solo el perfil propio; no hay escritura desde navegador.

@@ -6,12 +6,15 @@ const git=(...args)=>execFileSync('git',args,{encoding:'utf8',windowsHide:true})
 if(git('status','--porcelain','--untracked-files=no'))throw Error('clean_committed_tree_required');
 if(git('branch','--show-current')!=='autopilot-integration')throw Error('integration_branch_required');
 const sha=git('rev-parse','HEAD');
+const isolated=process.argv.includes('--isolated');
+const isolatedApiKey=isolated?process.env.AUTOPILOT_PACKAGE_API_KEY??'':'';
+if(isolated&&!isolatedApiKey.startsWith('sb_publishable_'))throw Error('isolated_publishable_key_required');
 const root='output/cloud-runtime-v3';
 await mkdir(root+'/functions/autopilot-director-wake',{recursive:true});
 const outfile=root+'/functions/autopilot-director-wake/index.ts';
 await build({entryPoints:['supabase/functions/autopilot-director-wake/index.ts'],bundle:true,format:'esm',platform:'neutral',target:'es2022',outfile,
- define:{__AUTOPILOT_ARTIFACT_SHA__:JSON.stringify(sha)}});
+ define:{__AUTOPILOT_ARTIFACT_SHA__:JSON.stringify(sha),__AUTOPILOT_ISOLATED_API_KEY__:JSON.stringify(isolatedApiKey)}});
 await writeFile(root+'/config.toml','[functions.autopilot-director-wake]\nverify_jwt = false\n');
 const digest=createHash('sha256').update(await readFile(outfile)).digest('hex');
-await writeFile(root+'/manifest.json',JSON.stringify({sha,sha256:digest,entry:outfile,activated:false,noSend:true},null,2)+'\n');
+await writeFile(root+'/manifest.json',JSON.stringify({sha,sha256:digest,entry:outfile,isolatedProject:isolated?'juyowvmtluxfetgkckjd':null,activated:false,noSend:true},null,2)+'\n');
 console.log(JSON.stringify({sha,sha256:digest,activated:false}));

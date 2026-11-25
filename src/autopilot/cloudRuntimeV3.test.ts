@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {runCloudOffice,cloudRpcClient} from './cloudRuntimeV3';
-import {createCloudTrigger} from './cloudTrigger';
+import {createCloudTrigger,createCloudBearerTrigger} from './cloudTrigger';
 import {readCloudStatus} from './cloudStatusReader';
 import {diagnosePublicHealth,networkFailure} from './publicHealthDiagnostic';
 const sha='a'.repeat(40),token='11111111-1111-4111-8111-111111111111';
@@ -56,6 +56,21 @@ test('RPC transport only calls pinned procedures, rejects redirects and redacts 
  await assert.rejects(client('cloud_v3_status',{}),/^Error: cloud_rpc_rejected$/);assert.equal(calls,1);
  assert.throws(()=>cloudRpcClient({url:'http://unsafe.invalid',apiKey:'key',jwt:'jwt'}));
 });
+
+test('bearer transport requires verified Auth identity and uses only its restricted JWT',async()=>{
+ let called=0,authenticated=0;
+ const handler=createCloudBearerTrigger({authenticate:async jwt=>{authenticated++;return jwt==='signed-runner';},runtime:jwt=>{
+  called++;assert.equal(jwt,'signed-runner');return {enabled:true,reviewedSha:sha,artifactSha:sha,rpc:async()=>null};
+ }});
+ const base='https://edge.invalid/autopilot-director-wake/run-bearer';
+ assert.equal((await handler(new Request(base))).status,405);
+ assert.equal((await handler(new Request(base,{method:'POST'}))).status,401);
+ assert.equal(authenticated,0);
+ assert.equal((await handler(new Request(base,{method:'POST',headers:{authorization:'Bearer forged'}}))).status,401);
+ assert.equal(called,0);
+ const response=await handler(new Request(base,{method:'POST',headers:{authorization:'Bearer signed-runner'}}));
+ assert.equal(response.status,200);assert.equal((await response.json()).tasksClaimed,0);assert.equal(called,1);
+});
 test('status reader rejects duplicate roles, future heartbeat and strips unexpected evidence',async t=>{
  const env={AUTOPILOT_STATUS_URL:'https://isolated.supabase.invalid',AUTOPILOT_STATUS_API_KEY:'public',AUTOPILOT_STATUS_READER_JWT:'reader'};
  const agents=['director','software','infrastructure','consultations','followup','reports'].map(id=>({id,pending:0,running:0,blocked:1,completed:0,lastHeartbeat:null,results:0,lastResult:null}));
@@ -65,4 +80,21 @@ test('status reader rejects duplicate roles, future heartbeat and strips unexpec
  agents[1].id='director';await assert.rejects(readCloudStatus(env),/INVALID/);
  agents[1].id='software';agents[0].lastHeartbeat='2999-01-01T00:00:00Z';await assert.rejects(readCloudStatus(env),/INVALID/);
  await assert.rejects(readCloudStatus({SUPABASE_SERVICE_ROLE_KEY:'must-not-fallback'}),/NOT_CONFIGURED/);
+});
+
+test('server reader signs in the restricted identity without exposing credentials or accepting another role',async t=>{
+ const env={AUTOPILOT_STATUS_URL:'https://isolated.supabase.invalid',AUTOPILOT_STATUS_API_KEY:'public',AUTOPILOT_STATUS_READER_EMAIL:'reader@example.invalid',AUTOPILOT_STATUS_READER_PASSWORD:'synthetic-only-password'};
+ const agents=['director','software','infrastructure','consultations','followup','reports'].map(id=>({id,pending:0,running:0,blocked:0,completed:0,lastHeartbeat:null,results:0,lastResult:null}));
+ let role='autopilot_cloud_reader',signins=0;
+ t.mock.method(globalThis,'fetch',async(input,options)=>{
+  const url=new URL(String(input));
+  if(url.pathname==='/auth/v1/token'){
+   signins++;assert.equal(options?.redirect,'error');assert.equal(JSON.parse(String(options?.body)).password,env.AUTOPILOT_STATUS_READER_PASSWORD);
+   return Response.json({user:{role},access_token:'restricted-reader-jwt'});
+  }
+  assert.equal(new Headers(options?.headers).get('authorization'),'Bearer restricted-reader-jwt');
+  return Response.json({source:'supabase',scope:'cloud_v3_read_only',environment:'isolated',generatedAt:new Date().toISOString(),partial:false,agents});
+ });
+ assert.equal((await readCloudStatus(env)).agents.length,6);assert.equal(signins,1);
+ role='service_role';await assert.rejects(readCloudStatus(env),/AUTH_INVALID/);
 });

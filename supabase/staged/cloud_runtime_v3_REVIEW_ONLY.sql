@@ -25,7 +25,9 @@ begin
  if not found then return false;end if;
  v_claims=nullif(current_setting('request.jwt.claims',true),'')::jsonb;
  return coalesce(p_sha ~ '^[0-9a-f]{40}$'
-   and v_input->>'enabled'='true' and v_input->>'scheduler'='supabase_cron'
+   and v_input->>'enabled'='true' and (v_input->>'scheduler'='supabase_cron'
+     or (v_input->>'environment'='isolated' and v_input->>'scheduler'='manual_once'
+       and v_input->>'slot' ~ '^[0-9]{1,12}$'))
    and v_input->>'github_disabled'='true' and v_input->>'no_send'='true'
    and v_input->>'reviewed_sha'=p_sha and v_input->>'subject'=v_claims->>'sub'
    and v_input->>'environment' in ('isolated','production')
@@ -36,14 +38,17 @@ end $$;
 
 create or replace function public.cloud_v3_start(p_sha text) returns jsonb
 language plpgsql security definer set search_path='' as $$
-declare v_id text; v_token uuid; v_row public.agent_tasks;
+declare v_id text; v_token uuid; v_row public.agent_tasks;v_slot text;
 begin
  if public.cloud_v3_authorized(p_sha) is not true then raise exception 'cloud_authorization_denied';end if;
  -- One owner globally, even across a slot boundary. Same lock for all starters.
  perform pg_advisory_xact_lock(724003,3);
  if exists(select 1 from public.agent_tasks where actor='cloud-v3-runtime' and agent_id='director'
    and status='running' and lease_until>clock_timestamp()) then return null;end if;
- v_id='cloud-v3:'||floor(extract(epoch from clock_timestamp())/1800)::bigint||':director';
+ select case when input->>'scheduler'='manual_once' then input->>'slot'
+   else floor(extract(epoch from clock_timestamp())/1800)::bigint::text end into v_slot
+  from public.agent_tasks where id='cloud-v3:control';
+ v_id='cloud-v3:'||v_slot||':director';
  insert into public.agent_tasks(id,goal,actor,action,status,agent_id,max_attempts,input)
  values(v_id,'Coordinar observaciones sin envíos','cloud-v3-runtime','read','queued','director',3,
   jsonb_build_object('version',3,'reviewed_sha',p_sha,'no_send',true)) on conflict(id) do nothing;

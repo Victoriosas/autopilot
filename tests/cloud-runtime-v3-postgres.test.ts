@@ -35,6 +35,11 @@ test('cloud office SQL enforces scoped roles, single owner, fencing, persisted r
  await assert.rejects(rpc('cloud_v3_start',{p_sha:sha}),/rejected/);
  await sql(`insert into public.agent_tasks(id,goal,actor,action,status,input) values('cloud-v3:control','authorized local fixture','cloud-v3-policy','read','awaiting_approval',${literal({enabled:true,environment:'isolated',scheduler:'supabase_cron',github_disabled:true,no_send:true,subject,reviewed_sha:sha,not_before:'2026-01-01',expires_at:'2099-01-01'})}::jsonb);`);
  const control=(patch:Record<string,unknown>)=>sql(`update public.agent_tasks set input=input||${literal(patch)}::jsonb where id='cloud-v3:control';`);
+ await control({scheduler:'manual_once',slot:1});
+ assert.equal(await sql(`${claims()}select public.cloud_v3_authorized('${sha}');`),'t');
+ await control({environment:'production'});
+ assert.equal(await sql(`${claims()}select public.cloud_v3_authorized('${sha}');`),'f');
+ await control({environment:'isolated',scheduler:'supabase_cron'});
  for(const patch of [{enabled:false},{enabled:null},{scheduler:'github'},{github_disabled:false},{no_send:false},{subject:'wrong'},{reviewed_sha:'b'.repeat(40)},{expires_at:'2020-01-01'},{not_before:'2099-01-01'}]){
   await sql(`begin;update public.agent_tasks set input=input||${literal(patch)}::jsonb where id='cloud-v3:control';commit;`);
   await assert.rejects(rpc('cloud_v3_start',{p_sha:sha}));

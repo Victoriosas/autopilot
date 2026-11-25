@@ -6,8 +6,22 @@ export interface CloudStatusRow {id:string;pending:number;running:number;blocked
 export interface CloudStatus {source:'supabase';scope:'cloud_v3_read_only';environment:'isolated'|'production'|'unconfigured';generatedAt:string;partial:false;agents:CloudStatusRow[]}
 /** Explicit destination and reader JWT only. No production/service-key fallback. */
 export async function readCloudStatus(env:NodeJS.ProcessEnv=process.env):Promise<CloudStatus> {
- if(!env.AUTOPILOT_STATUS_URL||!env.AUTOPILOT_STATUS_API_KEY||!env.AUTOPILOT_STATUS_READER_JWT)throw Error('DIRECTOR_SYNTHETIC_READER_NOT_CONFIGURED');
- const data=await cloudRpcClient({url:env.AUTOPILOT_STATUS_URL,apiKey:env.AUTOPILOT_STATUS_API_KEY,jwt:env.AUTOPILOT_STATUS_READER_JWT})('cloud_v3_status',{}) as CloudStatus;
+ if(!env.AUTOPILOT_STATUS_URL||!env.AUTOPILOT_STATUS_API_KEY||(!env.AUTOPILOT_STATUS_READER_JWT&&!(env.AUTOPILOT_STATUS_READER_EMAIL&&env.AUTOPILOT_STATUS_READER_PASSWORD)))throw Error('DIRECTOR_SYNTHETIC_READER_NOT_CONFIGURED');
+ let jwt=env.AUTOPILOT_STATUS_READER_JWT;
+ if(!jwt){
+  const base=new URL(env.AUTOPILOT_STATUS_URL);
+  if(base.protocol!=='https:'||base.username||base.password||base.pathname!=='/'||base.search||base.hash)throw Error('CLOUD_STATUS_AUTH_INVALID');
+  // The server signs in only the restricted reader identity. No master key,
+  // browser credential, background refresh process or shared rotating token.
+  const auth=await fetch(new URL('/auth/v1/token?grant_type=password',base),{method:'POST',redirect:'error',
+   headers:{apikey:env.AUTOPILOT_STATUS_API_KEY,'content-type':'application/json'},
+   body:JSON.stringify({email:env.AUTOPILOT_STATUS_READER_EMAIL,password:env.AUTOPILOT_STATUS_READER_PASSWORD}),signal:AbortSignal.timeout(8000)});
+  if(!auth.ok)throw Error('CLOUD_STATUS_AUTH_INVALID');
+  const identity=await auth.json();
+  if(identity?.user?.role!=='autopilot_cloud_reader'||typeof identity.access_token!=='string')throw Error('CLOUD_STATUS_AUTH_INVALID');
+  jwt=identity.access_token;
+ }
+ const data=await cloudRpcClient({url:env.AUTOPILOT_STATUS_URL,apiKey:env.AUTOPILOT_STATUS_API_KEY,jwt})('cloud_v3_status',{}) as CloudStatus;
  if(data?.source!=='supabase'||data.scope!=='cloud_v3_read_only'||data.partial!==false||!['isolated','production','unconfigured'].includes(data.environment)
   ||!Number.isFinite(Date.parse(data.generatedAt))||Date.parse(data.generatedAt)>Date.now()+30000
   ||!Array.isArray(data.agents)||data.agents.length!==6)throw Error('CLOUD_STATUS_INVALID');
