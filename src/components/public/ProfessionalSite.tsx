@@ -5,14 +5,15 @@ import './discovery.css';
 import './noir.css';
 import './depth.css';
 import './experience.css';
-import { ConsultationForm } from './ConsultationForm';
-import { EditorialPage } from './EditorialPage';
 import { ContactLink, contactEmail } from './ContactLink';
 import { PublicNavigation } from './PublicNavigation';
-import { TreatmentsPage } from './TreatmentsPage';
-import { TechnologyPage } from './TechnologyPage';
-import { GiftVoucherModal } from './GiftVoucherModal';
-import { PrivacyPage } from './PrivacyPage';
+
+const ConsultationForm = React.lazy(() => import('./ConsultationForm').then(module => ({ default: module.ConsultationForm })));
+const EditorialPage = React.lazy(() => import('./EditorialPage').then(module => ({ default: module.EditorialPage })));
+const GiftVoucherModal = React.lazy(() => import('./GiftVoucherModal').then(module => ({ default: module.GiftVoucherModal })));
+const PrivacyPage = React.lazy(() => import('./PrivacyPage').then(module => ({ default: module.PrivacyPage })));
+const TechnologyPage = React.lazy(() => import('./TechnologyPage').then(module => ({ default: module.TechnologyPage })));
+const TreatmentsPage = React.lazy(() => import('./TreatmentsPage').then(module => ({ default: module.TreatmentsPage })));
 
 const asset = '/brand/figma-gold/';
 const arrow = asset + 'e3eb3.svg';
@@ -109,7 +110,13 @@ export function ProfessionalSite() {
     <a className="beauty-skip" href="#contenido">Saltar al contenido</a>
     <header className="beauty-header beauty-wrap"><Brand /><PublicNavigation /><ContactLink>Conversemos</ContactLink></header>
     <main id="contenido" tabIndex={-1} key={location} className={editorial || contact ? 'beauty-editorial-main beauty-wrap' : undefined}>
-      {!known ? <section className="beauty-wrap beauty-section"><h1>No encontramos esta página.</h1><a href="/">Volver al inicio</a></section> : path === '/privacidad' ? <PrivacyPage /> : path === '/tecnologia' ? <TechnologyPage /> : path === '/victoria' ? <Victoria /> : path === '/contacto' ? <ComoEmpezar /> : contact ? <Contacto /> : editorial ? <EditorialPage /> : directory ? <TreatmentsPage /> : <Home />}
+      {!known ? (
+        <section className="beauty-wrap beauty-section"><h1>No encontramos esta página.</h1><a href="/">Volver al inicio</a></section>
+      ) : (
+        <React.Suspense fallback={<p className="beauty-wrap beauty-small" role="status">Cargando página…</p>}>
+          {path === '/privacidad' ? <PrivacyPage /> : path === '/tecnologia' ? <TechnologyPage /> : path === '/victoria' ? <Victoria /> : path === '/contacto' ? <ComoEmpezar /> : contact ? <Contacto /> : editorial ? <EditorialPage /> : directory ? <TreatmentsPage /> : <Home />}
+        </React.Suspense>
+      )}
     </main>
     <footer className="beauty-compact-footer beauty-wrap"><span>Victoria · Atención personal · Uruguay</span><a href="/contacto">Cómo empezar</a><a href="/privacidad">Contacto y privacidad</a><a href="/consultanos?canal=email" aria-label="Consultar por correo usando el formulario">Consultanos por email</a></footer>
   </div>;
